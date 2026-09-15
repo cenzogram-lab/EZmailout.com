@@ -1,0 +1,22 @@
+{
+  "overview": "A premium direct mail campaign command console that wraps the Lob API to let business owners design, target, and launch physical mail campaigns at scale.",
+  "features": [
+    "5-product catalog with layout selection (postcards, letters, self-mailers, snap packs, booklets)",
+    "Dual-path audience targeting: interactive geo map with radius/ZIP filtering + CSV upload with Lob address verification",
+    "Simplified design canvas with background image upload, draggable text blocks, and QR code overlay",
+    "Safe Zone, Cut Line, and Bleed Line boundary overlays on canvas",
+    "Admin control panel with masked API key management for Stripe, Lob, and Resend",
+    "Campaign history portal with live Lob webhook tracking (Created → Delivered)",
+    "Per-campaign CSV export with verified addresses and tracking IDs"
+  ],
+  "category": "productivity",
+  "tags": [
+    "direct-mail",
+    "campaign-management",
+    "lob-api",
+    "print-and-mail",
+    "dmass",
+    "marketing"
+  ],
+  "last_updated": "2026-06-04T01:57:28.819Z"
+}

@@ -1,0 +1,155 @@
+type http_request_result = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type http_header = 
+ record {
+   name: text;
+   value: text;
+ };
+type VerifiedAddress = 
+ record {
+   address_line1: text;
+   address_line2: opt text;
+   city: text;
+   name: text;
+   state: text;
+   zip_code: text;
+   zip_plus4: opt text;
+ };
+type TransformationOutput = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type TransformationInput = 
+ record {
+   context: blob;
+   response: http_request_result;
+ };
+type TrackingEvent = 
+ record {
+   campaignId: text;
+   eventType: text;
+   lobEventId: text;
+   timestamp: int;
+ };
+type TextBlockState = 
+ record {
+   color: text;
+   fontSize: float64;
+   height: float64;
+   id: text;
+   "text": text;
+   width: float64;
+   x: float64;
+   y: float64;
+ };
+type QrCodeState = 
+ record {
+   id: text;
+   size: float64;
+   url: text;
+   x: float64;
+   y: float64;
+ };
+type ProductType = 
+ variant {
+   Booklet;
+   Letter;
+   Postcard;
+   SelfMailer;
+   SnapPack;
+ };
+type ProductSelection = 
+ record {
+   colorOption: opt text;
+   layoutVariant: text;
+   productType: ProductType;
+ };
+type LogoState = 
+ record {
+   height: float64;
+   id: text;
+   url: text;
+   width: float64;
+   x: float64;
+   y: float64;
+ };
+type CanvasState = 
+ record {
+   backgroundImageUrl: opt text;
+   logos: vec LogoState;
+   qrCode: opt QrCodeState;
+   textBlocks: vec TextBlockState;
+ };
+type CampaignStatus = 
+ variant {
+   Created;
+   Delivered;
+   InProduction;
+   InTransit;
+   SortedAtLocalHub;
+ };
+type CampaignRecordShared = 
+ record {
+   audienceType: AudienceType;
+   canvasState: opt CanvasState;
+   createdAt: int;
+   designTemplateId: opt text;
+   id: text;
+   product: ProductSelection;
+   recipientCount: nat;
+   status: CampaignStatus;
+   trackingId: opt text;
+ };
+type AudienceType = 
+ variant {
+   CSV;
+   Map;
+ };
+type AdminKeys = 
+ record {
+   lobKey: opt text;
+   resendKey: opt text;
+   stripeKey: opt text;
+ };
+type AddressVerificationResult = 
+ record {
+   errorMessage: opt text;
+   input: AddressInput;
+   isValid: bool;
+   verified: opt VerifiedAddress;
+ };
+type AddressInput = 
+ record {
+   address_line1: text;
+   address_line2: opt text;
+   city: text;
+   name: text;
+   state: text;
+   zip_code: text;
+ };
+service : {
+  createCampaign: (product: ProductSelection, recipientCount: nat,
+   audienceType: AudienceType) -> (text);
+  exportCampaignRecipients: (campaignId: text) -> (opt text) query;
+  fireLobOutcall: (campaignId: text, recipientId: text, lobKey: text) ->
+   (text);
+  getAdminKeys: () -> (AdminKeys);
+  getCampaign: (id: text) -> (opt CampaignRecordShared) query;
+  getCampaigns: () -> (vec CampaignRecordShared) query;
+  getCanvasState: (campaignId: text) -> (opt CanvasState) query;
+  getTrackingEvents: (campaignId: text) -> (vec TrackingEvent) query;
+  handleLobWebhook: (payload: text) -> (bool);
+  saveAdminKeys: (keys: AdminKeys) -> (bool);
+  saveCanvasState: (campaignId: text, canvas: CanvasState) -> (bool);
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateCampaignStatus: (id: text, status: CampaignStatus, lobEventId: 
+   text, timestamp: int) -> (bool);
+  verifyAddresses: (addresses: vec AddressInput) ->
+   (vec AddressVerificationResult);
+}
