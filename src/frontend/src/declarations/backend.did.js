@@ -8,6 +8,101 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const ApiResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'error' : IDL.Opt(IDL.Text),
+});
+export const PaymentState = IDL.Variant({
+  'Failed' : IDL.Null,
+  'Succeeded' : IDL.Null,
+  'Created' : IDL.Null,
+  'Waived' : IDL.Null,
+});
+export const ConfirmPaymentResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'campaignId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+  'state' : IDL.Opt(PaymentState),
+  'creditBalance' : IDL.Opt(IDL.Nat),
+  'subscriptionActive' : IDL.Opt(IDL.Bool),
+  'referralRewardApplied' : IDL.Bool,
+});
+export const ReturnAddress = IDL.Record({
+  'zip_code' : IDL.Text,
+  'address_line1' : IDL.Text,
+  'address_line2' : IDL.Opt(IDL.Text),
+  'city' : IDL.Text,
+  'name' : IDL.Text,
+  'state' : IDL.Text,
+  'organization' : IDL.Opt(IDL.Text),
+});
+export const LogoState = IDL.Record({
+  'x' : IDL.Float64,
+  'y' : IDL.Float64,
+  'id' : IDL.Text,
+  'url' : IDL.Text,
+  'height' : IDL.Float64,
+  'zIndex' : IDL.Nat,
+  'width' : IDL.Float64,
+});
+export const QrMode = IDL.Variant({
+  'DynamicTracking' : IDL.Null,
+  'StaticUrl' : IDL.Null,
+});
+export const QrCodeState = IDL.Record({
+  'x' : IDL.Float64,
+  'y' : IDL.Float64,
+  'id' : IDL.Text,
+  'url' : IDL.Text,
+  'foreground' : IDL.Text,
+  'zIndex' : IDL.Nat,
+  'background' : IDL.Text,
+  'mode' : QrMode,
+  'size' : IDL.Float64,
+  'caption' : IDL.Opt(IDL.Text),
+});
+export const TextBlockState = IDL.Record({
+  'x' : IDL.Float64,
+  'y' : IDL.Float64,
+  'id' : IDL.Text,
+  'height' : IDL.Float64,
+  'zIndex' : IDL.Nat,
+  'align' : IDL.Text,
+  'color' : IDL.Text,
+  'text' : IDL.Text,
+  'fontFamily' : IDL.Text,
+  'fontWeight' : IDL.Nat,
+  'width' : IDL.Float64,
+  'fontSize' : IDL.Float64,
+});
+export const CanvasSide = IDL.Record({
+  'backgroundColor' : IDL.Text,
+  'backgroundImageUrl' : IDL.Opt(IDL.Text),
+  'logos' : IDL.Vec(LogoState),
+  'qrCodes' : IDL.Vec(QrCodeState),
+  'textBlocks' : IDL.Vec(TextBlockState),
+});
+export const CanvasState = IDL.Record({
+  'front' : CanvasSide,
+  'heightInches' : IDL.Float64,
+  'designPpi' : IDL.Nat,
+  'back' : CanvasSide,
+  'widthInches' : IDL.Float64,
+});
+export const VerifiedAddress = IDL.Record({
+  'zip_code' : IDL.Text,
+  'address_line1' : IDL.Text,
+  'address_line2' : IDL.Opt(IDL.Text),
+  'city' : IDL.Text,
+  'name' : IDL.Text,
+  'state' : IDL.Text,
+  'zip_plus4' : IDL.Opt(IDL.Text),
+});
+export const AudienceType = IDL.Variant({
+  'SavedPreset' : IDL.Null,
+  'CsvUpload' : IDL.Null,
+  'GeoRadius' : IDL.Null,
+});
 export const ProductType = IDL.Variant({
   'SelfMailer' : IDL.Null,
   'Booklet' : IDL.Null,
@@ -20,11 +115,175 @@ export const ProductSelection = IDL.Record({
   'layoutVariant' : IDL.Text,
   'colorOption' : IDL.Opt(IDL.Text),
 });
-export const AudienceType = IDL.Variant({ 'CSV' : IDL.Null, 'Map' : IDL.Null });
-export const AdminKeys = IDL.Record({
-  'resendKey' : IDL.Opt(IDL.Text),
-  'lobKey' : IDL.Opt(IDL.Text),
-  'stripeKey' : IDL.Opt(IDL.Text),
+export const CreateCampaignInput = IDL.Record({
+  'returnAddress' : IDL.Opt(ReturnAddress),
+  'name' : IDL.Text,
+  'canvasState' : IDL.Opt(CanvasState),
+  'recipients' : IDL.Vec(VerifiedAddress),
+  'qrDestinationUrl' : IDL.Opt(IDL.Text),
+  'designTemplateId' : IDL.Opt(IDL.Text),
+  'recipientCount' : IDL.Nat,
+  'audienceType' : AudienceType,
+  'product' : ProductSelection,
+  'sourcePresetId' : IDL.Opt(IDL.Text),
+});
+export const CreateCampaignResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'unitPriceCents' : IDL.Opt(IDL.Nat),
+  'totalCents' : IDL.Opt(IDL.Nat),
+  'campaignId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+});
+export const PaymentPurpose = IDL.Variant({
+  'CampaignOrder' : IDL.Null,
+  'CreditPack' : IDL.Null,
+  'Subscription' : IDL.Null,
+});
+export const CreditPack = IDL.Variant({
+  'Starter' : IDL.Null,
+  'Growth' : IDL.Null,
+  'Agency' : IDL.Null,
+});
+export const PaymentIntentResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'sandbox' : IDL.Bool,
+  'amountCents' : IDL.Opt(IDL.Nat),
+  'error' : IDL.Opt(IDL.Text),
+  'waived' : IDL.Bool,
+  'publishableKey' : IDL.Opt(IDL.Text),
+  'clientSecret' : IDL.Opt(IDL.Text),
+  'paymentIntentId' : IDL.Opt(IDL.Text),
+});
+export const CreditResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'balance' : IDL.Opt(IDL.Nat),
+  'error' : IDL.Opt(IDL.Text),
+});
+export const ProductionStatus = IDL.Variant({
+  'ReadyToDispatch' : IDL.Null,
+  'Failed' : IDL.Null,
+  'DocumentUploaded' : IDL.Null,
+  'AwaitingPayment' : IDL.Null,
+  'Draft' : IDL.Null,
+  'AddressListReady' : IDL.Null,
+  'Submitted' : IDL.Null,
+  'JobCreated' : IDL.Null,
+});
+export const DispatchResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'jobId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+  'productionStatus' : IDL.Opt(ProductionStatus),
+  'documentId' : IDL.Opt(IDL.Text),
+  'addressListId' : IDL.Opt(IDL.Text),
+});
+export const UserAccountShared = IDL.Record({
+  'id' : IDL.Text,
+  'referralCreditsRedeemed' : IDL.Nat,
+  'referralCode' : IDL.Text,
+  'referralLink' : IDL.Text,
+  'freeMonthsAvailable' : IDL.Nat,
+  'createdAt' : IDL.Int,
+  'referralCount' : IDL.Nat,
+  'email' : IDL.Text,
+  'updatedAt' : IDL.Int,
+  'referredBy' : IDL.Opt(IDL.Text),
+  'creditBalance' : IDL.Nat,
+  'subscriptionActive' : IDL.Bool,
+  'referralCreditsEarned' : IDL.Nat,
+  'firstPaymentAt' : IDL.Opt(IDL.Int),
+  'subscriptionRenewsAt' : IDL.Int,
+});
+export const AccountResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'error' : IDL.Opt(IDL.Text),
+  'account' : IDL.Opt(UserAccountShared),
+});
+export const AddressInput = IDL.Record({
+  'zip_code' : IDL.Text,
+  'address_line1' : IDL.Text,
+  'address_line2' : IDL.Opt(IDL.Text),
+  'city' : IDL.Text,
+  'name' : IDL.Text,
+  'state' : IDL.Text,
+});
+export const AddressVerificationResult = IDL.Record({
+  'verified' : IDL.Opt(VerifiedAddress),
+  'errorMessage' : IDL.Opt(IDL.Text),
+  'input' : AddressInput,
+  'isValid' : IDL.Bool,
+});
+export const VerificationBatchResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'results' : IDL.Vec(AddressVerificationResult),
+  'error' : IDL.Opt(IDL.Text),
+  'validCount' : IDL.Nat,
+  'addressListId' : IDL.Opt(IDL.Text),
+  'invalidCount' : IDL.Nat,
+});
+export const AiCopyInput = IDL.Record({
+  'offer' : IDL.Text,
+  'tone' : IDL.Opt(IDL.Text),
+  'businessName' : IDL.Text,
+  'callToAction' : IDL.Text,
+  'industry' : IDL.Text,
+});
+export const AiCopyResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'bullets' : IDL.Vec(IDL.Text),
+  'ctas' : IDL.Vec(IDL.Text),
+  'creditsCharged' : IDL.Nat,
+  'error' : IDL.Opt(IDL.Text),
+  'headlines' : IDL.Vec(IDL.Text),
+  'creditBalance' : IDL.Opt(IDL.Nat),
+});
+export const AiImageSize = IDL.Variant({
+  'WideHd1792' : IDL.Null,
+  'Square1024' : IDL.Null,
+  'Wide1792' : IDL.Null,
+});
+export const AiImageResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'creditsCharged' : IDL.Nat,
+  'error' : IDL.Opt(IDL.Text),
+  'imageUrl' : IDL.Opt(IDL.Text),
+  'creditBalance' : IDL.Opt(IDL.Nat),
+  'revisedPrompt' : IDL.Opt(IDL.Text),
+});
+export const Click2MailEnvironment = IDL.Variant({
+  'Production' : IDL.Null,
+  'Staging' : IDL.Null,
+});
+export const AdminKeysView = IDL.Record({
+  'openAiKeyMasked' : IDL.Opt(IDL.Text),
+  'adminPrincipal' : IDL.Opt(IDL.Text),
+  'click2mailUsername' : IDL.Opt(IDL.Text),
+  'click2mailEnvironment' : Click2MailEnvironment,
+  'sandboxCheckout' : IDL.Bool,
+  'callerIsAdmin' : IDL.Bool,
+  'stripePublishableKey' : IDL.Opt(IDL.Text),
+  'webhookSecretMasked' : IDL.Opt(IDL.Text),
+  'stripeSecretKeyMasked' : IDL.Opt(IDL.Text),
+  'outcallProxyUrl' : IDL.Opt(IDL.Text),
+  'resendKeyMasked' : IDL.Opt(IDL.Text),
+  'click2mailPasswordMasked' : IDL.Opt(IDL.Text),
+  'webhookPath' : IDL.Text,
+});
+export const CreditPackInfo = IDL.Record({
+  'credits' : IDL.Nat,
+  'name' : IDL.Text,
+  'pack' : CreditPack,
+  'bonusCredits' : IDL.Nat,
+  'priceCents' : IDL.Nat,
+});
+export const AiPricing = IDL.Record({
+  'monthlyAllowance' : IDL.Nat,
+  'wideImageCredits' : IDL.Nat,
+  'hdImageCredits' : IDL.Nat,
+  'copyCredits' : IDL.Nat,
+  'squareImageCredits' : IDL.Nat,
+  'creditValueCents' : IDL.Nat,
+  'packs' : IDL.Vec(CreditPackInfo),
 });
 export const CampaignStatus = IDL.Variant({
   'InTransit' : IDL.Null,
@@ -33,58 +292,199 @@ export const CampaignStatus = IDL.Variant({
   'Created' : IDL.Null,
   'SortedAtLocalHub' : IDL.Null,
 });
-export const LogoState = IDL.Record({
-  'x' : IDL.Float64,
-  'y' : IDL.Float64,
-  'id' : IDL.Text,
-  'url' : IDL.Text,
-  'height' : IDL.Float64,
-  'width' : IDL.Float64,
+export const PaymentStatus = IDL.Variant({
+  'Refunded' : IDL.Null,
+  'Paid' : IDL.Null,
+  'Unpaid' : IDL.Null,
+  'Waived' : IDL.Null,
+  'Pending' : IDL.Null,
 });
-export const TextBlockState = IDL.Record({
-  'x' : IDL.Float64,
-  'y' : IDL.Float64,
-  'id' : IDL.Text,
-  'height' : IDL.Float64,
+export const MailClass = IDL.Variant({
+  'MarketingMail' : IDL.Null,
+  'FirstClass' : IDL.Null,
+});
+export const PrintSpec = IDL.Record({
+  'envelope' : IDL.Opt(IDL.Text),
   'color' : IDL.Text,
-  'text' : IDL.Text,
-  'width' : IDL.Float64,
-  'fontSize' : IDL.Float64,
-});
-export const QrCodeState = IDL.Record({
-  'x' : IDL.Float64,
-  'y' : IDL.Float64,
-  'id' : IDL.Text,
-  'url' : IDL.Text,
-  'size' : IDL.Float64,
-});
-export const CanvasState = IDL.Record({
-  'backgroundImageUrl' : IDL.Opt(IDL.Text),
-  'logos' : IDL.Vec(LogoState),
-  'textBlocks' : IDL.Vec(TextBlockState),
-  'qrCode' : IDL.Opt(QrCodeState),
+  'printOption' : IDL.Text,
+  'layout' : IDL.Text,
+  'paperType' : IDL.Text,
+  'productionTime' : IDL.Text,
+  'mailClass' : MailClass,
+  'documentClass' : IDL.Text,
 });
 export const CampaignRecordShared = IDL.Record({
   'id' : IDL.Text,
   'status' : CampaignStatus,
+  'paymentStatus' : PaymentStatus,
+  'unitPriceCents' : IDL.Nat,
+  'c2mAddressListId' : IDL.Opt(IDL.Text),
+  'returnAddress' : IDL.Opt(ReturnAddress),
+  'ownerId' : IDL.Text,
+  'baseCostCents' : IDL.Nat,
+  'name' : IDL.Text,
   'createdAt' : IDL.Int,
-  'trackingId' : IDL.Opt(IDL.Text),
+  'c2mDocumentId' : IDL.Opt(IDL.Text),
+  'updatedAt' : IDL.Int,
   'canvasState' : IDL.Opt(CanvasState),
+  'productionStatus' : ProductionStatus,
+  'qrScanCount' : IDL.Nat,
+  'qrDestinationUrl' : IDL.Opt(IDL.Text),
   'designTemplateId' : IDL.Opt(IDL.Text),
+  'c2mJobId' : IDL.Opt(IDL.Text),
+  'lastError' : IDL.Opt(IDL.Text),
+  'printSpec' : PrintSpec,
   'recipientCount' : IDL.Nat,
   'audienceType' : AudienceType,
+  'totalAmountChargedCents' : IDL.Nat,
   'product' : ProductSelection,
+  'paymentIntentId' : IDL.Opt(IDL.Text),
+  'sourcePresetId' : IDL.Opt(IDL.Text),
 });
-export const TrackingEvent = IDL.Record({
-  'lobEventId' : IDL.Text,
+export const CreditLedgerEntry = IDL.Record({
+  'id' : IDL.Nat,
+  'userId' : IDL.Text,
+  'reference' : IDL.Opt(IDL.Text),
+  'timestamp' : IDL.Int,
+  'balanceAfter' : IDL.Nat,
+  'delta' : IDL.Int,
+  'reason' : IDL.Text,
+});
+export const DocumentUploadStatus = IDL.Record({
+  'campaignId' : IDL.Text,
+  'mimeType' : IDL.Text,
+  'receivedChunks' : IDL.Nat,
+  'fileName' : IDL.Text,
+  'complete' : IDL.Bool,
+  'totalChunks' : IDL.Nat,
+  'totalBytes' : IDL.Nat,
+});
+export const PricingRow = IDL.Record({
+  'heightInches' : IDL.Float64,
+  'displayName' : IDL.Text,
+  'retailPriceCents' : IDL.Nat,
+  'baseCostCents' : IDL.Nat,
+  'productType' : ProductType,
+  'marginCents' : IDL.Nat,
+  'layoutVariant' : IDL.Text,
+  'marginPercent' : IDL.Nat,
+  'widthInches' : IDL.Float64,
+  'printSpec' : PrintSpec,
+});
+export const PublicConfig = IDL.Record({
+  'click2mailEnvironment' : Click2MailEnvironment,
+  'openAiConfigured' : IDL.Bool,
+  'trackingBaseUrl' : IDL.Text,
+  'stripeConfigured' : IDL.Bool,
+  'click2mailConfigured' : IDL.Bool,
+  'sandboxCheckout' : IDL.Bool,
+  'resendConfigured' : IDL.Bool,
+  'stripePublishableKey' : IDL.Opt(IDL.Text),
+  'referralBaseUrl' : IDL.Text,
+});
+export const QrScanEvent = IDL.Record({
   'campaignId' : IDL.Text,
   'timestamp' : IDL.Int,
+  'userAgent' : IDL.Opt(IDL.Text),
+  'recipientId' : IDL.Text,
+});
+export const QrScanStats = IDL.Record({
+  'uniqueRecipients' : IDL.Nat,
+  'totalScans' : IDL.Nat,
+  'recentScans' : IDL.Vec(QrScanEvent),
+});
+export const ReferralReward = IDL.Record({
+  'id' : IDL.Nat,
+  'refereeId' : IDL.Text,
+  'amountCents' : IDL.Nat,
+  'referrerId' : IDL.Text,
+  'timestamp' : IDL.Int,
+  'paymentIntentId' : IDL.Text,
+});
+export const ReferralStats = IDL.Record({
+  'referralCreditsRedeemed' : IDL.Nat,
+  'referralCode' : IDL.Text,
+  'referralLink' : IDL.Text,
+  'freeMonthsAvailable' : IDL.Nat,
+  'referralCount' : IDL.Nat,
+  'subscriptionActive' : IDL.Bool,
+  'rewards' : IDL.Vec(ReferralReward),
+  'referralCreditsEarned' : IDL.Nat,
+});
+export const TrackingSource = IDL.Variant({
+  'System' : IDL.Null,
+  'Poll' : IDL.Null,
+  'Webhook' : IDL.Null,
+  'Manual' : IDL.Null,
+});
+export const TrackingEvent = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : CampaignStatus,
+  'source' : TrackingSource,
+  'campaignId' : IDL.Text,
+  'detail' : IDL.Opt(IDL.Text),
+  'timestamp' : IDL.Int,
+  'providerEventId' : IDL.Text,
   'eventType' : IDL.Text,
 });
-export const http_header = IDL.Record({
-  'value' : IDL.Text,
-  'name' : IDL.Text,
+export const WebhookResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'status' : IDL.Opt(CampaignStatus),
+  'campaignId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
 });
+export const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
+export const HttpRequest = IDL.Record({
+  'url' : IDL.Text,
+  'method' : IDL.Text,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(HeaderField),
+});
+export const HttpResponse = IDL.Record({
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(HeaderField),
+  'upgrade' : IDL.Opt(IDL.Bool),
+  'status_code' : IDL.Nat16,
+});
+export const AudiencePresetShared = IDL.Record({
+  'id' : IDL.Text,
+  'ownerId' : IDL.Text,
+  'name' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+  'sourceCampaignId' : IDL.Opt(IDL.Text),
+  'recipientCount' : IDL.Nat,
+});
+export const TrackingResolveResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'campaignId' : IDL.Opt(IDL.Text),
+  'destinationUrl' : IDL.Opt(IDL.Text),
+  'recipientId' : IDL.Opt(IDL.Text),
+});
+export const AdminKeysInput = IDL.Record({
+  'webhookSecret' : IDL.Opt(IDL.Text),
+  'resendKey' : IDL.Opt(IDL.Text),
+  'click2mailUsername' : IDL.Opt(IDL.Text),
+  'click2mailEnvironment' : IDL.Opt(Click2MailEnvironment),
+  'sandboxCheckout' : IDL.Opt(IDL.Bool),
+  'click2mailPassword' : IDL.Opt(IDL.Text),
+  'stripeSecretKey' : IDL.Opt(IDL.Text),
+  'openAiKey' : IDL.Opt(IDL.Text),
+  'stripePublishableKey' : IDL.Opt(IDL.Text),
+  'outcallProxyUrl' : IDL.Opt(IDL.Text),
+});
+export const PresetResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'presetId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+});
+export const SyncResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'status' : IDL.Opt(CampaignStatus),
+  'newEvents' : IDL.Nat,
+  'error' : IDL.Opt(IDL.Text),
+});
+export const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
 export const http_request_result = IDL.Record({
   'status' : IDL.Nat,
   'body' : IDL.Vec(IDL.Nat8),
@@ -99,34 +499,31 @@ export const TransformationOutput = IDL.Record({
   'body' : IDL.Vec(IDL.Nat8),
   'headers' : IDL.Vec(http_header),
 });
-export const AddressInput = IDL.Record({
-  'zip_code' : IDL.Text,
-  'address_line1' : IDL.Text,
-  'address_line2' : IDL.Opt(IDL.Text),
-  'city' : IDL.Text,
-  'name' : IDL.Text,
-  'state' : IDL.Text,
-});
-export const VerifiedAddress = IDL.Record({
-  'zip_code' : IDL.Text,
-  'address_line1' : IDL.Text,
-  'address_line2' : IDL.Opt(IDL.Text),
-  'city' : IDL.Text,
-  'name' : IDL.Text,
-  'state' : IDL.Text,
-  'zip_plus4' : IDL.Opt(IDL.Text),
-});
-export const AddressVerificationResult = IDL.Record({
-  'verified' : IDL.Opt(VerifiedAddress),
-  'errorMessage' : IDL.Opt(IDL.Text),
-  'input' : AddressInput,
-  'isValid' : IDL.Bool,
-});
 
 export const idlService = IDL.Service({
+  'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
+  'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
   'createCampaign' : IDL.Func(
-      [ProductSelection, IDL.Nat, AudienceType],
-      [IDL.Text],
+      [CreateCampaignInput],
+      [CreateCampaignResult],
+      [],
+    ),
+  'createPaymentIntent' : IDL.Func(
+      [PaymentPurpose, IDL.Opt(IDL.Text), IDL.Opt(CreditPack)],
+      [PaymentIntentResult],
+      [],
+    ),
+  'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
+  'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
+  'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
+  'ensureAccount' : IDL.Func(
+      [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+      [AccountResult],
+      [],
+    ),
+  'executeClick2MailVerification' : IDL.Func(
+      [IDL.Vec(AddressInput)],
+      [VerificationBatchResult],
       [],
     ),
   'exportCampaignRecipients' : IDL.Func(
@@ -134,36 +531,84 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Text)],
       ['query'],
     ),
-  'fireLobOutcall' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
-  'getAdminKeys' : IDL.Func([], [AdminKeys], []),
+  'generateAiCopy' : IDL.Func([AiCopyInput], [AiCopyResult], []),
+  'generateAiImage' : IDL.Func([IDL.Text, AiImageSize], [AiImageResult], []),
+  'getAdminKeys' : IDL.Func([], [AdminKeysView], ['query']),
+  'getAiPricing' : IDL.Func([], [AiPricing], ['query']),
   'getCampaign' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(CampaignRecordShared)],
       ['query'],
     ),
+  'getCampaignRecipients' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(VerifiedAddress)],
+      ['query'],
+    ),
   'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignRecordShared)], ['query']),
   'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
+  'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
+  'getDocumentUploadStatus' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(DocumentUploadStatus)],
+      ['query'],
+    ),
+  'getMyAccount' : IDL.Func([], [IDL.Opt(UserAccountShared)], ['query']),
+  'getPresetAddresses' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(VerifiedAddress)],
+      ['query'],
+    ),
+  'getPricingLedger' : IDL.Func([], [IDL.Vec(PricingRow)], ['query']),
+  'getPublicConfig' : IDL.Func([], [PublicConfig], ['query']),
+  'getQrScanStats' : IDL.Func([IDL.Text], [QrScanStats], ['query']),
+  'getReferralStats' : IDL.Func([], [IDL.Opt(ReferralStats)], ['query']),
   'getTrackingEvents' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(TrackingEvent)],
       ['query'],
     ),
-  'handleLobWebhook' : IDL.Func([IDL.Text], [IDL.Bool], []),
-  'saveAdminKeys' : IDL.Func([AdminKeys], [IDL.Bool], []),
+  'handleDeliveryWebhook' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [WebhookResult],
+      [],
+    ),
+  'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+  'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
+  'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
+  'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
+  'resolveTrackingLink' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text)],
+      [TrackingResolveResult],
+      [],
+    ),
+  'saveAdminKeys' : IDL.Func([AdminKeysInput], [ApiResult], []),
   'saveCanvasState' : IDL.Func([IDL.Text, CanvasState], [IDL.Bool], []),
+  'savePreset' : IDL.Func(
+      [IDL.Text, IDL.Vec(VerifiedAddress), IDL.Opt(IDL.Text)],
+      [PresetResult],
+      [],
+    ),
+  'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),
   'transform' : IDL.Func(
       [TransformationInput],
       [TransformationOutput],
       ['query'],
     ),
+  'updateAccountEmail' : IDL.Func([IDL.Text], [ApiResult], []),
   'updateCampaignStatus' : IDL.Func(
       [IDL.Text, CampaignStatus, IDL.Text, IDL.Int],
       [IDL.Bool],
       [],
     ),
-  'verifyAddresses' : IDL.Func(
-      [IDL.Vec(AddressInput)],
-      [IDL.Vec(AddressVerificationResult)],
+  'updatePreset' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Vec(VerifiedAddress)],
+      [ApiResult],
+      [],
+    ),
+  'uploadDocumentChunk' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8)],
+      [ApiResult],
       [],
     ),
 });
@@ -171,6 +616,101 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const ApiResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const PaymentState = IDL.Variant({
+    'Failed' : IDL.Null,
+    'Succeeded' : IDL.Null,
+    'Created' : IDL.Null,
+    'Waived' : IDL.Null,
+  });
+  const ConfirmPaymentResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'campaignId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+    'state' : IDL.Opt(PaymentState),
+    'creditBalance' : IDL.Opt(IDL.Nat),
+    'subscriptionActive' : IDL.Opt(IDL.Bool),
+    'referralRewardApplied' : IDL.Bool,
+  });
+  const ReturnAddress = IDL.Record({
+    'zip_code' : IDL.Text,
+    'address_line1' : IDL.Text,
+    'address_line2' : IDL.Opt(IDL.Text),
+    'city' : IDL.Text,
+    'name' : IDL.Text,
+    'state' : IDL.Text,
+    'organization' : IDL.Opt(IDL.Text),
+  });
+  const LogoState = IDL.Record({
+    'x' : IDL.Float64,
+    'y' : IDL.Float64,
+    'id' : IDL.Text,
+    'url' : IDL.Text,
+    'height' : IDL.Float64,
+    'zIndex' : IDL.Nat,
+    'width' : IDL.Float64,
+  });
+  const QrMode = IDL.Variant({
+    'DynamicTracking' : IDL.Null,
+    'StaticUrl' : IDL.Null,
+  });
+  const QrCodeState = IDL.Record({
+    'x' : IDL.Float64,
+    'y' : IDL.Float64,
+    'id' : IDL.Text,
+    'url' : IDL.Text,
+    'foreground' : IDL.Text,
+    'zIndex' : IDL.Nat,
+    'background' : IDL.Text,
+    'mode' : QrMode,
+    'size' : IDL.Float64,
+    'caption' : IDL.Opt(IDL.Text),
+  });
+  const TextBlockState = IDL.Record({
+    'x' : IDL.Float64,
+    'y' : IDL.Float64,
+    'id' : IDL.Text,
+    'height' : IDL.Float64,
+    'zIndex' : IDL.Nat,
+    'align' : IDL.Text,
+    'color' : IDL.Text,
+    'text' : IDL.Text,
+    'fontFamily' : IDL.Text,
+    'fontWeight' : IDL.Nat,
+    'width' : IDL.Float64,
+    'fontSize' : IDL.Float64,
+  });
+  const CanvasSide = IDL.Record({
+    'backgroundColor' : IDL.Text,
+    'backgroundImageUrl' : IDL.Opt(IDL.Text),
+    'logos' : IDL.Vec(LogoState),
+    'qrCodes' : IDL.Vec(QrCodeState),
+    'textBlocks' : IDL.Vec(TextBlockState),
+  });
+  const CanvasState = IDL.Record({
+    'front' : CanvasSide,
+    'heightInches' : IDL.Float64,
+    'designPpi' : IDL.Nat,
+    'back' : CanvasSide,
+    'widthInches' : IDL.Float64,
+  });
+  const VerifiedAddress = IDL.Record({
+    'zip_code' : IDL.Text,
+    'address_line1' : IDL.Text,
+    'address_line2' : IDL.Opt(IDL.Text),
+    'city' : IDL.Text,
+    'name' : IDL.Text,
+    'state' : IDL.Text,
+    'zip_plus4' : IDL.Opt(IDL.Text),
+  });
+  const AudienceType = IDL.Variant({
+    'SavedPreset' : IDL.Null,
+    'CsvUpload' : IDL.Null,
+    'GeoRadius' : IDL.Null,
+  });
   const ProductType = IDL.Variant({
     'SelfMailer' : IDL.Null,
     'Booklet' : IDL.Null,
@@ -183,11 +723,175 @@ export const idlFactory = ({ IDL }) => {
     'layoutVariant' : IDL.Text,
     'colorOption' : IDL.Opt(IDL.Text),
   });
-  const AudienceType = IDL.Variant({ 'CSV' : IDL.Null, 'Map' : IDL.Null });
-  const AdminKeys = IDL.Record({
-    'resendKey' : IDL.Opt(IDL.Text),
-    'lobKey' : IDL.Opt(IDL.Text),
-    'stripeKey' : IDL.Opt(IDL.Text),
+  const CreateCampaignInput = IDL.Record({
+    'returnAddress' : IDL.Opt(ReturnAddress),
+    'name' : IDL.Text,
+    'canvasState' : IDL.Opt(CanvasState),
+    'recipients' : IDL.Vec(VerifiedAddress),
+    'qrDestinationUrl' : IDL.Opt(IDL.Text),
+    'designTemplateId' : IDL.Opt(IDL.Text),
+    'recipientCount' : IDL.Nat,
+    'audienceType' : AudienceType,
+    'product' : ProductSelection,
+    'sourcePresetId' : IDL.Opt(IDL.Text),
+  });
+  const CreateCampaignResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'unitPriceCents' : IDL.Opt(IDL.Nat),
+    'totalCents' : IDL.Opt(IDL.Nat),
+    'campaignId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const PaymentPurpose = IDL.Variant({
+    'CampaignOrder' : IDL.Null,
+    'CreditPack' : IDL.Null,
+    'Subscription' : IDL.Null,
+  });
+  const CreditPack = IDL.Variant({
+    'Starter' : IDL.Null,
+    'Growth' : IDL.Null,
+    'Agency' : IDL.Null,
+  });
+  const PaymentIntentResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'sandbox' : IDL.Bool,
+    'amountCents' : IDL.Opt(IDL.Nat),
+    'error' : IDL.Opt(IDL.Text),
+    'waived' : IDL.Bool,
+    'publishableKey' : IDL.Opt(IDL.Text),
+    'clientSecret' : IDL.Opt(IDL.Text),
+    'paymentIntentId' : IDL.Opt(IDL.Text),
+  });
+  const CreditResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'balance' : IDL.Opt(IDL.Nat),
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const ProductionStatus = IDL.Variant({
+    'ReadyToDispatch' : IDL.Null,
+    'Failed' : IDL.Null,
+    'DocumentUploaded' : IDL.Null,
+    'AwaitingPayment' : IDL.Null,
+    'Draft' : IDL.Null,
+    'AddressListReady' : IDL.Null,
+    'Submitted' : IDL.Null,
+    'JobCreated' : IDL.Null,
+  });
+  const DispatchResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'jobId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+    'productionStatus' : IDL.Opt(ProductionStatus),
+    'documentId' : IDL.Opt(IDL.Text),
+    'addressListId' : IDL.Opt(IDL.Text),
+  });
+  const UserAccountShared = IDL.Record({
+    'id' : IDL.Text,
+    'referralCreditsRedeemed' : IDL.Nat,
+    'referralCode' : IDL.Text,
+    'referralLink' : IDL.Text,
+    'freeMonthsAvailable' : IDL.Nat,
+    'createdAt' : IDL.Int,
+    'referralCount' : IDL.Nat,
+    'email' : IDL.Text,
+    'updatedAt' : IDL.Int,
+    'referredBy' : IDL.Opt(IDL.Text),
+    'creditBalance' : IDL.Nat,
+    'subscriptionActive' : IDL.Bool,
+    'referralCreditsEarned' : IDL.Nat,
+    'firstPaymentAt' : IDL.Opt(IDL.Int),
+    'subscriptionRenewsAt' : IDL.Int,
+  });
+  const AccountResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'error' : IDL.Opt(IDL.Text),
+    'account' : IDL.Opt(UserAccountShared),
+  });
+  const AddressInput = IDL.Record({
+    'zip_code' : IDL.Text,
+    'address_line1' : IDL.Text,
+    'address_line2' : IDL.Opt(IDL.Text),
+    'city' : IDL.Text,
+    'name' : IDL.Text,
+    'state' : IDL.Text,
+  });
+  const AddressVerificationResult = IDL.Record({
+    'verified' : IDL.Opt(VerifiedAddress),
+    'errorMessage' : IDL.Opt(IDL.Text),
+    'input' : AddressInput,
+    'isValid' : IDL.Bool,
+  });
+  const VerificationBatchResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'results' : IDL.Vec(AddressVerificationResult),
+    'error' : IDL.Opt(IDL.Text),
+    'validCount' : IDL.Nat,
+    'addressListId' : IDL.Opt(IDL.Text),
+    'invalidCount' : IDL.Nat,
+  });
+  const AiCopyInput = IDL.Record({
+    'offer' : IDL.Text,
+    'tone' : IDL.Opt(IDL.Text),
+    'businessName' : IDL.Text,
+    'callToAction' : IDL.Text,
+    'industry' : IDL.Text,
+  });
+  const AiCopyResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'bullets' : IDL.Vec(IDL.Text),
+    'ctas' : IDL.Vec(IDL.Text),
+    'creditsCharged' : IDL.Nat,
+    'error' : IDL.Opt(IDL.Text),
+    'headlines' : IDL.Vec(IDL.Text),
+    'creditBalance' : IDL.Opt(IDL.Nat),
+  });
+  const AiImageSize = IDL.Variant({
+    'WideHd1792' : IDL.Null,
+    'Square1024' : IDL.Null,
+    'Wide1792' : IDL.Null,
+  });
+  const AiImageResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'creditsCharged' : IDL.Nat,
+    'error' : IDL.Opt(IDL.Text),
+    'imageUrl' : IDL.Opt(IDL.Text),
+    'creditBalance' : IDL.Opt(IDL.Nat),
+    'revisedPrompt' : IDL.Opt(IDL.Text),
+  });
+  const Click2MailEnvironment = IDL.Variant({
+    'Production' : IDL.Null,
+    'Staging' : IDL.Null,
+  });
+  const AdminKeysView = IDL.Record({
+    'openAiKeyMasked' : IDL.Opt(IDL.Text),
+    'adminPrincipal' : IDL.Opt(IDL.Text),
+    'click2mailUsername' : IDL.Opt(IDL.Text),
+    'click2mailEnvironment' : Click2MailEnvironment,
+    'sandboxCheckout' : IDL.Bool,
+    'callerIsAdmin' : IDL.Bool,
+    'stripePublishableKey' : IDL.Opt(IDL.Text),
+    'webhookSecretMasked' : IDL.Opt(IDL.Text),
+    'stripeSecretKeyMasked' : IDL.Opt(IDL.Text),
+    'outcallProxyUrl' : IDL.Opt(IDL.Text),
+    'resendKeyMasked' : IDL.Opt(IDL.Text),
+    'click2mailPasswordMasked' : IDL.Opt(IDL.Text),
+    'webhookPath' : IDL.Text,
+  });
+  const CreditPackInfo = IDL.Record({
+    'credits' : IDL.Nat,
+    'name' : IDL.Text,
+    'pack' : CreditPack,
+    'bonusCredits' : IDL.Nat,
+    'priceCents' : IDL.Nat,
+  });
+  const AiPricing = IDL.Record({
+    'monthlyAllowance' : IDL.Nat,
+    'wideImageCredits' : IDL.Nat,
+    'hdImageCredits' : IDL.Nat,
+    'copyCredits' : IDL.Nat,
+    'squareImageCredits' : IDL.Nat,
+    'creditValueCents' : IDL.Nat,
+    'packs' : IDL.Vec(CreditPackInfo),
   });
   const CampaignStatus = IDL.Variant({
     'InTransit' : IDL.Null,
@@ -196,53 +900,197 @@ export const idlFactory = ({ IDL }) => {
     'Created' : IDL.Null,
     'SortedAtLocalHub' : IDL.Null,
   });
-  const LogoState = IDL.Record({
-    'x' : IDL.Float64,
-    'y' : IDL.Float64,
-    'id' : IDL.Text,
-    'url' : IDL.Text,
-    'height' : IDL.Float64,
-    'width' : IDL.Float64,
+  const PaymentStatus = IDL.Variant({
+    'Refunded' : IDL.Null,
+    'Paid' : IDL.Null,
+    'Unpaid' : IDL.Null,
+    'Waived' : IDL.Null,
+    'Pending' : IDL.Null,
   });
-  const TextBlockState = IDL.Record({
-    'x' : IDL.Float64,
-    'y' : IDL.Float64,
-    'id' : IDL.Text,
-    'height' : IDL.Float64,
+  const MailClass = IDL.Variant({
+    'MarketingMail' : IDL.Null,
+    'FirstClass' : IDL.Null,
+  });
+  const PrintSpec = IDL.Record({
+    'envelope' : IDL.Opt(IDL.Text),
     'color' : IDL.Text,
-    'text' : IDL.Text,
-    'width' : IDL.Float64,
-    'fontSize' : IDL.Float64,
-  });
-  const QrCodeState = IDL.Record({
-    'x' : IDL.Float64,
-    'y' : IDL.Float64,
-    'id' : IDL.Text,
-    'url' : IDL.Text,
-    'size' : IDL.Float64,
-  });
-  const CanvasState = IDL.Record({
-    'backgroundImageUrl' : IDL.Opt(IDL.Text),
-    'logos' : IDL.Vec(LogoState),
-    'textBlocks' : IDL.Vec(TextBlockState),
-    'qrCode' : IDL.Opt(QrCodeState),
+    'printOption' : IDL.Text,
+    'layout' : IDL.Text,
+    'paperType' : IDL.Text,
+    'productionTime' : IDL.Text,
+    'mailClass' : MailClass,
+    'documentClass' : IDL.Text,
   });
   const CampaignRecordShared = IDL.Record({
     'id' : IDL.Text,
     'status' : CampaignStatus,
+    'paymentStatus' : PaymentStatus,
+    'unitPriceCents' : IDL.Nat,
+    'c2mAddressListId' : IDL.Opt(IDL.Text),
+    'returnAddress' : IDL.Opt(ReturnAddress),
+    'ownerId' : IDL.Text,
+    'baseCostCents' : IDL.Nat,
+    'name' : IDL.Text,
     'createdAt' : IDL.Int,
-    'trackingId' : IDL.Opt(IDL.Text),
+    'c2mDocumentId' : IDL.Opt(IDL.Text),
+    'updatedAt' : IDL.Int,
     'canvasState' : IDL.Opt(CanvasState),
+    'productionStatus' : ProductionStatus,
+    'qrScanCount' : IDL.Nat,
+    'qrDestinationUrl' : IDL.Opt(IDL.Text),
     'designTemplateId' : IDL.Opt(IDL.Text),
+    'c2mJobId' : IDL.Opt(IDL.Text),
+    'lastError' : IDL.Opt(IDL.Text),
+    'printSpec' : PrintSpec,
     'recipientCount' : IDL.Nat,
     'audienceType' : AudienceType,
+    'totalAmountChargedCents' : IDL.Nat,
     'product' : ProductSelection,
+    'paymentIntentId' : IDL.Opt(IDL.Text),
+    'sourcePresetId' : IDL.Opt(IDL.Text),
   });
-  const TrackingEvent = IDL.Record({
-    'lobEventId' : IDL.Text,
+  const CreditLedgerEntry = IDL.Record({
+    'id' : IDL.Nat,
+    'userId' : IDL.Text,
+    'reference' : IDL.Opt(IDL.Text),
+    'timestamp' : IDL.Int,
+    'balanceAfter' : IDL.Nat,
+    'delta' : IDL.Int,
+    'reason' : IDL.Text,
+  });
+  const DocumentUploadStatus = IDL.Record({
+    'campaignId' : IDL.Text,
+    'mimeType' : IDL.Text,
+    'receivedChunks' : IDL.Nat,
+    'fileName' : IDL.Text,
+    'complete' : IDL.Bool,
+    'totalChunks' : IDL.Nat,
+    'totalBytes' : IDL.Nat,
+  });
+  const PricingRow = IDL.Record({
+    'heightInches' : IDL.Float64,
+    'displayName' : IDL.Text,
+    'retailPriceCents' : IDL.Nat,
+    'baseCostCents' : IDL.Nat,
+    'productType' : ProductType,
+    'marginCents' : IDL.Nat,
+    'layoutVariant' : IDL.Text,
+    'marginPercent' : IDL.Nat,
+    'widthInches' : IDL.Float64,
+    'printSpec' : PrintSpec,
+  });
+  const PublicConfig = IDL.Record({
+    'click2mailEnvironment' : Click2MailEnvironment,
+    'openAiConfigured' : IDL.Bool,
+    'trackingBaseUrl' : IDL.Text,
+    'stripeConfigured' : IDL.Bool,
+    'click2mailConfigured' : IDL.Bool,
+    'sandboxCheckout' : IDL.Bool,
+    'resendConfigured' : IDL.Bool,
+    'stripePublishableKey' : IDL.Opt(IDL.Text),
+    'referralBaseUrl' : IDL.Text,
+  });
+  const QrScanEvent = IDL.Record({
     'campaignId' : IDL.Text,
     'timestamp' : IDL.Int,
+    'userAgent' : IDL.Opt(IDL.Text),
+    'recipientId' : IDL.Text,
+  });
+  const QrScanStats = IDL.Record({
+    'uniqueRecipients' : IDL.Nat,
+    'totalScans' : IDL.Nat,
+    'recentScans' : IDL.Vec(QrScanEvent),
+  });
+  const ReferralReward = IDL.Record({
+    'id' : IDL.Nat,
+    'refereeId' : IDL.Text,
+    'amountCents' : IDL.Nat,
+    'referrerId' : IDL.Text,
+    'timestamp' : IDL.Int,
+    'paymentIntentId' : IDL.Text,
+  });
+  const ReferralStats = IDL.Record({
+    'referralCreditsRedeemed' : IDL.Nat,
+    'referralCode' : IDL.Text,
+    'referralLink' : IDL.Text,
+    'freeMonthsAvailable' : IDL.Nat,
+    'referralCount' : IDL.Nat,
+    'subscriptionActive' : IDL.Bool,
+    'rewards' : IDL.Vec(ReferralReward),
+    'referralCreditsEarned' : IDL.Nat,
+  });
+  const TrackingSource = IDL.Variant({
+    'System' : IDL.Null,
+    'Poll' : IDL.Null,
+    'Webhook' : IDL.Null,
+    'Manual' : IDL.Null,
+  });
+  const TrackingEvent = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : CampaignStatus,
+    'source' : TrackingSource,
+    'campaignId' : IDL.Text,
+    'detail' : IDL.Opt(IDL.Text),
+    'timestamp' : IDL.Int,
+    'providerEventId' : IDL.Text,
     'eventType' : IDL.Text,
+  });
+  const WebhookResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'status' : IDL.Opt(CampaignStatus),
+    'campaignId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
+  const HttpRequest = IDL.Record({
+    'url' : IDL.Text,
+    'method' : IDL.Text,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+  });
+  const HttpResponse = IDL.Record({
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+    'upgrade' : IDL.Opt(IDL.Bool),
+    'status_code' : IDL.Nat16,
+  });
+  const AudiencePresetShared = IDL.Record({
+    'id' : IDL.Text,
+    'ownerId' : IDL.Text,
+    'name' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'updatedAt' : IDL.Int,
+    'sourceCampaignId' : IDL.Opt(IDL.Text),
+    'recipientCount' : IDL.Nat,
+  });
+  const TrackingResolveResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'campaignId' : IDL.Opt(IDL.Text),
+    'destinationUrl' : IDL.Opt(IDL.Text),
+    'recipientId' : IDL.Opt(IDL.Text),
+  });
+  const AdminKeysInput = IDL.Record({
+    'webhookSecret' : IDL.Opt(IDL.Text),
+    'resendKey' : IDL.Opt(IDL.Text),
+    'click2mailUsername' : IDL.Opt(IDL.Text),
+    'click2mailEnvironment' : IDL.Opt(Click2MailEnvironment),
+    'sandboxCheckout' : IDL.Opt(IDL.Bool),
+    'click2mailPassword' : IDL.Opt(IDL.Text),
+    'stripeSecretKey' : IDL.Opt(IDL.Text),
+    'openAiKey' : IDL.Opt(IDL.Text),
+    'stripePublishableKey' : IDL.Opt(IDL.Text),
+    'outcallProxyUrl' : IDL.Opt(IDL.Text),
+  });
+  const PresetResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'presetId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const SyncResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'status' : IDL.Opt(CampaignStatus),
+    'newEvents' : IDL.Nat,
+    'error' : IDL.Opt(IDL.Text),
   });
   const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_request_result = IDL.Record({
@@ -259,34 +1107,30 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(http_header),
   });
-  const AddressInput = IDL.Record({
-    'zip_code' : IDL.Text,
-    'address_line1' : IDL.Text,
-    'address_line2' : IDL.Opt(IDL.Text),
-    'city' : IDL.Text,
-    'name' : IDL.Text,
-    'state' : IDL.Text,
-  });
-  const VerifiedAddress = IDL.Record({
-    'zip_code' : IDL.Text,
-    'address_line1' : IDL.Text,
-    'address_line2' : IDL.Opt(IDL.Text),
-    'city' : IDL.Text,
-    'name' : IDL.Text,
-    'state' : IDL.Text,
-    'zip_plus4' : IDL.Opt(IDL.Text),
-  });
-  const AddressVerificationResult = IDL.Record({
-    'verified' : IDL.Opt(VerifiedAddress),
-    'errorMessage' : IDL.Opt(IDL.Text),
-    'input' : AddressInput,
-    'isValid' : IDL.Bool,
-  });
-  
   return IDL.Service({
+    'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
+    'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
     'createCampaign' : IDL.Func(
-        [ProductSelection, IDL.Nat, AudienceType],
-        [IDL.Text],
+        [CreateCampaignInput],
+        [CreateCampaignResult],
+        [],
+      ),
+    'createPaymentIntent' : IDL.Func(
+        [PaymentPurpose, IDL.Opt(IDL.Text), IDL.Opt(CreditPack)],
+        [PaymentIntentResult],
+        [],
+      ),
+    'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
+    'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
+    'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
+    'ensureAccount' : IDL.Func(
+        [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+        [AccountResult],
+        [],
+      ),
+    'executeClick2MailVerification' : IDL.Func(
+        [IDL.Vec(AddressInput)],
+        [VerificationBatchResult],
         [],
       ),
     'exportCampaignRecipients' : IDL.Func(
@@ -294,39 +1138,86 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Text)],
         ['query'],
       ),
-    'fireLobOutcall' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
-    'getAdminKeys' : IDL.Func([], [AdminKeys], []),
+    'generateAiCopy' : IDL.Func([AiCopyInput], [AiCopyResult], []),
+    'generateAiImage' : IDL.Func([IDL.Text, AiImageSize], [AiImageResult], []),
+    'getAdminKeys' : IDL.Func([], [AdminKeysView], ['query']),
+    'getAiPricing' : IDL.Func([], [AiPricing], ['query']),
     'getCampaign' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(CampaignRecordShared)],
         ['query'],
       ),
+    'getCampaignRecipients' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(VerifiedAddress)],
+        ['query'],
+      ),
     'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignRecordShared)], ['query']),
     'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
+    'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
+    'getDocumentUploadStatus' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(DocumentUploadStatus)],
+        ['query'],
+      ),
+    'getMyAccount' : IDL.Func([], [IDL.Opt(UserAccountShared)], ['query']),
+    'getPresetAddresses' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(VerifiedAddress)],
+        ['query'],
+      ),
+    'getPricingLedger' : IDL.Func([], [IDL.Vec(PricingRow)], ['query']),
+    'getPublicConfig' : IDL.Func([], [PublicConfig], ['query']),
+    'getQrScanStats' : IDL.Func([IDL.Text], [QrScanStats], ['query']),
+    'getReferralStats' : IDL.Func([], [IDL.Opt(ReferralStats)], ['query']),
     'getTrackingEvents' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(TrackingEvent)],
         ['query'],
       ),
-    'handleLobWebhook' : IDL.Func([IDL.Text], [IDL.Bool], []),
-    'saveAdminKeys' : IDL.Func([AdminKeys], [IDL.Bool], []),
+    'handleDeliveryWebhook' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [WebhookResult],
+        [],
+      ),
+    'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
+    'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
+    'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
+    'resolveTrackingLink' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text)],
+        [TrackingResolveResult],
+        [],
+      ),
+    'saveAdminKeys' : IDL.Func([AdminKeysInput], [ApiResult], []),
     'saveCanvasState' : IDL.Func([IDL.Text, CanvasState], [IDL.Bool], []),
+    'savePreset' : IDL.Func(
+        [IDL.Text, IDL.Vec(VerifiedAddress), IDL.Opt(IDL.Text)],
+        [PresetResult],
+        [],
+      ),
+    'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),
     'transform' : IDL.Func(
         [TransformationInput],
         [TransformationOutput],
         ['query'],
       ),
+    'updateAccountEmail' : IDL.Func([IDL.Text], [ApiResult], []),
     'updateCampaignStatus' : IDL.Func(
         [IDL.Text, CampaignStatus, IDL.Text, IDL.Int],
         [IDL.Bool],
         [],
       ),
-    'verifyAddresses' : IDL.Func(
-        [IDL.Vec(AddressInput)],
-        [IDL.Vec(AddressVerificationResult)],
+    'updatePreset' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Vec(VerifiedAddress)],
+        [ApiResult],
+        [],
+      ),
+    'uploadDocumentChunk' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8)],
+        [ApiResult],
         [],
       ),
   });
 };
-
 export const init = ({ IDL }) => { return []; };

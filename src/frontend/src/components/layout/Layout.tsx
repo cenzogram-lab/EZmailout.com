@@ -1,36 +1,56 @@
+import { CreditTopUpModal } from "@/components/billing/CreditTopUpModal";
+import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
+import { useAccountSync } from "@/hooks/use-account";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home,
+  Fingerprint,
   LayoutDashboard,
   LayoutTemplate,
+  Loader2,
+  LogOut,
   Mail,
+  Menu,
   Rocket,
   Settings,
+  Sparkles,
+  UserRound,
+  X,
 } from "lucide-react";
+import { useState } from "react";
+
+const NAV = [
+  { to: "/templates", label: "Templates", icon: LayoutTemplate },
+  { to: "/campaigns", label: "Campaigns", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: UserRound },
+  { to: "/admin", label: "Admin", icon: Settings },
+] as const;
 
 function NavLink({
   to,
   label,
   icon: Icon,
+  onClick,
 }: {
   to: string;
   label: string;
   icon: React.ElementType;
+  onClick?: () => void;
 }) {
-  const router = useRouterState();
-  const currentPath = router.location.pathname;
+  const currentPath = useRouterState().location.pathname;
   const isActive = currentPath === to || currentPath.startsWith(`${to}/`);
-
   return (
     <Link
       to={to}
+      onClick={onClick}
       data-ocid={`nav.${label.toLowerCase().replace(/\s+/g, "_")}.link`}
       className={cn(
         "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-smooth",
         isActive
           ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       <Icon className="size-4" />
@@ -39,11 +59,73 @@ function NavLink({
   );
 }
 
+function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
+  const {
+    isAuthenticated,
+    isInitializing,
+    isLoggingIn,
+    login,
+    logout,
+    principal,
+    creditBalance,
+  } = useAccountSync();
+  if (isInitializing) {
+    return <Loader2 className="size-4 animate-spin text-muted-foreground" />;
+  }
+  if (!isAuthenticated) {
+    return (
+      <Button
+        size="sm"
+        onClick={login}
+        disabled={isLoggingIn}
+        className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90"
+        data-ocid="nav.sign_in.button"
+      >
+        {isLoggingIn ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Fingerprint className="size-4" />
+        )}
+        Sign in
+      </Button>
+    );
+  }
+  const short = principal
+    ? `${principal.slice(0, 5)}…${principal.slice(-3)}`
+    : "";
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        to="/dashboard"
+        onClick={onNavigate}
+        className="hidden items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium sm:inline-flex"
+        data-ocid="nav.credits.link"
+        title={principal ?? undefined}
+      >
+        <Sparkles className="size-3.5 text-accent" />
+        {creditBalance.toLocaleString()} credits
+        <span className="font-mono text-muted-foreground">· {short}</span>
+      </Link>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={logout}
+        className="gap-1.5"
+        data-ocid="nav.sign_out.button"
+      >
+        <LogOut className="size-4" />
+        <span className="hidden sm:inline">Sign out</span>
+      </Button>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b bg-card/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             data-ocid="nav.logo.link"
@@ -52,31 +134,72 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Mail className="size-5" />
             </div>
-            <span className="font-display text-lg font-bold tracking-tight">
-              MailCommand
+            <span className="font-display text-lg font-bold tracking-tight text-primary">
+              {BRAND.name}
+              <span className="text-accent">.</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            <NavLink to="/" label="Home" icon={Home} />
-            <NavLink to="/templates" label="Templates" icon={LayoutTemplate} />
-            <NavLink to="/campaigns" label="Campaigns" icon={LayoutDashboard} />
-            <NavLink to="/wizard" label="Launch Campaign" icon={Rocket} />
-            <NavLink to="/admin" label="Admin" icon={Settings} />
+          <nav className="hidden items-center gap-1 lg:flex">
+            {NAV.map((item) => (
+              <NavLink key={item.to} {...item} />
+            ))}
+            <Link
+              to="/wizard"
+              data-ocid="nav.launch_campaign.link"
+              className="ml-2"
+            >
+              <Button size="sm" className="gap-1.5" variant="default">
+                <Rocket className="size-4" /> Launch campaign
+              </Button>
+            </Link>
           </nav>
 
-          <div className="flex items-center gap-2 md:hidden">
-            <MobileNav />
+          <div className="flex items-center gap-2">
+            <AuthControls />
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              className="inline-flex size-9 items-center justify-center rounded-md border bg-card text-foreground lg:hidden"
+              aria-label="Toggle menu"
+              data-ocid="nav.mobile_menu.button"
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
           </div>
         </div>
+        {open && (
+          <div
+            className="border-t bg-card px-4 py-3 lg:hidden"
+            data-ocid="nav.mobile.menu"
+          >
+            <div className="flex flex-col gap-1">
+              {NAV.map((item) => (
+                <NavLink
+                  key={item.to}
+                  {...item}
+                  onClick={() => setOpen(false)}
+                />
+              ))}
+              <NavLink
+                to="/wizard"
+                label="Launch campaign"
+                icon={Rocket}
+                onClick={() => setOpen(false)}
+              />
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t bg-muted/40 py-6">
+      <footer className="border-t bg-muted/40 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <span>
-            &copy; {new Date().getFullYear()} MailCommand. Built with love using{" "}
+            &copy; {new Date().getFullYear()} {BRAND.site} · Direct mail without
+            minimums · Fulfilled by Click2Mail · Built on the Internet Computer
+            with{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"
@@ -86,89 +209,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               caffeine.ai
             </a>
           </span>
-          <span className="monospace-accent">v1.0.0</span>
+          <span className="monospace-accent">v2.0.0</span>
         </div>
       </footer>
+      <CreditTopUpModal />
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }
-
-function MobileNav() {
-  const [open, setOpen] = React.useState(false);
-  const router = useRouterState();
-  const currentPath = router.location.pathname;
-
-  const links = [
-    { to: "/", label: "Home", icon: Home },
-    { to: "/templates", label: "Templates", icon: LayoutTemplate },
-    { to: "/campaigns", label: "Campaigns", icon: LayoutDashboard },
-    { to: "/wizard", label: "Launch Campaign", icon: Rocket },
-    { to: "/admin", label: "Admin", icon: Settings },
-  ];
-
-  return (
-    <>
-      <button
-        type="button"
-        data-ocid="nav.mobile_menu.button"
-        onClick={() => setOpen(!open)}
-        className="inline-flex size-9 items-center justify-center rounded-md border bg-card text-foreground"
-        aria-label="Toggle menu"
-      >
-        <span className="sr-only">Menu</span>
-        <svg
-          className="size-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          focusable="false"
-        >
-          {open ? (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          ) : (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          )}
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute right-4 top-16 z-50 w-56 rounded-lg border bg-card p-2 shadow-lg">
-          {links.map((link) => {
-            const isActive =
-              currentPath === link.to || currentPath.startsWith(`${link.to}/`);
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                data-ocid={`nav.mobile.${link.label.toLowerCase()}.link`}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-smooth",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                )}
-              >
-                <link.icon className="size-4" />
-                {link.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
-}
-
-import React from "react";

@@ -7,6 +7,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Actor, HttpAgent, type HttpAgentOptions, type ActorConfig, type Agent, type ActorSubclass } from "@icp-sdk/core/agent";
+import { IDL } from "@icp-sdk/core/candid";
 import type { Principal } from "@icp-sdk/core/principal";
 import { idlFactory, type _SERVICE } from "./declarations/backend.did";
 export interface Some<T> {
@@ -17,40 +18,6 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-function some<T>(value: T): Some<T> {
-    return {
-        __kind__: "Some",
-        value: value
-    };
-}
-function none(): None {
-    return {
-        __kind__: "None"
-    };
-}
-function isNone<T>(option: Option<T>): option is None {
-    return option.__kind__ === "None";
-}
-function isSome<T>(option: Option<T>): option is Some<T> {
-    return option.__kind__ === "Some";
-}
-function unwrap<T>(option: Option<T>): T {
-    if (isNone(option)) {
-        throw new Error("unwrap: none");
-    }
-    return option.value;
-}
-function candid_some<T>(value: T): [T] {
-    return [
-        value
-    ];
-}
-function candid_none<T>(): [] {
-    return [];
-}
-function record_opt_to_undefined<T>(arg: T | null): T | undefined {
-    return arg == null ? undefined : arg;
-}
 export class ExternalBlob {
     _blob?: Uint8Array<ArrayBuffer> | null;
     directURL: string;
@@ -89,725 +56,774 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface QrCodeState {
-    x: number;
-    y: number;
-    id: string;
-    url: string;
-    size: number;
-}
-export interface TextBlockState {
-    x: number;
-    y: number;
-    id: string;
-    height: number;
-    color: string;
-    text: string;
-    width: number;
-    fontSize: number;
-}
-export interface TransformationOutput {
-    status: bigint;
+export interface http_request_result {
     body: Uint8Array;
     headers: Array<http_header>;
+    status: bigint;
 }
-export interface TrackingEvent {
-    lobEventId: string;
-    campaignId: string;
-    timestamp: bigint;
-    eventType: string;
+export interface http_header {
+    name: string;
+    value: string;
 }
-export interface ProductSelection {
-    productType: ProductType;
-    layoutVariant: string;
-    colorOption?: string;
+export interface WebhookResult {
+    campaignId?: string;
+    error?: string;
+    ok: boolean;
+    status?: CampaignStatus;
 }
-export interface AddressInput {
-    zip_code: string;
+export interface VerifiedAddress {
     address_line1: string;
     address_line2?: string;
     city: string;
     name: string;
     state: string;
+    zip_code: string;
+    zip_plus4?: string;
 }
-export interface LogoState {
-    x: number;
-    y: number;
+export interface VerificationBatchResult {
+    addressListId?: string;
+    error?: string;
+    invalidCount: bigint;
+    ok: boolean;
+    results: Array<AddressVerificationResult>;
+    validCount: bigint;
+}
+export interface UserAccountShared {
+    createdAt: bigint;
+    creditBalance: bigint;
+    email: string;
+    firstPaymentAt?: bigint;
+    freeMonthsAvailable: bigint;
     id: string;
-    url: string;
-    height: number;
-    width: number;
+    referralCode: string;
+    referralCount: bigint;
+    referralCreditsEarned: bigint;
+    referralCreditsRedeemed: bigint;
+    referralLink: string;
+    referredBy?: string;
+    subscriptionActive: boolean;
+    subscriptionRenewsAt: bigint;
+    updatedAt: bigint;
 }
-export interface http_header {
-    value: string;
-    name: string;
-}
-export interface http_request_result {
-    status: bigint;
+export interface TransformationOutput {
     body: Uint8Array;
     headers: Array<http_header>;
-}
-export interface CanvasState {
-    backgroundImageUrl?: string;
-    logos: Array<LogoState>;
-    textBlocks: Array<TextBlockState>;
-    qrCode?: QrCodeState;
-}
-export interface CampaignRecordShared {
-    id: string;
-    status: CampaignStatus;
-    createdAt: bigint;
-    trackingId?: string;
-    canvasState?: CanvasState;
-    designTemplateId?: string;
-    recipientCount: bigint;
-    audienceType: AudienceType;
-    product: ProductSelection;
+    status: bigint;
 }
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
 }
-export interface AdminKeys {
-    resendKey?: string;
-    lobKey?: string;
-    stripeKey?: string;
+export enum TrackingSource {
+    Manual = "Manual",
+    Poll = "Poll",
+    System = "System",
+    Webhook = "Webhook"
 }
-export interface AddressVerificationResult {
-    verified?: VerifiedAddress;
-    errorMessage?: string;
-    input: AddressInput;
-    isValid: boolean;
+export interface TrackingResolveResult {
+    campaignId?: string;
+    destinationUrl?: string;
+    ok: boolean;
+    recipientId?: string;
 }
-export interface VerifiedAddress {
-    zip_code: string;
+export interface TrackingEvent {
+    campaignId: string;
+    detail?: string;
+    eventType: string;
+    id: bigint;
+    providerEventId: string;
+    source: TrackingSource;
+    status: CampaignStatus;
+    timestamp: bigint;
+}
+export interface TextBlockState {
+    align: string;
+    color: string;
+    fontFamily: string;
+    fontSize: number;
+    fontWeight: bigint;
+    height: number;
+    id: string;
+    text: string;
+    width: number;
+    x: number;
+    y: number;
+    zIndex: bigint;
+}
+export interface SyncResult {
+    error?: string;
+    newEvents: bigint;
+    ok: boolean;
+    status?: CampaignStatus;
+}
+export interface ReturnAddress {
     address_line1: string;
     address_line2?: string;
     city: string;
     name: string;
+    organization?: string;
     state: string;
-    zip_plus4?: string;
+    zip_code: string;
 }
-export enum AudienceType {
-    CSV = "CSV",
-    Map_ = "Map"
+export interface ReferralStats {
+    freeMonthsAvailable: bigint;
+    referralCode: string;
+    referralCount: bigint;
+    referralCreditsEarned: bigint;
+    referralCreditsRedeemed: bigint;
+    referralLink: string;
+    rewards: Array<ReferralReward>;
+    subscriptionActive: boolean;
 }
-export enum CampaignStatus {
-    InTransit = "InTransit",
-    InProduction = "InProduction",
-    Delivered = "Delivered",
-    Created = "Created",
-    SortedAtLocalHub = "SortedAtLocalHub"
+export interface ReferralReward {
+    amountCents: bigint;
+    id: bigint;
+    paymentIntentId: string;
+    refereeId: string;
+    referrerId: string;
+    timestamp: bigint;
+}
+export interface QrScanStats {
+    recentScans: Array<QrScanEvent>;
+    totalScans: bigint;
+    uniqueRecipients: bigint;
+}
+export interface QrScanEvent {
+    campaignId: string;
+    recipientId: string;
+    timestamp: bigint;
+    userAgent?: string;
+}
+export enum QrMode {
+    DynamicTracking = "DynamicTracking",
+    StaticUrl = "StaticUrl"
+}
+export interface QrCodeState {
+    background: string;
+    caption?: string;
+    foreground: string;
+    id: string;
+    mode: QrMode;
+    size: number;
+    url: string;
+    x: number;
+    y: number;
+    zIndex: bigint;
+}
+export interface PublicConfig {
+    click2mailConfigured: boolean;
+    click2mailEnvironment: Click2MailEnvironment;
+    openAiConfigured: boolean;
+    referralBaseUrl: string;
+    resendConfigured: boolean;
+    sandboxCheckout: boolean;
+    stripeConfigured: boolean;
+    stripePublishableKey?: string;
+    trackingBaseUrl: string;
+}
+export enum ProductionStatus {
+    AddressListReady = "AddressListReady",
+    AwaitingPayment = "AwaitingPayment",
+    DocumentUploaded = "DocumentUploaded",
+    Draft = "Draft",
+    Failed = "Failed",
+    JobCreated = "JobCreated",
+    ReadyToDispatch = "ReadyToDispatch",
+    Submitted = "Submitted"
 }
 export enum ProductType {
-    SelfMailer = "SelfMailer",
     Booklet = "Booklet",
     Letter = "Letter",
-    SnapPack = "SnapPack",
-    Postcard = "Postcard"
+    Postcard = "Postcard",
+    SelfMailer = "SelfMailer",
+    SnapPack = "SnapPack"
 }
-export interface backendInterface {
-    createCampaign(product: ProductSelection, recipientCount: bigint, audienceType: AudienceType): Promise<string>;
-    exportCampaignRecipients(campaignId: string): Promise<string | null>;
-    fireLobOutcall(campaignId: string, recipientId: string, lobKey: string): Promise<string>;
-    getAdminKeys(): Promise<AdminKeys>;
-    getCampaign(id: string): Promise<CampaignRecordShared | null>;
-    getCampaigns(): Promise<Array<CampaignRecordShared>>;
-    getCanvasState(campaignId: string): Promise<CanvasState | null>;
-    getTrackingEvents(campaignId: string): Promise<Array<TrackingEvent>>;
-    handleLobWebhook(payload: string): Promise<boolean>;
-    saveAdminKeys(keys: AdminKeys): Promise<boolean>;
-    saveCanvasState(campaignId: string, canvas: CanvasState): Promise<boolean>;
-    transform(input: TransformationInput): Promise<TransformationOutput>;
-    updateCampaignStatus(id: string, status: CampaignStatus, lobEventId: string, timestamp: bigint): Promise<boolean>;
-    verifyAddresses(addresses: Array<AddressInput>): Promise<Array<AddressVerificationResult>>;
+export interface ProductSelection {
+    colorOption?: string;
+    layoutVariant: string;
+    productType: ProductType;
 }
-import type { AddressInput as _AddressInput, AddressVerificationResult as _AddressVerificationResult, AdminKeys as _AdminKeys, AudienceType as _AudienceType, CampaignRecordShared as _CampaignRecordShared, CampaignStatus as _CampaignStatus, CanvasState as _CanvasState, LogoState as _LogoState, ProductSelection as _ProductSelection, ProductType as _ProductType, QrCodeState as _QrCodeState, TextBlockState as _TextBlockState, VerifiedAddress as _VerifiedAddress } from "./declarations/backend.did.d.ts";
-export class Backend implements backendInterface {
-    constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async createCampaign(arg0: ProductSelection, arg1: bigint, arg2: AudienceType): Promise<string> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.createCampaign(to_candid_ProductSelection_n1(this._uploadFile, this._downloadFile, arg0), arg1, to_candid_AudienceType_n5(this._uploadFile, this._downloadFile, arg2));
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.createCampaign(to_candid_ProductSelection_n1(this._uploadFile, this._downloadFile, arg0), arg1, to_candid_AudienceType_n5(this._uploadFile, this._downloadFile, arg2));
-            return result;
-        }
-    }
-    async exportCampaignRecipients(arg0: string): Promise<string | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.exportCampaignRecipients(arg0);
-                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.exportCampaignRecipients(arg0);
-            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async fireLobOutcall(arg0: string, arg1: string, arg2: string): Promise<string> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.fireLobOutcall(arg0, arg1, arg2);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.fireLobOutcall(arg0, arg1, arg2);
-            return result;
-        }
-    }
-    async getAdminKeys(): Promise<AdminKeys> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAdminKeys();
-                return from_candid_AdminKeys_n8(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAdminKeys();
-            return from_candid_AdminKeys_n8(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCampaign(arg0: string): Promise<CampaignRecordShared | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCampaign(arg0);
-                return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCampaign(arg0);
-            return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCampaigns(): Promise<Array<CampaignRecordShared>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCampaigns();
-                return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCampaigns();
-            return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCanvasState(arg0: string): Promise<CanvasState | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCanvasState(arg0);
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCanvasState(arg0);
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getTrackingEvents(arg0: string): Promise<Array<TrackingEvent>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getTrackingEvents(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getTrackingEvents(arg0);
-            return result;
-        }
-    }
-    async handleLobWebhook(arg0: string): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.handleLobWebhook(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.handleLobWebhook(arg0);
-            return result;
-        }
-    }
-    async saveAdminKeys(arg0: AdminKeys): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.saveAdminKeys(to_candid_AdminKeys_n26(this._uploadFile, this._downloadFile, arg0));
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.saveAdminKeys(to_candid_AdminKeys_n26(this._uploadFile, this._downloadFile, arg0));
-            return result;
-        }
-    }
-    async saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.saveCanvasState(arg0, to_candid_CanvasState_n28(this._uploadFile, this._downloadFile, arg1));
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.saveCanvasState(arg0, to_candid_CanvasState_n28(this._uploadFile, this._downloadFile, arg1));
-            return result;
-        }
-    }
-    async transform(arg0: TransformationInput): Promise<TransformationOutput> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.transform(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.transform(arg0);
-            return result;
-        }
-    }
-    async updateCampaignStatus(arg0: string, arg1: CampaignStatus, arg2: string, arg3: bigint): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.updateCampaignStatus(arg0, to_candid_CampaignStatus_n30(this._uploadFile, this._downloadFile, arg1), arg2, arg3);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.updateCampaignStatus(arg0, to_candid_CampaignStatus_n30(this._uploadFile, this._downloadFile, arg1), arg2, arg3);
-            return result;
-        }
-    }
-    async verifyAddresses(arg0: Array<AddressInput>): Promise<Array<AddressVerificationResult>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.verifyAddresses(to_candid_vec_n32(this._uploadFile, this._downloadFile, arg0));
-                return from_candid_vec_n35(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.verifyAddresses(to_candid_vec_n32(this._uploadFile, this._downloadFile, arg0));
-            return from_candid_vec_n35(this._uploadFile, this._downloadFile, result);
-        }
-    }
+export interface PrintSpec {
+    color: string;
+    documentClass: string;
+    envelope?: string;
+    layout: string;
+    mailClass: MailClass;
+    paperType: string;
+    printOption: string;
+    productionTime: string;
 }
-function from_candid_AddressInput_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AddressInput): AddressInput {
-    return from_candid_record_n42(_uploadFile, _downloadFile, value);
+export interface PricingRow {
+    baseCostCents: bigint;
+    displayName: string;
+    heightInches: number;
+    layoutVariant: string;
+    marginCents: bigint;
+    marginPercent: bigint;
+    printSpec: PrintSpec;
+    productType: ProductType;
+    retailPriceCents: bigint;
+    widthInches: number;
 }
-function from_candid_AddressVerificationResult_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AddressVerificationResult): AddressVerificationResult {
-    return from_candid_record_n37(_uploadFile, _downloadFile, value);
+export interface PresetResult {
+    error?: string;
+    ok: boolean;
+    presetId?: string;
 }
-function from_candid_AdminKeys_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AdminKeys): AdminKeys {
-    return from_candid_record_n9(_uploadFile, _downloadFile, value);
+export enum PaymentStatus {
+    Paid = "Paid",
+    Pending = "Pending",
+    Refunded = "Refunded",
+    Unpaid = "Unpaid",
+    Waived = "Waived"
 }
-function from_candid_AudienceType_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AudienceType): AudienceType {
-    return from_candid_variant_n20(_uploadFile, _downloadFile, value);
+export enum PaymentState {
+    Created = "Created",
+    Failed = "Failed",
+    Succeeded = "Succeeded",
+    Waived = "Waived"
 }
-function from_candid_CampaignRecordShared_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CampaignRecordShared): CampaignRecordShared {
-    return from_candid_record_n12(_uploadFile, _downloadFile, value);
+export enum PaymentPurpose {
+    CampaignOrder = "CampaignOrder",
+    CreditPack = "CreditPack",
+    Subscription = "Subscription"
 }
-function from_candid_CampaignStatus_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CampaignStatus): CampaignStatus {
-    return from_candid_variant_n14(_uploadFile, _downloadFile, value);
+export interface PaymentIntentResult {
+    amountCents?: bigint;
+    clientSecret?: string;
+    error?: string;
+    ok: boolean;
+    paymentIntentId?: string;
+    publishableKey?: string;
+    sandbox: boolean;
+    waived: boolean;
 }
-function from_candid_CanvasState_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CanvasState): CanvasState {
-    return from_candid_record_n17(_uploadFile, _downloadFile, value);
+export enum MailClass {
+    FirstClass = "FirstClass",
+    MarketingMail = "MarketingMail"
 }
-function from_candid_ProductSelection_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ProductSelection): ProductSelection {
-    return from_candid_record_n22(_uploadFile, _downloadFile, value);
-}
-function from_candid_ProductType_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ProductType): ProductType {
-    return from_candid_variant_n24(_uploadFile, _downloadFile, value);
-}
-function from_candid_VerifiedAddress_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VerifiedAddress): VerifiedAddress {
-    return from_candid_record_n40(_uploadFile, _downloadFile, value);
-}
-function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CampaignRecordShared]): CampaignRecordShared | null {
-    return value.length === 0 ? null : from_candid_CampaignRecordShared_n11(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CanvasState]): CanvasState | null {
-    return value.length === 0 ? null : from_candid_CanvasState_n16(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_QrCodeState]): QrCodeState | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_VerifiedAddress]): VerifiedAddress | null {
-    return value.length === 0 ? null : from_candid_VerifiedAddress_n39(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+export interface LogoState {
+    height: number;
     id: string;
-    status: _CampaignStatus;
-    createdAt: bigint;
-    trackingId: [] | [string];
-    canvasState: [] | [_CanvasState];
-    designTemplateId: [] | [string];
-    recipientCount: bigint;
-    audienceType: _AudienceType;
-    product: _ProductSelection;
-}): {
-    id: string;
-    status: CampaignStatus;
-    createdAt: bigint;
-    trackingId?: string;
+    url: string;
+    width: number;
+    x: number;
+    y: number;
+    zIndex: bigint;
+}
+export interface HttpResponse {
+    body: Uint8Array;
+    headers: Array<HeaderField>;
+    status_code: number;
+    upgrade?: boolean;
+}
+export interface HttpRequest {
+    body: Uint8Array;
+    headers: Array<HeaderField>;
+    method: string;
+    url: string;
+}
+export type HeaderField = [string, string];
+export interface DocumentUploadStatus {
+    campaignId: string;
+    complete: boolean;
+    fileName: string;
+    mimeType: string;
+    receivedChunks: bigint;
+    totalBytes: bigint;
+    totalChunks: bigint;
+}
+export interface DispatchResult {
+    addressListId?: string;
+    documentId?: string;
+    error?: string;
+    jobId?: string;
+    ok: boolean;
+    productionStatus?: ProductionStatus;
+}
+export interface CreditResult {
+    balance?: bigint;
+    error?: string;
+    ok: boolean;
+}
+export interface CreditPackInfo {
+    bonusCredits: bigint;
+    credits: bigint;
+    name: string;
+    pack: CreditPack;
+    priceCents: bigint;
+}
+export enum CreditPack {
+    Agency = "Agency",
+    Growth = "Growth",
+    Starter = "Starter"
+}
+export interface CreditLedgerEntry {
+    balanceAfter: bigint;
+    delta: bigint;
+    id: bigint;
+    reason: string;
+    reference?: string;
+    timestamp: bigint;
+    userId: string;
+}
+export interface CreateCampaignResult {
+    campaignId?: string;
+    error?: string;
+    ok: boolean;
+    totalCents?: bigint;
+    unitPriceCents?: bigint;
+}
+export interface CreateCampaignInput {
+    audienceType: AudienceType;
     canvasState?: CanvasState;
     designTemplateId?: string;
-    recipientCount: bigint;
-    audienceType: AudienceType;
+    name: string;
     product: ProductSelection;
-} {
-    return {
-        id: value.id,
-        status: from_candid_CampaignStatus_n13(_uploadFile, _downloadFile, value.status),
-        createdAt: value.createdAt,
-        trackingId: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.trackingId)),
-        canvasState: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.canvasState)),
-        designTemplateId: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.designTemplateId)),
-        recipientCount: value.recipientCount,
-        audienceType: from_candid_AudienceType_n19(_uploadFile, _downloadFile, value.audienceType),
-        product: from_candid_ProductSelection_n21(_uploadFile, _downloadFile, value.product)
-    };
+    qrDestinationUrl?: string;
+    recipientCount: bigint;
+    recipients: Array<VerifiedAddress>;
+    returnAddress?: ReturnAddress;
+    sourcePresetId?: string;
 }
-function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    backgroundImageUrl: [] | [string];
-    logos: Array<_LogoState>;
-    textBlocks: Array<_TextBlockState>;
-    qrCode: [] | [_QrCodeState];
-}): {
+export interface ConfirmPaymentResult {
+    campaignId?: string;
+    creditBalance?: bigint;
+    error?: string;
+    ok: boolean;
+    referralRewardApplied: boolean;
+    state?: PaymentState;
+    subscriptionActive?: boolean;
+}
+export enum Click2MailEnvironment {
+    Production = "Production",
+    Staging = "Staging"
+}
+export interface CanvasState {
+    back: CanvasSide;
+    designPpi: bigint;
+    front: CanvasSide;
+    heightInches: number;
+    widthInches: number;
+}
+export interface CanvasSide {
+    backgroundColor: string;
     backgroundImageUrl?: string;
     logos: Array<LogoState>;
+    qrCodes: Array<QrCodeState>;
     textBlocks: Array<TextBlockState>;
-    qrCode?: QrCodeState;
-} {
-    return {
-        backgroundImageUrl: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.backgroundImageUrl)),
-        logos: value.logos,
-        textBlocks: value.textBlocks,
-        qrCode: record_opt_to_undefined(from_candid_opt_n18(_uploadFile, _downloadFile, value.qrCode))
-    };
 }
-function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    productType: _ProductType;
-    layoutVariant: string;
-    colorOption: [] | [string];
-}): {
-    productType: ProductType;
-    layoutVariant: string;
-    colorOption?: string;
-} {
-    return {
-        productType: from_candid_ProductType_n23(_uploadFile, _downloadFile, value.productType),
-        layoutVariant: value.layoutVariant,
-        colorOption: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.colorOption))
-    };
+export enum CampaignStatus {
+    Created = "Created",
+    Delivered = "Delivered",
+    InProduction = "InProduction",
+    InTransit = "InTransit",
+    SortedAtLocalHub = "SortedAtLocalHub"
 }
-function from_candid_record_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    verified: [] | [_VerifiedAddress];
-    errorMessage: [] | [string];
-    input: _AddressInput;
-    isValid: boolean;
-}): {
-    verified?: VerifiedAddress;
+export interface CampaignRecordShared {
+    audienceType: AudienceType;
+    baseCostCents: bigint;
+    c2mAddressListId?: string;
+    c2mDocumentId?: string;
+    c2mJobId?: string;
+    canvasState?: CanvasState;
+    createdAt: bigint;
+    designTemplateId?: string;
+    id: string;
+    lastError?: string;
+    name: string;
+    ownerId: string;
+    paymentIntentId?: string;
+    paymentStatus: PaymentStatus;
+    printSpec: PrintSpec;
+    product: ProductSelection;
+    productionStatus: ProductionStatus;
+    qrDestinationUrl?: string;
+    qrScanCount: bigint;
+    recipientCount: bigint;
+    returnAddress?: ReturnAddress;
+    sourcePresetId?: string;
+    status: CampaignStatus;
+    totalAmountChargedCents: bigint;
+    unitPriceCents: bigint;
+    updatedAt: bigint;
+}
+export enum AudienceType {
+    CsvUpload = "CsvUpload",
+    GeoRadius = "GeoRadius",
+    SavedPreset = "SavedPreset"
+}
+export interface AudiencePresetShared {
+    createdAt: bigint;
+    id: string;
+    name: string;
+    ownerId: string;
+    recipientCount: bigint;
+    sourceCampaignId?: string;
+    updatedAt: bigint;
+}
+export interface ApiResult {
+    error?: string;
+    ok: boolean;
+}
+export interface AiPricing {
+    copyCredits: bigint;
+    creditValueCents: bigint;
+    hdImageCredits: bigint;
+    monthlyAllowance: bigint;
+    packs: Array<CreditPackInfo>;
+    squareImageCredits: bigint;
+    wideImageCredits: bigint;
+}
+export enum AiImageSize {
+    Square1024 = "Square1024",
+    Wide1792 = "Wide1792",
+    WideHd1792 = "WideHd1792"
+}
+export interface AiImageResult {
+    creditBalance?: bigint;
+    creditsCharged: bigint;
+    error?: string;
+    imageUrl?: string;
+    ok: boolean;
+    revisedPrompt?: string;
+}
+export interface AiCopyResult {
+    bullets: Array<string>;
+    creditBalance?: bigint;
+    creditsCharged: bigint;
+    ctas: Array<string>;
+    error?: string;
+    headlines: Array<string>;
+    ok: boolean;
+}
+export interface AiCopyInput {
+    businessName: string;
+    callToAction: string;
+    industry: string;
+    offer: string;
+    tone?: string;
+}
+export interface AdminKeysView {
+    adminPrincipal?: string;
+    callerIsAdmin: boolean;
+    click2mailEnvironment: Click2MailEnvironment;
+    click2mailPasswordMasked?: string;
+    click2mailUsername?: string;
+    openAiKeyMasked?: string;
+    outcallProxyUrl?: string;
+    resendKeyMasked?: string;
+    sandboxCheckout: boolean;
+    stripePublishableKey?: string;
+    stripeSecretKeyMasked?: string;
+    webhookPath: string;
+    webhookSecretMasked?: string;
+}
+export interface AdminKeysInput {
+    click2mailEnvironment?: Click2MailEnvironment;
+    click2mailPassword?: string;
+    click2mailUsername?: string;
+    openAiKey?: string;
+    outcallProxyUrl?: string;
+    resendKey?: string;
+    sandboxCheckout?: boolean;
+    stripePublishableKey?: string;
+    stripeSecretKey?: string;
+    webhookSecret?: string;
+}
+export interface AddressVerificationResult {
     errorMessage?: string;
     input: AddressInput;
     isValid: boolean;
-} {
-    return {
-        verified: record_opt_to_undefined(from_candid_opt_n38(_uploadFile, _downloadFile, value.verified)),
-        errorMessage: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.errorMessage)),
-        input: from_candid_AddressInput_n41(_uploadFile, _downloadFile, value.input),
-        isValid: value.isValid
-    };
+    verified?: VerifiedAddress;
 }
-function from_candid_record_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    zip_code: string;
-    address_line1: string;
-    address_line2: [] | [string];
-    city: string;
-    name: string;
-    state: string;
-    zip_plus4: [] | [string];
-}): {
-    zip_code: string;
+export interface AddressInput {
     address_line1: string;
     address_line2?: string;
     city: string;
     name: string;
     state: string;
-    zip_plus4?: string;
-} {
-    return {
-        zip_code: value.zip_code,
-        address_line1: value.address_line1,
-        address_line2: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.address_line2)),
-        city: value.city,
-        name: value.name,
-        state: value.state,
-        zip_plus4: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.zip_plus4))
-    };
-}
-function from_candid_record_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     zip_code: string;
-    address_line1: string;
-    address_line2: [] | [string];
-    city: string;
-    name: string;
-    state: string;
-}): {
-    zip_code: string;
-    address_line1: string;
-    address_line2?: string;
-    city: string;
-    name: string;
-    state: string;
-} {
-    return {
-        zip_code: value.zip_code,
-        address_line1: value.address_line1,
-        address_line2: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.address_line2)),
-        city: value.city,
-        name: value.name,
-        state: value.state
-    };
 }
-function from_candid_record_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    resendKey: [] | [string];
-    lobKey: [] | [string];
-    stripeKey: [] | [string];
-}): {
-    resendKey?: string;
-    lobKey?: string;
-    stripeKey?: string;
-} {
-    return {
-        resendKey: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.resendKey)),
-        lobKey: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.lobKey)),
-        stripeKey: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.stripeKey))
-    };
+export interface AccountResult {
+    account?: UserAccountShared;
+    error?: string;
+    ok: boolean;
 }
-function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    InTransit: null;
-} | {
-    InProduction: null;
-} | {
-    Delivered: null;
-} | {
-    Created: null;
-} | {
-    SortedAtLocalHub: null;
-}): CampaignStatus {
-    return "InTransit" in value ? CampaignStatus.InTransit : "InProduction" in value ? CampaignStatus.InProduction : "Delivered" in value ? CampaignStatus.Delivered : "Created" in value ? CampaignStatus.Created : "SortedAtLocalHub" in value ? CampaignStatus.SortedAtLocalHub : value;
+export interface backendInterface {
+    applyReferralReward(arg0: string): Promise<ApiResult>;
+    confirmPayment(arg0: string): Promise<ConfirmPaymentResult>;
+    createCampaign(arg0: CreateCampaignInput): Promise<CreateCampaignResult>;
+    createPaymentIntent(arg0: PaymentPurpose, arg1: string | null, arg2: CreditPack | null): Promise<PaymentIntentResult>;
+    deductAiCredits(arg0: bigint, arg1: string): Promise<CreditResult>;
+    deletePreset(arg0: string): Promise<ApiResult>;
+    dispatchClick2MailJob(arg0: string): Promise<DispatchResult>;
+    ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult>;
+    executeClick2MailVerification(arg0: Array<AddressInput>): Promise<VerificationBatchResult>;
+    exportCampaignRecipients(arg0: string): Promise<string | null>;
+    generateAiCopy(arg0: AiCopyInput): Promise<AiCopyResult>;
+    generateAiImage(arg0: string, arg1: AiImageSize): Promise<AiImageResult>;
+    getAdminKeys(): Promise<AdminKeysView>;
+    getAiPricing(): Promise<AiPricing>;
+    getCampaign(arg0: string): Promise<CampaignRecordShared | null>;
+    getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>>;
+    getCampaigns(): Promise<Array<CampaignRecordShared>>;
+    getCanvasState(arg0: string): Promise<CanvasState | null>;
+    getCreditLedger(): Promise<Array<CreditLedgerEntry>>;
+    getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null>;
+    getMyAccount(): Promise<UserAccountShared | null>;
+    getPresetAddresses(arg0: string): Promise<Array<VerifiedAddress>>;
+    getPricingLedger(): Promise<Array<PricingRow>>;
+    getPublicConfig(): Promise<PublicConfig>;
+    getQrScanStats(arg0: string): Promise<QrScanStats>;
+    getReferralStats(): Promise<ReferralStats | null>;
+    getTrackingEvents(arg0: string): Promise<Array<TrackingEvent>>;
+    handleDeliveryWebhook(arg0: string, arg1: string): Promise<WebhookResult>;
+    http_request(arg0: HttpRequest): Promise<HttpResponse>;
+    http_request_update(arg0: HttpRequest): Promise<HttpResponse>;
+    listPresets(): Promise<Array<AudiencePresetShared>>;
+    pollActiveTracking(): Promise<bigint>;
+    resolveTrackingLink(arg0: string, arg1: string | null): Promise<TrackingResolveResult>;
+    saveAdminKeys(arg0: AdminKeysInput): Promise<ApiResult>;
+    saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean>;
+    savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult>;
+    syncClick2MailTracking(arg0: string): Promise<SyncResult>;
+    transform(arg0: TransformationInput): Promise<TransformationOutput>;
+    updateAccountEmail(arg0: string): Promise<ApiResult>;
+    updateCampaignStatus(arg0: string, arg1: CampaignStatus, arg2: string, arg3: bigint): Promise<boolean>;
+    updatePreset(arg0: string, arg1: string, arg2: Array<VerifiedAddress>): Promise<ApiResult>;
+    uploadDocumentChunk(arg0: string, arg1: bigint, arg2: bigint, arg3: string, arg4: string, arg5: Uint8Array): Promise<ApiResult>;
 }
-function from_candid_variant_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    CSV: null;
-} | {
-    Map: null;
-}): AudienceType {
-    return "CSV" in value ? AudienceType.CSV : "Map" in value ? AudienceType.Map : value;
+// ─── Type-directed candid <-> TS conversion (opt <-> undefined/null, variant <-> enum string) ───
+function isNullType(t: IDL.Type): boolean {
+    return t instanceof IDL.NullClass;
 }
-function from_candid_variant_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    SelfMailer: null;
-} | {
-    Booklet: null;
-} | {
-    Letter: null;
-} | {
-    SnapPack: null;
-} | {
-    Postcard: null;
-}): ProductType {
-    return "SelfMailer" in value ? ProductType.SelfMailer : "Booklet" in value ? ProductType.Booklet : "Letter" in value ? ProductType.Letter : "SnapPack" in value ? ProductType.SnapPack : "Postcard" in value ? ProductType.Postcard : value;
+function resolve(t: IDL.Type): IDL.Type {
+    return t instanceof IDL.RecClass ? (t.getType() as IDL.Type) : t;
 }
-function from_candid_vec_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_CampaignRecordShared>): Array<CampaignRecordShared> {
-    return value.map((x)=>from_candid_CampaignRecordShared_n11(_uploadFile, _downloadFile, x));
+function toCandid(t0: IDL.Type, v: any): any {
+    const t = resolve(t0);
+    if (t instanceof IDL.OptClass) {
+        return v === undefined || v === null ? [] : [toCandid(t._type, v)];
+    }
+    if (t instanceof IDL.VecClass) {
+        if (t._type instanceof IDL.FixedNatClass && (t._type as any)._bits === 8) {
+            return v instanceof Uint8Array ? v : Uint8Array.from(v ?? []);
+        }
+        return (v ?? []).map((x: any) => toCandid(t._type, x));
+    }
+    if (t instanceof IDL.TupleClass) {
+        const comps = (t as any)._components as IDL.Type[];
+        return comps.map((ct, i) => toCandid(ct, v[i]));
+    }
+    if (t instanceof IDL.RecordClass) {
+        const out: Record<string, any> = {};
+        for (const [name, ft] of t._fields) {
+            out[name] = toCandid(ft, v?.[name]);
+        }
+        return out;
+    }
+    if (t instanceof IDL.VariantClass) {
+        if (typeof v === "string") {
+            return { [v]: null };
+        }
+        const key = Object.keys(v)[0];
+        const ft = t._fields.find(([n]) => n === key)?.[1];
+        return { [key]: ft ? toCandid(ft, v[key]) : null };
+    }
+    return v;
 }
-function from_candid_vec_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_AddressVerificationResult>): Array<AddressVerificationResult> {
-    return value.map((x)=>from_candid_AddressVerificationResult_n36(_uploadFile, _downloadFile, x));
+function fromCandid(t0: IDL.Type, v: any, topLevel: boolean): any {
+    const t = resolve(t0);
+    if (t instanceof IDL.OptClass) {
+        if (!Array.isArray(v) || v.length === 0) {
+            return topLevel ? null : undefined;
+        }
+        return fromCandid(t._type, v[0], false);
+    }
+    if (t instanceof IDL.VecClass) {
+        if (v instanceof Uint8Array) {
+            return v;
+        }
+        return (v ?? []).map((x: any) => fromCandid(t._type, x, false));
+    }
+    if (t instanceof IDL.TupleClass) {
+        const comps = (t as any)._components as IDL.Type[];
+        return comps.map((ct, i) => fromCandid(ct, v[i], false));
+    }
+    if (t instanceof IDL.RecordClass) {
+        const out: Record<string, any> = {};
+        for (const [name, ft] of t._fields) {
+            const converted = fromCandid(ft, v?.[name], false);
+            if (converted !== undefined) {
+                out[name] = converted;
+            }
+        }
+        return out;
+    }
+    if (t instanceof IDL.VariantClass) {
+        const key = Object.keys(v ?? {})[0];
+        const ft = t._fields.find(([n]) => n === key)?.[1];
+        if (!ft || isNullType(ft)) {
+            return key;
+        }
+        return { [key]: fromCandid(ft, v[key], false) };
+    }
+    return v;
 }
-function to_candid_AddressInput_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AddressInput): _AddressInput {
-    return to_candid_record_n34(_uploadFile, _downloadFile, value);
-}
-function to_candid_AdminKeys_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AdminKeys): _AdminKeys {
-    return to_candid_record_n27(_uploadFile, _downloadFile, value);
-}
-function to_candid_AudienceType_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AudienceType): _AudienceType {
-    return to_candid_variant_n6(_uploadFile, _downloadFile, value);
-}
-function to_candid_CampaignStatus_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: CampaignStatus): _CampaignStatus {
-    return to_candid_variant_n31(_uploadFile, _downloadFile, value);
-}
-function to_candid_CanvasState_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: CanvasState): _CanvasState {
-    return to_candid_record_n29(_uploadFile, _downloadFile, value);
-}
-function to_candid_ProductSelection_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ProductSelection): _ProductSelection {
-    return to_candid_record_n2(_uploadFile, _downloadFile, value);
-}
-function to_candid_ProductType_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ProductType): _ProductType {
-    return to_candid_variant_n4(_uploadFile, _downloadFile, value);
-}
-function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    productType: ProductType;
-    layoutVariant: string;
-    colorOption?: string;
-}): {
-    productType: _ProductType;
-    layoutVariant: string;
-    colorOption: [] | [string];
-} {
-    return {
-        productType: to_candid_ProductType_n3(_uploadFile, _downloadFile, value.productType),
-        layoutVariant: value.layoutVariant,
-        colorOption: value.colorOption ? candid_some(value.colorOption) : candid_none()
-    };
-}
-function to_candid_record_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    resendKey?: string;
-    lobKey?: string;
-    stripeKey?: string;
-}): {
-    resendKey: [] | [string];
-    lobKey: [] | [string];
-    stripeKey: [] | [string];
-} {
-    return {
-        resendKey: value.resendKey ? candid_some(value.resendKey) : candid_none(),
-        lobKey: value.lobKey ? candid_some(value.lobKey) : candid_none(),
-        stripeKey: value.stripeKey ? candid_some(value.stripeKey) : candid_none()
-    };
-}
-function to_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    backgroundImageUrl?: string;
-    logos: Array<LogoState>;
-    textBlocks: Array<TextBlockState>;
-    qrCode?: QrCodeState;
-}): {
-    backgroundImageUrl: [] | [string];
-    logos: Array<_LogoState>;
-    textBlocks: Array<_TextBlockState>;
-    qrCode: [] | [_QrCodeState];
-} {
-    return {
-        backgroundImageUrl: value.backgroundImageUrl ? candid_some(value.backgroundImageUrl) : candid_none(),
-        logos: value.logos,
-        textBlocks: value.textBlocks,
-        qrCode: value.qrCode ? candid_some(value.qrCode) : candid_none()
-    };
-}
-function to_candid_record_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    zip_code: string;
-    address_line1: string;
-    address_line2?: string;
-    city: string;
-    name: string;
-    state: string;
-}): {
-    zip_code: string;
-    address_line1: string;
-    address_line2: [] | [string];
-    city: string;
-    name: string;
-    state: string;
-} {
-    return {
-        zip_code: value.zip_code,
-        address_line1: value.address_line1,
-        address_line2: value.address_line2 ? candid_some(value.address_line2) : candid_none(),
-        city: value.city,
-        name: value.name,
-        state: value.state
-    };
-}
-function to_candid_variant_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: CampaignStatus): {
-    InTransit: null;
-} | {
-    InProduction: null;
-} | {
-    Delivered: null;
-} | {
-    Created: null;
-} | {
-    SortedAtLocalHub: null;
-} {
-    return value == CampaignStatus.InTransit ? {
-        InTransit: null
-    } : value == CampaignStatus.InProduction ? {
-        InProduction: null
-    } : value == CampaignStatus.Delivered ? {
-        Delivered: null
-    } : value == CampaignStatus.Created ? {
-        Created: null
-    } : value == CampaignStatus.SortedAtLocalHub ? {
-        SortedAtLocalHub: null
-    } : value;
-}
-function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ProductType): {
-    SelfMailer: null;
-} | {
-    Booklet: null;
-} | {
-    Letter: null;
-} | {
-    SnapPack: null;
-} | {
-    Postcard: null;
-} {
-    return value == ProductType.SelfMailer ? {
-        SelfMailer: null
-    } : value == ProductType.Booklet ? {
-        Booklet: null
-    } : value == ProductType.Letter ? {
-        Letter: null
-    } : value == ProductType.SnapPack ? {
-        SnapPack: null
-    } : value == ProductType.Postcard ? {
-        Postcard: null
-    } : value;
-}
-function to_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AudienceType): {
-    CSV: null;
-} | {
-    Map: null;
-} {
-    return value == AudienceType.CSV ? {
-        CSV: null
-    } : value == AudienceType.Map ? {
-        Map_: null
-    } : value;
-}
-function to_candid_vec_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<AddressInput>): Array<_AddressInput> {
-    return value.map((x)=>to_candid_AddressInput_n33(_uploadFile, _downloadFile, x));
+const _service = idlFactory({ IDL }) as IDL.ServiceClass;
+const _methods = new Map<string, IDL.FuncClass>(_service._fields as Array<[string, IDL.FuncClass]>);
+export class Backend implements backendInterface {
+    constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    private async _call(name: string, args: any[]): Promise<any> {
+        const fn = _methods.get(name);
+        if (!fn) {
+            throw new Error(`Unknown backend method: ${name}`);
+        }
+        const candidArgs = fn.argTypes.map((t, i) => toCandid(t, args[i]));
+        try {
+            const result = await (this.actor as any)[name](...candidArgs);
+            if (fn.retTypes.length === 0) {
+                return undefined;
+            }
+            if (fn.retTypes.length === 1) {
+                return fromCandid(fn.retTypes[0], result, true);
+            }
+            return fn.retTypes.map((t, i) => fromCandid(t, result[i], true));
+        } catch (e) {
+            if (this.processError) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+            throw e;
+        }
+    }
+    async applyReferralReward(arg0: string): Promise<ApiResult> {
+        return this._call("applyReferralReward", [arg0]) as Promise<ApiResult>;
+    }
+    async confirmPayment(arg0: string): Promise<ConfirmPaymentResult> {
+        return this._call("confirmPayment", [arg0]) as Promise<ConfirmPaymentResult>;
+    }
+    async createCampaign(arg0: CreateCampaignInput): Promise<CreateCampaignResult> {
+        return this._call("createCampaign", [arg0]) as Promise<CreateCampaignResult>;
+    }
+    async createPaymentIntent(arg0: PaymentPurpose, arg1: string | null, arg2: CreditPack | null): Promise<PaymentIntentResult> {
+        return this._call("createPaymentIntent", [arg0, arg1, arg2]) as Promise<PaymentIntentResult>;
+    }
+    async deductAiCredits(arg0: bigint, arg1: string): Promise<CreditResult> {
+        return this._call("deductAiCredits", [arg0, arg1]) as Promise<CreditResult>;
+    }
+    async deletePreset(arg0: string): Promise<ApiResult> {
+        return this._call("deletePreset", [arg0]) as Promise<ApiResult>;
+    }
+    async dispatchClick2MailJob(arg0: string): Promise<DispatchResult> {
+        return this._call("dispatchClick2MailJob", [arg0]) as Promise<DispatchResult>;
+    }
+    async ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult> {
+        return this._call("ensureAccount", [arg0, arg1]) as Promise<AccountResult>;
+    }
+    async executeClick2MailVerification(arg0: Array<AddressInput>): Promise<VerificationBatchResult> {
+        return this._call("executeClick2MailVerification", [arg0]) as Promise<VerificationBatchResult>;
+    }
+    async exportCampaignRecipients(arg0: string): Promise<string | null> {
+        return this._call("exportCampaignRecipients", [arg0]) as Promise<string | null>;
+    }
+    async generateAiCopy(arg0: AiCopyInput): Promise<AiCopyResult> {
+        return this._call("generateAiCopy", [arg0]) as Promise<AiCopyResult>;
+    }
+    async generateAiImage(arg0: string, arg1: AiImageSize): Promise<AiImageResult> {
+        return this._call("generateAiImage", [arg0, arg1]) as Promise<AiImageResult>;
+    }
+    async getAdminKeys(): Promise<AdminKeysView> {
+        return this._call("getAdminKeys", []) as Promise<AdminKeysView>;
+    }
+    async getAiPricing(): Promise<AiPricing> {
+        return this._call("getAiPricing", []) as Promise<AiPricing>;
+    }
+    async getCampaign(arg0: string): Promise<CampaignRecordShared | null> {
+        return this._call("getCampaign", [arg0]) as Promise<CampaignRecordShared | null>;
+    }
+    async getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>> {
+        return this._call("getCampaignRecipients", [arg0]) as Promise<Array<VerifiedAddress>>;
+    }
+    async getCampaigns(): Promise<Array<CampaignRecordShared>> {
+        return this._call("getCampaigns", []) as Promise<Array<CampaignRecordShared>>;
+    }
+    async getCanvasState(arg0: string): Promise<CanvasState | null> {
+        return this._call("getCanvasState", [arg0]) as Promise<CanvasState | null>;
+    }
+    async getCreditLedger(): Promise<Array<CreditLedgerEntry>> {
+        return this._call("getCreditLedger", []) as Promise<Array<CreditLedgerEntry>>;
+    }
+    async getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null> {
+        return this._call("getDocumentUploadStatus", [arg0]) as Promise<DocumentUploadStatus | null>;
+    }
+    async getMyAccount(): Promise<UserAccountShared | null> {
+        return this._call("getMyAccount", []) as Promise<UserAccountShared | null>;
+    }
+    async getPresetAddresses(arg0: string): Promise<Array<VerifiedAddress>> {
+        return this._call("getPresetAddresses", [arg0]) as Promise<Array<VerifiedAddress>>;
+    }
+    async getPricingLedger(): Promise<Array<PricingRow>> {
+        return this._call("getPricingLedger", []) as Promise<Array<PricingRow>>;
+    }
+    async getPublicConfig(): Promise<PublicConfig> {
+        return this._call("getPublicConfig", []) as Promise<PublicConfig>;
+    }
+    async getQrScanStats(arg0: string): Promise<QrScanStats> {
+        return this._call("getQrScanStats", [arg0]) as Promise<QrScanStats>;
+    }
+    async getReferralStats(): Promise<ReferralStats | null> {
+        return this._call("getReferralStats", []) as Promise<ReferralStats | null>;
+    }
+    async getTrackingEvents(arg0: string): Promise<Array<TrackingEvent>> {
+        return this._call("getTrackingEvents", [arg0]) as Promise<Array<TrackingEvent>>;
+    }
+    async handleDeliveryWebhook(arg0: string, arg1: string): Promise<WebhookResult> {
+        return this._call("handleDeliveryWebhook", [arg0, arg1]) as Promise<WebhookResult>;
+    }
+    async http_request(arg0: HttpRequest): Promise<HttpResponse> {
+        return this._call("http_request", [arg0]) as Promise<HttpResponse>;
+    }
+    async http_request_update(arg0: HttpRequest): Promise<HttpResponse> {
+        return this._call("http_request_update", [arg0]) as Promise<HttpResponse>;
+    }
+    async listPresets(): Promise<Array<AudiencePresetShared>> {
+        return this._call("listPresets", []) as Promise<Array<AudiencePresetShared>>;
+    }
+    async pollActiveTracking(): Promise<bigint> {
+        return this._call("pollActiveTracking", []) as Promise<bigint>;
+    }
+    async resolveTrackingLink(arg0: string, arg1: string | null): Promise<TrackingResolveResult> {
+        return this._call("resolveTrackingLink", [arg0, arg1]) as Promise<TrackingResolveResult>;
+    }
+    async saveAdminKeys(arg0: AdminKeysInput): Promise<ApiResult> {
+        return this._call("saveAdminKeys", [arg0]) as Promise<ApiResult>;
+    }
+    async saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean> {
+        return this._call("saveCanvasState", [arg0, arg1]) as Promise<boolean>;
+    }
+    async savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult> {
+        return this._call("savePreset", [arg0, arg1, arg2]) as Promise<PresetResult>;
+    }
+    async syncClick2MailTracking(arg0: string): Promise<SyncResult> {
+        return this._call("syncClick2MailTracking", [arg0]) as Promise<SyncResult>;
+    }
+    async transform(arg0: TransformationInput): Promise<TransformationOutput> {
+        return this._call("transform", [arg0]) as Promise<TransformationOutput>;
+    }
+    async updateAccountEmail(arg0: string): Promise<ApiResult> {
+        return this._call("updateAccountEmail", [arg0]) as Promise<ApiResult>;
+    }
+    async updateCampaignStatus(arg0: string, arg1: CampaignStatus, arg2: string, arg3: bigint): Promise<boolean> {
+        return this._call("updateCampaignStatus", [arg0, arg1, arg2, arg3]) as Promise<boolean>;
+    }
+    async updatePreset(arg0: string, arg1: string, arg2: Array<VerifiedAddress>): Promise<ApiResult> {
+        return this._call("updatePreset", [arg0, arg1, arg2]) as Promise<ApiResult>;
+    }
+    async uploadDocumentChunk(arg0: string, arg1: bigint, arg2: bigint, arg3: string, arg4: string, arg5: Uint8Array): Promise<ApiResult> {
+        return this._call("uploadDocumentChunk", [arg0, arg1, arg2, arg3, arg4, arg5]) as Promise<ApiResult>;
+    }
 }
 export interface CreateActorOptions {
     agent?: Agent;

@@ -1,142 +1,154 @@
 import { BookDemoModal } from "@/components/BookDemoModal";
+import { MembershipCard } from "@/components/marketing/MembershipCard";
+import { PricingCalculator } from "@/components/marketing/PricingCalculator";
+import { ProductShowcase } from "@/components/marketing/ProductShowcase";
 import { Button } from "@/components/ui/button";
+import { AI_COSTS, CREDIT_PACKS, MONTHLY_ALLOWANCE } from "@/lib/credits";
+import { SUBSCRIPTION_PRICE_CENTS, formatCents } from "@/lib/pricing";
 import { Link } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
-  BookOpen,
+  Barcode,
   Check,
-  ChevronRight,
-  FileText,
-  Mail,
+  Image as ImageIcon,
+  Layers,
   MapPin,
-  Package,
+  Minus,
+  Palette,
   Printer,
-  Shield,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
   Truck,
+  Type,
   Upload,
   X,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
+/* ─── Shared section shell ─── */
+function Section({
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  className = "",
+}: {
+  id?: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      id={id}
+      className={`mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20 lg:px-8 ${className}`}
+    >
+      <div className="mb-10 text-center">
+        {eyebrow && (
+          <div className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+            {eyebrow}
+          </div>
+        )}
+        <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mx-auto mt-3 max-w-2xl text-base text-muted-foreground">
+            {subtitle}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 /* ─── Animated Mail Pipeline Widget ─── */
+function PipelineStage({
+  label,
+  caption,
+  children,
+}: {
+  label: string;
+  caption: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {children}
+      <div className="text-center">
+        <div className="text-xs font-semibold text-foreground sm:text-sm">
+          {label}
+        </div>
+        <div className="hidden text-[11px] text-muted-foreground sm:block">
+          {caption}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PipelineConnector({ delay }: { delay?: string }) {
+  return (
+    <div className="relative flex-1">
+      <div className="border-t-2 border-dashed border-border" />
+      <div
+        className={`absolute -top-1.5 left-0 size-3 rounded-full bg-accent/70 animate-ping ${delay ?? ""}`}
+      />
+    </div>
+  );
+}
+
 function PipelineWidget() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-sm sm:p-10">
+    <div className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-10">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
-      <div className="relative flex items-center justify-between gap-2 sm:gap-4">
-        {/* Stage 1: Digital Trigger */}
-        <div className="flex flex-col items-center gap-3">
+      <div className="relative flex items-start justify-between gap-2 sm:gap-4">
+        <PipelineStage label="Design" caption="Templates or AI Studio">
           <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16">
-            <svg
-              role="img"
-              aria-label="Digital trigger icon"
-              className="size-7 text-primary sm:size-8"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <rect x="2" y="3" width="20" height="8" rx="2" />
-              <rect x="2" y="13" width="20" height="8" rx="2" />
-              <circle
-                cx="6"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse"
-              />
-              <circle
-                cx="10"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-75"
-              />
-              <circle
-                cx="14"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-150"
-              />
-              <circle
-                cx="6"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-100"
-              />
-              <circle
-                cx="10"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-200"
-              />
-              <circle
-                cx="14"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-300"
-              />
-            </svg>
+            <Palette className="size-7 text-primary sm:size-8" />
+            <span className="absolute -right-1 -top-1 flex size-3">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-75" />
+              <span className="relative inline-flex size-3 rounded-full bg-accent" />
+            </span>
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Digital Trigger
-          </span>
-        </div>
+        </PipelineStage>
 
-        {/* Connector 1 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping" />
-        </div>
+        <PipelineConnector />
 
-        {/* Stage 2: Print Network */}
-        <div className="flex flex-col items-center gap-3">
+        <PipelineStage label="Click2Mail print" caption="Next-day production">
           <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16 animate-pipeline-pulse">
             <Printer className="size-7 text-accent sm:size-8" />
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Print Network
-          </span>
-        </div>
+        </PipelineStage>
 
-        {/* Connector 2 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping delay-500" />
-        </div>
+        <PipelineConnector delay="delay-500" />
 
-        {/* Stage 3: In Transit */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16 overflow-hidden">
+        <PipelineStage label="USPS transit" caption="IMb scan events">
+          <div className="relative flex size-14 items-center justify-center overflow-hidden rounded-xl border border-border bg-background sm:size-16">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-dashed border-muted/50" />
+              <div className="w-full border-t border-dashed border-border" />
             </div>
             <Truck className="size-7 text-primary sm:size-8 animate-pipeline-truck" />
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            In Transit
-          </span>
-        </div>
+        </PipelineStage>
 
-        {/* Connector 3 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping delay-1000" />
-        </div>
+        <PipelineConnector delay="delay-1000" />
 
-        {/* Stage 4: Delivered */}
-        <div className="flex flex-col items-center gap-3">
+        <PipelineStage label="Mailbox" caption="Delivered & tracked">
           <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16">
             <svg
               role="img"
               aria-label="Delivered mailbox icon"
-              className="size-7 text-green-400 sm:size-8"
+              className="size-7 text-emerald-brand sm:size-8"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -154,10 +166,7 @@ function PipelineWidget() {
               />
             </svg>
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Delivered
-          </span>
-        </div>
+        </PipelineStage>
       </div>
     </div>
   );
@@ -166,12 +175,12 @@ function PipelineWidget() {
 /* ─── Marquee ─── */
 function Marquee() {
   const text =
-    "✨ 90% Open Rates Locked • USPS Address Verification Active • 8x Average Retail ROI Delivered • Intelligent Mail Barcodes Armed • 4-Day Delivery Window • 1,000+ Commercial Printers • Personalized Per Recipient • Real-Time USPS Tracking • ";
+    "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • Click2Mail fulfillment • AI design studio • Dynamic QR tracking links • Radius targeting with EDDM estimates • ";
   return (
-    <div className="relative overflow-hidden bg-accent/10 py-3">
+    <div className="relative overflow-hidden border-y border-accent/20 bg-accent/10 py-3">
       <div className="flex whitespace-nowrap animate-marquee-scroll">
-        <span className="text-sm font-medium text-accent/90 px-4">{text}</span>
-        <span className="text-sm font-medium text-accent/90 px-4">{text}</span>
+        <span className="px-4 text-sm font-medium text-accent">{text}</span>
+        <span className="px-4 text-sm font-medium text-accent">{text}</span>
       </div>
     </div>
   );
@@ -179,10 +188,10 @@ function Marquee() {
 
 /* ─── Stats Row ─── */
 const STATS = [
-  { value: "90%", label: "Open Rate", sub: "vs 20% email avg" },
+  { value: "90%", label: "Open rate", sub: "vs ~20% email average" },
   { value: "8x", label: "Avg ROI", sub: "retail campaigns" },
-  { value: "4-Day", label: "Delivery", sub: "nationwide avg" },
-  { value: "USPS", label: "Verified", sub: "CASS-certified" },
+  { value: "4-day", label: "Delivery", sub: "nationwide average" },
+  { value: "USPS", label: "Verified", sub: "CASS-certified addresses" },
 ];
 
 function StatsRow() {
@@ -191,7 +200,7 @@ function StatsRow() {
       {STATS.map((s) => (
         <div
           key={s.value}
-          className="rounded-xl border border-border bg-card/50 p-5 text-center backdrop-blur-sm transition-smooth hover:bg-card hover:-translate-y-1"
+          className="rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
         >
           <div className="font-display text-3xl font-bold text-primary sm:text-4xl">
             {s.value}
@@ -210,32 +219,33 @@ function StatsRow() {
 function ValuePillars() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card/60 p-8 backdrop-blur-sm transition-smooth hover:bg-card">
+      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
         <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
         <div className="relative">
           <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Upload className="size-6" />
           </div>
           <h3 className="font-display text-xl font-bold text-foreground">
-            Win Back Lapsed Customers
+            Win back the customers you already have
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Upload your CSV of past buyers. Our Lob-powered address verification
-            engine scrubs every row to USPS standards, appends missing ZIP+4
-            codes, and strips undeliverable addresses. Then we automatically
-            trigger a personalized re-engagement mailer drop.
+            Upload a CSV of past buyers. Every row is scrubbed to USPS standards
+            through Click2Mail's CASS verification — ZIP+4 appended,
+            undeliverable addresses flagged — before a single piece is printed.
+            Save the clean list as a preset and reuse it next quarter.
           </p>
           <ul className="mt-4 space-y-2">
             {[
-              "CASS-certified address scrubbing",
-              "Auto-append ZIP+4 & delivery point",
-              "Invalid row highlighting & removal",
+              "CASS-certified scrub via Click2Mail",
+              "ZIP+4 and delivery-point correction",
+              "Invalid rows highlighted before you pay",
+              "Saved audience presets for repeat drops",
             ].map((item) => (
               <li
                 key={item}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-green-400" />
+                <Check className="size-4 shrink-0 text-emerald-brand" />
                 {item}
               </li>
             ))}
@@ -243,32 +253,32 @@ function ValuePillars() {
         </div>
       </div>
 
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card/60 p-8 backdrop-blur-sm transition-smooth hover:bg-card">
+      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
         <div className="absolute -right-8 -top-8 size-32 rounded-full bg-accent/5 blur-2xl transition-smooth group-hover:bg-accent/10" />
         <div className="relative">
           <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-accent/10 text-accent">
             <MapPin className="size-6" />
           </div>
           <h3 className="font-display text-xl font-bold text-foreground">
-            Acquire New Local Customers
+            Reach every mailbox around your location
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Drop a pin on our interactive map canvas, set your radius with a
-            smooth slider, and instantly see how many verified mailboxes sit in
-            that zone. No existing list required — we surface local household
-            counts matched to USPS EDDM boundaries.
+            No list? Drop a pin, drag the radius, and see an instant household
+            estimate built from USPS EDDM carrier routes. Target the ZIP codes
+            and routes that matter and launch without buying a single record.
           </p>
           <ul className="mt-4 space-y-2">
             {[
-              "Interactive radius builder",
-              "ZIP code & area code targeting",
-              "Real-time household count estimator",
+              "Interactive radius builder on a live map",
+              "EDDM carrier-route household estimates",
+              "ZIP code and route-level targeting",
+              "Works alongside your CSV audiences",
             ].map((item) => (
               <li
                 key={item}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-green-400" />
+                <Check className="size-4 shrink-0 text-emerald-brand" />
                 {item}
               </li>
             ))}
@@ -279,131 +289,207 @@ function ValuePillars() {
   );
 }
 
-/* ─── Product Price Grid ─── */
-const PRODUCTS = [
-  {
-    name: "Postcards",
-    desc: "4×6, 6×9, 6×11 formats. Full-color front & back.",
-    price: "From $0.95 / address",
-    icon: Mail,
-  },
-  {
-    name: "Standard Letters",
-    desc: "8.5×11 pages stuffed into #10 double-window envelopes.",
-    price: "$1.50 / address",
-    icon: FileText,
-  },
-  {
-    name: "Self-Mailer Brochures",
-    desc: "Bifold & trifold layouts tabbed shut. No envelope needed.",
-    price: "$2.10 / address",
-    icon: Package,
-  },
-  {
-    name: "Security Snap Packs",
-    desc: "Perforated pressure-sealed mailers for urgent notices.",
-    price: "Custom pricing",
-    icon: Shield,
-  },
-  {
-    name: "Booklets",
-    desc: "Multi-page edge-bound catalogs & annual showcases.",
-    price: "Custom pricing",
-    icon: BookOpen,
-  },
-];
-
-function ProductGrid() {
+/* ─── AI Studio teaser ─── */
+function AiStudioTeaser() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {PRODUCTS.map((p) => (
-        <div
-          key={p.name}
-          className="group relative flex flex-col rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-sm transition-smooth hover:bg-card hover:-translate-y-1"
-        >
-          <div className="mb-4 inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-smooth group-hover:bg-primary group-hover:text-primary-foreground">
-            <p.icon className="size-5" />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-8 text-primary-foreground sm:p-10">
+        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute -bottom-24 -left-16 size-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <Sparkles className="size-3.5 text-accent" />
+            AI Studio
           </div>
-          <h4 className="font-display text-lg font-bold text-foreground">
-            {p.name}
-          </h4>
-          <p className="mt-1 flex-1 text-sm text-muted-foreground">{p.desc}</p>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-              Starting from {p.price}
-            </span>
-            <ChevronRight className="size-4 text-muted-foreground transition-smooth group-hover:translate-x-1" />
+          <h3 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
+            Backgrounds and copy, generated inside the canvas
+          </h3>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
+            Describe the vibe and drop a DALL·E 3 background straight onto your
+            postcard. Ask GPT-4o mini for headlines, bullets and calls to action
+            tuned to your offer. Every member gets {MONTHLY_ALLOWANCE} credits a
+            month — one credit is one cent.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <ImageIcon className="size-4 text-accent" />
+                DALL·E 3 backgrounds
+              </div>
+              <div className="mt-1 text-xs text-primary-foreground/70">
+                From {AI_COSTS.squareImage} credits (square) ·{" "}
+                {AI_COSTS.wideImage} wide · {AI_COSTS.hdImage} HD
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Type className="size-4 text-accent" />
+                GPT-4o mini copy
+              </div>
+              <div className="mt-1 text-xs text-primary-foreground/70">
+                {AI_COSTS.copy} credit per generation — headlines, bullets and
+                CTAs
+              </div>
+            </div>
           </div>
+          <Button
+            asChild
+            size="lg"
+            className="mt-6 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          >
+            <Link to="/wizard" data-ocid="ai_studio.try.link">
+              Try it in the wizard
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
-      ))}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <h4 className="font-display text-lg font-bold text-foreground">
+          Need more credits?
+        </h4>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Top up any time. Bigger packs include bonus credits.
+        </p>
+        <ul className="mt-5 space-y-3">
+          {CREDIT_PACKS.map((pack) => (
+            <li
+              key={pack.id}
+              className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3"
+              data-ocid={`ai_studio.pack.${pack.id.toLowerCase()}.item`}
+            >
+              <div>
+                <div className="text-sm font-semibold text-foreground">
+                  {pack.name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {pack.credits.toLocaleString("en-US")} credits
+                  {pack.bonus > 0 ? ` · includes ${pack.bonus} bonus` : ""}
+                </div>
+              </div>
+              <div className="font-display text-lg font-bold text-primary">
+                {formatCents(pack.priceCents)}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Credits never expire while your membership is active.
+        </p>
+      </div>
     </div>
   );
 }
 
 /* ─── Feature Comparison Table ─── */
-const FEATURES = [
+type Support = "yes" | "no" | "partial";
+
+interface FeatureRow {
+  label: string;
+  us: Support;
+  generic: Support;
+  traditional: Support;
+  note?: string;
+}
+
+const FEATURES: FeatureRow[] = [
   {
-    label: "Built-in Address Verification",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/mo no-minimum membership`,
+    us: "yes",
+    generic: "no",
+    traditional: "no",
+    note: "Usage tiers or minimum print runs elsewhere",
   },
   {
-    label: "Live Map Radius Builder",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "CASS address verification",
+    us: "yes",
+    generic: "partial",
+    traditional: "partial",
+    note: "Paid add-on or manual list hygiene",
   },
   {
-    label: "Real-Time USPS Tracking",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "Live radius builder with EDDM estimates",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "API-Triggered Campaigns",
-    us: true,
-    generic: true,
-    traditional: false,
+    label: "Real-time USPS IMb tracking",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
   },
   {
-    label: "4-Day Delivery Window",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "AI design studio",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "Per-Recipient Personalization",
-    us: true,
-    generic: false,
-    traditional: true,
+    label: "Dynamic QR tracking links",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "Transparent Pricing",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "Transparent per-piece pricing",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
+    note: "Quote-based pricing at most print shops",
+  },
+  {
+    label: "Saved audience presets",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
   },
 ];
 
+function SupportCell({ value }: { value: Support }) {
+  if (value === "yes") {
+    return (
+      <span className="inline-flex size-7 items-center justify-center rounded-full bg-emerald-brand/10">
+        <Check className="size-4 text-emerald-brand" aria-label="Included" />
+      </span>
+    );
+  }
+  if (value === "partial") {
+    return (
+      <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted">
+        <Minus
+          className="size-4 text-muted-foreground"
+          aria-label="Partial or add-on"
+        />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex size-7 items-center justify-center rounded-full bg-destructive/10">
+      <X className="size-4 text-destructive" aria-label="Not included" />
+    </span>
+  );
+}
+
 function ComparisonTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr className="border-b border-border bg-muted/40">
               <th className="px-6 py-4 text-left font-display font-bold text-foreground">
                 Feature
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-primary">
-                MailCommand
+                EZmailout
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Generic Provider
+                Generic API provider
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Traditional Print Shop
+                Traditional print shop
               </th>
             </tr>
           </thead>
@@ -411,93 +497,139 @@ function ComparisonTable() {
             {FEATURES.map((f) => (
               <tr
                 key={f.label}
-                className="border-b border-border last:border-0 hover:bg-muted/20"
+                className="border-b border-border last:border-0 hover:bg-muted/30"
               >
-                <td className="px-6 py-4 font-medium text-foreground">
-                  {f.label}
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <Check className="mx-auto size-5 text-green-400" />
-                </td>
-                <td className="px-6 py-4 text-center">
-                  {f.generic ? (
-                    <Check className="mx-auto size-5 text-green-400" />
-                  ) : (
-                    <X className="mx-auto size-5 text-red-400" />
+                <td className="px-6 py-4">
+                  <div className="font-medium text-foreground">{f.label}</div>
+                  {f.note && (
+                    <div className="text-xs text-muted-foreground">
+                      {f.note}
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  {f.traditional ? (
-                    <Check className="mx-auto size-5 text-green-400" />
-                  ) : (
-                    <X className="mx-auto size-5 text-red-400" />
-                  )}
+                  <SupportCell value={f.us} />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <SupportCell value={f.generic} />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <SupportCell value={f.traditional} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border bg-muted/30 px-6 py-3 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="size-3.5 text-emerald-brand" /> Included
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Minus className="size-3.5" /> Partial or paid add-on
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <X className="size-3.5 text-destructive" /> Not offered
+        </span>
+      </div>
     </div>
   );
 }
 
 /* ─── Hero Section ─── */
+interface TrustBadge {
+  icon: LucideIcon;
+  label: string;
+}
+
+const TRUST_BADGES: TrustBadge[] = [
+  { icon: ShieldCheck, label: "CASS-certified addresses" },
+  { icon: Barcode, label: "USPS IMb tracking" },
+  { icon: Printer, label: "Click2Mail fulfillment" },
+  { icon: Layers, label: "No minimums" },
+];
+
 function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
     <section className="relative overflow-hidden bg-background pt-16 pb-12 sm:pt-24 sm:pb-16">
-      {/* Subtle grid background */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
             "linear-gradient(oklch(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, oklch(var(--primary)) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+          backgroundSize: "56px 56px",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute -right-32 top-10 size-96 rounded-full bg-accent/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
           <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-green-400" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-brand opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-emerald-brand" />
           </span>
-          Now shipping 1,000+ campaigns daily
+          Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month · cancel
+          anytime
         </div>
 
-        <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl sm:leading-tight">
-          Turn Mail Into{" "}
-          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Money
+        <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground animate-fade-up sm:text-6xl sm:leading-[1.05]">
+          Direct mail without minimums.
+          <span className="block bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+            Wholesale print rates for $9/month.
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Connect your list, drop a pin on a map, and launch automated direct
-          mail that actually gets opened.
+          Design a postcard, letter or brochure in minutes, target by CSV or map
+          radius, and let Click2Mail print while USPS delivers — one piece or
+          five thousand, same per-piece price.
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/wizard">
-            <Button
-              size="lg"
-              className="gap-2 px-8 text-base"
-              data-ocid="hero.start_campaign_button"
-            >
-              Start Free Campaign
-              <ArrowRight className="size-4" />
-            </Button>
-          </Link>
           <Button
+            asChild
+            size="lg"
+            className="gap-2 bg-accent px-8 text-base text-accent-foreground shadow-md shadow-accent/25 hover:bg-accent/90"
+          >
+            <Link to="/wizard" data-ocid="hero.launch_campaign.button">
+              Launch a campaign
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button
+            asChild
             variant="outline"
             size="lg"
             className="px-8 text-base"
-            data-ocid="hero.book_demo_button"
-            onClick={onOpenDemo}
           >
-            Book a Demo
+            <a href="#pricing" data-ocid="hero.see_pricing.link">
+              See pricing
+            </a>
           </Button>
         </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Prefer a walkthrough?{" "}
+          <button
+            type="button"
+            onClick={onOpenDemo}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+            data-ocid="hero.book_demo.button"
+          >
+            Book a demo
+          </button>
+        </p>
+
+        <ul className="mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          {TRUST_BADGES.map((badge) => (
+            <li
+              key={badge.label}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+            >
+              <badge.icon className="size-3.5 text-primary" />
+              {badge.label}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -506,36 +638,47 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
 /* ─── Final CTA Banner ─── */
 function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-accent/5 p-8 text-center sm:p-12">
+    <section className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8 text-center sm:p-12">
       <div className="absolute -left-20 -top-20 size-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-accent/10 blur-3xl" />
+      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-accent/15 blur-3xl" />
       <div className="relative">
         <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-          Ready to Launch Your First Campaign?
+          Your first campaign can be in the mail tomorrow
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
-          No credit card required. Upload your list or drop a pin and send your
-          first piece in under 10 minutes.
+          Pick a format, upload a list or drop a pin, design it in the canvas
+          and launch. Membership is {formatCents(SUBSCRIPTION_PRICE_CENTS)} a
+          month, and you only pay per piece for what you send.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/wizard">
-            <Button
-              size="lg"
-              className="gap-2 px-8 text-base"
-              data-ocid="final_cta.start_now_button"
-            >
-              Start Now
-              <ArrowRight className="size-4" />
-            </Button>
-          </Link>
           <Button
+            asChild
+            size="lg"
+            className="gap-2 bg-accent px-8 text-base text-accent-foreground hover:bg-accent/90"
+          >
+            <Link to="/wizard" data-ocid="final_cta.launch_campaign.button">
+              Launch a campaign
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button
+            asChild
             variant="outline"
             size="lg"
             className="px-8 text-base"
-            data-ocid="final_cta.book_demo_button"
+          >
+            <Link to="/templates" data-ocid="final_cta.templates.link">
+              Browse templates
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="px-6 text-base"
+            data-ocid="final_cta.book_demo.button"
             onClick={onOpenDemo}
           >
-            Book a Demo
+            Book a demo
           </Button>
         </div>
       </div>
@@ -548,67 +691,77 @@ export function StoreFront() {
   const [demoOpen, setDemoOpen] = useState(false);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-background text-foreground">
       <HeroSection onOpenDemo={() => setDemoOpen(true)} />
 
-      {/* Pipeline Widget */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <PipelineWidget />
       </section>
 
-      {/* Marquee */}
       <Marquee />
 
-      {/* Stats */}
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <StatsRow />
       </section>
 
-      {/* Value Pillars */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Two Ways to Win
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Retention or acquisition — we have you covered.
-          </p>
-        </div>
+      <Section
+        id="membership"
+        eyebrow="Membership"
+        title="One membership. Every wholesale rate."
+        subtitle="Skip the volume tiers and quote requests. Members pay the same low per-piece price on every format from day one."
+      >
+        <MembershipCard />
+      </Section>
+
+      <Section
+        id="pricing"
+        eyebrow="Live pricing"
+        title="See what you'd save"
+        subtitle="Pick a format and a quantity. Every number below is computed from the same price list the wizard charges."
+      >
+        <PricingCalculator />
+      </Section>
+
+      <Section
+        id="products"
+        eyebrow="Products"
+        title="Five formats, one transparent price list"
+        subtitle="Printed and mailed by Click2Mail. Prices include print, postage and address verification."
+      >
+        <ProductShowcase />
+      </Section>
+
+      <Section
+        id="audiences"
+        eyebrow="Audiences"
+        title="Two ways to win"
+        subtitle="Retention or acquisition — bring a list or build one from the map."
+      >
         <ValuePillars />
-      </section>
+      </Section>
 
-      {/* Product Grid */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Transparent Pricing
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Wholesale-to-retail card matrix for every format.
-          </p>
-        </div>
-        <ProductGrid />
-      </section>
+      <Section
+        id="ai-studio"
+        eyebrow="AI Studio"
+        title="Design help that lives in the editor"
+        subtitle={`${MONTHLY_ALLOWANCE} AI credits are included every month. Top up with packs from ${formatCents(CREDIT_PACKS[0].priceCents)}.`}
+      >
+        <AiStudioTeaser />
+      </Section>
 
-      {/* Comparison Table */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Why MailCommand?
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            The features that separate us from the pack.
-          </p>
-        </div>
+      <Section
+        id="compare"
+        eyebrow="Compare"
+        title="Why EZmailout?"
+        subtitle="Everything a print shop does, everything an API does, without the minimums or the engineering."
+      >
         <ComparisonTable />
-      </section>
+      </Section>
 
-      {/* Final CTA */}
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <FinalCTA onOpenDemo={() => setDemoOpen(true)} />
       </section>
 
-      {/* Book a Demo Modal */}
       <BookDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
   );

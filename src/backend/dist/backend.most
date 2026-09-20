@@ -1,7 +1,42 @@
 // Version: 4.0.0
-type AudienceType__397578867 = {#CSV; #Map};
+type AdminState__542284524 =
+  {
+    var adminPrincipal : ?Text;
+    var click2mailEnvironment : Click2MailEnvironment__710301626;
+    var click2mailPassword : ?Text;
+    var click2mailUsername : ?Text;
+    var openAiKey : ?Text;
+    var outcallProxyUrl : ?Text;
+    var resendKey : ?Text;
+    var sandboxCheckout : Bool;
+    var stripePublishableKey : ?Text;
+    var stripeSecretKey : ?Text;
+    var webhookSecret : ?Text
+  };
+type AudiencePreset__540346492 =
+  {
+    createdAt : Int;
+    id : Text;
+    name : Text;
+    ownerId : Text;
+    recipientCount : Nat;
+    sourceCampaignId : ?Text;
+    var updatedAt : Int
+  };
+type AudiencePreset__991566103 =
+  {
+    createdAt : Int;
+    id : Text;
+    name : Text;
+    ownerId : Text;
+    recipientCount : Nat;
+    sourceCampaignId : ?Text;
+    var updatedAt : Int
+  };
+type AudienceType__397578867 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type AudienceType__675991603 = {#CSV; #Map};
 type AudienceType__764144161 = {#CSV; #Map};
+type AudienceType__842848238 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type CampaignRecord__588274483 =
   {
     audienceType : AudienceType__764144161;
@@ -16,14 +51,60 @@ type CampaignRecord__588274483 =
 type CampaignRecord__748290426 =
   {
     audienceType : AudienceType__397578867;
+    baseCostCents : Nat;
+    var c2mAddressListId : ?Text;
+    var c2mDocumentId : ?Text;
+    var c2mJobId : ?Text;
     var canvasState : ?CanvasState__291765340;
     createdAt : Int;
     designTemplateId : ?Text;
     id : Text;
+    var lastError : ?Text;
+    name : Text;
+    ownerId : Text;
+    var paymentIntentId : ?Text;
+    var paymentStatus : PaymentStatus__71296514;
+    printSpec : PrintSpec__214838956;
     product : ProductSelection__392936132;
+    var productionStatus : ProductionStatus__240898271;
+    var qrDestinationUrl : ?Text;
+    var qrScanCount : Nat;
     recipientCount : Nat;
+    var returnAddress : ?ReturnAddress__641606568;
+    sourcePresetId : ?Text;
     var status : CampaignStatus__60122010;
-    trackingId : ?Text
+    var totalAmountChargedCents : Nat;
+    unitPriceCents : Nat;
+    var updatedAt : Int
+  };
+type CampaignRecord__974282667 =
+  {
+    audienceType : AudienceType__842848238;
+    baseCostCents : Nat;
+    var c2mAddressListId : ?Text;
+    var c2mDocumentId : ?Text;
+    var c2mJobId : ?Text;
+    var canvasState : ?CanvasState__978804621;
+    createdAt : Int;
+    designTemplateId : ?Text;
+    id : Text;
+    var lastError : ?Text;
+    name : Text;
+    ownerId : Text;
+    var paymentIntentId : ?Text;
+    var paymentStatus : PaymentStatus__1009151203;
+    printSpec : PrintSpec__266434925;
+    product : ProductSelection__287238961;
+    var productionStatus : ProductionStatus__330867495;
+    var qrDestinationUrl : ?Text;
+    var qrScanCount : Nat;
+    recipientCount : Nat;
+    var returnAddress : ?ReturnAddress__316142976;
+    sourcePresetId : ?Text;
+    var status : CampaignStatus__671304151;
+    var totalAmountChargedCents : Nat;
+    unitPriceCents : Nat;
+    var updatedAt : Int
   };
 type CampaignStatus__397441306 =
   {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
@@ -31,6 +112,24 @@ type CampaignStatus__60122010 =
   {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
 type CampaignStatus__670227347 =
   {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
+type CampaignStatus__671304151 =
+  {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
+type CanvasSide__187429840 =
+  {
+    backgroundColor : Text;
+    backgroundImageUrl : ?Text;
+    logos : [LogoState__960159450];
+    qrCodes : [QrCodeState__275489691];
+    textBlocks : [TextBlockState__964234570]
+  };
+type CanvasSide__63799821 =
+  {
+    backgroundColor : Text;
+    backgroundImageUrl : ?Text;
+    logos : [LogoState__81542703];
+    qrCodes : [QrCodeState__604549760];
+    textBlocks : [TextBlockState__197637459]
+  };
 type CanvasState__258476440 =
   {
     backgroundImageUrl : ?Text;
@@ -40,23 +139,85 @@ type CanvasState__258476440 =
   };
 type CanvasState__291765340 =
   {
-    backgroundImageUrl : ?Text;
-    logos : [LogoState__81542703];
-    qrCode : ?QrCodeState__604549760;
-    textBlocks : [TextBlockState__197637459]
+    back : CanvasSide__63799821;
+    designPpi : Nat;
+    front : CanvasSide__63799821;
+    heightInches : Float;
+    widthInches : Float
   };
-type Data__80296667<K, V> =
-  {var count : Nat__1040412405; kvs : [var ?(K, V)]};
-type Internal__41346355<K, V> =
-  {children : [var ?Node__1000929467<K, V>]; data : Data__80296667<K, V>};
-type Leaf__712614010<K, V> = {data : Data__80296667<K, V>};
-type List__529703492<T> =
+type CanvasState__978804621 =
   {
-    var blockIndex : Nat__1040412405;
-    var blocks : [var [var ?T]];
-    var elementIndex : Nat__1040412405
+    back : CanvasSide__187429840;
+    designPpi : Nat;
+    front : CanvasSide__187429840;
+    heightInches : Float;
+    widthInches : Float
   };
-type List__560604548<T> = List__529703492<T>;
+type Click2MailEnvironment__697158736 = {#Production; #Staging};
+type Click2MailEnvironment__710301626 = {#Production; #Staging};
+type Counters__355208772 =
+  {
+    var nextCampaignId : Nat;
+    var nextEventId : Nat;
+    var nextLedgerId : Nat;
+    var nextPaymentId : Nat;
+    var nextPresetId : Nat;
+    var nextRewardId : Nat
+  };
+type CreditLedgerEntry__489297990 =
+  {
+    balanceAfter : Nat;
+    delta : Int;
+    id : Nat;
+    reason : Text;
+    reference : ?Text;
+    timestamp : Int;
+    userId : Text
+  };
+type CreditLedgerEntry__72746892 =
+  {
+    balanceAfter : Nat;
+    delta : Int;
+    id : Nat;
+    reason : Text;
+    reference : ?Text;
+    timestamp : Int;
+    userId : Text
+  };
+type CreditPack__259775564 = {#Agency; #Growth; #Starter};
+type CreditPack__590267947 = {#Agency; #Growth; #Starter};
+type Data__402283183<K, V> =
+  {var count : Nat__290648668; kvs : [var ?(K, V)]};
+type DocumentUpload__662607668 =
+  {
+    campaignId : Text;
+    var chunks : [Blob];
+    createdAt : Int;
+    fileName : Text;
+    mimeType : Text;
+    var receivedChunks : Nat;
+    totalChunks : Nat
+  };
+type DocumentUpload__974961311 =
+  {
+    campaignId : Text;
+    var chunks : [Blob];
+    createdAt : Int;
+    fileName : Text;
+    mimeType : Text;
+    var receivedChunks : Nat;
+    totalChunks : Nat
+  };
+type Internal__1009030202<K, V> =
+  {children : [var ?Node__410026902<K, V>]; data : Data__402283183<K, V>};
+type Leaf__668810236<K, V> = {data : Data__402283183<K, V>};
+type List__540857550<T> =
+  {
+    var blockIndex : Nat__290648668;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__290648668
+  };
+type List__970266387<T> = List__540857550<T>;
 type LogoState__734424194 =
   {
     height : Float;
@@ -73,31 +234,61 @@ type LogoState__81542703 =
     url : Text;
     width : Float;
     x : Float;
-    y : Float
+    y : Float;
+    zIndex : Nat
   };
-type Map__222667396<K, V> = Map__912772452<K, V>;
-type Map__709709801<K, V> =
-  {var root : Node__1000929467<K, V>; var size : Nat__1040412405};
-type Map__912772452<K, V> = Map__709709801<K, V>;
-type Nat__1040412405 = Nat__920180692;
+type LogoState__960159450 =
+  {
+    height : Float;
+    id : Text;
+    url : Text;
+    width : Float;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
+type MailClass__374367456 = {#FirstClass; #MarketingMail};
+type MailClass__536824682 = {#FirstClass; #MarketingMail};
+type Map__1008872669<K, V> =
+  {var root : Node__410026902<K, V>; var size : Nat__290648668};
+type Map__493350506<K, V> = Map__1008872669<K, V>;
+type Map__904312358<K, V> = Map__493350506<K, V>;
+type Nat__290648668 = Nat__920180692;
 type Nat__920180692 = Nat;
 type NewActor__1020670674 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__222667396<Text, [VerifiedAddress__349001753]>;
-    campaigns : Map__222667396<Text, NewCampaignRecord__773509469>;
+    campaignRecipients : Map__904312358<Text, [VerifiedAddress__349001753]>;
+    campaigns : Map__904312358<Text, NewCampaignRecord__773509469>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__560604548<TrackingEvent__791218366>
+    trackingEvents : List__970266387<TrackingEvent__791218366>
+  };
+type NewActor__515961458 =
+  {
+    accounts : Map__904312358<Text, UserAccount__843964924>;
+    adminKeysState : AdminState__542284524;
+    campaignRecipients : Map__904312358<Text, [VerifiedAddress__112051349]>;
+    campaigns : Map__904312358<Text, CampaignRecord__974282667>;
+    creditLedger : List__970266387<CreditLedgerEntry__489297990>;
+    documentUploads : Map__904312358<Text, DocumentUpload__662607668>;
+    payments : Map__904312358<Text, PaymentRecord__1050070475>;
+    presetMeta : Map__904312358<Text, AudiencePreset__540346492>;
+    qrScans : List__970266387<QrScanEvent__205857800>;
+    referralCodes : Map__904312358<Text, Text>;
+    referralRewards : List__970266387<ReferralReward__120987050>;
+    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__112051349]>;
+    state : Counters__355208772;
+    trackingEvents : List__970266387<TrackingEvent__464851599>
   };
 type NewActor__58440520 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__222667396<Text, [VerifiedAddress__30019136]>;
-    campaigns : Map__222667396<Text, CampaignRecord__588274483>;
+    campaignRecipients : Map__904312358<Text, [VerifiedAddress__30019136]>;
+    campaigns : Map__904312358<Text, CampaignRecord__588274483>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__560604548<TrackingEvent__319664258>
+    trackingEvents : List__970266387<TrackingEvent__319664258>
   };
 type NewCampaignRecord__773509469 =
   {
@@ -111,18 +302,28 @@ type NewCampaignRecord__773509469 =
     var status : CampaignStatus__670227347;
     trackingId : ?Text
   };
-type Node__1000929467<K, V> =
-  {#internal : Internal__41346355<K, V>; #leaf : Leaf__712614010<K, V>};
+type Node__410026902<K, V> =
+  {#internal : Internal__1009030202<K, V>; #leaf : Leaf__668810236<K, V>};
 type OldActor__166002484 = {};
 type OldActor__36808326 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__222667396<Text, [VerifiedAddress__349001753]>;
-    campaigns : Map__222667396<Text, OldCampaignRecord__563143060>;
+    campaignRecipients : Map__904312358<Text, [VerifiedAddress__349001753]>;
+    campaigns : Map__904312358<Text, OldCampaignRecord__563143060>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__560604548<TrackingEvent__791218366>
+    trackingEvents : List__970266387<TrackingEvent__791218366>
   };
+type OldActor__765607141 =
+  {
+    adminKeysState :
+      {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
+    campaignRecipients : Map__904312358<Text, [VerifiedAddress__112051349]>;
+    campaigns : Map__904312358<Text, OldCampaignRecord__771780174>;
+    state : {var nextCampaignId : Nat};
+    trackingEvents : List__970266387<OldTrackingEvent__584112003>
+  };
+type OldAudienceType__742654545 = {#CSV; #Map};
 type OldCampaignRecord__563143060 =
   {
     audienceType : AudienceType__675991603;
@@ -133,6 +334,110 @@ type OldCampaignRecord__563143060 =
     recipientCount : Nat;
     var status : CampaignStatus__670227347;
     trackingId : ?Text
+  };
+type OldCampaignRecord__771780174 =
+  {
+    audienceType : OldAudienceType__742654545;
+    var canvasState : ?OldCanvasState__71821954;
+    createdAt : Int;
+    designTemplateId : ?Text;
+    id : Text;
+    product : ProductSelection__287238961;
+    recipientCount : Nat;
+    var status : CampaignStatus__671304151;
+    trackingId : ?Text
+  };
+type OldCanvasState__71821954 =
+  {
+    backgroundImageUrl : ?Text;
+    logos : [OldLogoState__30076267];
+    qrCode : ?OldQrCodeState__870232866;
+    textBlocks : [OldTextBlockState__847676214]
+  };
+type OldLogoState__30076267 =
+  {
+    height : Float;
+    id : Text;
+    url : Text;
+    width : Float;
+    x : Float;
+    y : Float
+  };
+type OldQrCodeState__870232866 =
+  {id : Text; size : Float; url : Text; x : Float; y : Float};
+type OldTextBlockState__847676214 =
+  {
+    color : Text;
+    fontSize : Float;
+    height : Float;
+    id : Text;
+    text : Text;
+    width : Float;
+    x : Float;
+    y : Float
+  };
+type OldTrackingEvent__584112003 =
+  {campaignId : Text; eventType : Text; lobEventId : Text; timestamp : Int};
+type PaymentPurpose__273801835 = {#CampaignOrder; #CreditPack; #Subscription};
+type PaymentPurpose__405022687 = {#CampaignOrder; #CreditPack; #Subscription};
+type PaymentRecord__1050070475 =
+  {
+    amountCents : Nat;
+    var confirmedAt : ?Int;
+    createdAt : Int;
+    creditPack : ?CreditPack__259775564;
+    paymentIntentId : Text;
+    purpose : PaymentPurpose__273801835;
+    reference : ?Text;
+    sandbox : Bool;
+    var state : PaymentState__1025235690;
+    userId : Text
+  };
+type PaymentRecord__75058045 =
+  {
+    amountCents : Nat;
+    var confirmedAt : ?Int;
+    createdAt : Int;
+    creditPack : ?CreditPack__590267947;
+    paymentIntentId : Text;
+    purpose : PaymentPurpose__405022687;
+    reference : ?Text;
+    sandbox : Bool;
+    var state : PaymentState__898489416;
+    userId : Text
+  };
+type PaymentState__1025235690 = {#Created; #Failed; #Succeeded; #Waived};
+type PaymentState__898489416 = {#Created; #Failed; #Succeeded; #Waived};
+type PaymentStatus__1009151203 =
+  {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
+type PaymentStatus__71296514 = {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
+type PrintSpec__214838956 =
+  {
+    color : Text;
+    documentClass : Text;
+    envelope : ?Text;
+    layout : Text;
+    mailClass : MailClass__536824682;
+    paperType : Text;
+    printOption : Text;
+    productionTime : Text
+  };
+type PrintSpec__266434925 =
+  {
+    color : Text;
+    documentClass : Text;
+    envelope : ?Text;
+    layout : Text;
+    mailClass : MailClass__374367456;
+    paperType : Text;
+    printOption : Text;
+    productionTime : Text
+  };
+type ProductSelection__287238961 =
+  {
+    colorOption : ?Text;
+    layoutVariant : Text;
+    productType : ProductType__480668803
   };
 type ProductSelection__392936132 =
   {
@@ -154,24 +459,120 @@ type ProductSelection__874213769 =
   };
 type ProductType__410063292 =
   {#Booklet; #Letter; #Postcard; #SelfMailer; #SnapPack};
+type ProductType__480668803 =
+  {#Booklet; #Letter; #Postcard; #SelfMailer; #SnapPack};
 type ProductType__83492315 =
   {#Booklet; #Letter; #Postcard; #SelfMailer; #SnapPack};
 type ProductType__905369149 =
   {#Booklet; #Letter; #Postcard; #SelfMailer; #SnapPack};
+type ProductionStatus__240898271 =
+  {
+    #AddressListReady;
+    #AwaitingPayment;
+    #DocumentUploaded;
+    #Draft;
+    #Failed;
+    #JobCreated;
+    #ReadyToDispatch;
+    #Submitted
+  };
+type ProductionStatus__330867495 =
+  {
+    #AddressListReady;
+    #AwaitingPayment;
+    #DocumentUploaded;
+    #Draft;
+    #Failed;
+    #JobCreated;
+    #ReadyToDispatch;
+    #Submitted
+  };
+type QrCodeState__275489691 =
+  {
+    background : Text;
+    caption : ?Text;
+    foreground : Text;
+    id : Text;
+    mode : QrMode__314371017;
+    size : Float;
+    url : Text;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
 type QrCodeState__604549760 =
-  {id : Text; size : Float; url : Text; x : Float; y : Float};
+  {
+    background : Text;
+    caption : ?Text;
+    foreground : Text;
+    id : Text;
+    mode : QrMode__66943053;
+    size : Float;
+    url : Text;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
 type QrCodeState__967073526 =
   {id : Text; size : Float; url : Text; x : Float; y : Float};
+type QrMode__314371017 = {#DynamicTracking; #StaticUrl};
+type QrMode__66943053 = {#DynamicTracking; #StaticUrl};
+type QrScanEvent__175856408 =
+  {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
+type QrScanEvent__205857800 =
+  {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
+type ReferralReward__120987050 =
+  {
+    amountCents : Nat;
+    id : Nat;
+    paymentIntentId : Text;
+    refereeId : Text;
+    referrerId : Text;
+    timestamp : Int
+  };
+type ReferralReward__924831799 =
+  {
+    amountCents : Nat;
+    id : Nat;
+    paymentIntentId : Text;
+    refereeId : Text;
+    referrerId : Text;
+    timestamp : Int
+  };
+type ReturnAddress__316142976 =
+  {
+    address_line1 : Text;
+    address_line2 : ?Text;
+    city : Text;
+    name : Text;
+    organization : ?Text;
+    state : Text;
+    zip_code : Text
+  };
+type ReturnAddress__641606568 =
+  {
+    address_line1 : Text;
+    address_line2 : ?Text;
+    city : Text;
+    name : Text;
+    organization : ?Text;
+    state : Text;
+    zip_code : Text
+  };
 type TextBlockState__197637459 =
   {
+    align : Text;
     color : Text;
+    fontFamily : Text;
     fontSize : Float;
+    fontWeight : Nat;
     height : Float;
     id : Text;
     text : Text;
     width : Float;
     x : Float;
-    y : Float
+    y : Float;
+    zIndex : Nat
   };
 type TextBlockState__465211617 =
   {
@@ -184,12 +585,93 @@ type TextBlockState__465211617 =
     x : Float;
     y : Float
   };
+type TextBlockState__964234570 =
+  {
+    align : Text;
+    color : Text;
+    fontFamily : Text;
+    fontSize : Float;
+    fontWeight : Nat;
+    height : Float;
+    id : Text;
+    text : Text;
+    width : Float;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
 type TrackingEvent__319664258 =
   {campaignId : Text; eventType : Text; lobEventId : Text; timestamp : Int};
+type TrackingEvent__464851599 =
+  {
+    campaignId : Text;
+    detail : ?Text;
+    eventType : Text;
+    id : Nat;
+    providerEventId : Text;
+    source : TrackingSource__717050023;
+    status : CampaignStatus__671304151;
+    timestamp : Int
+  };
 type TrackingEvent__608626749 =
-  {campaignId : Text; eventType : Text; lobEventId : Text; timestamp : Int};
+  {
+    campaignId : Text;
+    detail : ?Text;
+    eventType : Text;
+    id : Nat;
+    providerEventId : Text;
+    source : TrackingSource__638600774;
+    status : CampaignStatus__60122010;
+    timestamp : Int
+  };
 type TrackingEvent__791218366 =
   {campaignId : Text; eventType : Text; lobEventId : Text; timestamp : Int};
+type TrackingSource__638600774 = {#Manual; #Poll; #System; #Webhook};
+type TrackingSource__717050023 = {#Manual; #Poll; #System; #Webhook};
+type UserAccount__843964924 =
+  {
+    createdAt : Int;
+    var creditBalance : Nat;
+    var email : Text;
+    var firstPaymentAt : ?Int;
+    id : Text;
+    var lastMonthlyGrantAt : Int;
+    var referralCode : Text;
+    var referralCount : Nat;
+    var referralCreditsEarned : Nat;
+    var referralCreditsRedeemed : Nat;
+    var referredBy : ?Text;
+    var subscriptionActive : Bool;
+    var subscriptionRenewsAt : Int;
+    var updatedAt : Int
+  };
+type UserAccount__868819829 =
+  {
+    createdAt : Int;
+    var creditBalance : Nat;
+    var email : Text;
+    var firstPaymentAt : ?Int;
+    id : Text;
+    var lastMonthlyGrantAt : Int;
+    var referralCode : Text;
+    var referralCount : Nat;
+    var referralCreditsEarned : Nat;
+    var referralCreditsRedeemed : Nat;
+    var referredBy : ?Text;
+    var subscriptionActive : Bool;
+    var subscriptionRenewsAt : Int;
+    var updatedAt : Int
+  };
+type VerifiedAddress__112051349 =
+  {
+    address_line1 : Text;
+    address_line2 : ?Text;
+    city : Text;
+    name : Text;
+    state : Text;
+    zip_code : Text;
+    zip_plus4 : ?Text
+  };
 type VerifiedAddress__30019136 =
   {
     address_line1 : Text;
@@ -223,26 +705,93 @@ type VerifiedAddress__70652957 =
 {
   "20260604_000000_Init" : OldActor__166002484 -> NewActor__58440520;
   "20260604_120000_AddCanvasState" :
-    (old : OldActor__36808326) -> NewActor__1020670674
+    (old : OldActor__36808326) -> NewActor__1020670674;
+  "20260919_000000_EZmailoutClick2Mail" :
+    (old : OldActor__765607141) -> NewActor__515961458
 }
 actor  {
+  stable accounts :
+    {
+      var root : Node__410026902<Text, UserAccount__868819829>;
+      var size : Nat__290648668
+    };
   stable adminKeysState :
-    {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
+    {
+      var adminPrincipal : ?Text;
+      var click2mailEnvironment : Click2MailEnvironment__697158736;
+      var click2mailPassword : ?Text;
+      var click2mailUsername : ?Text;
+      var openAiKey : ?Text;
+      var outcallProxyUrl : ?Text;
+      var resendKey : ?Text;
+      var sandboxCheckout : Bool;
+      var stripePublishableKey : ?Text;
+      var stripeSecretKey : ?Text;
+      var webhookSecret : ?Text
+    };
   stable campaignRecipients :
     {
-      var root : Node__1000929467<Text, [VerifiedAddress__70652957]>;
-      var size : Nat__1040412405
+      var root : Node__410026902<Text, [VerifiedAddress__70652957]>;
+      var size : Nat__290648668
     };
   stable campaigns :
     {
-      var root : Node__1000929467<Text, CampaignRecord__748290426>;
-      var size : Nat__1040412405
+      var root : Node__410026902<Text, CampaignRecord__748290426>;
+      var size : Nat__290648668
     };
-  stable state : {var nextCampaignId : Nat};
+  stable creditLedger :
+    {
+      var blockIndex : Nat__290648668;
+      var blocks : [var [var ?CreditLedgerEntry__72746892]];
+      var elementIndex : Nat__290648668
+    };
+  stable documentUploads :
+    {
+      var root : Node__410026902<Text, DocumentUpload__974961311>;
+      var size : Nat__290648668
+    };
+  stable payments :
+    {
+      var root : Node__410026902<Text, PaymentRecord__75058045>;
+      var size : Nat__290648668
+    };
+  stable presetMeta :
+    {
+      var root : Node__410026902<Text, AudiencePreset__991566103>;
+      var size : Nat__290648668
+    };
+  stable qrScans :
+    {
+      var blockIndex : Nat__290648668;
+      var blocks : [var [var ?QrScanEvent__175856408]];
+      var elementIndex : Nat__290648668
+    };
+  stable referralCodes :
+    {var root : Node__410026902<Text, Text>; var size : Nat__290648668};
+  stable referralRewards :
+    {
+      var blockIndex : Nat__290648668;
+      var blocks : [var [var ?ReferralReward__924831799]];
+      var elementIndex : Nat__290648668
+    };
+  stable savedAudiencePresets :
+    {
+      var root : Node__410026902<Text, [VerifiedAddress__70652957]>;
+      var size : Nat__290648668
+    };
+  stable state :
+    {
+      var nextCampaignId : Nat;
+      var nextEventId : Nat;
+      var nextLedgerId : Nat;
+      var nextPaymentId : Nat;
+      var nextPresetId : Nat;
+      var nextRewardId : Nat
+    };
   stable trackingEvents :
     {
-      var blockIndex : Nat__1040412405;
+      var blockIndex : Nat__290648668;
       var blocks : [var [var ?TrackingEvent__608626749]];
-      var elementIndex : Nat__1040412405
+      var elementIndex : Nat__290648668
     }
 };

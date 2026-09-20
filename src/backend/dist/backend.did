@@ -9,6 +9,13 @@ type http_header =
    name: text;
    value: text;
  };
+type WebhookResult = 
+ record {
+   campaignId: opt text;
+   error: opt text;
+   ok: bool;
+   status: opt CampaignStatus;
+ };
 type VerifiedAddress = 
  record {
    address_line1: text;
@@ -18,6 +25,33 @@ type VerifiedAddress =
    state: text;
    zip_code: text;
    zip_plus4: opt text;
+ };
+type VerificationBatchResult = 
+ record {
+   addressListId: opt text;
+   error: opt text;
+   invalidCount: nat;
+   ok: bool;
+   results: vec AddressVerificationResult;
+   validCount: nat;
+ };
+type UserAccountShared = 
+ record {
+   createdAt: int;
+   creditBalance: nat;
+   email: text;
+   firstPaymentAt: opt int;
+   freeMonthsAvailable: nat;
+   id: text;
+   referralCode: text;
+   referralCount: nat;
+   referralCreditsEarned: nat;
+   referralCreditsRedeemed: nat;
+   referralLink: text;
+   referredBy: opt text;
+   subscriptionActive: bool;
+   subscriptionRenewsAt: int;
+   updatedAt: int;
  };
 type TransformationOutput = 
  record {
@@ -30,31 +64,136 @@ type TransformationInput =
    context: blob;
    response: http_request_result;
  };
+type TrackingSource = 
+ variant {
+   Manual;
+   Poll;
+   System;
+   Webhook;
+ };
+type TrackingResolveResult = 
+ record {
+   campaignId: opt text;
+   destinationUrl: opt text;
+   ok: bool;
+   recipientId: opt text;
+ };
 type TrackingEvent = 
  record {
    campaignId: text;
+   detail: opt text;
    eventType: text;
-   lobEventId: text;
+   id: nat;
+   providerEventId: text;
+   source: TrackingSource;
+   status: CampaignStatus;
    timestamp: int;
  };
 type TextBlockState = 
  record {
+   align: text;
    color: text;
+   fontFamily: text;
    fontSize: float64;
+   fontWeight: nat;
    height: float64;
    id: text;
    "text": text;
    width: float64;
    x: float64;
    y: float64;
+   zIndex: nat;
+ };
+type SyncResult = 
+ record {
+   error: opt text;
+   newEvents: nat;
+   ok: bool;
+   status: opt CampaignStatus;
+ };
+type ReturnAddress = 
+ record {
+   address_line1: text;
+   address_line2: opt text;
+   city: text;
+   name: text;
+   organization: opt text;
+   state: text;
+   zip_code: text;
+ };
+type ReferralStats = 
+ record {
+   freeMonthsAvailable: nat;
+   referralCode: text;
+   referralCount: nat;
+   referralCreditsEarned: nat;
+   referralCreditsRedeemed: nat;
+   referralLink: text;
+   rewards: vec ReferralReward;
+   subscriptionActive: bool;
+ };
+type ReferralReward = 
+ record {
+   amountCents: nat;
+   id: nat;
+   paymentIntentId: text;
+   refereeId: text;
+   referrerId: text;
+   timestamp: int;
+ };
+type QrScanStats = 
+ record {
+   recentScans: vec QrScanEvent;
+   totalScans: nat;
+   uniqueRecipients: nat;
+ };
+type QrScanEvent = 
+ record {
+   campaignId: text;
+   recipientId: text;
+   timestamp: int;
+   userAgent: opt text;
+ };
+type QrMode = 
+ variant {
+   DynamicTracking;
+   StaticUrl;
  };
 type QrCodeState = 
  record {
+   background: text;
+   caption: opt text;
+   foreground: text;
    id: text;
+   mode: QrMode;
    size: float64;
    url: text;
    x: float64;
    y: float64;
+   zIndex: nat;
+ };
+type PublicConfig = 
+ record {
+   click2mailConfigured: bool;
+   click2mailEnvironment: Click2MailEnvironment;
+   openAiConfigured: bool;
+   referralBaseUrl: text;
+   resendConfigured: bool;
+   sandboxCheckout: bool;
+   stripeConfigured: bool;
+   stripePublishableKey: opt text;
+   trackingBaseUrl: text;
+ };
+type ProductionStatus = 
+ variant {
+   AddressListReady;
+   AwaitingPayment;
+   DocumentUploaded;
+   Draft;
+   Failed;
+   JobCreated;
+   ReadyToDispatch;
+   Submitted;
  };
 type ProductType = 
  variant {
@@ -70,6 +209,73 @@ type ProductSelection =
    layoutVariant: text;
    productType: ProductType;
  };
+type PrintSpec = 
+ record {
+   color: text;
+   documentClass: text;
+   envelope: opt text;
+   layout: text;
+   mailClass: MailClass;
+   paperType: text;
+   printOption: text;
+   productionTime: text;
+ };
+type PricingRow = 
+ record {
+   baseCostCents: nat;
+   displayName: text;
+   heightInches: float64;
+   layoutVariant: text;
+   marginCents: nat;
+   marginPercent: nat;
+   printSpec: PrintSpec;
+   productType: ProductType;
+   retailPriceCents: nat;
+   widthInches: float64;
+ };
+type PresetResult = 
+ record {
+   error: opt text;
+   ok: bool;
+   presetId: opt text;
+ };
+type PaymentStatus = 
+ variant {
+   Paid;
+   Pending;
+   Refunded;
+   Unpaid;
+   Waived;
+ };
+type PaymentState = 
+ variant {
+   Created;
+   Failed;
+   Succeeded;
+   Waived;
+ };
+type PaymentPurpose = 
+ variant {
+   CampaignOrder;
+   CreditPack;
+   Subscription;
+ };
+type PaymentIntentResult = 
+ record {
+   amountCents: opt nat;
+   clientSecret: opt text;
+   error: opt text;
+   ok: bool;
+   paymentIntentId: opt text;
+   publishableKey: opt text;
+   sandbox: bool;
+   waived: bool;
+ };
+type MailClass = 
+ variant {
+   FirstClass;
+   MarketingMail;
+ };
 type LogoState = 
  record {
    height: float64;
@@ -78,12 +284,126 @@ type LogoState =
    width: float64;
    x: float64;
    y: float64;
+   zIndex: nat;
+ };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   upgrade: opt bool;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
+type DocumentUploadStatus = 
+ record {
+   campaignId: text;
+   complete: bool;
+   fileName: text;
+   mimeType: text;
+   receivedChunks: nat;
+   totalBytes: nat;
+   totalChunks: nat;
+ };
+type DispatchResult = 
+ record {
+   addressListId: opt text;
+   documentId: opt text;
+   error: opt text;
+   jobId: opt text;
+   ok: bool;
+   productionStatus: opt ProductionStatus;
+ };
+type CreditResult = 
+ record {
+   balance: opt nat;
+   error: opt text;
+   ok: bool;
+ };
+type CreditPackInfo = 
+ record {
+   bonusCredits: nat;
+   credits: nat;
+   name: text;
+   pack: CreditPack;
+   priceCents: nat;
+ };
+type CreditPack = 
+ variant {
+   Agency;
+   Growth;
+   Starter;
+ };
+type CreditLedgerEntry = 
+ record {
+   balanceAfter: nat;
+   delta: int;
+   id: nat;
+   reason: text;
+   reference: opt text;
+   timestamp: int;
+   userId: text;
+ };
+type CreateCampaignResult = 
+ record {
+   campaignId: opt text;
+   error: opt text;
+   ok: bool;
+   totalCents: opt nat;
+   unitPriceCents: opt nat;
+ };
+type CreateCampaignInput = 
+ record {
+   audienceType: AudienceType;
+   canvasState: opt CanvasState;
+   designTemplateId: opt text;
+   name: text;
+   product: ProductSelection;
+   qrDestinationUrl: opt text;
+   recipientCount: nat;
+   recipients: vec VerifiedAddress;
+   returnAddress: opt ReturnAddress;
+   sourcePresetId: opt text;
+ };
+type ConfirmPaymentResult = 
+ record {
+   campaignId: opt text;
+   creditBalance: opt nat;
+   error: opt text;
+   ok: bool;
+   referralRewardApplied: bool;
+   state: opt PaymentState;
+   subscriptionActive: opt bool;
+ };
+type Click2MailEnvironment = 
+ variant {
+   Production;
+   Staging;
  };
 type CanvasState = 
  record {
+   back: CanvasSide;
+   designPpi: nat;
+   front: CanvasSide;
+   heightInches: float64;
+   widthInches: float64;
+ };
+type CanvasSide = 
+ record {
+   backgroundColor: text;
    backgroundImageUrl: opt text;
    logos: vec LogoState;
-   qrCode: opt QrCodeState;
+   qrCodes: vec QrCodeState;
    textBlocks: vec TextBlockState;
  };
 type CampaignStatus = 
@@ -97,25 +417,124 @@ type CampaignStatus =
 type CampaignRecordShared = 
  record {
    audienceType: AudienceType;
+   baseCostCents: nat;
+   c2mAddressListId: opt text;
+   c2mDocumentId: opt text;
+   c2mJobId: opt text;
    canvasState: opt CanvasState;
    createdAt: int;
    designTemplateId: opt text;
    id: text;
+   lastError: opt text;
+   name: text;
+   ownerId: text;
+   paymentIntentId: opt text;
+   paymentStatus: PaymentStatus;
+   printSpec: PrintSpec;
    product: ProductSelection;
+   productionStatus: ProductionStatus;
+   qrDestinationUrl: opt text;
+   qrScanCount: nat;
    recipientCount: nat;
+   returnAddress: opt ReturnAddress;
+   sourcePresetId: opt text;
    status: CampaignStatus;
-   trackingId: opt text;
+   totalAmountChargedCents: nat;
+   unitPriceCents: nat;
+   updatedAt: int;
  };
 type AudienceType = 
  variant {
-   CSV;
-   Map;
+   CsvUpload;
+   GeoRadius;
+   SavedPreset;
  };
-type AdminKeys = 
+type AudiencePresetShared = 
  record {
-   lobKey: opt text;
+   createdAt: int;
+   id: text;
+   name: text;
+   ownerId: text;
+   recipientCount: nat;
+   sourceCampaignId: opt text;
+   updatedAt: int;
+ };
+type ApiResult = 
+ record {
+   error: opt text;
+   ok: bool;
+ };
+type AiPricing = 
+ record {
+   copyCredits: nat;
+   creditValueCents: nat;
+   hdImageCredits: nat;
+   monthlyAllowance: nat;
+   packs: vec CreditPackInfo;
+   squareImageCredits: nat;
+   wideImageCredits: nat;
+ };
+type AiImageSize = 
+ variant {
+   Square1024;
+   Wide1792;
+   WideHd1792;
+ };
+type AiImageResult = 
+ record {
+   creditBalance: opt nat;
+   creditsCharged: nat;
+   error: opt text;
+   imageUrl: opt text;
+   ok: bool;
+   revisedPrompt: opt text;
+ };
+type AiCopyResult = 
+ record {
+   bullets: vec text;
+   creditBalance: opt nat;
+   creditsCharged: nat;
+   ctas: vec text;
+   error: opt text;
+   headlines: vec text;
+   ok: bool;
+ };
+type AiCopyInput = 
+ record {
+   businessName: text;
+   callToAction: text;
+   industry: text;
+   offer: text;
+   tone: opt text;
+ };
+type AdminKeysView = 
+ record {
+   adminPrincipal: opt text;
+   callerIsAdmin: bool;
+   click2mailEnvironment: Click2MailEnvironment;
+   click2mailPasswordMasked: opt text;
+   click2mailUsername: opt text;
+   openAiKeyMasked: opt text;
+   outcallProxyUrl: opt text;
+   resendKeyMasked: opt text;
+   sandboxCheckout: bool;
+   stripePublishableKey: opt text;
+   stripeSecretKeyMasked: opt text;
+   webhookPath: text;
+   webhookSecretMasked: opt text;
+ };
+type AdminKeysInput = 
+ record {
+   click2mailEnvironment: opt Click2MailEnvironment;
+   click2mailPassword: opt text;
+   click2mailUsername: opt text;
+   openAiKey: opt text;
+   outcallProxyUrl: opt text;
    resendKey: opt text;
-   stripeKey: opt text;
+   sandboxCheckout: opt bool;
+   stripePublishableKey: opt text;
+   stripeSecretKey: opt text;
+   webhookSecret: opt text;
  };
 type AddressVerificationResult = 
  record {
@@ -133,23 +552,64 @@ type AddressInput =
    state: text;
    zip_code: text;
  };
+type AccountResult = 
+ record {
+   account: opt UserAccountShared;
+   error: opt text;
+   ok: bool;
+ };
+/// EZmailout backend canister: direct mail campaigns fulfilled through the
+/// Click2Mail REST API, AI credit ledger, Stripe billing and referral rewards.
 service : {
-  createCampaign: (product: ProductSelection, recipientCount: nat,
-   audienceType: AudienceType) -> (text);
+  applyReferralReward: (paymentIntentId: text) -> (ApiResult);
+  confirmPayment: (paymentIntentId: text) -> (ConfirmPaymentResult);
+  createCampaign: (input: CreateCampaignInput) -> (CreateCampaignResult);
+  createPaymentIntent: (purpose: PaymentPurpose, reference: opt text, pack:
+   opt CreditPack) -> (PaymentIntentResult);
+  deductAiCredits: (costCredits: nat, reason: text) -> (CreditResult);
+  deletePreset: (presetId: text) -> (ApiResult);
+  dispatchClick2MailJob: (campaignId: text) -> (DispatchResult);
+  ensureAccount: (referralCode: opt text, email: opt text) -> (AccountResult);
+  executeClick2MailVerification: (addresses: vec AddressInput) ->
+   (VerificationBatchResult);
   exportCampaignRecipients: (campaignId: text) -> (opt text) query;
-  fireLobOutcall: (campaignId: text, recipientId: text, lobKey: text) ->
-   (text);
-  getAdminKeys: () -> (AdminKeys);
+  generateAiCopy: (input: AiCopyInput) -> (AiCopyResult);
+  generateAiImage: (prompt: text, size: AiImageSize) -> (AiImageResult);
+  getAdminKeys: () -> (AdminKeysView) query;
+  getAiPricing: () -> (AiPricing) query;
   getCampaign: (id: text) -> (opt CampaignRecordShared) query;
+  getCampaignRecipients: (campaignId: text) -> (vec VerifiedAddress) query;
   getCampaigns: () -> (vec CampaignRecordShared) query;
   getCanvasState: (campaignId: text) -> (opt CanvasState) query;
+  getCreditLedger: () -> (vec CreditLedgerEntry) query;
+  getDocumentUploadStatus: (campaignId: text) ->
+   (opt DocumentUploadStatus) query;
+  getMyAccount: () -> (opt UserAccountShared) query;
+  getPresetAddresses: (presetId: text) -> (vec VerifiedAddress) query;
+  getPricingLedger: () -> (vec PricingRow) query;
+  getPublicConfig: () -> (PublicConfig) query;
+  getQrScanStats: (campaignId: text) -> (QrScanStats) query;
+  getReferralStats: () -> (opt ReferralStats) query;
   getTrackingEvents: (campaignId: text) -> (vec TrackingEvent) query;
-  handleLobWebhook: (payload: text) -> (bool);
-  saveAdminKeys: (keys: AdminKeys) -> (bool);
+  handleDeliveryWebhook: (secret: text, payload: text) -> (WebhookResult);
+  http_request: (req: HttpRequest) -> (HttpResponse) query;
+  http_request_update: (req: HttpRequest) -> (HttpResponse);
+  listPresets: () -> (vec AudiencePresetShared) query;
+  pollActiveTracking: () -> (nat);
+  resolveTrackingLink: (code: text, userAgent: opt text) ->
+   (TrackingResolveResult);
+  saveAdminKeys: (keys: AdminKeysInput) -> (ApiResult);
   saveCanvasState: (campaignId: text, canvas: CanvasState) -> (bool);
+  savePreset: (name: text, addresses: vec VerifiedAddress, sourceCampaignId:
+   opt text) -> (PresetResult);
+  syncClick2MailTracking: (campaignId: text) -> (SyncResult);
+  /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   transform: (input: TransformationInput) -> (TransformationOutput) query;
-  updateCampaignStatus: (id: text, status: CampaignStatus, lobEventId: 
+  updateAccountEmail: (email: text) -> (ApiResult);
+  updateCampaignStatus: (id: text, status: CampaignStatus, providerEventId:
    text, timestamp: int) -> (bool);
-  verifyAddresses: (addresses: vec AddressInput) ->
-   (vec AddressVerificationResult);
+  updatePreset: (presetId: text, name: text, addresses:
+   vec VerifiedAddress) -> (ApiResult);
+  uploadDocumentChunk: (campaignId: text, chunkIndex: nat, totalChunks: 
+   nat, mimeType: text, fileName: text, data: blob) -> (ApiResult);
 }

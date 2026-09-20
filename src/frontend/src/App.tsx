@@ -7,6 +7,12 @@ import { Step4ReviewLaunch } from "@/components/wizard/Step4ReviewLaunch";
 import { AdminPage } from "@/pages/AdminPage";
 import { CampaignDetailPage } from "@/pages/CampaignDetailPage";
 import { CampaignsPage } from "@/pages/CampaignsPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+import { ReferralLandingPage } from "@/pages/ReferralLandingPage";
+import { StoreFront } from "@/pages/StoreFront";
+import { TemplatesPage } from "@/pages/Templates";
+import { TrackRedirectPage } from "@/pages/TrackRedirectPage";
 import { useWizardStore } from "@/store/wizard";
 import {
   Outlet,
@@ -15,27 +21,9 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { StoreFront } from "./pages/StoreFront";
-import { TemplatesPage } from "./pages/Templates";
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="flex flex-1 items-center justify-center bg-background px-4 py-20">
-      <div className="text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          {title}
-        </h1>
-        <p className="mt-3 text-muted-foreground">
-          This page is under construction.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function WizardPage() {
   const currentStep = useWizardStore((s) => s.currentStep);
-
   return (
     <WizardLayout currentStep={currentStep}>
       {currentStep === 1 && <Step1ProductCatalog />}
@@ -46,69 +34,73 @@ function WizardPage() {
   );
 }
 
-const RootLayout = () => (
-  <Layout>
-    <Outlet />
-  </Layout>
-);
-
 const rootRoute = createRootRoute({
-  component: RootLayout,
+  component: () => (
+    <Layout>
+      <Outlet />
+    </Layout>
+  ),
 });
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  component: StoreFront,
-});
+const routes = [
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/",
+    component: StoreFront,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/wizard",
+    component: WizardPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/templates",
+    component: TemplatesPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/campaigns",
+    component: CampaignsPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/campaigns/$campaignId",
+    component: CampaignDetailPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/dashboard",
+    component: DashboardPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/admin",
+    component: AdminPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/track/$code",
+    component: TrackRedirectPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/t/$code",
+    component: TrackRedirectPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/ref/$code",
+    component: ReferralLandingPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "*",
+    component: NotFoundPage,
+  }),
+];
 
-const wizardRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/wizard",
-  component: WizardPage,
-});
-
-const templatesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/templates",
-  component: TemplatesPage,
-});
-
-const campaignsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/campaigns",
-  component: CampaignsPage,
-});
-
-const campaignDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/campaigns/$campaignId",
-  component: CampaignDetailPage,
-});
-
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: AdminPage,
-});
-
-const notFoundRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "*",
-  component: () => <PlaceholderPage title="404 — Page Not Found" />,
-});
-
-const routeTree = rootRoute.addChildren([
-  indexRoute,
-  wizardRoute,
-  templatesRoute,
-  campaignsRoute,
-  campaignDetailRoute,
-  adminRoute,
-  notFoundRoute,
-]);
-
-const router = createRouter({ routeTree });
+const router = createRouter({ routeTree: rootRoute.addChildren(routes) });
 
 export default function App() {
   return <RouterProvider router={router} />;

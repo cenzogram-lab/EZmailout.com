@@ -56,6 +56,21 @@ export default {
           4: "oklch(var(--chart-4))",
           5: "oklch(var(--chart-5))",
         },
+        navy: {
+          DEFAULT: "oklch(var(--navy) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground))",
+        },
+        ember: {
+          DEFAULT: "oklch(var(--ember) / <alpha-value>)",
+          foreground: "oklch(var(--accent-foreground))",
+        },
+        "emerald-brand": {
+          DEFAULT: "oklch(var(--emerald) / <alpha-value>)",
+          foreground: "oklch(0.98 0 0)",
+        },
+        slate: {
+          DEFAULT: "oklch(var(--slate) / <alpha-value>)",
+        },
         sidebar: {
           DEFAULT: "oklch(var(--sidebar))",
           foreground: "oklch(var(--sidebar-foreground))",
@@ -117,6 +132,10 @@ export default {
           from: { transform: "rotateY(0deg)" },
           to: { transform: "rotateY(25deg)" },
         },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +147,7 @@ export default {
         "card-float": "card-float 3s ease-in-out infinite",
         "card-rotate-left": "card-rotate-left 0.4s ease-out forwards",
         "card-rotate-right": "card-rotate-right 0.4s ease-out forwards",
+        "fade-up": "fade-up 0.5s ease-out both",
       },
     },
   },

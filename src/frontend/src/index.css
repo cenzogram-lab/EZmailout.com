@@ -1,3 +1,4 @@
+@import "leaflet/dist/leaflet.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -25,97 +26,102 @@
     --font-display: "Space Grotesk";
     --font-body: "DM Sans";
     --font-mono: "JetBrains Mono";
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --background: 0.14 0 0;
-    --foreground: 0.93 0 0;
-    --card: 0.19 0.01 250;
-    --card-foreground: 0.93 0 0;
-    --popover: 0.22 0.01 250;
-    --popover-foreground: 0.93 0 0;
+    /* EZmailout light identity: postal navy, slate surfaces, emerald + orange accents */
+    --background: 0.985 0.004 250;
+    --foreground: 0.22 0.05 262;
+    --card: 1 0 0;
+    --card-foreground: 0.22 0.05 262;
+    --popover: 1 0 0;
+    --popover-foreground: 0.22 0.05 262;
 
-    --primary: 0.6 0.18 262;
+    --primary: 0.33 0.09 262;
     --primary-foreground: 0.98 0 0;
 
-    --secondary: 0.25 0.01 250;
-    --secondary-foreground: 0.88 0 0;
-    --muted: 0.35 0.01 250;
-    --muted-foreground: 0.65 0 0;
+    --secondary: 0.95 0.012 250;
+    --secondary-foreground: 0.3 0.05 262;
+    --muted: 0.95 0.01 250;
+    --muted-foreground: 0.48 0.03 262;
 
-    --accent: 0.7 0.15 60;
-    --accent-foreground: 0.18 0 0;
+    --accent: 0.72 0.19 45;
+    --accent-foreground: 0.15 0.02 45;
 
-    --destructive: 0.65 0.19 22;
+    --destructive: 0.6 0.2 25;
     --destructive-foreground: 0.98 0 0;
 
-    --border: 0.28 0.01 250;
-    --input: 0.28 0.01 250;
-    --ring: 0.6 0.18 262;
+    --border: 0.9 0.01 250;
+    --input: 0.9 0.01 250;
+    --ring: 0.72 0.19 45;
 
-    --chart-1: 0.6 0.18 262;
-    --chart-2: 0.7 0.15 60;
-    --chart-3: 0.55 0.16 180;
-    --chart-4: 0.65 0.17 30;
-    --chart-5: 0.5 0.12 270;
+    --navy: 0.33 0.09 262;
+    --ember: 0.72 0.19 45;
+    --emerald: 0.66 0.17 160;
+    --slate: 0.5 0.03 262;
 
-    --sidebar: 0.19 0.01 250;
-    --sidebar-foreground: 0.93 0 0;
-    --sidebar-primary: 0.6 0.18 262;
+    --chart-1: 0.33 0.09 262;
+    --chart-2: 0.66 0.17 160;
+    --chart-3: 0.72 0.19 45;
+    --chart-4: 0.55 0.12 262;
+    --chart-5: 0.8 0.1 90;
+
+    --sidebar: 1 0 0;
+    --sidebar-foreground: 0.22 0.05 262;
+    --sidebar-primary: 0.33 0.09 262;
     --sidebar-primary-foreground: 0.98 0 0;
-    --sidebar-accent: 0.7 0.15 60;
-    --sidebar-accent-foreground: 0.18 0 0;
-    --sidebar-border: 0.28 0.01 250;
-    --sidebar-ring: 0.6 0.18 262;
+    --sidebar-accent: 0.95 0.01 250;
+    --sidebar-accent-foreground: 0.22 0.05 262;
+    --sidebar-border: 0.9 0.01 250;
+    --sidebar-ring: 0.72 0.19 45;
 
-    --perspective-distance: 1200px;
-    --animation-pipeline-duration: 3s;
-    --animation-pulse-duration: 2s;
+    --perspective-distance: 1400px;
   }
 
   .dark {
-    --background: 0.14 0 0;
-    --foreground: 0.93 0 0;
-    --card: 0.19 0.01 250;
-    --card-foreground: 0.93 0 0;
-    --popover: 0.22 0.01 250;
-    --popover-foreground: 0.93 0 0;
+    --background: 0.16 0.03 262;
+    --foreground: 0.95 0.01 250;
+    --card: 0.21 0.03 262;
+    --card-foreground: 0.95 0.01 250;
+    --popover: 0.23 0.03 262;
+    --popover-foreground: 0.95 0.01 250;
 
-    --primary: 0.6 0.18 262;
-    --primary-foreground: 0.98 0 0;
+    --primary: 0.78 0.08 262;
+    --primary-foreground: 0.16 0.03 262;
 
-    --secondary: 0.25 0.01 250;
-    --secondary-foreground: 0.88 0 0;
-    --muted: 0.35 0.01 250;
-    --muted-foreground: 0.65 0 0;
+    --secondary: 0.27 0.03 262;
+    --secondary-foreground: 0.92 0.01 250;
+    --muted: 0.27 0.03 262;
+    --muted-foreground: 0.72 0.02 250;
 
-    --accent: 0.7 0.15 60;
-    --accent-foreground: 0.18 0 0;
+    --accent: 0.74 0.18 45;
+    --accent-foreground: 0.15 0.02 45;
 
     --destructive: 0.65 0.19 22;
     --destructive-foreground: 0.98 0 0;
 
-    --border: 0.28 0.01 250;
-    --input: 0.28 0.01 250;
-    --ring: 0.6 0.18 262;
+    --border: 0.3 0.03 262;
+    --input: 0.3 0.03 262;
+    --ring: 0.74 0.18 45;
 
-    --chart-1: 0.6 0.18 262;
-    --chart-2: 0.7 0.15 60;
-    --chart-3: 0.55 0.16 180;
-    --chart-4: 0.65 0.17 30;
-    --chart-5: 0.5 0.12 270;
+    --navy: 0.78 0.08 262;
+    --ember: 0.74 0.18 45;
+    --emerald: 0.7 0.16 160;
+    --slate: 0.7 0.02 250;
 
-    --sidebar: 0.19 0.01 250;
-    --sidebar-foreground: 0.93 0 0;
-    --sidebar-primary: 0.6 0.18 262;
-    --sidebar-primary-foreground: 0.98 0 0;
-    --sidebar-accent: 0.7 0.15 60;
-    --sidebar-accent-foreground: 0.18 0 0;
-    --sidebar-border: 0.28 0.01 250;
-    --sidebar-ring: 0.6 0.18 262;
+    --chart-1: 0.78 0.08 262;
+    --chart-2: 0.7 0.16 160;
+    --chart-3: 0.74 0.18 45;
+    --chart-4: 0.6 0.1 262;
+    --chart-5: 0.8 0.1 90;
 
-    --perspective-distance: 1200px;
-    --animation-pipeline-duration: 3s;
-    --animation-pulse-duration: 2s;
+    --sidebar: 0.21 0.03 262;
+    --sidebar-foreground: 0.95 0.01 250;
+    --sidebar-primary: 0.78 0.08 262;
+    --sidebar-primary-foreground: 0.16 0.03 262;
+    --sidebar-accent: 0.27 0.03 262;
+    --sidebar-accent-foreground: 0.95 0.01 250;
+    --sidebar-border: 0.3 0.03 262;
+    --sidebar-ring: 0.74 0.18 45;
   }
 
   * {
@@ -124,15 +130,18 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+  ::selection {
+    background: oklch(var(--ember) / 0.3);
+  }
 }
 
 @layer utilities {
   .transition-smooth {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .perspective-3d {
-    perspective: var(--perspective-distance, 1200px);
+    perspective: var(--perspective-distance, 1400px);
   }
 
   .preserve-3d {
@@ -146,11 +155,43 @@
   .animate-card-float {
     animation: card-float 3s ease-in-out infinite;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .surface-glow {
+    box-shadow: 0 1px 2px oklch(var(--navy) / 0.06), 0 12px 40px -16px
+      oklch(var(--navy) / 0.25);
+  }
+
+  .text-emerald-brand {
+    color: oklch(var(--emerald));
+  }
+}
+
+.leaflet-container {
+  z-index: 0;
+  font-family: var(--font-body);
 }
 
 .monospace-accent {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
-  letter-spacing: 0.025em;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.checkerboard {
+  background-color: #f1f5f9;
+  background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
