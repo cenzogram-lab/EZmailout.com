@@ -57706,7 +57706,7 @@ function RadiusMap({ initialTarget, onUseAudience }) {
             /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
               "About ",
               formatNumber(estimate.densityPerSqMi),
-              " households per square mile. Click2Mail binds the exact carrier-route list when the job goes to production."
+              " households per square mile. This sizes and prices the drop; the pieces are mailed to the address list you attach next."
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs(
               Button,
@@ -57716,7 +57716,7 @@ function RadiusMap({ initialTarget, onUseAudience }) {
                 className: "w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90",
                 "data-ocid": "audience.map.use.button",
                 children: [
-                  "Use this audience",
+                  "Save estimate & add recipients",
                   /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "size-4" })
                 ]
               }
@@ -58186,14 +58186,11 @@ function Step2AudienceIntake() {
   const [selectedPreset, setSelectedPreset] = reactExports.useState(null);
   function applyMapAudience(target) {
     setGeoTarget(target);
-    setAudienceType("map");
-    setRecipientCount(target.estimatedHouseholds);
-    setVerifiedAddresses([]);
     setSourcePresetId(null);
     ue.success(
-      `Targeting about ${formatNumber(target.estimatedHouseholds)} households.`
+      `Saved a radius estimate of about ${formatNumber(target.estimatedHouseholds)} households. Add the recipient list for this area to continue.`
     );
-    setStep(3);
+    setTab("csv");
   }
   function applyCsvAudience(addresses) {
     if (addresses.length === 0) {
@@ -67428,12 +67425,19 @@ function computePreflight(input) {
       level: "info"
     }
   );
-  if (input.recipientCount > 0) {
+  if (input.verifiedCount > 0) {
     items.push({
       id: "recipients",
       label: "Recipients",
-      detail: input.audienceType === "map" ? `${formatNumber(input.recipientCount)} households (EDDM saturation estimate; Click2Mail binds the carrier-route list at production).` : `${formatNumber(input.recipientCount)} verified recipients.`,
+      detail: `${formatNumber(input.verifiedCount)} verified addresses ready for Click2Mail.`,
       level: "pass"
+    });
+  } else if (input.audienceType === "map" && input.recipientCount > 0) {
+    items.push({
+      id: "recipients",
+      label: "Recipients",
+      detail: `${formatNumber(input.recipientCount)} households is a radius estimate, not an address list. Go back to step 2 and upload a list or pick a saved preset for this area.`,
+      level: "fail"
     });
   } else {
     items.push({
@@ -67443,6 +67447,19 @@ function computePreflight(input) {
       level: "fail"
     });
   }
+  items.push(
+    input.isAuthenticated ? {
+      id: "account",
+      label: "Signed in",
+      detail: "The campaign and its payment are recorded against your account.",
+      level: "pass"
+    } : {
+      id: "account",
+      label: "Signed in",
+      detail: "Sign in with Internet Identity before launching so the campaign is created under your account.",
+      level: "fail"
+    }
+  );
   items.push(
     input.returnAddress ? {
       id: "return",
@@ -67461,7 +67478,7 @@ function computePreflight(input) {
       input.qrDestinationUrl.trim() ? {
         id: "qr",
         label: "Dynamic QR destination",
-        detail: `Scans redirect to ${input.qrDestinationUrl.trim()}.`,
+        detail: `Campaign scans redirect to ${input.qrDestinationUrl.trim()}.`,
         level: "pass"
       } : {
         id: "qr",
@@ -67902,6 +67919,7 @@ function Step4ReviewLaunch() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const audienceType = useWizardStore((s) => s.audienceType);
   const recipientCount = useWizardStore((s) => s.recipientCount);
+  const verifiedAddresses = useWizardStore((s) => s.verifiedAddresses);
   const geoTarget = useWizardStore((s) => s.geoTarget);
   const canvas2 = useWizardStore((s) => s.canvas);
   const returnAddress = useWizardStore((s) => s.returnAddress);
@@ -67914,6 +67932,7 @@ function Step4ReviewLaunch() {
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchClick2MailJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
+  const { isAuthenticated, login, isLoggingIn } = useAccountSync();
   const [machine, setMachine] = reactExports.useState({
     stage: "idle",
     failedStage: null,
@@ -67938,6 +67957,8 @@ function Step4ReviewLaunch() {
       preflight,
       audienceType,
       recipientCount,
+      verifiedCount: verifiedAddresses.length,
+      isAuthenticated,
       returnAddress,
       qrDestinationUrl
     }),
@@ -67948,6 +67969,8 @@ function Step4ReviewLaunch() {
       preflight,
       audienceType,
       recipientCount,
+      verifiedAddresses.length,
+      isAuthenticated,
       returnAddress,
       qrDestinationUrl
     ]
@@ -68000,7 +68023,7 @@ function Step4ReviewLaunch() {
           setCampaignId(id);
         }
         setMachine({ stage: "rendering", failedStage: null, error: null });
-        const doc = await buildPdf(`${id}_0`).catch((e) => {
+        const doc = await buildPdf(id).catch((e) => {
           throw new StageError(
             "rendering",
             messageOf(e, "The design could not be rendered to PDF.")
@@ -68379,6 +68402,22 @@ function Step4ReviewLaunch() {
               }
             ),
             machine.stage !== "paying" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-2", children: [
+              !isAuthenticated && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                Button,
+                {
+                  type: "button",
+                  size: "lg",
+                  variant: "outline",
+                  onClick: login,
+                  disabled: isLoggingIn,
+                  className: "w-full gap-2",
+                  "data-ocid": "review.sign_in.button",
+                  children: [
+                    isLoggingIn ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Fingerprint, { className: "size-4" }),
+                    "Sign in to launch"
+                  ]
+                }
+              ),
               machine.failedStage ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
                 Button,
                 {

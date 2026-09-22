@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { useAccountSync } from "@/hooks/use-account";
 import {
   useCreateCampaign,
   useDispatchClick2MailJob,
@@ -27,6 +28,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   FileImage,
+  Fingerprint,
   Loader2,
   PartyPopper,
   Receipt,
@@ -121,6 +123,7 @@ export function Step4ReviewLaunch() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const audienceType = useWizardStore((s) => s.audienceType);
   const recipientCount = useWizardStore((s) => s.recipientCount);
+  const verifiedAddresses = useWizardStore((s) => s.verifiedAddresses);
   const geoTarget = useWizardStore((s) => s.geoTarget);
   const canvas = useWizardStore((s) => s.canvas);
   const returnAddress = useWizardStore((s) => s.returnAddress);
@@ -134,6 +137,7 @@ export function Step4ReviewLaunch() {
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchClick2MailJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
+  const { isAuthenticated, login, isLoggingIn } = useAccountSync();
 
   const [machine, setMachine] = useState<Machine>({
     stage: "idle",
@@ -169,6 +173,8 @@ export function Step4ReviewLaunch() {
         preflight,
         audienceType,
         recipientCount,
+        verifiedCount: verifiedAddresses.length,
+        isAuthenticated,
         returnAddress,
         qrDestinationUrl,
       }),
@@ -179,6 +185,8 @@ export function Step4ReviewLaunch() {
       preflight,
       audienceType,
       recipientCount,
+      verifiedAddresses.length,
+      isAuthenticated,
       returnAddress,
       qrDestinationUrl,
     ],
@@ -239,7 +247,7 @@ export function Step4ReviewLaunch() {
 
         // 2. Render the print-ready PDF.
         setMachine({ stage: "rendering", failedStage: null, error: null });
-        const doc = await buildPdf(`${id}_0`).catch((e) => {
+        const doc = await buildPdf(id).catch((e) => {
           throw new StageError(
             "rendering",
             messageOf(e, "The design could not be rendered to PDF."),
@@ -672,6 +680,24 @@ export function Step4ReviewLaunch() {
 
               {machine.stage !== "paying" && (
                 <div className="flex flex-col gap-2">
+                  {!isAuthenticated && (
+                    <Button
+                      type="button"
+                      size="lg"
+                      variant="outline"
+                      onClick={login}
+                      disabled={isLoggingIn}
+                      className="w-full gap-2"
+                      data-ocid="review.sign_in.button"
+                    >
+                      {isLoggingIn ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Fingerprint className="size-4" />
+                      )}
+                      Sign in to launch
+                    </Button>
+                  )}
                   {machine.failedStage ? (
                     <Button
                       type="button"

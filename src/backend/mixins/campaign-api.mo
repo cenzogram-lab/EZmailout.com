@@ -46,11 +46,13 @@ mixin (
       case (?s) s;
       case null { return fail("Unknown layout variant: " # input.product.layoutVariant) };
     };
+    if (caller.isAnonymous()) { return fail("Sign in with Internet Identity before creating a campaign") };
     if (input.recipients.size() > maxRecipients) { return fail("A campaign may include at most 5,000 recipients") };
     let recipients = input.recipients.map(AddressLib.sanitizeVerified);
-    let count : Nat = if (input.recipientCount > recipients.size()) { input.recipientCount } else { recipients.size() };
-    if (count == 0) { return fail("At least one recipient is required") };
-    if (count > 100_000) { return fail("Recipient count exceeds the 100,000 per-campaign limit") };
+    // Billing and Click2Mail dispatch both key off the stored list, so a campaign
+    // is priced for exactly the addresses supplied — never an estimated count.
+    let count : Nat = recipients.size();
+    if (count == 0) { return fail("Add at least one verified recipient address before creating a campaign") };
     let id = CampaignLib.nextId(state);
     let record = CampaignLib.create(id, caller.toText(), input, printSpec, row.retailPriceCents, row.baseCostCents, count);
     campaigns.add(id, record);

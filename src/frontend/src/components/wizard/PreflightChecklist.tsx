@@ -36,6 +36,9 @@ export interface PreflightInput {
   preflight: PreflightRaster;
   audienceType: WizardAudienceType | null;
   recipientCount: number;
+  /** Verified addresses actually stored with the campaign and sent to Click2Mail. */
+  verifiedCount: number;
+  isAuthenticated: boolean;
   returnAddress: ReturnAddress | null;
   qrDestinationUrl: string;
 }
@@ -201,16 +204,21 @@ export function computePreflight(input: PreflightInput): PreflightReport {
         },
   );
 
-  // 5. Recipients
-  if (input.recipientCount > 0) {
+  // 5. Recipients — Click2Mail mails the stored address list, so an estimate
+  // alone can never be dispatched and must never reach checkout.
+  if (input.verifiedCount > 0) {
     items.push({
       id: "recipients",
       label: "Recipients",
-      detail:
-        input.audienceType === "map"
-          ? `${formatNumber(input.recipientCount)} households (EDDM saturation estimate; Click2Mail binds the carrier-route list at production).`
-          : `${formatNumber(input.recipientCount)} verified recipients.`,
+      detail: `${formatNumber(input.verifiedCount)} verified addresses ready for Click2Mail.`,
       level: "pass",
+    });
+  } else if (input.audienceType === "map" && input.recipientCount > 0) {
+    items.push({
+      id: "recipients",
+      label: "Recipients",
+      detail: `${formatNumber(input.recipientCount)} households is a radius estimate, not an address list. Go back to step 2 and upload a list or pick a saved preset for this area.`,
+      level: "fail",
     });
   } else {
     items.push({
@@ -221,7 +229,27 @@ export function computePreflight(input: PreflightInput): PreflightReport {
     });
   }
 
-  // 6. Return address
+  // 6. Account — the campaign is stored against the signed-in principal, and
+  // only that principal can pay for it afterwards.
+  items.push(
+    input.isAuthenticated
+      ? {
+          id: "account",
+          label: "Signed in",
+          detail:
+            "The campaign and its payment are recorded against your account.",
+          level: "pass",
+        }
+      : {
+          id: "account",
+          label: "Signed in",
+          detail:
+            "Sign in with Internet Identity before launching so the campaign is created under your account.",
+          level: "fail",
+        },
+  );
+
+  // 7. Return address
   items.push(
     input.returnAddress
       ? {
@@ -238,14 +266,14 @@ export function computePreflight(input: PreflightInput): PreflightReport {
         },
   );
 
-  // 7. Dynamic QR destination
+  // 8. Dynamic QR destination
   if (hasDynamicQr(input.canvas)) {
     items.push(
       input.qrDestinationUrl.trim()
         ? {
             id: "qr",
             label: "Dynamic QR destination",
-            detail: `Scans redirect to ${input.qrDestinationUrl.trim()}.`,
+            detail: `Campaign scans redirect to ${input.qrDestinationUrl.trim()}.`,
             level: "pass",
           }
         : {

@@ -24,6 +24,32 @@ mixin (
   transformFn : Http.TransformFn,
 ) {
   transient let maxAddresses : Nat = 5_000;
+  /// Rolling per-account verification quota (transient: a fresh window after upgrades).
+  transient let verifyWindowNs : Int = 3_600_000_000_000;
+  transient let verifyAddressesPerWindow : Nat = 25_000;
+  transient let verifyUsage = Map.empty<Text, { var windowStart : Int; var addresses : Nat }>();
+
+  /// Charges `count` addresses against the caller's hourly quota; false when exceeded.
+  private func chargeVerifyQuota(userId : Text, count : Nat) : Bool {
+    let now = Time.now();
+    switch (verifyUsage.get(userId)) {
+      case (?usage) {
+        if (now - usage.windowStart > verifyWindowNs) {
+          usage.windowStart := now;
+          usage.addresses := 0;
+        };
+        if (usage.addresses + count > verifyAddressesPerWindow) { return false };
+        usage.addresses += count;
+        true;
+      };
+      case null {
+        verifyUsage.add(userId, { var windowStart = now; var addresses = count });
+        true;
+      };
+    };
+  };
+
+  transient let signInRequired : Text = "Sign in with Internet Identity to use saved audience presets";
 
   private func invalidResult(addr : Common.AddressInput, msg : Text) : Common.AddressVerificationResult {
     { input = addr; verified = null; isValid = false; errorMessage = ?msg };
@@ -66,9 +92,12 @@ mixin (
 
   /// CASS-scrubs a batch through Click2Mail's address-list API (fail-closed).
   public shared ({ caller }) func executeClick2MailVerification(addresses : [Common.AddressInput]) : async Common.VerificationBatchResult {
-    ignore caller;
+    if (caller.isAnonymous()) { return batch(false, ?"Sign in with Internet Identity to verify addresses", [], null) };
     if (addresses.size() == 0) { return batch(false, ?"No addresses supplied", [], null) };
     if (addresses.size() > maxAddresses) { return batch(false, ?"Verify at most 5,000 addresses per batch", [], null) };
+    if (not chargeVerifyQuota(caller.toText(), addresses.size())) {
+      return batch(false, ?"Hourly address-verification limit reached for this account; try again later", [], null);
+    };
     let sanitized = addresses.map(AddressLib.sanitize);
     let results = VarArray.tabulate<Common.AddressVerificationResult>(sanitized.size(), func(i) {
       let a = sanitized[i];
@@ -150,6 +179,7 @@ mixin (
 
   /// Save an address list as a reusable named preset for the caller.
   public shared ({ caller }) func savePreset(name : Text, addresses : [Common.VerifiedAddress], sourceCampaignId : ?Text) : async Types.PresetResult {
+    if (caller.isAnonymous()) { return { ok = false; error = ?signInRequired; presetId = null } };
     if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address"; presetId = null } };
     if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses"; presetId = null } };
     let owner = caller.toText();
@@ -164,6 +194,7 @@ mixin (
 
   /// Replace a preset's name and pruned/extended address list.
   public shared ({ caller }) func updatePreset(presetId : Text, name : Text, addresses : [Common.VerifiedAddress]) : async Common.ApiResult {
+    if (caller.isAnonymous()) { return { ok = false; error = ?signInRequired } };
     let owner = caller.toText();
     switch (presetMeta.get(key(owner, presetId))) {
       case null { { ok = false; error = ?"Preset not found" } };
@@ -180,6 +211,7 @@ mixin (
   };
 
   public shared ({ caller }) func deletePreset(presetId : Text) : async Common.ApiResult {
+    if (caller.isAnonymous()) { return { ok = false; error = ?signInRequired } };
     let k = key(caller.toText(), presetId);
     if (not presetMeta.containsKey(k)) { return { ok = false; error = ?"Preset not found" } };
     presetMeta.remove(k);
@@ -188,6 +220,7 @@ mixin (
   };
 
   public shared query ({ caller }) func listPresets() : async [Types.AudiencePresetShared] {
+    if (caller.isAnonymous()) { return [] };
     let owner = caller.toText();
     let out = List.empty<Types.AudiencePresetShared>();
     for ((_, p) in presetMeta.entries()) {
@@ -197,6 +230,7 @@ mixin (
   };
 
   public shared query ({ caller }) func getPresetAddresses(presetId : Text) : async [Common.VerifiedAddress] {
+    if (caller.isAnonymous()) { return [] };
     switch (savedAudiencePresets.get(key(caller.toText(), presetId))) {
       case null [];
       case (?addrs) addrs;

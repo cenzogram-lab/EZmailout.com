@@ -377,8 +377,8 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
             </div>
             <p className="text-xs text-muted-foreground">
               About {formatNumber(estimate.densityPerSqMi)} households per
-              square mile. Click2Mail binds the exact carrier-route list when
-              the job goes to production.
+              square mile. This sizes and prices the drop; the pieces are mailed
+              to the address list you attach next.
             </p>
             <Button
               type="button"
@@ -386,7 +386,7 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
               className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
               data-ocid="audience.map.use.button"
             >
-              Use this audience
+              Save estimate &amp; add recipients
               <ArrowRight className="size-4" />
             </Button>
           </CardContent>

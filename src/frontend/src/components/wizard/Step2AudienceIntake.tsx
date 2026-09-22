@@ -37,15 +37,15 @@ export function Step2AudienceIntake() {
     useState<AudiencePresetShared | null>(null);
 
   function applyMapAudience(target: MapTarget) {
+    // The radius tool sizes and prices a drop, but Click2Mail mails the address
+    // list we store, so the estimate is kept and the user attaches real
+    // recipients before the campaign can be created or paid for.
     setGeoTarget(target);
-    setAudienceType("map");
-    setRecipientCount(target.estimatedHouseholds);
-    setVerifiedAddresses([]);
     setSourcePresetId(null);
     toast.success(
-      `Targeting about ${formatNumber(target.estimatedHouseholds)} households.`,
+      `Saved a radius estimate of about ${formatNumber(target.estimatedHouseholds)} households. Add the recipient list for this area to continue.`,
     );
-    setStep(3);
+    setTab("csv");
   }
 
   function applyCsvAudience(addresses: VerifiedAddress[]) {
