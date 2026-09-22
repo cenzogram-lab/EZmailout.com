@@ -61,7 +61,7 @@ module {
       row("letter_legal", "8.5 x 14 Legal Letter", #Letter, "Letter 8.5 x 14", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 61, 165, 8.5, 14.0),
       row("certified_self_mailer", "Certified Self Mailer 8.5 x 11", #CertifiedMail, "Certified Self Mailer 8.5 x 11", "Certified Self Mailer", #FirstClass, "White 24#", null, 645, 1290, 8.5, 11.0),
       row("certified_letter", "Certified Letter 8.5 x 11", #CertifiedMail, "Certified Letter 8.5 x 11", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 666, 1350, 8.5, 11.0),
-      row("certified_green_card", "Certified Self Mailer with Green Card Receipt", #CertifiedMail, "Certified Self Mailer With Green Card Receipt", "Certified Self Mailer", #FirstClass, "White 24#", null, 1104, 2200, 8.5, 11.0),
+      row("certified_green_card", "Certified Self Mailer with Green Card", #CertifiedMail, "Certified Self Mailer With Green Card", "Certified Self Mailer", #FirstClass, "White 24#", null, 1104, 2200, 8.5, 11.0),
       row("eddm_6.5x9", "EDDM® Mailer 6.5 x 9", #Eddm, "EDDM® Mailer 6.5 x 9", "EDDM Self Mailer", #MarketingMail, "White Matte with Gloss UV Finish", null, 15, 40, 6.5, 9.0),
       row("eddm_8.5x11", "EDDM® Mailer 8.5 x 11", #Eddm, "EDDM® Mailer 8.5 x 11", "EDDM Self Mailer", #MarketingMail, "White Matte with Gloss UV Finish", null, 16, 42, 8.5, 11.0),
       row("eddm_6.25x11", "EDDM® Mailer 6.25 x 11", #Eddm, "EDDM® Mailer 6.25 x 11", "EDDM Self Mailer", #MarketingMail, "White Matte with Gloss UV Finish", null, 17, 45, 6.25, 11.0),
@@ -77,8 +77,8 @@ module {
       row("reply_postcard_4.25x6", "4.25 x 6 Reply Postcard", #ReplyMail, "Reply Postcard 4.25 x 6", "Business Reply Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 64, 150, 4.25, 6.0),
       row("reply_letter", "8.5 x 11 Reply Letter", #ReplyMail, "Reply Letter 8.5 x 11", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 65, 160, 8.5, 11.0),
       row("8.5x11_booklet", "8.5 x 11 Booklet Self Mailer", #Booklet, "Booklet Self Mailer 8.5 x 11", "Saddle Stitched Booklet", #MarketingMail, "White Matte with Gloss UV Finish", null, 74, 210, 8.5, 11.0),
-      row("booklet_address_front", "8.5 x 11 Booklet · Address Front Page", #Booklet, "Booklet 8.5 x 11 - Address Front Page", "Address on Front Page", #MarketingMail, "White Matte with Gloss UV Finish", null, 162, 360, 8.5, 11.0),
-      row("booklet_address_back", "8.5 x 11 Booklet · Address Back Page", #Booklet, "Booklet 8.5 x 11 - Address Back Page", "Address on Back Page", #MarketingMail, "White Matte with Gloss UV Finish", null, 162, 360, 8.5, 11.0),
+      row("booklet_address_front", "8.5 x 11 Booklet · Address Front Page", #Booklet, "Booklet Address Front Page 8.5 x 11", "Address on Front Page", #MarketingMail, "White Matte with Gloss UV Finish", null, 162, 360, 8.5, 11.0),
+      row("booklet_address_back", "8.5 x 11 Booklet · Address Back Page", #Booklet, "Booklet Address Back Page 8.5 x 11", "Address on Back Page", #MarketingMail, "White Matte with Gloss UV Finish", null, 162, 360, 8.5, 11.0),
       row("card_stock_12x4.5", "12 x 4.5 Card Stock", #CardStock, "Card Stock Paper 12 x 4.5", "Double Sided Postcard", #MarketingMail, "Heavy Cardstock", null, 65, 165, 12.0, 4.5),
     ];
   };

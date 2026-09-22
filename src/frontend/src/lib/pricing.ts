@@ -118,9 +118,10 @@ function spec(input: SpecInput): ProductSpec {
 
 /**
  * The authoritative Click2Mail price matrix: 14 product families, 29 document
- * classes. Costs and retail prices are the rates supplied by the operator;
- * `marginPercent` is derived so any row outside the 100–140 % target band is
- * visible rather than silently re-priced (see `marginOutliers()`).
+ * classes. Costs and retail prices are the operator's rates and are final —
+ * the spread is deliberate retail positioning (standardised letter pricing,
+ * carrier cost absorbed on Priority Express to stay competitive, higher margin
+ * on self-mailers), so nothing here derives a price from a target band.
  *
  * Mirrored by `src/backend/lib/pricing.mo` — change both.
  */
@@ -283,8 +284,8 @@ export const PRICING_LEDGER: ProductSpec[] = [
   spec({
     id: "certified_green_card",
     category: "certified-mail",
-    name: "Certified Self Mailer with Green Card Receipt",
-    documentClass: "Certified Self Mailer With Green Card Receipt",
+    name: "Certified Self Mailer with Green Card",
+    documentClass: "Certified Self Mailer With Green Card",
     widthInches: 8.5,
     heightInches: 11,
     cogsBase: 11.04,
@@ -539,7 +540,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     id: "booklet_address_front",
     category: "booklets",
     name: "8.5 × 11 Booklet · Address Front Page",
-    documentClass: "Booklet 8.5 x 11 - Address Front Page",
+    documentClass: "Booklet Address Front Page 8.5 x 11",
     widthInches: 8.5,
     heightInches: 11,
     cogsBase: 1.62,
@@ -554,7 +555,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     id: "booklet_address_back",
     category: "booklets",
     name: "8.5 × 11 Booklet · Address Back Page",
-    documentClass: "Booklet 8.5 x 11 - Address Back Page",
+    documentClass: "Booklet Address Back Page 8.5 x 11",
     widthInches: 8.5,
     heightInches: 11,
     cogsBase: 1.62,
@@ -582,7 +583,11 @@ export const PRICING_LEDGER: ProductSpec[] = [
   }),
 ];
 
-/** Rows whose margin falls outside the 100–140 % target band. */
+/**
+ * Internal analytics only: rows whose margin sits outside the 100–140 %
+ * reference band. Pricing is intentional, so this must not drive user-facing
+ * copy, preflight warnings or any automatic re-pricing.
+ */
 export function marginOutliers(): ProductSpec[] {
   return PRICING_LEDGER.filter(
     (row) => row.marginPercent < 100 || row.marginPercent > 140,
@@ -618,6 +623,20 @@ export const LEGACY_LAYOUT_VARIANTS: Record<string, string> = {
   "11x17_trifold": "11x8.5_brochure",
   "8.5x11_perforated": "8.5x11_secure",
   multi_page: "8.5x11_booklet",
+};
+
+/**
+ * Click2Mail renamed these product strings; stored campaign records created
+ * before the rename keep the old value in their `printSpec`. Kept for auditing
+ * that history only — live selections always send the current
+ * `ProductSpec.documentClass`.
+ */
+export const LEGACY_DOCUMENT_CLASSES: Record<string, string> = {
+  "Certified Self Mailer With Green Card Receipt":
+    "Certified Self Mailer With Green Card",
+  "Booklet 8.5 x 11 - Address Front Page":
+    "Booklet Address Front Page 8.5 x 11",
+  "Booklet 8.5 x 11 - Address Back Page": "Booklet Address Back Page 8.5 x 11",
 };
 
 /** Canonical layout variant for a (possibly legacy) key. */

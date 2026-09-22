@@ -15,7 +15,7 @@ an AI design studio, saved audience presets and referral rewards. Fulfilment run
 ## Product ledger — the Click2Mail catalog
 
 14 product families, 29 document classes. `documentClass` is the exact Click2Mail product name and the trim size
-follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall). Costs and member prices are the operator's authoritative rates.
+follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 
 | Family | Click2Mail document class | Trim | Cost | Retail | Margin | Mail class |
 | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -25,38 +25,39 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall). Costs and member prices
 | Postcards | `Postcard 5 x 8` | 5″ × 8″ | $0.54 | **$1.25** | 131% | First-Class |
 | Postcards | `Postcard 6 x 9` | 6″ × 9″ | $0.57 | **$1.35** | 137% | Standard / First-Class |
 | Postcards | `Postcard 6 x 11` | 6″ × 11″ | $0.73 | **$1.65** | 126% | Standard / First-Class |
-| Letters | `Letter 8.5 x 11` | 8.5″ × 11″ | $0.59 | **$1.50** | 154% ⚠️ | First-Class |
-| Letters | `Letter 8.5 x 14` | 8.5″ × 14″ | $0.61 | **$1.65** | 170% ⚠️ | First-Class |
+| Letters | `Letter 8.5 x 11` | 8.5″ × 11″ | $0.59 | **$1.50** | 154% | First-Class |
+| Letters | `Letter 8.5 x 14` | 8.5″ × 14″ | $0.61 | **$1.65** | 170% | First-Class |
 | Certified Mail™ | `Certified Self Mailer 8.5 x 11` | 8.5″ × 11″ | $6.45 | **$12.90** | 100% | First-Class |
 | Certified Mail™ | `Certified Letter 8.5 x 11` | 8.5″ × 11″ | $6.66 | **$13.50** | 103% | First-Class |
-| Certified Mail™ | `Certified Self Mailer With Green Card Receipt` | 8.5″ × 11″ | $11.04 | **$22.00** | 99% ⚠️ | First-Class |
-| EDDM® | `EDDM® Mailer 6.5 x 9` | 6.5″ × 9″ | $0.15 | **$0.40** | 167% ⚠️ | Standard |
-| EDDM® | `EDDM® Mailer 8.5 x 11` | 8.5″ × 11″ | $0.16 | **$0.42** | 162% ⚠️ | Standard |
-| EDDM® | `EDDM® Mailer 6.25 x 11` | 6.25″ × 11″ | $0.17 | **$0.45** | 165% ⚠️ | Standard |
-| EDDM® | `EDDM® Mailer 8.5 x 12` | 8.5″ × 12″ | $0.22 | **$0.55** | 150% ⚠️ | Standard |
-| Priority Mail® Plus | `Priority Letter 8.5 x 11` | 8.5″ × 11″ | $11.66 | **$22.50** | 93% ⚠️ | Priority |
-| Priority Mail® Express | `Priority Mail® Express Letters 8.5 x 11` | 8.5″ × 11″ | $32.06 | **$55.00** | 72% ⚠️ | Priority Express |
-| Flyers | `Flyer 8.5 x 11` | 8.5″ × 11″ | $0.57 | **$1.45** | 154% ⚠️ | Standard / First-Class |
+| Certified Mail™ | `Certified Self Mailer With Green Card` | 8.5″ × 11″ | $11.04 | **$22.00** | 99% | First-Class |
+| EDDM® | `EDDM® Mailer 6.5 x 9` | 6.5″ × 9″ | $0.15 | **$0.40** | 167% | Standard |
+| EDDM® | `EDDM® Mailer 8.5 x 11` | 8.5″ × 11″ | $0.16 | **$0.42** | 162% | Standard |
+| EDDM® | `EDDM® Mailer 6.25 x 11` | 6.25″ × 11″ | $0.17 | **$0.45** | 165% | Standard |
+| EDDM® | `EDDM® Mailer 8.5 x 12` | 8.5″ × 12″ | $0.22 | **$0.55** | 150% | Standard |
+| Priority Mail® Plus | `Priority Letter 8.5 x 11` | 8.5″ × 11″ | $11.66 | **$22.50** | 93% | Priority |
+| Priority Mail® Express | `Priority Mail® Express Letters 8.5 x 11` | 8.5″ × 11″ | $32.06 | **$55.00** | 72% | Priority Express |
+| Flyers | `Flyer 8.5 x 11` | 8.5″ × 11″ | $0.57 | **$1.45** | 154% | Standard / First-Class |
 | Brochures | `Brochure 11 x 8.5` | 11″ × 8.5″ | $1.07 | **$2.25** | 110% | Standard / First-Class |
-| Secure Mailers | `Secure Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.58 | **$1.95** | 236% ⚠️ | First-Class |
+| Secure Mailers | `Secure Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.58 | **$1.95** | 236% | First-Class |
 | Notecards | `Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $0.87 | **$1.85** | 113% | First-Class |
 | Notecards | `Folded Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $1.04 | **$2.25** | 116% | First-Class |
 | Rack Cards | `Rack Card 4 x 9` | 4″ × 9″ | $0.55 | **$1.25** | 127% | First-Class |
 | Reply Mail | `Reply Postcard 4.25 x 6` | 4.25″ × 6″ | $0.64 | **$1.50** | 134% | First-Class |
-| Reply Mail | `Reply Letter 8.5 x 11` | 8.5″ × 11″ | $0.65 | **$1.60** | 146% ⚠️ | First-Class |
-| Booklets | `Booklet Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.74 | **$2.10** | 184% ⚠️ | Standard |
-| Booklets | `Booklet 8.5 x 11 - Address Front Page` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
-| Booklets | `Booklet 8.5 x 11 - Address Back Page` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
-| Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | 154% ⚠️ | Standard |
+| Reply Mail | `Reply Letter 8.5 x 11` | 8.5″ × 11″ | $0.65 | **$1.60** | 146% | First-Class |
+| Booklets | `Booklet Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.74 | **$2.10** | 184% | Standard |
+| Booklets | `Booklet Address Front Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
+| Booklets | `Booklet Address Back Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
+| Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | 154% | Standard |
 
-⚠️ marks the 14 rows whose margin falls outside the 100–140 % target band (letters, EDDM®, flyer, secure mailer,
-reply letter, booklet self mailer and card stock run above it; the green-card, Priority and Priority Express rows run
-below). The rates are implemented exactly as supplied — `marginOutliers()` in `src/frontend/src/lib/pricing.ts`
-returns this set so it stays visible rather than being silently re-priced.
+Costs and member prices are final. The spread is deliberate retail positioning — standardised letter pricing,
+carrier cost absorbed on Priority Mail® Express to stay competitive, and higher margin on self-mailers — so nothing
+in the app derives a price from a target band or warns about one. `marginPercent` and `marginOutliers()` in
+`src/frontend/src/lib/pricing.ts` exist for internal analytics only.
 
 Products supporting more than one mail class expose it as a chip in the size accordion; the choice rides through
 `CreateCampaignInput.mailClass` and lands in the stored `printSpec`. Legacy layout keys (`4x6`, `6x18_bifold`,
-`11x17_trifold`, `8.5x11_perforated`, `multi_page`) resolve to the current rows in both the canister and the frontend.
+`11x17_trifold`, `8.5x11_perforated`, `multi_page`) resolve to the current rows in both the canister and the
+frontend, and `LEGACY_DOCUMENT_CLASSES` records the three renamed product strings for auditing older campaigns.
 
 ## AI credits
 
