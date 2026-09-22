@@ -101,10 +101,10 @@ function SizeRow({
       </span>
       <AspectBadge row={row} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium text-foreground">
+        <span className="block font-medium leading-snug text-foreground">
           {row.documentClass}
         </span>
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="block font-mono text-xs text-muted-foreground">
           {sizeLabel(row.layoutVariant)}
           {row.envelope ? ` · ${row.envelope}` : ""}
         </span>
