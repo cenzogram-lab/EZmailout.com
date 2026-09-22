@@ -217,10 +217,10 @@
 
   /* Canva-style dotted workspace behind the design canvas. */
   .studio-dotgrid {
-    background-color: #ffffff;
+    background-color: #f4f4f4;
     background-image: radial-gradient(
       circle,
-      oklch(0.86 0.01 265) 1px,
+      oklch(0.84 0.008 265) 1px,
       transparent 1.2px
     );
     background-size: 18px 18px;

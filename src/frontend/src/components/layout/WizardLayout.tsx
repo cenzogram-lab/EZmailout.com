@@ -26,7 +26,10 @@ export function WizardLayout({
         wide ? "max-w-[1600px]" : "max-w-6xl",
       )}
     >
-      <nav aria-label="Wizard progress" className="mb-6">
+      <nav
+        aria-label="Wizard progress"
+        className="mb-6 rounded-2xl border border-[#e5e7eb] bg-card px-4 py-4 shadow-xs sm:px-8"
+      >
         <ol className="flex items-center justify-between">
           {STEPS.map((step, index) => {
             const isCompleted = currentStep > step.id;
@@ -47,10 +50,10 @@ export function WizardLayout({
                       isCompleted &&
                         "border-emerald-brand bg-emerald-brand text-white",
                       isActive &&
-                        "border-primary bg-primary/10 text-primary ring-4 ring-primary/15",
+                        "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15",
                       !isCompleted &&
                         !isActive &&
-                        "border-border bg-card text-muted-foreground",
+                        "border-[#e5e7eb] bg-[#f6f7f9] text-[#575859]",
                     )}
                   >
                     {isCompleted ? <Check className="size-4" /> : step.id}
@@ -83,7 +86,7 @@ export function WizardLayout({
           </p>
         )}
       </nav>
-      <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6 lg:p-8">
+      <div className="rounded-2xl border border-[#e5e7eb] bg-card p-4 shadow-sm sm:p-6 lg:p-8">
         {children}
       </div>
     </div>

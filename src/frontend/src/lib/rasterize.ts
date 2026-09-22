@@ -52,6 +52,9 @@ function wrapLines(
  */
 async function ensureFontsLoaded(side: CanvasSide): Promise<void> {
   if (typeof document === "undefined" || !("fonts" in document)) return;
+  // Geist is self-hosted; wait for the stylesheet's @font-face loads first so
+  // no glyph is measured with a substituted face.
+  await document.fonts.ready;
   const requests = side.textBlocks.map((block) =>
     document.fonts
       .load(`${Number(block.fontWeight)} 16px "${block.fontFamily}"`)

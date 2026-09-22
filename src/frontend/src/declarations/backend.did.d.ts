@@ -245,8 +245,10 @@ export interface LogoState {
   'zIndex' : bigint,
   'width' : number,
 }
-export type MailClass = { 'MarketingMail' : null } |
-  { 'FirstClass' : null };
+export type MailClass = { 'PriorityExpress' : null } |
+  { 'MarketingMail' : null } |
+  { 'FirstClass' : null } |
+  { 'Priority' : null };
 export interface PaymentIntentResult {
   'ok' : boolean,
   'sandbox' : boolean,
@@ -301,11 +303,21 @@ export interface ProductSelection {
   'layoutVariant' : string,
   'colorOption' : [] | [string],
 }
-export type ProductType = { 'SelfMailer' : null } |
+export type ProductType = { 'PriorityMail' : null } |
+  { 'SelfMailer' : null } |
+  { 'Eddm' : null } |
+  { 'CertifiedMail' : null } |
+  { 'Notecard' : null } |
   { 'Booklet' : null } |
+  { 'ReplyMail' : null } |
+  { 'RackCard' : null } |
+  { 'CardStock' : null } |
+  { 'Flyer' : null } |
   { 'Letter' : null } |
   { 'SnapPack' : null } |
-  { 'Postcard' : null };
+  { 'Brochure' : null } |
+  { 'Postcard' : null } |
+  { 'PriorityMailExpress' : null };
 export type ProductionStatus = { 'ReadyToDispatch' : null } |
   { 'Failed' : null } |
   { 'DocumentUploaded' : null } |

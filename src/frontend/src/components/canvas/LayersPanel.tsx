@@ -1,6 +1,7 @@
 import { sortedElements } from "@/components/canvas/CanvasEditor";
 import { Button } from "@/components/ui/button";
 import { getSide } from "@/lib/canvas";
+import { isShapeUrl, shapeKindOf } from "@/lib/shapes";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import {
@@ -11,6 +12,7 @@ import {
   Image as ImageIcon,
   Layers,
   QrCode,
+  Shapes,
   Trash2,
   Type,
 } from "lucide-react";
@@ -54,13 +56,22 @@ export function LayersPanel() {
       <ul className="divide-y rounded-lg border" data-ocid="canvas.layers.list">
         {layers.map((el) => {
           const selected = el.id === selectedElementId;
+          const shape = el.kind === "logo" && isShapeUrl(el.data.url);
           const Icon =
-            el.kind === "text" ? Type : el.kind === "logo" ? ImageIcon : QrCode;
+            el.kind === "text"
+              ? Type
+              : el.kind === "logo"
+                ? shape
+                  ? Shapes
+                  : ImageIcon
+                : QrCode;
           const label =
             el.kind === "text"
               ? el.data.text.split("\n")[0] || "Text block"
               : el.kind === "logo"
-                ? "Logo image"
+                ? shape
+                  ? `Shape · ${shapeKindOf(el.data.url) ?? "rect"}`
+                  : "Logo image"
                 : el.data.mode === "DynamicTracking"
                   ? "Dynamic tracking QR"
                   : "Static QR";

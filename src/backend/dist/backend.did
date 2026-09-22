@@ -198,8 +198,18 @@ type ProductionStatus =
 type ProductType = 
  variant {
    Booklet;
+   Brochure;
+   CardStock;
+   CertifiedMail;
+   Eddm;
+   Flyer;
    Letter;
+   Notecard;
    Postcard;
+   PriorityMail;
+   PriorityMailExpress;
+   RackCard;
+   ReplyMail;
    SelfMailer;
    SnapPack;
  };
@@ -275,6 +285,8 @@ type MailClass =
  variant {
    FirstClass;
    MarketingMail;
+   Priority;
+   PriorityExpress;
  };
 type LogoState = 
  record {

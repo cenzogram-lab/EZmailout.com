@@ -104,11 +104,21 @@ export const AudienceType = IDL.Variant({
   'GeoRadius' : IDL.Null,
 });
 export const ProductType = IDL.Variant({
+  'PriorityMail' : IDL.Null,
   'SelfMailer' : IDL.Null,
+  'Eddm' : IDL.Null,
+  'CertifiedMail' : IDL.Null,
+  'Notecard' : IDL.Null,
   'Booklet' : IDL.Null,
+  'ReplyMail' : IDL.Null,
+  'RackCard' : IDL.Null,
+  'CardStock' : IDL.Null,
+  'Flyer' : IDL.Null,
   'Letter' : IDL.Null,
   'SnapPack' : IDL.Null,
+  'Brochure' : IDL.Null,
   'Postcard' : IDL.Null,
+  'PriorityMailExpress' : IDL.Null,
 });
 export const ProductSelection = IDL.Record({
   'productType' : ProductType,
@@ -300,8 +310,10 @@ export const PaymentStatus = IDL.Variant({
   'Pending' : IDL.Null,
 });
 export const MailClass = IDL.Variant({
+  'PriorityExpress' : IDL.Null,
   'MarketingMail' : IDL.Null,
   'FirstClass' : IDL.Null,
+  'Priority' : IDL.Null,
 });
 export const PrintSpec = IDL.Record({
   'envelope' : IDL.Opt(IDL.Text),
@@ -712,11 +724,21 @@ export const idlFactory = ({ IDL }) => {
     'GeoRadius' : IDL.Null,
   });
   const ProductType = IDL.Variant({
+    'PriorityMail' : IDL.Null,
     'SelfMailer' : IDL.Null,
+    'Eddm' : IDL.Null,
+    'CertifiedMail' : IDL.Null,
+    'Notecard' : IDL.Null,
     'Booklet' : IDL.Null,
+    'ReplyMail' : IDL.Null,
+    'RackCard' : IDL.Null,
+    'CardStock' : IDL.Null,
+    'Flyer' : IDL.Null,
     'Letter' : IDL.Null,
     'SnapPack' : IDL.Null,
+    'Brochure' : IDL.Null,
     'Postcard' : IDL.Null,
+    'PriorityMailExpress' : IDL.Null,
   });
   const ProductSelection = IDL.Record({
     'productType' : ProductType,
@@ -908,8 +930,10 @@ export const idlFactory = ({ IDL }) => {
     'Pending' : IDL.Null,
   });
   const MailClass = IDL.Variant({
+    'PriorityExpress' : IDL.Null,
     'MarketingMail' : IDL.Null,
     'FirstClass' : IDL.Null,
+    'Priority' : IDL.Null,
   });
   const PrintSpec = IDL.Record({
     'envelope' : IDL.Opt(IDL.Text),

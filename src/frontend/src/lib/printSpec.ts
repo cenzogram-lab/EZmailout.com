@@ -1,10 +1,11 @@
 import type { PrintSpec } from "@/backend";
-import { ProductType } from "@/backend";
 import {
   COLOR_BW,
   COLOR_FULL,
   PRODUCTION_TIME,
   getPricingRow,
+  hasAddressSide,
+  supportsBlackAndWhite,
 } from "@/lib/pricing";
 
 /** Design-canvas resolution: canvas coordinates are stored at 100 px per inch. */
@@ -71,7 +72,7 @@ export function getLayoutDims(layoutVariant: string): LayoutDims {
     safeInsetInches: SAFE_INSET_INCHES,
     hasBackSide: true,
   };
-  if (row?.productType === ProductType.Postcard) {
+  if (row && hasAddressSide(row.productType) && !row.envelope) {
     // USPS reserves the lower-right area of the address side for the
     // delivery address, postage indicia and IMb barcode.
     const x = Math.round(designWidth / 2);
@@ -123,14 +124,14 @@ export function getPrintSpec(
   if (!row) {
     throw new Error(`Unknown layout variant: ${layoutVariant}`);
   }
-  const isLetter = row.productType === ProductType.Letter;
+  const bw = supportsBlackAndWhite(row.productType) && colorOption === "bw";
   const spec: PrintSpec = {
     documentClass: row.documentClass,
     layout: row.layout,
     mailClass: row.mailClass,
     paperType: row.paperType,
     productionTime: PRODUCTION_TIME,
-    color: isLetter && colorOption === "bw" ? COLOR_BW : COLOR_FULL,
+    color: bw ? COLOR_BW : COLOR_FULL,
     printOption: row.printOption,
   };
   if (row.envelope) {

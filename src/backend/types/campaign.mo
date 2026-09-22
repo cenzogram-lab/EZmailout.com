@@ -2,12 +2,25 @@
 import Common "common";
 
 module {
+  /// Click2Mail product families. `#SelfMailer` is kept for records created
+  /// before flyers and brochures became their own categories; `#SnapPack` is
+  /// the Secure Mailer family.
   public type ProductType = {
     #Postcard;
     #Letter;
     #SelfMailer;
     #SnapPack;
     #Booklet;
+    #CertifiedMail;
+    #Eddm;
+    #PriorityMail;
+    #PriorityMailExpress;
+    #Flyer;
+    #Notecard;
+    #RackCard;
+    #Brochure;
+    #ReplyMail;
+    #CardStock;
   };
 
   public type ProductSelection = {
@@ -34,6 +47,8 @@ module {
   public type MailClass = {
     #FirstClass;
     #MarketingMail;
+    #Priority;
+    #PriorityExpress;
   };
 
   /// Physical print options bound to a Click2Mail job.

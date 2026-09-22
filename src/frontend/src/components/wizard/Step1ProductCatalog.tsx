@@ -1,111 +1,34 @@
-import { MailClass, ProductType } from "@/backend";
+import { CatalogIcon } from "@/components/catalog/CatalogIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  CATALOG,
+  CATALOG_SIZE_COUNT,
+  type CatalogCategory,
+  categoryForVariant,
+  categoryFromCents,
+  categoryRows,
+} from "@/lib/catalog";
 import { layoutLabel, sizeLabel } from "@/lib/format";
 import {
+  type PricingRowUi,
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
   getPricingRow,
+  mailClassLabel,
+  supportsBlackAndWhite,
 } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
-import {
-  ArrowRight,
-  BookOpen,
-  Check,
-  FileText,
-  Layers,
-  Mail,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
 
-interface FormatDef {
-  layoutVariant: string;
-  label: string;
-}
-
-interface ProductDef {
-  type: ProductType;
-  name: string;
-  description: string;
-  icon: ReactNode;
-  formats: FormatDef[];
-  colorOptions?: { label: string; value: string }[];
-}
-
-const PRODUCTS: ProductDef[] = [
-  {
-    type: ProductType.Postcard,
-    name: "Postcards",
-    description:
-      "Every Click2Mail postcard size — 3.5×5 through 6×11 — printed both sides on gloss UV stock. First-Class up to 4.25×6, Marketing Mail above.",
-    icon: <Mail className="size-6" />,
-    formats: [
-      { layoutVariant: "3.5x5", label: "3.5×5 Mini" },
-      { layoutVariant: "4.25x6", label: "4.25×6 Standard" },
-      { layoutVariant: "4x9", label: "4×9 Slim" },
-      { layoutVariant: "5x8", label: "5×8" },
-      { layoutVariant: "6x9", label: "6×9 Large" },
-      { layoutVariant: "6x11", label: "6×11 Jumbo" },
-    ],
-  },
-  {
-    type: ProductType.Letter,
-    name: "Letters",
-    description:
-      "8.5×11 and 8.5×14 letters printed on 24# white stock and machine-inserted into #10 double-window envelopes.",
-    icon: <FileText className="size-6" />,
-    formats: [
-      { layoutVariant: "letter", label: "8.5×11 Letter" },
-      { layoutVariant: "letter_legal", label: "8.5×14 Legal" },
-    ],
-    colorOptions: [
-      { label: "Full Color", value: "full_color" },
-      { label: "Black & White", value: "bw" },
-    ],
-  },
-  {
-    type: ProductType.SelfMailer,
-    name: "Flyers & Brochures",
-    description:
-      "Folded self-mailers tabbed shut with no envelope: an 8.5×11 flyer folded in half or an 11×8.5 trifold brochure.",
-    icon: <Layers className="size-6" />,
-    formats: [
-      { layoutVariant: "8.5x11_flyer", label: "8.5×11 Flyer · bifold" },
-      { layoutVariant: "11x8.5_brochure", label: "11×8.5 Brochure · trifold" },
-    ],
-  },
-  {
-    type: ProductType.SnapPack,
-    name: "Secure Mailers",
-    description:
-      "Pressure-sealed, perforated secure self-mailers that look official. Ideal for statements, notices and checks.",
-    icon: <ShieldCheck className="size-6" />,
-    formats: [
-      { layoutVariant: "8.5x11_secure", label: "8.5×11 Secure Self Mailer" },
-    ],
-  },
-  {
-    type: ProductType.Booklet,
-    name: "Booklets",
-    description:
-      "Saddle-stitched 8.5×11 booklet self-mailers for catalogs, guides and lookbooks that deserve more than a single page.",
-    icon: <BookOpen className="size-6" />,
-    formats: [
-      { layoutVariant: "8.5x11_booklet", label: "8.5×11 Booklet Self Mailer" },
-    ],
-  },
+const COLOR_OPTIONS = [
+  { label: "Full Color", value: "full_color" },
+  { label: "Black & White", value: "bw" },
 ];
-
-function mailClassLabel(mailClass: MailClass): string {
-  return mailClass === MailClass.FirstClass ? "First-Class" : "Marketing Mail";
-}
 
 function suggestCampaignName(layoutVariant: string): string {
   const month = new Date().toLocaleDateString("en-US", {
@@ -115,7 +38,142 @@ function suggestCampaignName(layoutVariant: string): string {
   return `${layoutLabel(layoutVariant)} campaign – ${month}`;
 }
 
-/** Step 1: pick a product format and name the campaign. */
+/** Tiny proportional rectangle that previews a format's aspect ratio. */
+export function AspectBadge({
+  row,
+  className,
+}: {
+  row: PricingRowUi;
+  className?: string;
+}) {
+  const ratio = row.widthInches / row.heightInches;
+  const box = 28;
+  const w = ratio >= 1 ? box : Math.max(8, Math.round(box * ratio));
+  const h = ratio >= 1 ? Math.max(8, Math.round(box / ratio)) : box;
+  return (
+    <span
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-muted",
+        className,
+      )}
+      title={`${row.widthInches}″ × ${row.heightInches}″`}
+      data-ocid={`catalog.aspect.${row.layoutVariant}`}
+    >
+      <span
+        className="block rounded-[2px] border border-navy/60 bg-card"
+        style={{ width: w, height: h }}
+      />
+    </span>
+  );
+}
+
+function SizeRow({
+  row,
+  selected,
+  onSelect,
+}: {
+  row: PricingRowUi;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-smooth",
+        selected
+          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+          : "border-border bg-card hover:border-primary/40",
+      )}
+      data-ocid={`catalog.format.${row.layoutVariant}.button`}
+    >
+      <span
+        className={cn(
+          "flex size-5 shrink-0 items-center justify-center rounded-full border",
+          selected
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-border bg-card",
+        )}
+      >
+        {selected && <Check className="size-3" />}
+      </span>
+      <AspectBadge row={row} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium text-foreground">
+          {row.documentClass}
+        </span>
+        <span className="font-mono text-xs text-muted-foreground">
+          {sizeLabel(row.layoutVariant)}
+          {row.envelope ? ` · ${row.envelope}` : ""}
+        </span>
+      </span>
+      <span className="hidden items-center gap-2 sm:flex">
+        <Badge variant="secondary" className="font-normal">
+          {mailClassLabel(row.mailClass)}
+        </Badge>
+      </span>
+      <Badge className="bg-primary text-primary-foreground">
+        {formatCents(row.retailPriceCents)} / piece
+      </Badge>
+    </button>
+  );
+}
+
+function CategoryCard({
+  category,
+  expanded,
+  selected,
+  onToggle,
+}: {
+  category: CatalogCategory;
+  expanded: boolean;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const rows = categoryRows(category);
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className={cn(
+        "group flex flex-col items-center gap-2 rounded-2xl border bg-card px-3 py-5 text-center transition-smooth",
+        expanded
+          ? "border-primary shadow-md ring-2 ring-primary/20"
+          : "border-border hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+        selected && !expanded && "border-primary/60",
+      )}
+      data-ocid={`catalog.category.${category.id}.button`}
+    >
+      <CatalogIcon
+        id={category.icon}
+        className={cn(
+          "size-10 transition-smooth",
+          expanded || selected
+            ? "text-primary"
+            : "text-[#575859] group-hover:text-primary",
+        )}
+      />
+      <span className="text-sm font-semibold leading-tight text-foreground">
+        {category.name}
+      </span>
+      <span className="text-[11px] text-muted-foreground">
+        {rows.length} size{rows.length === 1 ? "" : "s"} · from{" "}
+        {formatCents(categoryFromCents(category))}
+      </span>
+      <ChevronDown
+        className={cn(
+          "size-4 text-muted-foreground transition-transform",
+          expanded && "rotate-180 text-primary",
+        )}
+      />
+    </button>
+  );
+}
+
+/** Step 1: browse the Click2Mail catalog, expand a category and pick a size. */
 export function Step1ProductCatalog() {
   const campaignName = useWizardStore((s) => s.campaignName);
   const setCampaignName = useWizardStore((s) => s.setCampaignName);
@@ -125,30 +183,33 @@ export function Step1ProductCatalog() {
   const setLayout = useWizardStore((s) => s.setLayout);
   const setStep = useWizardStore((s) => s.setStep);
 
+  const selectedCategory = selectedLayout
+    ? categoryForVariant(selectedLayout)
+    : undefined;
+  const [expandedId, setExpandedId] = useState<string | null>(
+    selectedCategory?.id ?? null,
+  );
   const [colorOption, setColorOption] = useState<string>(
     selectedProduct?.colorOption ?? "full_color",
   );
 
+  const expanded = CATALOG.find((c) => c.id === expandedId) ?? null;
   const selectedRow = selectedLayout ? getPricingRow(selectedLayout) : null;
 
-  function chooseFormat(product: ProductDef, layoutVariant: string) {
-    const color = product.colorOptions ? colorOption : undefined;
+  function chooseFormat(category: CatalogCategory, layoutVariant: string) {
+    const bw = supportsBlackAndWhite(category.productType);
     setProduct({
-      productType: product.type,
+      productType: category.productType,
       layoutVariant,
-      colorOption: color,
+      colorOption: bw ? colorOption : undefined,
     });
     setLayout(layoutVariant);
   }
 
-  function chooseColor(product: ProductDef, value: string) {
+  function chooseColor(value: string) {
     setColorOption(value);
-    if (selectedProduct?.productType === product.type && selectedLayout) {
-      setProduct({
-        productType: product.type,
-        layoutVariant: selectedLayout,
-        colorOption: value,
-      });
+    if (selectedProduct && selectedLayout) {
+      setProduct({ ...selectedProduct, colorOption: value });
     }
   }
 
@@ -162,218 +223,157 @@ export function Step1ProductCatalog() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6">
-      <div className="space-y-2">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Choose your mail piece
-        </h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Every format is printed, addressed and mailed by Click2Mail. Prices
-          include printing and postage, with no minimum order.
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Choose your mail piece
+          </h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            {CATALOG.length} Click2Mail product families, {CATALOG_SIZE_COUNT}{" "}
+            sizes. Every price includes printing, postage and CASS address
+            verification — no minimum order.
+          </p>
+        </div>
+        <div className="w-full space-y-1.5 lg:max-w-sm">
+          <Label htmlFor="campaign-name">Campaign name</Label>
+          <Input
+            id="campaign-name"
+            value={campaignName}
+            onChange={(e) => setCampaignName(e.target.value)}
+            placeholder={
+              selectedLayout
+                ? suggestCampaignName(selectedLayout)
+                : "e.g. Spring open-house mailer"
+            }
+            maxLength={120}
+            className="rounded-xl bg-card"
+            data-ocid="catalog.campaign_name.input"
+          />
+        </div>
+      </div>
+
+      <div
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"
+        data-ocid="catalog.category.grid"
+      >
+        {CATALOG.map((category) => (
+          <CategoryCard
+            key={category.id}
+            category={category}
+            expanded={expandedId === category.id}
+            selected={selectedCategory?.id === category.id}
+            onToggle={() =>
+              setExpandedId((current) =>
+                current === category.id ? null : category.id,
+              )
+            }
+          />
+        ))}
+      </div>
+
+      {expanded ? (
+        <div
+          className="rounded-2xl border border-primary/30 bg-card p-5 shadow-sm animate-fade-up sm:p-6"
+          data-ocid={`catalog.sizes.${expanded.id}.panel`}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <CatalogIcon id={expanded.icon} className="size-7" />
+              </span>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  {expanded.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {expanded.blurb}
+                </p>
+                {expanded.note ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {expanded.note}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            {supportsBlackAndWhite(expanded.productType) ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Print colour
+                </span>
+                {COLOR_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    size="sm"
+                    variant={colorOption === opt.value ? "default" : "outline"}
+                    onClick={() => chooseColor(opt.value)}
+                    data-ocid={`catalog.color.${opt.value}.button`}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div
+            className="mt-4 grid gap-2 lg:grid-cols-2"
+            data-ocid={`catalog.sizes.${expanded.id}.list`}
+          >
+            {categoryRows(expanded).map((row) => (
+              <SizeRow
+                key={row.layoutVariant}
+                row={row}
+                selected={selectedLayout === row.layoutVariant}
+                onSelect={() => chooseFormat(expanded, row.layoutVariant)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
+          Pick a category above to see every size, aspect ratio and per-piece
+          price.
+        </div>
+      )}
+
+      <div className="grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
+        <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Sparkles className="size-5" />
+        </span>
+        <p className="text-sm text-foreground">
+          <span className="font-semibold">
+            {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month membership
+          </span>{" "}
+          unlocks these wholesale rates on every size — send one piece or ten
+          thousand at the same per-piece price, next-day production by
+          Click2Mail, USPS IMb tracking included.
         </p>
       </div>
 
-      <Card className="bg-card">
-        <CardContent className="flex flex-col gap-2 py-5 sm:flex-row sm:items-end sm:gap-4">
-          <div className="flex-1 space-y-2">
-            <Label htmlFor="campaign-name">Campaign name</Label>
-            <Input
-              id="campaign-name"
-              value={campaignName}
-              onChange={(e) => setCampaignName(e.target.value)}
-              placeholder={
-                selectedLayout
-                  ? suggestCampaignName(selectedLayout)
-                  : "e.g. Spring open-house mailer"
-              }
-              maxLength={120}
-              data-ocid="catalog.campaign_name.input"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground sm:max-w-xs sm:pb-2">
-            Leave it blank and we will name it after the format you pick.
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        {PRODUCTS.map((product) => {
-          const isProductSelected =
-            selectedProduct?.productType === product.type;
-          const rows = product.formats
-            .map((f) => ({ format: f, row: getPricingRow(f.layoutVariant) }))
-            .filter((r) => r.row !== undefined);
-          const lowest = Math.min(
-            ...rows.map((r) => r.row?.retailPriceCents ?? 0),
-          );
-          return (
-            <Card
-              key={product.type}
-              className={cn(
-                "bg-card transition-smooth",
-                isProductSelected
-                  ? "border-primary shadow-md ring-2 ring-primary/30"
-                  : "hover:border-primary/40",
-              )}
-              data-ocid={`catalog.product.${product.type.toLowerCase()}.card`}
-            >
-              <CardContent className="space-y-4 py-5">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "flex size-11 shrink-0 items-center justify-center rounded-xl",
-                      isProductSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary",
-                    )}
-                  >
-                    {product.icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-display text-lg font-semibold text-foreground">
-                        {product.name}
-                      </h3>
-                      <Badge
-                        variant="outline"
-                        className="border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-                      >
-                        from {formatCents(lowest)} / piece
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {product.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  {rows.map(({ format, row }) => {
-                    if (!row) return null;
-                    const isSelected =
-                      isProductSelected &&
-                      selectedLayout === format.layoutVariant;
-                    return (
-                      <button
-                        key={format.layoutVariant}
-                        type="button"
-                        onClick={() =>
-                          chooseFormat(product, format.layoutVariant)
-                        }
-                        className={cn(
-                          "flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-smooth",
-                          isSelected
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-background hover:border-primary/40",
-                        )}
-                        aria-pressed={isSelected}
-                        data-ocid={`catalog.format.${format.layoutVariant}.button`}
-                      >
-                        <span className="flex items-center gap-2">
-                          {isSelected ? (
-                            <Check className="size-4 text-primary" />
-                          ) : (
-                            <span className="size-4 rounded-full border border-border" />
-                          )}
-                          <span className="font-medium text-foreground">
-                            {format.label}
-                          </span>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {sizeLabel(format.layoutVariant)}
-                          </span>
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <Badge variant="secondary" className="font-normal">
-                            {mailClassLabel(row.mailClass)}
-                          </Badge>
-                          <Badge className="bg-primary text-primary-foreground">
-                            {formatCents(row.retailPriceCents)} / piece
-                          </Badge>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {product.colorOptions && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Print color
-                    </span>
-                    {product.colorOptions.map((opt) => {
-                      const active = colorOption === opt.value;
-                      return (
-                        <Button
-                          key={opt.value}
-                          type="button"
-                          size="sm"
-                          variant={active ? "default" : "outline"}
-                          onClick={() => chooseColor(product, opt.value)}
-                          data-ocid={`catalog.color.${opt.value}.button`}
-                        >
-                          {opt.label}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        <Card className="surface-glow border-primary/20 bg-primary/5">
-          <CardContent className="flex h-full flex-col justify-between gap-4 py-5">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-5 text-primary" />
-                <h3 className="font-display text-lg font-semibold text-foreground">
-                  Membership pricing
-                </h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                A {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
-                membership unlocks these wholesale rates with no minimums. Send
-                one piece or ten thousand at the same per-piece price.
-              </p>
-            </div>
-            <ul className="space-y-1.5 text-sm text-foreground">
-              <li className="flex items-center gap-2">
-                <Check className="size-4 text-emerald-brand" /> Printing and
-                postage included
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="size-4 text-emerald-brand" /> Next-day
-                production by Click2Mail
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="size-4 text-emerald-brand" /> CASS-verified
-                addressing and USPS tracking
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="flex flex-col items-start justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
-        <div className="text-sm text-muted-foreground">
+        <div
+          className="text-sm text-muted-foreground"
+          data-ocid="catalog.selection.summary"
+        >
           {selectedRow ? (
             <span>
               Selected:{" "}
               <span className="font-medium text-foreground">
-                {selectedRow.displayName}
+                {selectedRow.documentClass}
               </span>{" "}
-              at {formatCents(selectedRow.retailPriceCents)} per piece (
+              · {sizeLabel(selectedRow.layoutVariant)} ·{" "}
+              {formatCents(selectedRow.retailPriceCents)} per piece (
               {mailClassLabel(selectedRow.mailClass)})
             </span>
           ) : (
-            "Pick a format to continue."
+            "Pick a size to continue."
           )}
         </div>
         <Button
           size="lg"
           onClick={handleContinue}
           disabled={!selectedLayout}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="gap-2"
           data-ocid="catalog.continue.button"
         >
           Continue to audience

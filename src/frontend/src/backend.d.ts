@@ -184,8 +184,18 @@ export enum ProductionStatus {
 }
 export enum ProductType {
     Booklet = "Booklet",
+    Brochure = "Brochure",
+    CardStock = "CardStock",
+    CertifiedMail = "CertifiedMail",
+    Eddm = "Eddm",
+    Flyer = "Flyer",
     Letter = "Letter",
+    Notecard = "Notecard",
     Postcard = "Postcard",
+    PriorityMail = "PriorityMail",
+    PriorityMailExpress = "PriorityMailExpress",
+    RackCard = "RackCard",
+    ReplyMail = "ReplyMail",
     SelfMailer = "SelfMailer",
     SnapPack = "SnapPack"
 }
@@ -251,7 +261,9 @@ export interface PaymentIntentResult {
 }
 export enum MailClass {
     FirstClass = "FirstClass",
-    MarketingMail = "MarketingMail"
+    MarketingMail = "MarketingMail",
+    Priority = "Priority",
+    PriorityExpress = "PriorityExpress"
 }
 export interface LogoState {
     height: number;

@@ -16,6 +16,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { STUDIO_FONTS } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
 import { normalizeDestinationUrl } from "@/lib/qr";
+import {
+  isShapeUrl,
+  recolorShape,
+  shapeFillOf,
+  shapeKindOf,
+} from "@/lib/shapes";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import {
@@ -271,6 +277,62 @@ export function ElementInspector() {
     const logo = side.logos.find((l) => l.id === selectedElementId);
     if (!logo) return null;
     const ratio = logo.width / Math.max(1, logo.height);
+    if (isShapeUrl(logo.url)) {
+      const patchLogo = (p: Partial<typeof logo>) =>
+        updateLogo(activeSide, logo.id, p);
+      const shapeKind = shapeKindOf(logo.url) ?? "rect";
+      return (
+        <div className="space-y-3" data-ocid="canvas.inspector.shape">
+          {header(`Shape · ${shapeKind}`)}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Fill
+            </Label>
+            <SwatchRow
+              value={shapeFillOf(logo.url)}
+              onChange={(fill) =>
+                patchLogo({ url: recolorShape(logo.url, fill) })
+              }
+              ocid="canvas.inspector.shape_fill"
+              label="Shape fill"
+              size="sm"
+            />
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <NumberField
+              label="X"
+              value={logo.x}
+              onChange={(x) => patchLogo({ x })}
+              ocid="canvas.inspector.shape_x"
+            />
+            <NumberField
+              label="Y"
+              value={logo.y}
+              onChange={(y) => patchLogo({ y })}
+              ocid="canvas.inspector.shape_y"
+            />
+            <NumberField
+              label="W"
+              value={logo.width}
+              min={8}
+              onChange={(width) => patchLogo({ width })}
+              ocid="canvas.inspector.shape_w"
+            />
+            <NumberField
+              label="H"
+              value={logo.height}
+              min={4}
+              onChange={(height) => patchLogo({ height })}
+              ocid="canvas.inspector.shape_h"
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Shapes resize freely from any handle; drag to move, arrow keys
+            nudge.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="space-y-3" data-ocid="canvas.inspector.logo">
         {header("Logo")}

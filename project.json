@@ -1,7 +1,7 @@
 {
   "overview": "EZmailout.com — direct mail campaigns without minimums. A $9/month membership unlocks wholesale Click2Mail print rates (postcards from $1.15), an AI design studio with a pay-as-you-go credit ledger, saved audience presets, dynamic QR tracking and referral rewards, all on a single Motoko canister.",
   "features": [
-    "Click2Mail catalog with a 100%–140% margin pricing ledger (postcards 3.5×5 to 6×11, letters 8.5×11/8.5×14, flyer and brochure self-mailers, secure self mailers, booklet self mailers)",
+    "Full Click2Mail catalog — 14 product families, 29 sizes (postcards, letters, Certified Mail, EDDM, Priority Mail, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets, card stock) — with a 100%–140% margin pricing ledger",
     "Dual-path audience targeting: interactive Leaflet radius map with EDDM-style estimates, CSV upload with Click2Mail CASS verification, and saved audience presets (re-run, prune, save as new)",
     "Side-by-side design studio: 2D drag-and-drop editor with bleed/cut/safe overlays and a synchronized 3D front/back preview",
     "AI Studio: DALL·E 3 backgrounds with industry quick-prompts and a GPT-4o mini copywriter, paid with credits (Stripe top-up packs, 50 free credits per member month)",

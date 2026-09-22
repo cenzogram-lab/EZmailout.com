@@ -5,15 +5,18 @@ import { CanvasEditor, sortedElements } from "@/components/canvas/CanvasEditor";
 import { CanvasPreview3D } from "@/components/canvas/CanvasPreview3D";
 import { CanvasToolbar } from "@/components/canvas/CanvasToolbar";
 import { ElementInspector } from "@/components/canvas/ElementInspector";
+import { ElementsPanel } from "@/components/canvas/ElementsPanel";
 import { LayersPanel } from "@/components/canvas/LayersPanel";
 import { QrTool } from "@/components/canvas/QrTool";
 import { StudioRail } from "@/components/canvas/StudioRail";
+import { TemplatesPanel } from "@/components/canvas/TemplatesPanel";
 import { TextPanel } from "@/components/canvas/TextPanel";
 import { UploadsPanel } from "@/components/canvas/UploadsPanel";
 import { Button } from "@/components/ui/button";
 import { layoutLabel } from "@/lib/format";
 import { getLayoutDims, safeRect } from "@/lib/printSpec";
 import { checkImageResolution } from "@/lib/rasterize";
+import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { StudioTool } from "@/types";
 import {
@@ -21,6 +24,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  PanelLeftClose,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -60,7 +64,8 @@ export function Step3DesignCanvas() {
   const selectedElementId = useWizardStore((s) => s.selectedElementId);
   const setStep = useWizardStore((s) => s.setStep);
   const [copywriterOpen, setCopywriterOpen] = useState(false);
-  const [tool, setTool] = useState<StudioTool>("text");
+  const [tool, setTool] = useState<StudioTool>("templates");
+  const [drawerOpen, setDrawerOpen] = useState(true);
   const layoutVariant = selectedLayout ?? "6x9";
   const dims = getLayoutDims(layoutVariant);
   const side = activeSide === "front" ? canvas.front : canvas.back;
@@ -91,6 +96,10 @@ export function Step3DesignCanvas() {
 
   const panel = (() => {
     switch (tool) {
+      case "templates":
+        return <TemplatesPanel />;
+      case "elements":
+        return <ElementsPanel />;
       case "text":
         return <TextPanel onOpenCopywriter={() => setCopywriterOpen(true)} />;
       case "uploads":
@@ -152,14 +161,42 @@ export function Step3DesignCanvas() {
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="flex flex-col gap-3 lg:sticky lg:top-24 lg:w-[372px] lg:flex-row lg:items-start">
-          <StudioRail active={tool} onSelect={setTool} />
-          <div
-            className="min-w-0 flex-1 rounded-2xl border bg-card p-4 shadow-xs lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
-            data-ocid={`canvas.panel.${tool}`}
-          >
-            {panel}
-          </div>
+        <div
+          className={cn(
+            "flex flex-col gap-3 lg:sticky lg:top-24 lg:flex-row lg:items-start",
+            drawerOpen ? "lg:w-[380px]" : "lg:w-[76px]",
+          )}
+        >
+          <StudioRail
+            active={tool}
+            drawerOpen={drawerOpen}
+            onSelect={(next) => {
+              if (next === tool && drawerOpen) {
+                setDrawerOpen(false);
+                return;
+              }
+              setTool(next);
+              setDrawerOpen(true);
+            }}
+          />
+          {drawerOpen ? (
+            <div
+              className="relative min-w-0 flex-1 rounded-2xl border border-[#e5e7eb] bg-card p-4 shadow-xs lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
+              data-ocid={`canvas.drawer.${tool}`}
+            >
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="absolute right-2 top-2 hidden size-7 items-center justify-center rounded-lg text-[#575859] transition-smooth hover:bg-muted hover:text-foreground lg:flex"
+                title="Collapse panel"
+                aria-label="Collapse panel"
+                data-ocid="canvas.panel.collapse"
+              >
+                <PanelLeftClose className="size-4" />
+              </button>
+              {panel}
+            </div>
+          ) : null}
         </div>
 
         <div className="min-w-0 flex-1 space-y-3">

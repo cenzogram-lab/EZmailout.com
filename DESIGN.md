@@ -36,15 +36,24 @@ tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. 
 - Status badges: Created (slate) → In Production (navy) → In Transit (indigo) → Sorted (sky) → Delivered (emerald).
 
 ## Design studio (Step 3, Canva reference)
-- Left icon rail (Text · Uploads · Brand · AI Studio · QR · Layers) with a 300px tool panel beside it; the canvas sits on
-  a dotted workspace; the live 3D proof is pinned on the right at `lg+`.
-- Selection: indigo outline with round white handles (indigo border) at each corner; double-click edits text inline.
-- Alignment: align selected element left / centre / right / top / middle / bottom of the canvas; layer order supports
-  forward / backward / front / back.
-- Print guides (Click2Mail): cut = canvas edge (orange), bleed = 1/8″ band (red), safe zone = 1/4″ (emerald);
-  postcard backs reserve the lower-right USPS address + IMb zone.
-- Swatches: paper colour and text colour pickers expose the brand palette
+- Left icon rail (`#f6f7f9`, `#575859` icons): Templates · Elements · Text · Uploads · Brand · QR code · AI Studio, then Layers.
+  The active tool opens a collapsible drawer beside the rail; clicking the active tool (or the collapse chevron) hides it.
+- Stage: BG/300 `#f4f4f4` with a dotted grid; the artboard is the finished document size at the fitted scale.
+- Print guides: bleed edge = solid red ⅛″ frame outside the cut line (backgrounds are shown running through it),
+  cut line = fine dashed line at the trim edge, safe zone = soft green dashed ¼″ inset, USPS address + IMb zone
+  hatched in the lower-right quadrant of address-side formats (postcards, EDDM®, rack cards, reply postcards, card stock).
+- Selection: indigo outline with round white handles (indigo border); a contextual toolbar floats above the element
+  with align left / centre / right / top / middle / bottom, bring forward / send backward / front / back, duplicate, delete.
+- Elements are vector shapes stored as SVG data-URL logo layers (`lib/shapes.ts`) so they rasterize and persist like images;
+  they resize freely and recolour from the inspector.
+- Live 3D proof pinned on the right at `lg+` with flip and rotation; Geist is loaded (`document.fonts.ready`) before rasterizing.
+- Swatches: paper, text, QR and shape colour pickers expose the brand palette
   (`#ffffff #f4f4f4 #f0f1f5 #cff3fd #b5d8fc #dbefad #6366f1 #0e2b4f #01080a`).
+
+## Catalog (Step 1 and homepage)
+- 14 product families drawn as monochrome line-art icons (`components/catalog/CatalogIcon.tsx`) in a 7-column grid.
+- Clicking a family expands an accordion listing every size with an aspect badge, the exact Click2Mail document class,
+  trim size, envelope, mail class and per-piece price.
 
 ## Motion
 Pipeline truck / print pulse / mailbox flag on the landing page; card float + rotate/flip on the 3D preview;

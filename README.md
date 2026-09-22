@@ -14,21 +14,27 @@ an AI design studio, saved audience presets and referral rewards. Fulfilment run
 
 ## Product ledger (Click2Mail catalog, 100%–140% margin spread)
 
-| Layout (Click2Mail document class) | Click2Mail base | EZmailout retail | Margin |
-| --- | --- | --- | --- |
-| Postcard 3.5 x 5 / 4.25 x 6 (First-Class) | $0.55 | **$1.15** | 109% |
-| Postcard 4 x 9 / 5 x 8 / 6 x 9 (Marketing Mail) | $0.57 | **$1.35** | 136% |
-| Postcard 6 x 11 | $0.73 | **$1.65** | 126% |
-| Letter 8.5 x 11 (#10 double window) | $0.70 | **$1.50** | 114% |
-| Letter 8.5 x 14 (#10 double window) | $0.80 | **$1.70** | 112% |
-| Flyer 8.5 x 11 (bifold) / Brochure 11 x 8.5 (trifold) | $0.95 | **$2.10** | 121% |
-| Secure Self Mailer 8.5 x 11 | $0.85 | **$1.95** | 129% |
-| Booklet Self Mailer 8.5 x 11 | $1.60 | **$3.60** | 125% |
+Fourteen Click2Mail product families, 29 sizes. `documentClass` is the exact Click2Mail product name; base costs marked
+† reuse the closest priced tier until the Click2Mail rate card confirms them.
+
+| Family | Click2Mail document classes | Base → retail |
+| --- | --- | --- |
+| Postcards | Postcard 3.5 x 5†, 4.25 x 6 · 4 x 9†, 5 x 8†, 6 x 9 · 6 x 11 | $0.55 → **$1.15** · $0.57 → **$1.35** · $0.73 → **$1.65** |
+| Letters | Letter 8.5 x 11 · Letter 8.5 x 14† | $0.70 → **$1.50** · $0.80 → **$1.70** |
+| Certified Mail™ | Certified Self Mailer 8.5 x 11† · With Green Card† · Certified Letter 8.5 x 11† | $8.95 → **$17.95** · $12.95 → **$25.95** · $9.25 → **$18.50** |
+| EDDM® | EDDM® Mailer 6.25 x 11† · 6.5 x 9† · 8.5 x 11† · 8.5 x 12† | $0.45 → **$0.95** · $0.43 → **$0.90** · $0.48 → **$0.99** · $0.52 → **$1.09** |
+| Priority Mail® Plus / Express | Priority Letter 8.5 x 11† · Priority Mail® Express Letters 8.5 x 11† | $9.95 → **$19.95** · $29.95 → **$59.95** |
+| Flyers / Brochures | Flyer 8.5 x 11 · Brochure 11 x 8.5 | $0.95 → **$2.10** |
+| Secure Mailers | Secure Self Mailer 8.5 x 11 | $0.85 → **$1.95** |
+| Notecards | Notecard 4.25 x 5.5† · Folded Notecard 4.25 x 5.5† | $0.62 → **$1.30** · $0.85 → **$1.80** |
+| Rack Cards | Rack Card 4 x 9† | $0.57 → **$1.35** |
+| Reply Mail | Reply Postcard 4.25 x 6† · Reply Letter 8.5 x 11† | $0.75 → **$1.60** · $0.95 → **$2.00** |
+| Booklets | Booklet Self Mailer 8.5 x 11 · Address Back Page† · Address Front Page† | $1.60 → **$3.60** · $1.75 → **$3.85** |
+| Card Stock | Card Stock Paper 12 x 4.5† | $0.60 → **$1.30** |
 
 Legacy layout keys (`4x6`, `6x18_bifold`, `11x17_trifold`, `8.5x11_perforated`, `multi_page`) resolve to the
-current rows in both the canister and the frontend.
-
-Authoritative copy: `src/backend/lib/pricing.mo` (mirrored in `src/frontend/src/lib/pricing.ts`).
+current rows in both the canister and the frontend. `ProductType` keeps `#SelfMailer` / `#SnapPack` for records
+created before flyers, brochures and secure mailers became their own families.
 
 ## AI credits
 
@@ -46,7 +52,7 @@ as long as the referrer's membership is active.
 
 1. **Product** – pick a format (all prices from the ledger).
 2. **Audience** – radius map (EDDM-style estimate), CSV upload with Click2Mail CASS verification, or a saved preset (re-run / prune / save as new).
-3. **Design** – side-by-side 2D editor + live 3D preview, AI Studio (backgrounds + copywriter), dynamic QR codes (`https://ezmailout.com/t/{recipientId}`).
+3. **Design** – Canva-style studio: tool rail (Templates · Elements · Text · Uploads · Brand · QR · AI Studio · Layers), true-to-scale artboard with cut / ⅛″ bleed / ¼″ safe guides and the USPS IMb zone, floating align/depth toolbar, live 3D proof, dynamic QR codes (`https://ezmailout.com/t/{recipientId}`).
 4. **Review & Pay** – pre-flight checks, Stripe Elements checkout, then `dispatchClick2MailJob` uploads the 300 DPI PDF, submits the address list and job. Tracking is polled every 6 hours and can be pushed via the webhook.
 
 ## Admin

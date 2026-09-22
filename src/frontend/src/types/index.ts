@@ -123,4 +123,12 @@ export type CanvasAlignment =
   | "bottom";
 
 /** Tools on the studio's left rail (Canva-style). */
-export type StudioTool = "text" | "uploads" | "brand" | "ai" | "qr" | "layers";
+export type StudioTool =
+  | "templates"
+  | "elements"
+  | "text"
+  | "uploads"
+  | "brand"
+  | "qr"
+  | "ai"
+  | "layers";

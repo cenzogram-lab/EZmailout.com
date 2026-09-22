@@ -6,6 +6,11 @@ import type {
 } from "@/backend";
 import { QrMode } from "@/backend";
 import {
+  SELECTION_TOOLBAR_HEIGHT,
+  SELECTION_TOOLBAR_WIDTH,
+  SelectionToolbar,
+} from "@/components/canvas/SelectionToolbar";
+import {
   type ElementBox,
   type ResizeCorner,
   type ResizeResult,
@@ -13,8 +18,14 @@ import {
 } from "@/components/canvas/useCanvasInteractions";
 import { BRAND } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
-import { type LayoutDims, getLayoutDims, insetRect } from "@/lib/printSpec";
+import {
+  DESIGN_PPI,
+  type LayoutDims,
+  getLayoutDims,
+  insetRect,
+} from "@/lib/printSpec";
 import { qrDataUrl } from "@/lib/qr";
+import { isShapeUrl } from "@/lib/shapes";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasElementKind, CanvasSideKey } from "@/types";
@@ -200,40 +211,37 @@ export function AddressZoneOverlay({
 // ─── Editor ─────────────────────────────────────────────────────────────────
 
 /**
- * Click2Mail guides, outermost first: cut line at the trim edge, 1/8″ bleed
- * band, 1/4″ safe zone (see `lib/printSpec.ts`).
+ * Click2Mail guides drawn inside the artboard: the cut line at the trim edge
+ * (fine dashed) and the 1/4″ safe zone (soft green). The 1/8″ bleed edge is
+ * drawn outside the artboard in the stage (solid red), see `BleedFrame`.
  */
 const GUIDES = [
   {
     key: "cut",
     inset: "cutInsetInches",
-    color: "#f97316",
+    color: "rgba(1, 8, 10, 0.55)",
+    labelColor: "#01080a",
     label: "Cut 0″",
-    dashed: false,
-    labelClass: "bottom-0 right-0 rounded-tl",
-  },
-  {
-    key: "bleed",
-    inset: "bleedInsetInches",
-    color: "#ef4444",
-    label: "Bleed ⅛″",
     dashed: true,
-    labelClass: "right-0 top-0 rounded-bl",
+    labelClass: "bottom-0 right-0 rounded-tl",
   },
   {
     key: "safe",
     inset: "safeInsetInches",
-    color: "#10b981",
+    color: "rgba(16, 185, 129, 0.85)",
+    labelColor: "#10b981",
     label: "Safe ¼″",
     dashed: true,
     labelClass: "left-0 top-0 rounded-br",
   },
 ] as const;
 
+const BLEED_COLOR = "#ef4444";
+
 const CORNERS: ResizeCorner[] = ["nw", "ne", "sw", "se"];
 
 /** Dotted workspace margin around the sheet (screen px). */
-const WORKSPACE_PADDING = 24;
+const WORKSPACE_PADDING = 36;
 
 const CORNER_CURSOR: Record<ResizeCorner, string> = {
   nw: "nwse-resize",
@@ -279,8 +287,8 @@ function elementBox(el: CanvasElement): ElementBox {
       y: el.data.y,
       width: el.data.width,
       height: el.data.height,
-      keepAspect: true,
-      minSize: 20,
+      keepAspect: !isShapeUrl(el.data.url),
+      minSize: 8,
     };
   }
   return {
@@ -499,6 +507,52 @@ export function CanvasEditor({
   const displayWidth = dims.designWidth * scale;
   const displayHeight = dims.designHeight * scale;
   const outline = 2 / scale;
+  const bleedPx = dims.bleedInsetInches * DESIGN_PPI * scale;
+  const containerWidth = containerRef.current?.clientWidth ?? 0;
+  const sheetLeft = containerWidth
+    ? (containerWidth - displayWidth) / 2
+    : WORKSPACE_PADDING;
+
+  const selectedElement = elements.find((e) => e.id === selectedElementId);
+  const selectionToolbar = (() => {
+    if (!selectedElement || editingId === selectedElement.id) return null;
+    const box = elementBox(selectedElement);
+    const elTop = WORKSPACE_PADDING + box.y * scale;
+    const elLeft = sheetLeft + box.x * scale;
+    const above = elTop - SELECTION_TOOLBAR_HEIGHT - 8;
+    const top =
+      above >= 2
+        ? above
+        : Math.min(
+            elTop + box.height * scale + 8,
+            displayHeight +
+              WORKSPACE_PADDING * 2 -
+              SELECTION_TOOLBAR_HEIGHT -
+              2,
+          );
+    const maxLeft = Math.max(
+      2,
+      (containerWidth || displayWidth + WORKSPACE_PADDING * 2) -
+        SELECTION_TOOLBAR_WIDTH -
+        2,
+    );
+    const left = Math.min(Math.max(2, elLeft), maxLeft);
+    return (
+      <SelectionToolbar
+        side={activeSide}
+        id={selectedElement.id}
+        kind={selectedElement.kind}
+        label={
+          selectedElement.kind === "logo" &&
+          isShapeUrl(selectedElement.data.url)
+            ? "shape"
+            : undefined
+        }
+        left={left}
+        top={top}
+      />
+    );
+  })();
 
   return (
     <div
@@ -514,8 +568,36 @@ export function CanvasEditor({
       style={{ height: displayHeight + WORKSPACE_PADDING * 2 }}
       data-ocid="canvas.editor.container"
     >
+      {/* Bleed edge: 1/8″ outside the cut line. Backgrounds run through it. */}
       <div
-        className="absolute shadow-lg ring-1 ring-border"
+        className="pointer-events-none absolute overflow-hidden"
+        style={{
+          top: WORKSPACE_PADDING - bleedPx,
+          left: "50%",
+          marginLeft: -displayWidth / 2 - bleedPx,
+          width: displayWidth + bleedPx * 2,
+          height: displayHeight + bleedPx * 2,
+          backgroundColor: side.backgroundColor || "#ffffff",
+          backgroundImage: side.backgroundImageUrl
+            ? `url(${side.backgroundImageUrl})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          border: `2px solid ${BLEED_COLOR}`,
+          boxSizing: "border-box",
+          opacity: 0.9,
+        }}
+        data-ocid="canvas.editor.guide.bleed"
+      >
+        <span
+          className="absolute right-0 top-0 rounded-bl px-1 font-mono text-[9px] uppercase tracking-wide text-white"
+          style={{ backgroundColor: BLEED_COLOR, lineHeight: 1.4 }}
+        >
+          Bleed ⅛″
+        </span>
+      </div>
+      <div
+        className="absolute shadow-lg"
         style={{
           top: WORKSPACE_PADDING,
           left: "50%",
@@ -555,7 +637,7 @@ export function CanvasEditor({
           {/* Print guides */}
           {GUIDES.map((guide) => {
             const rect = insetRect(dims, dims[guide.inset]);
-            const stroke = (guide.dashed ? 1 : 2) / scale;
+            const stroke = 1 / scale;
             return (
               <div
                 key={guide.key}
@@ -579,7 +661,7 @@ export function CanvasEditor({
                   style={{
                     fontSize: 9 / scale,
                     lineHeight: 1.4,
-                    backgroundColor: guide.color,
+                    backgroundColor: guide.labelColor,
                     opacity: 0.85,
                   }}
                 >
@@ -685,6 +767,7 @@ export function CanvasEditor({
           })}
         </div>
       </div>
+      {selectionToolbar}
     </div>
   );
 }

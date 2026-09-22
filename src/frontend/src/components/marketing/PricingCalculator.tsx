@@ -3,11 +3,14 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { CATALOG, categoryRows } from "@/lib/catalog";
 import { formatNumber } from "@/lib/format";
 import {
   PRICING_LEDGER,
@@ -15,8 +18,8 @@ import {
   formatCents,
   getBenchmarkCents,
   getPricingRow,
+  mailClassLabel,
 } from "@/lib/pricing";
-import { MailClass } from "@/types";
 import { Calculator, TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -29,10 +32,6 @@ const DEFAULT_VARIANT = PRICING_LEDGER[0].layoutVariant;
 function clampQty(value: number): number {
   if (!Number.isFinite(value)) return MIN_QTY;
   return Math.min(MAX_QTY, Math.max(MIN_QTY, Math.round(value)));
-}
-
-function mailClassLabel(mailClass: MailClass): string {
-  return mailClass === MailClass.FirstClass ? "First-Class" : "Marketing Mail";
 }
 
 interface Quote {
@@ -131,13 +130,19 @@ export function PricingCalculator() {
                 <SelectValue placeholder="Choose a format" />
               </SelectTrigger>
               <SelectContent>
-                {PRICING_LEDGER.map((item) => (
-                  <SelectItem
-                    key={item.layoutVariant}
-                    value={item.layoutVariant}
-                  >
-                    {item.displayName} · {formatCents(item.retailPriceCents)}
-                  </SelectItem>
+                {CATALOG.map((category) => (
+                  <SelectGroup key={category.id}>
+                    <SelectLabel>{category.name}</SelectLabel>
+                    {categoryRows(category).map((item) => (
+                      <SelectItem
+                        key={item.layoutVariant}
+                        value={item.layoutVariant}
+                      >
+                        {item.documentClass} ·{" "}
+                        {formatCents(item.retailPriceCents)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
