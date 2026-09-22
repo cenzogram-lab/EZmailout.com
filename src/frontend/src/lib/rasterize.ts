@@ -47,6 +47,20 @@ function wrapLines(
 }
 
 /**
+ * Makes sure every typeface used on a side is loaded before the 2D context
+ * measures or draws text, otherwise the browser silently falls back.
+ */
+async function ensureFontsLoaded(side: CanvasSide): Promise<void> {
+  if (typeof document === "undefined" || !("fonts" in document)) return;
+  const requests = side.textBlocks.map((block) =>
+    document.fonts
+      .load(`${Number(block.fontWeight)} 16px "${block.fontFamily}"`)
+      .catch(() => []),
+  );
+  await Promise.all(requests);
+}
+
+/**
  * Renders one canvas side into an HTMLCanvasElement at print resolution.
  * Coordinates in `side` are design pixels (DESIGN_PPI); output is `dpi` px/in.
  */
@@ -57,6 +71,7 @@ export async function rasterizeSide(
 ): Promise<HTMLCanvasElement> {
   const dpi = options.dpi ?? RASTER_DPI;
   const scale = dpi / DESIGN_PPI;
+  await ensureFontsLoaded(side);
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(dims.widthInches * dpi);
   canvas.height = Math.round(dims.heightInches * dpi);
@@ -109,7 +124,7 @@ export async function rasterizeSide(
       z: block.zIndex,
       draw: async () => {
         const fontSize = block.fontSize * scale;
-        ctx.font = `${Number(block.fontWeight)} ${fontSize}px "${block.fontFamily}", "DM Sans", sans-serif`;
+        ctx.font = `${Number(block.fontWeight)} ${fontSize}px "${block.fontFamily}", "Geist", sans-serif`;
         ctx.fillStyle = block.color;
         ctx.textBaseline = "top";
         const align =

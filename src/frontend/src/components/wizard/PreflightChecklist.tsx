@@ -3,7 +3,7 @@ import { QrMode } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/format";
-import { getLayoutDims, insetRect } from "@/lib/printSpec";
+import { getLayoutDims, safeRect } from "@/lib/printSpec";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, WizardAudienceType } from "@/types";
 import {
@@ -165,7 +165,7 @@ export function computePreflight(input: PreflightInput): PreflightReport {
   // 3. Safe-area boundary check
   if (input.selectedLayout) {
     const dims = getLayoutDims(input.selectedLayout);
-    const safe = insetRect(dims, dims.safeInsetPct);
+    const safe = safeRect(dims);
     const offenders = [
       ...outOfBoundsIds(input.canvas.front, safe).map((id) => `front:${id}`),
       ...outOfBoundsIds(input.canvas.back, safe).map((id) => `back:${id}`),
@@ -302,8 +302,8 @@ const LEVEL_STYLES: Record<
     className: "border-emerald-brand/20",
   },
   warn: {
-    icon: <AlertTriangle className="size-4 text-accent" />,
-    className: "border-accent/40 bg-accent/5",
+    icon: <AlertTriangle className="size-4 text-primary" />,
+    className: "border-primary/40 bg-primary/5",
   },
   fail: {
     icon: <XCircle className="size-4 text-destructive" />,
@@ -338,7 +338,7 @@ export function PreflightChecklist({ report }: { report: PreflightReport }) {
           ) : report.warnings > 0 ? (
             <Badge
               variant="outline"
-              className="border-accent/40 bg-accent/10 text-accent"
+              className="border-primary/40 bg-primary/10 text-primary"
             >
               {report.warnings} warning{report.warnings === 1 ? "" : "s"}
             </Badge>

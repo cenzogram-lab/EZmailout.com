@@ -240,7 +240,7 @@ export function PresetEditor({
           {dirty && (
             <Badge
               variant="outline"
-              className="border-accent/40 bg-accent/10 text-accent"
+              className="border-primary/40 bg-primary/10 text-primary"
             >
               Unsaved changes
             </Badge>
@@ -418,7 +418,7 @@ export function PresetEditor({
           type="button"
           onClick={() => onRerun(list, preset.id)}
           disabled={busy || list.length === 0}
-          className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="audience.preset_editor.rerun.button"
         >
           Re-run this audience <ArrowRight className="size-4" />
@@ -459,7 +459,7 @@ export function PresetEditor({
               type="button"
               onClick={() => void handleSaveAs()}
               disabled={savePreset.isPending}
-              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               data-ocid="audience.preset_editor.save_as.confirm.button"
             >
               {savePreset.isPending ? (

@@ -75,7 +75,7 @@ function RecentCampaigns() {
             </p>
             <Button
               asChild
-              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               data-ocid="dashboard.recent_campaigns.new.link"
             >
               <Link to="/wizard">
@@ -126,7 +126,7 @@ function QuickLinks() {
       <CardContent className="grid gap-2 sm:grid-cols-3">
         <Button
           asChild
-          className="justify-start gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="justify-start gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="dashboard.quick_links.wizard.link"
         >
           <Link to="/wizard">

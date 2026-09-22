@@ -60,9 +60,19 @@ export default {
           DEFAULT: "oklch(var(--navy) / <alpha-value>)",
           foreground: "oklch(var(--primary-foreground))",
         },
-        ember: {
-          DEFAULT: "oklch(var(--ember) / <alpha-value>)",
-          foreground: "oklch(var(--accent-foreground))",
+        "indigo-deep": {
+          DEFAULT: "oklch(var(--indigo-deep) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground))",
+        },
+        ice: {
+          DEFAULT: "oklch(var(--ice) / <alpha-value>)",
+          foreground: "oklch(var(--foreground))",
+        },
+        sky: {
+          DEFAULT: "oklch(var(--sky) / <alpha-value>)",
+        },
+        lime: {
+          DEFAULT: "oklch(var(--lime) / <alpha-value>)",
         },
         "emerald-brand": {
           DEFAULT: "oklch(var(--emerald) / <alpha-value>)",
@@ -83,11 +93,14 @@ export default {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "serif"],
-        body: ["var(--font-body)", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       borderRadius: {
+        "2xl": "calc(var(--radius) + 8px)",
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -110,7 +123,7 @@ export default {
         },
         "pipeline-pulse": {
           "0%, 100%": { transform: "scale(1)", filter: "drop-shadow(0 0 0 transparent)" },
-          "50%": { transform: "scale(1.1)", filter: "drop-shadow(0 0 12px oklch(0.7 0.15 60 / 0.6))" },
+          "50%": { transform: "scale(1.1)", filter: "drop-shadow(0 0 12px oklch(0.585 0.204 277 / 0.55))" },
         },
         "pipeline-flag": {
           from: { transform: "rotateZ(0deg)" },

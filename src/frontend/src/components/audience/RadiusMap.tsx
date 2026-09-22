@@ -383,7 +383,7 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
             <Button
               type="button"
               onClick={handleUse}
-              className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+              className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               data-ocid="audience.map.use.button"
             >
               Save estimate &amp; add recipients

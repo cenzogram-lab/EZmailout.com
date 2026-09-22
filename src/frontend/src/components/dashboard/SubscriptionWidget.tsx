@@ -48,7 +48,7 @@ export function SubscriptionWidget() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Crown className="size-4 text-accent" />
+              <Crown className="size-4 text-primary" />
               Membership
             </CardTitle>
             <CardDescription>
@@ -121,7 +121,7 @@ export function SubscriptionWidget() {
             type="button"
             onClick={() => setCheckoutOpen(true)}
             disabled={!account}
-            className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="dashboard.subscription.checkout.button"
           >
             <Crown className="size-4" />

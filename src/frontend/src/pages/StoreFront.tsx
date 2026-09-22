@@ -51,7 +51,7 @@ function Section({
     >
       <div className="mb-10 text-center">
         {eyebrow && (
-          <div className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+          <div className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
             {eyebrow}
           </div>
         )}
@@ -99,7 +99,7 @@ function PipelineConnector({ delay }: { delay?: string }) {
     <div className="relative flex-1">
       <div className="border-t-2 border-dashed border-border" />
       <div
-        className={`absolute -top-1.5 left-0 size-3 rounded-full bg-accent/70 animate-ping ${delay ?? ""}`}
+        className={`absolute -top-1.5 left-0 size-3 rounded-full bg-primary/70 animate-ping ${delay ?? ""}`}
       />
     </div>
   );
@@ -109,15 +109,15 @@ function PipelineWidget() {
   return (
     <div className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-10">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
       <div className="relative flex items-start justify-between gap-2 sm:gap-4">
         <PipelineStage label="Design" caption="Templates or AI Studio">
           <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16">
             <Palette className="size-7 text-primary sm:size-8" />
             <span className="absolute -right-1 -top-1 flex size-3">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex size-3 rounded-full bg-accent" />
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex size-3 rounded-full bg-primary" />
             </span>
           </div>
         </PipelineStage>
@@ -126,7 +126,7 @@ function PipelineWidget() {
 
         <PipelineStage label="Click2Mail print" caption="Next-day production">
           <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16 animate-pipeline-pulse">
-            <Printer className="size-7 text-accent sm:size-8" />
+            <Printer className="size-7 text-primary sm:size-8" />
           </div>
         </PipelineStage>
 
@@ -177,10 +177,10 @@ function Marquee() {
   const text =
     "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • Click2Mail fulfillment • AI design studio • Dynamic QR tracking links • Radius targeting with EDDM estimates • ";
   return (
-    <div className="relative overflow-hidden border-y border-accent/20 bg-accent/10 py-3">
+    <div className="relative overflow-hidden border-y border-primary/20 bg-primary/10 py-3">
       <div className="flex whitespace-nowrap animate-marquee-scroll">
-        <span className="px-4 text-sm font-medium text-accent">{text}</span>
-        <span className="px-4 text-sm font-medium text-accent">{text}</span>
+        <span className="px-4 text-sm font-medium text-primary">{text}</span>
+        <span className="px-4 text-sm font-medium text-primary">{text}</span>
       </div>
     </div>
   );
@@ -254,9 +254,9 @@ function ValuePillars() {
       </div>
 
       <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
-        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-accent/5 blur-2xl transition-smooth group-hover:bg-accent/10" />
+        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
         <div className="relative">
-          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-accent/10 text-accent">
+          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <MapPin className="size-6" />
           </div>
           <h3 className="font-display text-xl font-bold text-foreground">
@@ -294,11 +294,11 @@ function AiStudioTeaser() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-8 text-primary-foreground sm:p-10">
-        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/25 blur-3xl" />
         <div className="absolute -bottom-24 -left-16 size-64 rounded-full bg-white/10 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
-            <Sparkles className="size-3.5 text-accent" />
+            <Sparkles className="size-3.5 text-primary" />
             AI Studio
           </div>
           <h3 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
@@ -313,7 +313,7 @@ function AiStudioTeaser() {
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <ImageIcon className="size-4 text-accent" />
+                <ImageIcon className="size-4 text-primary" />
                 DALL·E 3 backgrounds
               </div>
               <div className="mt-1 text-xs text-primary-foreground/70">
@@ -323,7 +323,7 @@ function AiStudioTeaser() {
             </div>
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Type className="size-4 text-accent" />
+                <Type className="size-4 text-primary" />
                 GPT-4o mini copy
               </div>
               <div className="mt-1 text-xs text-primary-foreground/70">
@@ -335,7 +335,7 @@ function AiStudioTeaser() {
           <Button
             asChild
             size="lg"
-            className="mt-6 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="mt-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Link to="/wizard" data-ocid="ai_studio.try.link">
               Try it in the wizard
@@ -561,7 +561,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
         }}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-      <div className="pointer-events-none absolute -right-32 top-10 size-96 rounded-full bg-accent/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-10 size-96 rounded-full bg-primary/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
@@ -575,7 +575,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
 
         <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground animate-fade-up sm:text-6xl sm:leading-[1.05]">
           Direct mail without minimums.
-          <span className="block bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+          <span className="block bg-gradient-to-r from-primary via-primary to-primary bg-clip-text text-transparent">
             Wholesale print rates for $9/month.
           </span>
         </h1>
@@ -589,7 +589,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
           <Button
             asChild
             size="lg"
-            className="gap-2 bg-accent px-8 text-base text-accent-foreground shadow-md shadow-accent/25 hover:bg-accent/90"
+            className="gap-2 bg-primary px-8 text-base text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90"
           >
             <Link to="/wizard" data-ocid="hero.launch_campaign.button">
               Launch a campaign
@@ -638,9 +638,9 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
 /* ─── Final CTA Banner ─── */
 function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
-    <section className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8 text-center sm:p-12">
+    <section className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-primary/10 p-8 text-center sm:p-12">
       <div className="absolute -left-20 -top-20 size-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-accent/15 blur-3xl" />
+      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative">
         <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
           Your first campaign can be in the mail tomorrow
@@ -654,7 +654,7 @@ function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
           <Button
             asChild
             size="lg"
-            className="gap-2 bg-accent px-8 text-base text-accent-foreground hover:bg-accent/90"
+            className="gap-2 bg-primary px-8 text-base text-primary-foreground hover:bg-primary/90"
           >
             <Link to="/wizard" data-ocid="final_cta.launch_campaign.button">
               Launch a campaign

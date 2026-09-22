@@ -75,7 +75,7 @@ export function CreditsWidget() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="size-4 text-accent" />
+              <Sparkles className="size-4 text-primary" />
               AI credits
             </CardTitle>
             <CardDescription>
@@ -87,7 +87,7 @@ export function CreditsWidget() {
             type="button"
             size="sm"
             onClick={() => setTopUpOpen(true)}
-            className="gap-1 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="dashboard.credits.topup.button"
           >
             <Plus className="size-3.5" /> Top up

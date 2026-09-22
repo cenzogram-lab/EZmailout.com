@@ -57,7 +57,7 @@ const SIZES: {
     size: AiImageSize.Wide1792,
     label: "Widescreen",
     credits: AI_COSTS.wideImage,
-    hint: "1024×1792 · fits 4×6 / 6×9",
+    hint: "1024×1792 · fits 4.25×6 / 6×9",
   },
   {
     size: AiImageSize.WideHd1792,
@@ -201,7 +201,7 @@ export function AiStudioPanel() {
   return (
     <div className="space-y-4" data-ocid="canvas.ai_studio">
       {config.data && !config.data.openAiConfigured && (
-        <p className="rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs">
+        <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs">
           The OpenAI API key isn't configured yet (Admin → OpenAI API Key).
           Generations will fail until it is set.
         </p>
@@ -215,8 +215,8 @@ export function AiStudioPanel() {
               type="button"
               onClick={() => setPrompt(q.prompt)}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-xs transition-smooth hover:border-accent",
-                prompt === q.prompt && "border-accent bg-accent/10",
+                "rounded-full border px-2.5 py-1 text-xs transition-smooth hover:border-primary",
+                prompt === q.prompt && "border-primary bg-primary/10",
               )}
               data-ocid={`canvas.ai.quick_prompt.${q.industry.toLowerCase().replace(/[^a-z]+/g, "_")}`}
             >
@@ -241,14 +241,14 @@ export function AiStudioPanel() {
             className={cn(
               "rounded-lg border p-2.5 text-left text-xs transition-smooth",
               size === s.size
-                ? "border-accent bg-accent/10"
-                : "hover:border-accent/50",
+                ? "border-primary bg-primary/10"
+                : "hover:border-primary/50",
             )}
             data-ocid={`canvas.ai.size.${s.size}`}
           >
             <div className="flex items-center justify-between">
               <span className="font-semibold text-foreground">{s.label}</span>
-              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">
                 {s.credits} cr
               </span>
             </div>
@@ -260,7 +260,7 @@ export function AiStudioPanel() {
         <Button
           onClick={handleGenerate}
           disabled={generate.isPending}
-          className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="canvas.ai.generate"
         >
           {generate.isPending ? (
@@ -321,7 +321,7 @@ export function AiStudioPanel() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            <Sparkles className="mr-1 inline size-3 text-accent" />
+            <Sparkles className="mr-1 inline size-3 text-primary" />
             “Logo” strips near-white backgrounds so a generated badge or seal
             sits cleanly on your card.
           </p>

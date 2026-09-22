@@ -17,7 +17,9 @@ import {
   makeTextBlock,
   withSide,
 } from "@/lib/canvas";
+import { getLayoutDims } from "@/lib/printSpec";
 import type {
+  CanvasAlignment,
   CanvasSideKey,
   DesignTemplate,
   MapTarget,
@@ -95,6 +97,15 @@ interface WizardActions {
   setBackgroundColor: (side: CanvasSideKey, color: string) => void;
   bringToFront: (side: CanvasSideKey, id: string) => void;
   sendToBack: (side: CanvasSideKey, id: string) => void;
+  bringForward: (side: CanvasSideKey, id: string) => void;
+  sendBackward: (side: CanvasSideKey, id: string) => void;
+  /** Aligns an element to the canvas (left/center/right/top/middle/bottom). */
+  alignElement: (
+    side: CanvasSideKey,
+    id: string,
+    alignment: CanvasAlignment,
+  ) => void;
+  duplicateElement: (side: CanvasSideKey, id: string) => string | null;
   removeElement: (side: CanvasSideKey, id: string) => void;
   setQrDestinationUrl: (url: string) => void;
   setReturnAddress: (address: ReturnAddress | null) => void;
@@ -133,6 +144,64 @@ function maxZ(side: CanvasSide): bigint {
   for (const l of side.logos) if (l.zIndex > max) max = l.zIndex;
   for (const q of side.qrCodes) if (q.zIndex > max) max = q.zIndex;
   return max;
+}
+
+interface ElementGeometry {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  z: bigint;
+}
+
+function geometryOf(side: CanvasSide, id: string): ElementGeometry | null {
+  const t = side.textBlocks.find((b) => b.id === id);
+  if (t)
+    return { x: t.x, y: t.y, width: t.width, height: t.height, z: t.zIndex };
+  const l = side.logos.find((b) => b.id === id);
+  if (l)
+    return { x: l.x, y: l.y, width: l.width, height: l.height, z: l.zIndex };
+  const q = side.qrCodes.find((b) => b.id === id);
+  if (q) return { x: q.x, y: q.y, width: q.size, height: q.size, z: q.zIndex };
+  return null;
+}
+
+function moveTo(
+  side: CanvasSide,
+  id: string,
+  x: number,
+  y: number,
+): CanvasSide {
+  return {
+    ...side,
+    textBlocks: side.textBlocks.map((t) => (t.id === id ? { ...t, x, y } : t)),
+    logos: side.logos.map((l) => (l.id === id ? { ...l, x, y } : l)),
+    qrCodes: side.qrCodes.map((q) => (q.id === id ? { ...q, x, y } : q)),
+  };
+}
+
+/** Every element's id and z-index on a side, sorted by paint order. */
+function zOrder(side: CanvasSide): { id: string; z: bigint }[] {
+  return [
+    ...side.textBlocks.map((t) => ({ id: t.id, z: t.zIndex })),
+    ...side.logos.map((l) => ({ id: l.id, z: l.zIndex })),
+    ...side.qrCodes.map((q) => ({ id: q.id, z: q.zIndex })),
+  ].sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : 0));
+}
+
+/** Swaps the z-index of `id` with its neighbour above (`+1`) or below (`-1`). */
+function stepZ(side: CanvasSide, id: string, direction: 1 | -1): CanvasSide {
+  const order = zOrder(side);
+  const index = order.findIndex((e) => e.id === id);
+  const neighbour = order[index + direction];
+  if (index < 0 || !neighbour) return side;
+  const current = order[index];
+  // Identical z-indices (e.g. templates) would swap into a no-op, so spread them.
+  const lower = direction === 1 ? current : neighbour;
+  const upper = direction === 1 ? neighbour : current;
+  const base = lower.z;
+  const swapped = reindex(reindex(side, upper.id, base), lower.id, base + 1n);
+  return swapped;
 }
 
 function reindex(side: CanvasSide, id: string, z: bigint): CanvasSide {
@@ -334,6 +403,94 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
       };
       return { canvas: withSide(s.canvas, sideKey, reindex(shifted, id, 1n)) };
     }),
+  bringForward: (sideKey, id) =>
+    set((s) => ({
+      canvas: withSide(
+        s.canvas,
+        sideKey,
+        stepZ(getSide(s.canvas, sideKey), id, 1),
+      ),
+    })),
+  sendBackward: (sideKey, id) =>
+    set((s) => ({
+      canvas: withSide(
+        s.canvas,
+        sideKey,
+        stepZ(getSide(s.canvas, sideKey), id, -1),
+      ),
+    })),
+  alignElement: (sideKey, id, alignment) =>
+    set((s) => {
+      const side = getSide(s.canvas, sideKey);
+      const geo = geometryOf(side, id);
+      if (!geo) return {};
+      const dims = getLayoutDims(s.selectedLayout ?? DEFAULT_LAYOUT);
+      let { x, y } = geo;
+      switch (alignment) {
+        case "left":
+          x = 0;
+          break;
+        case "center":
+          x = (dims.designWidth - geo.width) / 2;
+          break;
+        case "right":
+          x = dims.designWidth - geo.width;
+          break;
+        case "top":
+          y = 0;
+          break;
+        case "middle":
+          y = (dims.designHeight - geo.height) / 2;
+          break;
+        case "bottom":
+          y = dims.designHeight - geo.height;
+          break;
+      }
+      return {
+        canvas: withSide(
+          s.canvas,
+          sideKey,
+          moveTo(
+            side,
+            id,
+            Math.round(Math.max(0, x)),
+            Math.round(Math.max(0, y)),
+          ),
+        ),
+      };
+    }),
+  duplicateElement: (sideKey, id) => {
+    const side = getSide(get().canvas, sideKey);
+    const offset = 24;
+    const text = side.textBlocks.find((t) => t.id === id);
+    if (text) {
+      const { id: _id, zIndex: _z, ...rest } = text;
+      return get().addTextBlock(sideKey, {
+        ...rest,
+        x: text.x + offset,
+        y: text.y + offset,
+      });
+    }
+    const logo = side.logos.find((l) => l.id === id);
+    if (logo) {
+      const { id: _id, zIndex: _z, url, ...rest } = logo;
+      return get().addLogo(sideKey, url, {
+        ...rest,
+        x: logo.x + offset,
+        y: logo.y + offset,
+      });
+    }
+    const qr = side.qrCodes.find((q) => q.id === id);
+    if (qr) {
+      const { id: _id, zIndex: _z, ...rest } = qr;
+      return get().addQrCode(sideKey, {
+        ...rest,
+        x: qr.x + offset,
+        y: qr.y + offset,
+      });
+    }
+    return null;
+  },
   removeElement: (sideKey, id) => {
     const { removeTextBlock, removeLogo, removeQrCode } = get();
     removeTextBlock(sideKey, id);

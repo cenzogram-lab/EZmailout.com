@@ -91,7 +91,7 @@ export function textBlockStyle(block: TextBlockState): CSSProperties {
     block.align === "center" || block.align === "right" ? block.align : "left";
   return {
     fontSize: block.fontSize,
-    fontFamily: `"${block.fontFamily}", "DM Sans", sans-serif`,
+    fontFamily: `"${block.fontFamily}", "Geist", sans-serif`,
     fontWeight: Number(block.fontWeight),
     color: block.color,
     textAlign: align,
@@ -199,13 +199,41 @@ export function AddressZoneOverlay({
 
 // ─── Editor ─────────────────────────────────────────────────────────────────
 
+/**
+ * Click2Mail guides, outermost first: cut line at the trim edge, 1/8″ bleed
+ * band, 1/4″ safe zone (see `lib/printSpec.ts`).
+ */
 const GUIDES = [
-  { key: "bleed", pct: "bleedInsetPct", color: "#ef4444", label: "Bleed" },
-  { key: "cut", pct: "cutInsetPct", color: "#f97316", label: "Cut" },
-  { key: "safe", pct: "safeInsetPct", color: "#10b981", label: "Safe" },
+  {
+    key: "cut",
+    inset: "cutInsetInches",
+    color: "#f97316",
+    label: "Cut 0″",
+    dashed: false,
+    labelClass: "bottom-0 right-0 rounded-tl",
+  },
+  {
+    key: "bleed",
+    inset: "bleedInsetInches",
+    color: "#ef4444",
+    label: "Bleed ⅛″",
+    dashed: true,
+    labelClass: "right-0 top-0 rounded-bl",
+  },
+  {
+    key: "safe",
+    inset: "safeInsetInches",
+    color: "#10b981",
+    label: "Safe ¼″",
+    dashed: true,
+    labelClass: "left-0 top-0 rounded-br",
+  },
 ] as const;
 
 const CORNERS: ResizeCorner[] = ["nw", "ne", "sw", "se"];
+
+/** Dotted workspace margin around the sheet (screen px). */
+const WORKSPACE_PADDING = 24;
 
 const CORNER_CURSOR: Record<ResizeCorner, string> = {
   nw: "nwse-resize",
@@ -275,7 +303,7 @@ function ResizeHandles({
   scale: number;
   onStart: (event: React.PointerEvent, corner: ResizeCorner) => void;
 }) {
-  const size = 11 / scale;
+  const size = 12 / scale;
   const offset = -size / 2;
   const positions: Record<ResizeCorner, CSSProperties> = {
     nw: { left: offset, top: offset },
@@ -289,13 +317,13 @@ function ResizeHandles({
         <div
           key={corner}
           role="presentation"
-          className="absolute touch-none rounded-sm bg-white"
+          className="absolute touch-none rounded-full bg-white"
           style={{
             ...positions[corner],
             width: size,
             height: size,
-            border: `${1.5 / scale}px solid oklch(var(--ember))`,
-            boxShadow: `0 0 0 ${1 / scale}px rgba(255,255,255,0.9)`,
+            border: `${1.5 / scale}px solid oklch(var(--primary))`,
+            boxShadow: `0 ${1 / scale}px ${3 / scale}px rgba(15, 23, 42, 0.25)`,
             cursor: CORNER_CURSOR[corner],
             zIndex: 2,
           }}
@@ -342,7 +370,7 @@ export function CanvasEditor({
     const fit = (width: number) => {
       if (width <= 0) return;
       const next = Math.min(
-        width / dims.designWidth,
+        (width - WORKSPACE_PADDING * 2) / dims.designWidth,
         maxHeight / dims.designHeight,
       );
       setScale(Math.max(0.05, next));
@@ -479,21 +507,25 @@ export function CanvasEditor({
       tabIndex={0}
       aria-label={`Design canvas, ${activeSide} side`}
       className={cn(
-        "relative w-full select-none outline-none",
+        "studio-dotgrid relative w-full select-none rounded-2xl border outline-none",
         "flex justify-center",
         className,
       )}
-      style={{ height: displayHeight }}
+      style={{ height: displayHeight + WORKSPACE_PADDING * 2 }}
       data-ocid="canvas.editor.container"
     >
       <div
-        className="absolute top-0 shadow-lg ring-1 ring-border"
+        className="absolute shadow-lg ring-1 ring-border"
         style={{
+          top: WORKSPACE_PADDING,
           left: "50%",
           marginLeft: -displayWidth / 2,
           width: displayWidth,
           height: displayHeight,
         }}
+        data-ocid="canvas.editor.sheet"
+        data-width-inches={dims.widthInches}
+        data-height-inches={dims.heightInches}
       >
         <div
           role="presentation"
@@ -522,7 +554,8 @@ export function CanvasEditor({
 
           {/* Print guides */}
           {GUIDES.map((guide) => {
-            const rect = insetRect(dims, dims[guide.pct]);
+            const rect = insetRect(dims, dims[guide.inset]);
+            const stroke = (guide.dashed ? 1 : 2) / scale;
             return (
               <div
                 key={guide.key}
@@ -532,12 +565,17 @@ export function CanvasEditor({
                   top: rect.y,
                   width: rect.w,
                   height: rect.h,
-                  border: `${1 / scale}px dashed ${guide.color}`,
+                  boxSizing: "border-box",
+                  border: `${stroke}px ${guide.dashed ? "dashed" : "solid"} ${guide.color}`,
                   zIndex: 8000,
                 }}
+                data-ocid={`canvas.editor.guide.${guide.key}`}
               >
                 <span
-                  className="absolute left-0 top-0 rounded-br px-1 font-mono uppercase tracking-wide text-white"
+                  className={cn(
+                    "absolute px-1 font-mono uppercase tracking-wide text-white",
+                    guide.labelClass,
+                  )}
                   style={{
                     fontSize: 9 / scale,
                     lineHeight: 1.4,
@@ -575,7 +613,7 @@ export function CanvasEditor({
                   height: box.height,
                   zIndex: el.z + 1,
                   outline: selected
-                    ? `${outline}px solid oklch(var(--ember))`
+                    ? `${outline}px solid oklch(var(--primary))`
                     : undefined,
                   outlineOffset: selected ? outline : undefined,
                 }}

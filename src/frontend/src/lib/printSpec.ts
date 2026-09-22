@@ -13,10 +13,19 @@ export const DESIGN_PPI = 100;
 /** Print-ready raster resolution used when exporting the PDF for Click2Mail. */
 export const RASTER_DPI = 300;
 
-/** Guide insets as a fraction of the shorter canvas side. */
-export const BLEED_INSET_PCT = 0.04;
-export const CUT_INSET_PCT = 0.08;
-export const SAFE_INSET_PCT = 0.12;
+/**
+ * Click2Mail print guides. The canvas is the finished document size, so:
+ *  - cut line   = the canvas edge (0″) — where the press trims;
+ *  - bleed zone = the outer 1/8″ — backgrounds must run through it to the
+ *    edge, anything else inside it may be trimmed off;
+ *  - safe zone  = 1/4″ inside the edge — keep text, logos and QR codes here.
+ */
+export const CUT_INSET_INCHES = 0;
+export const BLEED_INSET_INCHES = 0.125;
+export const SAFE_INSET_INCHES = 0.25;
+
+/** USPS address block + Intelligent Mail barcode clear zone on postcard backs. */
+export const ADDRESS_ZONE_TOP_PCT = 0.38;
 
 export interface AddressZone {
   x: number;
@@ -33,9 +42,10 @@ export interface LayoutDims {
   designWidth: number;
   /** Canvas height in design pixels (`heightInches * DESIGN_PPI`). */
   designHeight: number;
-  bleedInsetPct: number;
-  cutInsetPct: number;
-  safeInsetPct: number;
+  /** Guide insets from the canvas edge, in inches. */
+  cutInsetInches: number;
+  bleedInsetInches: number;
+  safeInsetInches: number;
   hasBackSide: boolean;
   /** Reserved USPS address / indicia area on postcard backs (design px). */
   addressZone?: AddressZone;
@@ -56,37 +66,48 @@ export function getLayoutDims(layoutVariant: string): LayoutDims {
     heightInches,
     designWidth,
     designHeight,
-    bleedInsetPct: BLEED_INSET_PCT,
-    cutInsetPct: CUT_INSET_PCT,
-    safeInsetPct: SAFE_INSET_PCT,
+    cutInsetInches: CUT_INSET_INCHES,
+    bleedInsetInches: BLEED_INSET_INCHES,
+    safeInsetInches: SAFE_INSET_INCHES,
     hasBackSide: true,
   };
   if (row?.productType === ProductType.Postcard) {
-    const shorter = Math.min(designWidth, designHeight);
-    const safe = shorter * SAFE_INSET_PCT;
-    const x = Math.round(designWidth * 0.55);
+    // USPS reserves the lower-right area of the address side for the
+    // delivery address, postage indicia and IMb barcode.
+    const x = Math.round(designWidth / 2);
+    const y = Math.round(designHeight * ADDRESS_ZONE_TOP_PCT);
     dims.addressZone = {
       x,
-      y: Math.round(designHeight * 0.38),
-      w: Math.round(designWidth - x - safe),
-      h: Math.round(designHeight * 0.62 - safe),
+      y,
+      w: designWidth - x,
+      h: designHeight - y,
     };
   }
   return dims;
 }
 
-/** Inset guide rectangle (bleed / cut / safe) in design px for a side. */
+/** Rectangle inset from every canvas edge by `inches`, in design px. */
 export function insetRect(
   dims: LayoutDims,
-  pct: number,
+  inches: number,
 ): { x: number; y: number; w: number; h: number } {
-  const inset = Math.min(dims.designWidth, dims.designHeight) * pct;
+  const inset = inches * DESIGN_PPI;
   return {
     x: inset,
     y: inset,
     w: dims.designWidth - inset * 2,
     h: dims.designHeight - inset * 2,
   };
+}
+
+/** Safe-zone rectangle (design px) — every element should sit inside it. */
+export function safeRect(dims: LayoutDims): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
+  return insetRect(dims, dims.safeInsetInches);
 }
 
 /**

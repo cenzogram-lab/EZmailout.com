@@ -78,7 +78,7 @@ export function PresetPicker({ selectedId, onSelect }: PresetPickerProps) {
               className={cn(
                 "h-auto w-full items-start justify-between gap-3 rounded-xl border p-4 text-left whitespace-normal",
                 active
-                  ? "border-accent bg-accent/10"
+                  ? "border-primary bg-primary/10"
                   : "border-border bg-card hover:border-primary/40",
               )}
               data-ocid={`audience.presets.item.${index + 1}`}

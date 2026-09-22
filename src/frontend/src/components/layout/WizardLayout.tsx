@@ -47,7 +47,7 @@ export function WizardLayout({
                       isCompleted &&
                         "border-emerald-brand bg-emerald-brand text-white",
                       isActive &&
-                        "border-accent bg-accent/10 text-accent ring-4 ring-accent/15",
+                        "border-primary bg-primary/10 text-primary ring-4 ring-primary/15",
                       !isCompleted &&
                         !isActive &&
                         "border-border bg-card text-muted-foreground",

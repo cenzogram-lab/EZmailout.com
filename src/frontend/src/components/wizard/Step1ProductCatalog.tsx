@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { layoutLabel } from "@/lib/format";
+import { layoutLabel, sizeLabel } from "@/lib/format";
 import {
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
@@ -44,10 +44,13 @@ const PRODUCTS: ProductDef[] = [
     type: ProductType.Postcard,
     name: "Postcards",
     description:
-      "Glossy UV-coated cards printed both sides in three commercial sizes, from budget mailers to jumbo attention grabbers.",
+      "Every Click2Mail postcard size — 3.5×5 through 6×11 — printed both sides on gloss UV stock. First-Class up to 4.25×6, Marketing Mail above.",
     icon: <Mail className="size-6" />,
     formats: [
-      { layoutVariant: "4x6", label: "4×6 Standard" },
+      { layoutVariant: "3.5x5", label: "3.5×5 Mini" },
+      { layoutVariant: "4.25x6", label: "4.25×6 Standard" },
+      { layoutVariant: "4x9", label: "4×9 Slim" },
+      { layoutVariant: "5x8", label: "5×8" },
       { layoutVariant: "6x9", label: "6×9 Large" },
       { layoutVariant: "6x11", label: "6×11 Jumbo" },
     ],
@@ -56,9 +59,12 @@ const PRODUCTS: ProductDef[] = [
     type: ProductType.Letter,
     name: "Letters",
     description:
-      "8.5×11 letters printed on 24# white stock and machine-inserted into #10 double-window envelopes.",
+      "8.5×11 and 8.5×14 letters printed on 24# white stock and machine-inserted into #10 double-window envelopes.",
     icon: <FileText className="size-6" />,
-    formats: [{ layoutVariant: "letter", label: "8.5×11 Letter" }],
+    formats: [
+      { layoutVariant: "letter", label: "8.5×11 Letter" },
+      { layoutVariant: "letter_legal", label: "8.5×14 Legal" },
+    ],
     colorOptions: [
       { label: "Full Color", value: "full_color" },
       { label: "Black & White", value: "bw" },
@@ -66,43 +72,39 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     type: ProductType.SelfMailer,
-    name: "Self-Mailers",
+    name: "Flyers & Brochures",
     description:
-      "Folded brochures tabbed shut with no envelope needed. Room for menus, catalogs and multi-offer promotions.",
+      "Folded self-mailers tabbed shut with no envelope: an 8.5×11 flyer folded in half or an 11×8.5 trifold brochure.",
     icon: <Layers className="size-6" />,
     formats: [
-      { layoutVariant: "6x18_bifold", label: "6×18 Bifold" },
-      { layoutVariant: "11x17_trifold", label: "11×17 Trifold" },
+      { layoutVariant: "8.5x11_flyer", label: "8.5×11 Flyer · bifold" },
+      { layoutVariant: "11x8.5_brochure", label: "11×8.5 Brochure · trifold" },
     ],
   },
   {
     type: ProductType.SnapPack,
-    name: "Snap Packs",
+    name: "Secure Mailers",
     description:
-      "Pressure-sealed, perforated security mailers that look official. Ideal for statements, notices and checks.",
+      "Pressure-sealed, perforated secure self-mailers that look official. Ideal for statements, notices and checks.",
     icon: <ShieldCheck className="size-6" />,
     formats: [
-      { layoutVariant: "8.5x11_perforated", label: "8.5×11 Snap Pack" },
+      { layoutVariant: "8.5x11_secure", label: "8.5×11 Secure Self Mailer" },
     ],
   },
   {
     type: ProductType.Booklet,
     name: "Booklets",
     description:
-      "Saddle-stitched multi-page booklets for catalogs, guides and lookbooks that deserve more than a single page.",
+      "Saddle-stitched 8.5×11 booklet self-mailers for catalogs, guides and lookbooks that deserve more than a single page.",
     icon: <BookOpen className="size-6" />,
-    formats: [{ layoutVariant: "multi_page", label: "8.5×11 Booklet" }],
+    formats: [
+      { layoutVariant: "8.5x11_booklet", label: "8.5×11 Booklet Self Mailer" },
+    ],
   },
 ];
 
 function mailClassLabel(mailClass: MailClass): string {
   return mailClass === MailClass.FirstClass ? "First-Class" : "Marketing Mail";
-}
-
-function sizeLabel(layoutVariant: string): string {
-  const row = getPricingRow(layoutVariant);
-  if (!row) return "";
-  return `${row.widthInches}" × ${row.heightInches}"`;
 }
 
 function suggestCampaignName(layoutVariant: string): string {
@@ -209,7 +211,7 @@ export function Step1ProductCatalog() {
               className={cn(
                 "bg-card transition-smooth",
                 isProductSelected
-                  ? "border-accent shadow-md ring-2 ring-accent/30"
+                  ? "border-primary shadow-md ring-2 ring-primary/30"
                   : "hover:border-primary/40",
               )}
               data-ocid={`catalog.product.${product.type.toLowerCase()}.card`}
@@ -220,7 +222,7 @@ export function Step1ProductCatalog() {
                     className={cn(
                       "flex size-11 shrink-0 items-center justify-center rounded-xl",
                       isProductSelected
-                        ? "bg-accent text-accent-foreground"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-primary/10 text-primary",
                     )}
                   >
@@ -260,7 +262,7 @@ export function Step1ProductCatalog() {
                         className={cn(
                           "flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-smooth",
                           isSelected
-                            ? "border-accent bg-accent/10"
+                            ? "border-primary bg-primary/10"
                             : "border-border bg-background hover:border-primary/40",
                         )}
                         aria-pressed={isSelected}
@@ -268,7 +270,7 @@ export function Step1ProductCatalog() {
                       >
                         <span className="flex items-center gap-2">
                           {isSelected ? (
-                            <Check className="size-4 text-accent" />
+                            <Check className="size-4 text-primary" />
                           ) : (
                             <span className="size-4 rounded-full border border-border" />
                           )}
@@ -323,7 +325,7 @@ export function Step1ProductCatalog() {
           <CardContent className="flex h-full flex-col justify-between gap-4 py-5">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-5 text-accent" />
+                <Sparkles className="size-5 text-primary" />
                 <h3 className="font-display text-lg font-semibold text-foreground">
                   Membership pricing
                 </h3>
@@ -371,7 +373,7 @@ export function Step1ProductCatalog() {
           size="lg"
           onClick={handleContinue}
           disabled={!selectedLayout}
-          className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="catalog.continue.button"
         >
           Continue to audience

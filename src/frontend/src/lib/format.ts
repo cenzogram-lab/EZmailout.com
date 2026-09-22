@@ -1,3 +1,6 @@
+import { ProductType } from "@/backend";
+import { getPricingRow } from "@/lib/pricing";
+
 /** Formats a canister timestamp (nanoseconds since epoch, bigint) as a date-time string. */
 export function formatTimestamp(ns: bigint | number, withTime = true): string {
   const ms = Number(BigInt(ns) / 1_000_000n);
@@ -10,17 +13,31 @@ export function formatNumber(n: number | bigint): string {
   return Number(n).toLocaleString("en-US");
 }
 
-/** Human label for a layout variant. */
+/** Human label for a layout variant (legacy keys resolve to the current row). */
 export function layoutLabel(variant: string): string {
-  const labels: Record<string, string> = {
-    "4x6": '4" × 6" Postcard',
-    "6x9": '6" × 9" Postcard',
-    "6x11": '6" × 11" Jumbo Postcard',
-    letter: '8.5" × 11" Letter',
-    "6x18_bifold": '6" × 18" Bifold',
-    "11x17_trifold": '11" × 17" Trifold',
-    "8.5x11_perforated": "Snap Pack",
-    multi_page: "Booklet",
-  };
-  return labels[variant] ?? variant;
+  const row = getPricingRow(variant);
+  if (!row) return variant;
+  const inches = `${row.widthInches}″ × ${row.heightInches}″`;
+  switch (row.productType) {
+    case ProductType.Postcard:
+      return `${inches} Postcard`;
+    case ProductType.Letter:
+      return `${inches} Letter`;
+    case ProductType.SelfMailer:
+      return row.layoutVariant === "8.5x11_flyer"
+        ? `${inches} Flyer (bifold)`
+        : `${inches} Brochure (trifold)`;
+    case ProductType.SnapPack:
+      return `${inches} Secure Mailer`;
+    case ProductType.Booklet:
+      return `${inches} Booklet`;
+    default:
+      return row.displayName;
+  }
+}
+
+/** Trim size such as `6″ × 4.25″` for a layout variant. */
+export function sizeLabel(variant: string): string {
+  const row = getPricingRow(variant);
+  return row ? `${row.widthInches}″ × ${row.heightInches}″` : "";
 }

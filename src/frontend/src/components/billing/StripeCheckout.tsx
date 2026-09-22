@@ -137,7 +137,7 @@ function PaymentForm({
           <Button
             type="submit"
             disabled={!stripe || !elements || submitting}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="checkout.pay.button"
           >
             {submitting ? (
@@ -318,7 +318,7 @@ export function StripeCheckout({
                 variables: {
                   colorPrimary: "#f97316",
                   borderRadius: "10px",
-                  fontFamily: "DM Sans, sans-serif",
+                  fontFamily: "Geist, sans-serif",
                 },
               },
             }}

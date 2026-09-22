@@ -10,7 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatNumber } from "@/lib/format";
 import { useWizardStore } from "@/store/wizard";
 import type { MapTarget, WizardAudienceType } from "@/types";
-import { ArrowLeft, Bookmark, FileSpreadsheet, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bookmark,
+  FileSpreadsheet,
+  MapPin,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -163,7 +169,7 @@ export function Step2AudienceIntake() {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-start border-t border-border pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
         <Button
           type="button"
           variant="ghost"
@@ -172,6 +178,17 @@ export function Step2AudienceIntake() {
           data-ocid="audience.back.button"
         >
           <ArrowLeft className="size-4" /> Back to products
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setStep(3)}
+          className="gap-2"
+          title="You can design first; a verified recipient list is still required before launch."
+          data-ocid="audience.skip.button"
+        >
+          Design first, add recipients later
+          <ArrowRight className="size-4" />
         </Button>
       </div>
     </div>

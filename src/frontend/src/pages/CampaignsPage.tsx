@@ -287,7 +287,7 @@ export function CampaignsPage() {
         </div>
         <Button
           asChild
-          className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="campaigns.new_campaign.button"
         >
           <Link to="/wizard">
@@ -328,7 +328,7 @@ export function CampaignsPage() {
                 In flight / delivered
               </p>
               <p className="font-display text-2xl font-bold text-foreground">
-                <span className="text-accent">
+                <span className="text-primary">
                   {formatNumber(inFlightCount)}
                 </span>
                 <span className="text-muted-foreground"> / </span>
@@ -366,7 +366,7 @@ export function CampaignsPage() {
           </p>
           <Button
             asChild
-            className="mt-6 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="mt-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="campaigns.empty.cta.button"
           >
             <Link to="/wizard">

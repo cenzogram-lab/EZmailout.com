@@ -25,33 +25,33 @@ const PRODUCTS: ShowcaseProduct[] = [
     productType: ProductType.Postcard,
     name: "Postcards",
     tagline:
-      "Full-color both sides on gloss UV stock. The fastest way to get a local offer read.",
+      "Six Click2Mail sizes from 3.5×5 to 6×11, full color both sides on gloss UV stock.",
     icon: Mail,
-    layoutVariants: ["4x6", "6x9", "6x11"],
+    layoutVariants: ["3.5x5", "4.25x6", "4x9", "5x8", "6x9", "6x11"],
   },
   {
     productType: ProductType.Letter,
     name: "Letters",
     tagline:
-      "8.5×11 pages folded into a #10 double-window envelope. Full color or black & white.",
+      "8.5×11 and 8.5×14 pages folded into a #10 double-window envelope. Full color or black & white.",
     icon: FileText,
-    layoutVariants: ["letter"],
+    layoutVariants: ["letter", "letter_legal"],
   },
   {
     productType: ProductType.SelfMailer,
-    name: "Self-Mailers & Brochures",
+    name: "Flyers & Brochures",
     tagline:
-      "Bifold and trifold panels tabbed shut — no envelope, maximum room for menus and catalogs.",
+      "Bifold flyers and trifold brochures tabbed shut — no envelope, maximum room for menus and catalogs.",
     icon: Package,
-    layoutVariants: ["6x18_bifold", "11x17_trifold"],
+    layoutVariants: ["8.5x11_flyer", "11x8.5_brochure"],
   },
   {
     productType: ProductType.SnapPack,
-    name: "Snap Packs",
+    name: "Secure Mailers",
     tagline:
-      "Pressure-sealed, perforated security mailers for notices, statements and checks.",
+      "Pressure-sealed, perforated secure self-mailers for notices, statements and checks.",
     icon: ShieldCheck,
-    layoutVariants: ["8.5x11_perforated"],
+    layoutVariants: ["8.5x11_secure"],
   },
   {
     productType: ProductType.Booklet,
@@ -59,7 +59,7 @@ const PRODUCTS: ShowcaseProduct[] = [
     tagline:
       "Saddle-stitched multi-page catalogs and reports, printed and mailed as one piece.",
     icon: BookOpen,
-    layoutVariants: ["multi_page"],
+    layoutVariants: ["8.5x11_booklet"],
   },
 ];
 
@@ -69,7 +69,7 @@ function mailClassLabel(mailClass: MailClass): string {
 
 function mailClassBadgeClass(mailClass: MailClass): string {
   return mailClass === MailClass.FirstClass
-    ? "border-transparent bg-accent/15 text-accent"
+    ? "border-transparent bg-primary/15 text-primary"
     : "border-transparent bg-emerald-brand/10 text-emerald-brand";
 }
 
@@ -149,7 +149,7 @@ function ProductCard({ product }: { product: ShowcaseProduct }) {
         </div>
         <Link
           to="/wizard"
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold text-accent transition-smooth hover:bg-accent/10"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold text-primary transition-smooth hover:bg-primary/10"
           data-ocid={`products.design_one.${product.productType.toLowerCase()}.link`}
         >
           Design one

@@ -126,7 +126,7 @@ export function ReferralLandingPage() {
           <div className="mb-2 flex items-center gap-2">
             <Badge
               variant="outline"
-              className="border-accent/40 bg-accent/15 font-mono text-accent-foreground"
+              className="border-primary/40 bg-primary/15 font-mono text-primary-foreground"
               data-ocid="referral.code.badge"
             >
               <Gift className="size-3" /> {code || "No code"}
@@ -213,7 +213,7 @@ export function ReferralLandingPage() {
               <Button
                 onClick={login}
                 disabled={isLoggingIn || isInitializing}
-                className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 data-ocid="referral.sign_in.button"
               >
                 {isLoggingIn ? (
@@ -226,7 +226,7 @@ export function ReferralLandingPage() {
             ) : (
               <Button
                 asChild
-                className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 data-ocid="referral.wizard.link"
               >
                 <Link to="/wizard">

@@ -1,77 +1,93 @@
 import { CreditBadge } from "@/components/billing/CreditBadge";
+import { findElementKind } from "@/components/canvas/CanvasEditor";
 import { Button } from "@/components/ui/button";
-import { getLayoutDims, insetRect } from "@/lib/printSpec";
+import { getSide } from "@/lib/canvas";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
-import type { CanvasSideKey } from "@/types";
-import { ImagePlus, PenLine, Type, Upload, X } from "lucide-react";
-import { useRef } from "react";
-import { toast } from "sonner";
+import type { CanvasAlignment, CanvasSideKey } from "@/types";
+import type { LucideIcon } from "lucide-react";
+import {
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  ArrowDown,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowUpToLine,
+  Copy,
+  Trash2,
+} from "lucide-react";
 
-/** Top toolbar: side switcher, uploads, quick add text, background colour, credits. */
-export function CanvasToolbar({
-  onOpenCopywriter,
-}: { onOpenCopywriter: () => void }) {
+const ALIGNMENTS: { id: CanvasAlignment; label: string; icon: LucideIcon }[] = [
+  { id: "left", label: "Align left", icon: AlignStartVertical },
+  { id: "center", label: "Align centre", icon: AlignCenterVertical },
+  { id: "right", label: "Align right", icon: AlignEndVertical },
+  { id: "top", label: "Align top", icon: AlignStartHorizontal },
+  { id: "middle", label: "Align middle", icon: AlignCenterHorizontal },
+  { id: "bottom", label: "Align bottom", icon: AlignEndHorizontal },
+];
+
+function IconAction({
+  label,
+  icon: Icon,
+  onClick,
+  ocid,
+  className,
+}: {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  ocid: string;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={cn("size-8 rounded-lg", className)}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      data-ocid={ocid}
+    >
+      <Icon className="size-4" />
+    </Button>
+  );
+}
+
+/**
+ * Contextual bar above the canvas (Canva-style): side switcher, then — when
+ * an element is selected — align-to-canvas, layer order, duplicate, delete.
+ */
+export function CanvasToolbar() {
   const canvas = useWizardStore((s) => s.canvas);
   const activeSide = useWizardStore((s) => s.activeSide);
   const setActiveSide = useWizardStore((s) => s.setActiveSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
-  const setBackgroundImage = useWizardStore((s) => s.setBackgroundImage);
-  const setBackgroundColor = useWizardStore((s) => s.setBackgroundColor);
-  const addLogo = useWizardStore((s) => s.addLogo);
-  const addTextBlock = useWizardStore((s) => s.addTextBlock);
-  const bgInput = useRef<HTMLInputElement>(null);
-  const logoInput = useRef<HTMLInputElement>(null);
-  const side = activeSide === "front" ? canvas.front : canvas.back;
-
-  function onBackgroundFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
-      return;
-    }
-    setBackgroundImage(activeSide, URL.createObjectURL(file));
-    e.target.value = "";
-  }
-
-  function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose a PNG, WebP or SVG logo");
-      return;
-    }
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
-    const safe = insetRect(dims, dims.safeInsetPct);
-    addLogo(activeSide, URL.createObjectURL(file), {
-      x: safe.x + 12,
-      y: safe.y + 12,
-      width: 140,
-      height: 140,
-    });
-    e.target.value = "";
-  }
-
-  function onAddText() {
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
-    const safe = insetRect(dims, dims.safeInsetPct);
-    const count = side.textBlocks.length;
-    addTextBlock(activeSide, {
-      x: safe.x + 12,
-      y: safe.y + 12 + count * 48,
-      width: Math.round(safe.w * 0.6),
-      height: 48,
-    });
-  }
+  const selectedElementId = useWizardStore((s) => s.selectedElementId);
+  const alignElement = useWizardStore((s) => s.alignElement);
+  const bringForward = useWizardStore((s) => s.bringForward);
+  const sendBackward = useWizardStore((s) => s.sendBackward);
+  const bringToFront = useWizardStore((s) => s.bringToFront);
+  const sendToBack = useWizardStore((s) => s.sendToBack);
+  const duplicateElement = useWizardStore((s) => s.duplicateElement);
+  const removeElement = useWizardStore((s) => s.removeElement);
+  const side = getSide(canvas, activeSide);
+  const kind = selectedElementId
+    ? findElementKind(side, selectedElementId)
+    : null;
+  const id = kind ? selectedElementId : null;
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 p-2"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card px-2 py-1.5 shadow-xs"
       data-ocid="canvas.toolbar"
     >
       <div
-        className="inline-flex rounded-lg border bg-card p-0.5"
+        className="inline-flex rounded-full border bg-secondary p-0.5"
         role="tablist"
         aria-label="Card side"
       >
@@ -83,9 +99,9 @@ export function CanvasToolbar({
             aria-selected={activeSide === s}
             onClick={() => setActiveSide(s)}
             className={cn(
-              "rounded-md px-3 py-1 text-xs font-semibold capitalize transition-smooth",
+              "rounded-full px-3 py-1 text-xs font-semibold capitalize transition-smooth",
               activeSide === s
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
             data-ocid={`canvas.side.${s}`}
@@ -94,80 +110,76 @@ export function CanvasToolbar({
           </button>
         ))}
       </div>
-      <input
-        ref={bgInput}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onBackgroundFile}
-        data-ocid="canvas.upload_input"
-      />
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => bgInput.current?.click()}
-        className="gap-1.5"
-        data-ocid="canvas.upload_button"
-      >
-        <Upload className="size-4" /> Background
-      </Button>
-      {side.backgroundImageUrl && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setBackgroundImage(activeSide, null)}
-          className="gap-1 text-muted-foreground"
-          data-ocid="canvas.remove_background"
-        >
-          <X className="size-3.5" /> Remove
-        </Button>
+
+      {id ? (
+        <>
+          <span className="hidden text-xs font-medium capitalize text-muted-foreground sm:inline">
+            {kind === "qr" ? "QR code" : kind}
+          </span>
+          <div
+            className="flex items-center gap-0.5 rounded-xl border bg-secondary/60 p-0.5"
+            aria-label="Position"
+            data-ocid="canvas.align.group"
+          >
+            {ALIGNMENTS.map((a) => (
+              <IconAction
+                key={a.id}
+                label={a.label}
+                icon={a.icon}
+                onClick={() => alignElement(activeSide, id, a.id)}
+                ocid={`canvas.align.${a.id}`}
+              />
+            ))}
+          </div>
+          <div
+            className="flex items-center gap-0.5 rounded-xl border bg-secondary/60 p-0.5"
+            aria-label="Layer order"
+            data-ocid="canvas.order.group"
+          >
+            <IconAction
+              label="Bring forward"
+              icon={ArrowUp}
+              onClick={() => bringForward(activeSide, id)}
+              ocid="canvas.order.forward"
+            />
+            <IconAction
+              label="Send backward"
+              icon={ArrowDown}
+              onClick={() => sendBackward(activeSide, id)}
+              ocid="canvas.order.backward"
+            />
+            <IconAction
+              label="Bring to front"
+              icon={ArrowUpToLine}
+              onClick={() => bringToFront(activeSide, id)}
+              ocid="canvas.order.front"
+            />
+            <IconAction
+              label="Send to back"
+              icon={ArrowDownToLine}
+              onClick={() => sendToBack(activeSide, id)}
+              ocid="canvas.order.back"
+            />
+          </div>
+          <IconAction
+            label="Duplicate"
+            icon={Copy}
+            onClick={() => duplicateElement(activeSide, id)}
+            ocid="canvas.duplicate"
+          />
+          <IconAction
+            label="Delete"
+            icon={Trash2}
+            onClick={() => removeElement(activeSide, id)}
+            ocid="canvas.delete"
+            className="text-destructive hover:text-destructive"
+          />
+        </>
+      ) : (
+        <span className="text-xs text-muted-foreground">
+          Select an element to align, reorder or duplicate it.
+        </span>
       )}
-      <input
-        ref={logoInput}
-        type="file"
-        accept="image/png,image/webp,image/svg+xml,image/jpeg"
-        className="hidden"
-        onChange={onLogoFile}
-        data-ocid="canvas.logo_upload_input"
-      />
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => logoInput.current?.click()}
-        className="gap-1.5"
-        data-ocid="canvas.logo_upload_button"
-      >
-        <ImagePlus className="size-4" /> Logo
-      </Button>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onAddText}
-        className="gap-1.5"
-        data-ocid="canvas.add_text_button"
-      >
-        <Type className="size-4" /> Text
-      </Button>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onOpenCopywriter}
-        className="gap-1.5"
-        data-ocid="canvas.copywriter_button"
-      >
-        <PenLine className="size-4 text-accent" /> AI Copywriter
-      </Button>
-      <label className="ml-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        Paper
-        <input
-          type="color"
-          value={side.backgroundColor}
-          onChange={(e) => setBackgroundColor(activeSide, e.target.value)}
-          className="size-7 cursor-pointer rounded border bg-transparent"
-          aria-label="Background colour"
-          data-ocid="canvas.background_color"
-        />
-      </label>
       <div className="ml-auto">
         <CreditBadge compact />
       </div>

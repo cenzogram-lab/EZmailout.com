@@ -187,7 +187,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
         className={cn(
           "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-smooth",
           dragging
-            ? "border-accent bg-accent/10"
+            ? "border-primary bg-primary/10"
             : "border-border bg-muted/30 hover:bg-muted/50",
         )}
         data-ocid="audience.csv.dropzone"
@@ -208,7 +208,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="audience.csv.browse.button"
           >
             <FileSpreadsheet className="size-4" /> Choose file
@@ -352,7 +352,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
                 type="button"
                 onClick={() => onUseAudience(verifiedAddresses)}
                 disabled={!canContinue}
-                className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 data-ocid="audience.csv.use.button"
               >
                 Use verified audience <ArrowRight className="size-4" />
@@ -394,7 +394,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               type="button"
               onClick={() => void handleSavePreset()}
               disabled={savePreset.isPending}
-              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               data-ocid="audience.csv.save_preset.confirm.button"
             >
               {savePreset.isPending ? (

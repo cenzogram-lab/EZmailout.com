@@ -19,7 +19,7 @@ const SOURCE_STYLES: Record<TrackingSource, string> = {
   [TrackingSource.Webhook]: "border-primary/20 bg-primary/10 text-primary",
   [TrackingSource.Poll]: "border-border bg-muted text-muted-foreground",
   [TrackingSource.Manual]:
-    "border-accent/40 bg-accent/15 text-accent-foreground",
+    "border-primary/40 bg-primary/15 text-primary-foreground",
   [TrackingSource.System]:
     "border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand",
 };
@@ -69,7 +69,7 @@ function StageMarker({
         state === "done" &&
           "border-emerald-brand bg-emerald-brand text-white shadow-sm",
         state === "current" &&
-          "animate-pipeline-pulse border-accent bg-accent text-accent-foreground ring-4 ring-accent/20",
+          "animate-pipeline-pulse border-primary bg-primary text-primary-foreground ring-4 ring-primary/20",
         state === "pending" && "border-border bg-card text-muted-foreground",
       )}
       aria-current={state === "current" ? "step" : undefined}
@@ -105,7 +105,7 @@ function StageDetails({
       <p
         className={cn(
           "font-display text-sm font-semibold leading-tight",
-          state === "current" && "text-accent",
+          state === "current" && "text-primary",
           state === "done" && "text-foreground",
           state === "pending" && "text-muted-foreground",
         )}

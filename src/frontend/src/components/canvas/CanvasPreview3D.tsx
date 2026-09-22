@@ -127,8 +127,9 @@ export function CanvasPreview3D({ className }: { className?: string }) {
     timer.current = window.setTimeout(() => setInteracting(false), 700);
   }, []);
 
+  // Fits inside the 340px studio column (panel padding + card border).
   const previewScale = Math.min(
-    320 / dims.designWidth,
+    280 / dims.designWidth,
     300 / dims.designHeight,
     0.5,
   );
@@ -148,7 +149,7 @@ export function CanvasPreview3D({ className }: { className?: string }) {
     >
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 font-display text-sm font-semibold">
-          <ScanEye className="size-4 text-accent" /> Live 3D proof
+          <ScanEye className="size-4 text-primary" /> Live 3D proof
         </span>
         <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
           {dims.widthInches}″ × {dims.heightInches}″ · 300 DPI export
@@ -168,7 +169,7 @@ export function CanvasPreview3D({ className }: { className?: string }) {
       >
         <div
           className={cn(
-            "preserve-3d relative",
+            "preserve-3d relative shrink-0",
             !interacting && "animate-card-float",
           )}
           style={{

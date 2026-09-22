@@ -144,7 +144,7 @@ function SecretField({
           {value !== undefined && (
             <Badge
               variant="outline"
-              className="border-accent/40 bg-accent/15 text-accent-foreground"
+              className="border-primary/40 bg-primary/15 text-primary-foreground"
             >
               {cleared ? "Will be cleared" : "Unsaved change"}
             </Badge>
@@ -657,7 +657,7 @@ export function AdminPage() {
                   <Separator />
 
                   <div
-                    className="flex items-start justify-between gap-4 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3"
+                    className="flex items-start justify-between gap-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3"
                     data-ocid="admin.sandbox_checkout.field"
                   >
                     <div className="space-y-1">
@@ -665,7 +665,7 @@ export function AdminPage() {
                         htmlFor="admin-sandbox"
                         className="flex items-center gap-2 text-sm font-medium"
                       >
-                        <FlaskConical className="size-4 text-accent" />
+                        <FlaskConical className="size-4 text-primary" />
                         Sandbox checkout
                       </Label>
                       <p className="text-xs text-muted-foreground">
@@ -703,7 +703,7 @@ export function AdminPage() {
                       type="button"
                       onClick={handleSave}
                       disabled={!dirty || saveKeys.isPending}
-                      className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                      className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                       data-ocid="admin.save_keys.button"
                     >
                       {saveKeys.isPending ? (

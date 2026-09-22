@@ -1,33 +1,54 @@
 # EZmailout — Visual Identity
 
 ## Overview
-A crisp, high-conversion SaaS interface for launching direct mail without minimums. Light surfaces, deep postal
-navy for structure and trust, vibrant orange for every action item, emerald for verified/positive states.
+A light, Canva-style SaaS interface for launching direct mail without minimums. Neutral BG/300 surfaces, near-black ink,
+one indigo brand colour for every action, ice-cyan highlights, deep navy for dark panels, emerald only for verified /
+delivered states. Source of truth: the MAIL_Command master specification (swatches, Geist type sheet, studio reference).
 
 ## Palette (OKLCH tokens in `src/frontend/src/index.css`)
-| Token | Light | Purpose |
-| --- | --- | --- |
-| `--background` | 0.985 0.004 250 | Page background (cool off-white) |
-| `--foreground` | 0.22 0.05 262 | Body text (navy ink) |
-| `--primary` / `--navy` | 0.33 0.09 262 | Headers, structure, primary buttons |
-| `--accent` / `--ember` | 0.72 0.19 45 | CTAs, action items, active states, focus ring |
-| `--emerald` | 0.66 0.17 160 | Success, verified, delivered, savings |
-| `--muted` | 0.95 0.01 250 | Panels, table headers |
-| `--border` | 0.90 0.01 250 | Hairlines |
+| Token | Hex | Light OKLCH | Purpose |
+| --- | --- | --- | --- |
+| `--primary` | `#6366f1` | 0.585 0.204 277 | Brand indigo: CTAs, links, active states, focus ring, selection handles |
+| `--indigo-deep` | `#4d32a6` | 0.423 0.175 287 | Pressed / gradient end of the brand colour |
+| `--background` | `#f4f4f4` (BG/300) | 0.967 0 0 | Page background |
+| `--card` | `#ffffff` | 1 0 0 | Cards, panels, studio canvas |
+| `--foreground` | `#01080a` | 0.125 0.018 211 | Ink (Geist type sheet black) |
+| `--accent` / `--ice` | `#cff3fd` | 0.942 0.04 216 | Highlights, hover tints, chips (Geist type sheet ice) |
+| `--navy` | `#0e2b4f` | 0.289 0.074 255 | Dark buttons/panels (studio reference "Book today") |
+| `--secondary` | `#f6f7f9` | 0.976 0.003 264 | Studio rail, secondary buttons |
+| `--muted` | `#f0f1f5` | 0.959 0.005 275 | Panels, table headers, studio swatch 1 |
+| `--muted-foreground` | `#575859` | 0.46 0.006 255 | Secondary text, rail icons |
+| `--border` | `#e4e6ec` | 0.925 0.008 271 | Hairlines |
+| `--sky` / `--lime` | `#b5d8fc` / `#dbefad` | — | Studio swatches only |
+| `--emerald` | `#10b981` | 0.696 0.149 162 | Success, verified, delivered |
 
-Dark mode (`.dark`) keeps the same roles on navy surfaces.
+Dark mode (`.dark`) keeps the same roles on navy surfaces with indigo-400 as primary.
 
 ## Typography
-Display: Space Grotesk · Body: DM Sans · Mono: JetBrains Mono (ids, tracking codes, prices in tables).
+Geist (variable 100–900, self-hosted `public/assets/fonts/Geist-*.woff2`) for display and body; Geist Mono for ids,
+tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. Body: 400/500.
 
 ## Components
-- Cards: white, 1px border, `rounded-xl`, soft shadow; hero cards add `surface-glow`.
-- Buttons: navy default, orange accent for the primary action on a screen, outline for secondary.
-- Status badges: Created (slate) → In Production (navy) → In Transit (orange) → Sorted (amber) → Delivered (emerald).
-- Canvas overlays: bleed red dashed (4%), cut orange dashed (8%), safe emerald dashed (12%).
+- Radius: `--radius: 0.875rem`; cards `rounded-xl`/`rounded-2xl`, buttons and badges are pills (`rounded-full`).
+- Buttons: indigo `default` for the primary action, `outline`/`secondary` for secondary, `navy` for dark hero CTAs,
+  `ghost` hover uses `muted` (never a colour fill).
+- Chips: pill, `bg-primary/10 text-primary` or `bg-ice text-foreground`.
+- Status badges: Created (slate) → In Production (navy) → In Transit (indigo) → Sorted (sky) → Delivered (emerald).
+
+## Design studio (Step 3, Canva reference)
+- Left icon rail (Text · Uploads · Brand · AI Studio · QR · Layers) with a 300px tool panel beside it; the canvas sits on
+  a dotted workspace; the live 3D proof is pinned on the right at `lg+`.
+- Selection: indigo outline with round white handles (indigo border) at each corner; double-click edits text inline.
+- Alignment: align selected element left / centre / right / top / middle / bottom of the canvas; layer order supports
+  forward / backward / front / back.
+- Print guides (Click2Mail): cut = canvas edge (orange), bleed = 1/8″ band (red), safe zone = 1/4″ (emerald);
+  postcard backs reserve the lower-right USPS address + IMb zone.
+- Swatches: paper colour and text colour pickers expose the brand palette
+  (`#ffffff #f4f4f4 #f0f1f5 #cff3fd #b5d8fc #dbefad #6366f1 #0e2b4f #01080a`).
 
 ## Motion
-Pipeline truck / print pulse / mailbox flag on the landing page; card float + rotate/flip on the 3D preview; `fade-up` for section reveals. Durations 0.3–0.6s for interactions, 2–3s loops.
+Pipeline truck / print pulse / mailbox flag on the landing page; card float + rotate/flip on the 3D preview;
+`fade-up` for section reveals. Durations 0.3–0.6s for interactions, 2–3s loops.
 
 ## Anti-patterns
-No dark-console aesthetic, no cyan, no untinted greys on text, no more than one orange CTA per viewport.
+No orange or ember accents, no untinted greys on text, one indigo CTA per viewport, no square buttons.

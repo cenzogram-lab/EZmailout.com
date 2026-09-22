@@ -22,7 +22,7 @@ export function SignInPrompt({
         <Button
           onClick={login}
           disabled={isLoggingIn || isInitializing}
-          className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="auth.sign_in_prompt.button"
         >
           {isLoggingIn ? (

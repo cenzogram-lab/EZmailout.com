@@ -112,3 +112,15 @@ export type CanvasSideKey = "front" | "back";
 
 /** Kinds of draggable elements on a canvas side. */
 export type CanvasElementKind = "text" | "logo" | "qr";
+
+/** Align-to-canvas commands offered by the studio position tools. */
+export type CanvasAlignment =
+  | "left"
+  | "center"
+  | "right"
+  | "top"
+  | "middle"
+  | "bottom";
+
+/** Tools on the studio's left rail (Canva-style). */
+export type StudioTool = "text" | "uploads" | "brand" | "ai" | "qr" | "layers";

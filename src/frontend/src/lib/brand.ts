@@ -34,3 +34,34 @@ export function referralUrlFor(code: string): string {
 export function recipientIdFor(campaignId: string, index: number): string {
   return `${campaignId}_${index}`;
 }
+
+/** A named colour in the studio swatch palette. */
+export interface BrandSwatch {
+  name: string;
+  hex: string;
+}
+
+/**
+ * Brand palette exposed by the design studio colour pickers (master spec:
+ * BG/300, indigo primary, Geist ink + ice, studio reference navy / sky / lime).
+ */
+export const STUDIO_SWATCHES: BrandSwatch[] = [
+  { name: "White", hex: "#ffffff" },
+  { name: "BG/300", hex: "#f4f4f4" },
+  { name: "Cloud", hex: "#f0f1f5" },
+  { name: "Ice", hex: "#cff3fd" },
+  { name: "Sky", hex: "#b5d8fc" },
+  { name: "Lime", hex: "#dbefad" },
+  { name: "Indigo", hex: "#6366f1" },
+  { name: "Navy", hex: "#0e2b4f" },
+  { name: "Ink", hex: "#01080a" },
+];
+
+/** Typefaces offered by the text inspector (Geist is the brand face). */
+export const STUDIO_FONTS = [
+  "Geist",
+  "Geist Mono",
+  "Georgia",
+  "Times New Roman",
+  "Arial",
+] as const;

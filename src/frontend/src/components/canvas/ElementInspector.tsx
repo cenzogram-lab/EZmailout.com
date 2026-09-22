@@ -1,5 +1,6 @@
 import { QrMode } from "@/backend";
 import { findElementKind } from "@/components/canvas/CanvasEditor";
+import { SwatchRow } from "@/components/canvas/SwatchRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { STUDIO_FONTS } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
 import { normalizeDestinationUrl } from "@/lib/qr";
 import { cn } from "@/lib/utils";
@@ -25,14 +27,8 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 
-const FONTS = [
-  "DM Sans",
-  "Space Grotesk",
-  "JetBrains Mono",
-  "Georgia",
-  "Arial",
-];
-const WEIGHTS = ["400", "600", "700", "800"];
+const FONTS = STUDIO_FONTS;
+const WEIGHTS = ["300", "400", "500", "600", "700", "800"];
 
 function NumberField({
   label,
@@ -131,7 +127,11 @@ export function ElementInspector() {
               </SelectTrigger>
               <SelectContent>
                 {FONTS.map((f) => (
-                  <SelectItem key={f} value={f}>
+                  <SelectItem
+                    key={f}
+                    value={f}
+                    style={{ fontFamily: `"${f}", "Geist", sans-serif` }}
+                  >
                     {f}
                   </SelectItem>
                 ))}
@@ -193,14 +193,16 @@ export function ElementInspector() {
             data-ocid="canvas.inspector.size_slider"
           />
         </div>
-        <div className="grid grid-cols-[auto_1fr] items-center gap-2">
-          <input
-            type="color"
+        <div className="space-y-1.5">
+          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Colour
+          </Label>
+          <SwatchRow
             value={block.color}
-            onChange={(e) => patch({ color: e.target.value })}
-            className="size-8 cursor-pointer rounded border bg-transparent"
-            data-ocid="canvas.inspector.color"
-            aria-label="Text color"
+            onChange={(color) => patch({ color })}
+            ocid="canvas.inspector.swatch"
+            label="Text colour"
+            size="sm"
           />
           <Input
             value={block.color}

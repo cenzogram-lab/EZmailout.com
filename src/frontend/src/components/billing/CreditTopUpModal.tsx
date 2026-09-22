@@ -38,7 +38,7 @@ export function CreditTopUpModal() {
       <DialogContent className="max-w-lg" data-ocid="credits.topup.modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
-            <Sparkles className="size-5 text-accent" /> Top up AI credits
+            <Sparkles className="size-5 text-primary" /> Top up AI credits
           </DialogTitle>
           <DialogDescription>
             1 credit = $0.01. Copy assistant 1 credit · square art 7 ·
@@ -54,7 +54,7 @@ export function CreditTopUpModal() {
                 type="button"
                 onClick={() => setPack(p.id)}
                 className={cn(
-                  "flex flex-col items-start rounded-xl border bg-card p-4 text-left transition-smooth hover:border-accent hover:shadow-sm",
+                  "flex flex-col items-start rounded-xl border bg-card p-4 text-left transition-smooth hover:border-primary hover:shadow-sm",
                   p.bonus > 0 && "border-emerald-brand/40",
                 )}
                 data-ocid={`credits.pack.${p.id.toLowerCase()}.button`}

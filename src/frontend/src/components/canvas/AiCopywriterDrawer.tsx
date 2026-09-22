@@ -19,7 +19,7 @@ import {
 import { useAccountSync } from "@/hooks/use-account";
 import { useGenerateAiCopy } from "@/hooks/use-backend";
 import { AI_COSTS } from "@/lib/credits";
-import { getLayoutDims, insetRect } from "@/lib/printSpec";
+import { getLayoutDims, safeRect } from "@/lib/printSpec";
 import { useAccountStore } from "@/store/account";
 import { useWizardStore } from "@/store/wizard";
 import { Loader2, PenLine, Plus, Sparkles } from "lucide-react";
@@ -104,7 +104,7 @@ export function AiCopywriterDrawer({
 
   function insert(kind: "headline" | "bullets" | "cta", text: string) {
     const dims = getLayoutDims(selectedLayout ?? "6x9");
-    const safe = insetRect(dims, dims.safeInsetPct);
+    const safe = safeRect(dims);
     const y = safe.y + 12 + inserted * 52;
     const width = Math.round(safe.w * 0.62);
     if (kind === "headline") {
@@ -162,7 +162,7 @@ export function AiCopywriterDrawer({
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 font-display">
-            <PenLine className="size-5 text-accent" /> AI Copywriter
+            <PenLine className="size-5 text-primary" /> AI Copywriter
           </SheetTitle>
           <SheetDescription>
             GPT-4o mini writes 3 converting headlines, benefit bullets and CTA
@@ -241,7 +241,7 @@ export function AiCopywriterDrawer({
               <Button
                 onClick={handleGenerate}
                 disabled={generate.isPending}
-                className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 data-ocid="canvas.copywriter.generate"
               >
                 {generate.isPending ? (
@@ -336,7 +336,7 @@ function Section({
               size="sm"
               variant="ghost"
               onClick={() => onInsert(t)}
-              className="h-7 gap-1 text-accent"
+              className="h-7 gap-1 text-primary"
               data-ocid={`canvas.copywriter.insert.${ocid}`}
             >
               <Plus className="size-3.5" /> Insert

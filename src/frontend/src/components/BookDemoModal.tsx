@@ -162,8 +162,8 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Top accent line */}
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary" />
+        {/* Top primary line */}
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary to-primary" />
 
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4">
@@ -181,7 +181,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
             <p className="mt-1 text-sm text-muted-foreground">
               A 20-minute call with the EZmailout team — we'll build your first
               campaign with you.{" "}
-              <span className="font-medium text-accent">Spots fill fast.</span>
+              <span className="font-medium text-primary">Spots fill fast.</span>
             </p>
           </div>
           <button
@@ -271,7 +271,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                     <Clock className="mr-1 inline size-3" />
                     Available Times
                     {selectedDate.isWeekend && (
-                      <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
                         Weekend hours
                       </span>
                     )}

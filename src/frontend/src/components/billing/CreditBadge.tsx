@@ -19,7 +19,7 @@ export function CreditBadge({ compact = false }: { compact?: boolean }) {
         className="gap-1.5"
         data-ocid="credits.badge.sign_in"
       >
-        <Sparkles className="size-3.5 text-accent" /> Sign in for AI credits
+        <Sparkles className="size-3.5 text-primary" /> Sign in for AI credits
       </Button>
     );
   }
@@ -32,7 +32,7 @@ export function CreditBadge({ compact = false }: { compact?: boolean }) {
       )}
       data-ocid="credits.badge"
     >
-      <Sparkles className="size-3.5 text-accent" />
+      <Sparkles className="size-3.5 text-primary" />
       <span>
         Credits:{" "}
         <strong className="font-mono">{creditBalance.toLocaleString()}</strong>
@@ -40,7 +40,7 @@ export function CreditBadge({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => setTopUpOpen(true)}
-        className="inline-flex items-center gap-0.5 rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent hover:bg-accent/25"
+        className="inline-flex items-center gap-0.5 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/25"
         data-ocid="credits.badge.topup"
       >
         <Plus className="size-3" /> Top up

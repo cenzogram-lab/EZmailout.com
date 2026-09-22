@@ -66,11 +66,11 @@ export function MembershipCard() {
       className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-card"
       data-ocid="membership.card.panel"
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary to-primary" />
       <div className="grid gap-0 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         {/* Price column */}
         <div className="relative overflow-hidden border-b border-border bg-primary p-8 text-primary-foreground lg:border-b-0 lg:border-r sm:p-10">
-          <div className="absolute -right-16 -top-16 size-48 rounded-full bg-accent/20 blur-3xl" />
+          <div className="absolute -right-16 -top-16 size-48 rounded-full bg-primary/20 blur-3xl" />
           <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-white/10 blur-3xl" />
           <div className="relative">
             <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
@@ -94,7 +94,7 @@ export function MembershipCard() {
                   key={item}
                   className="flex items-center gap-2 text-sm text-primary-foreground/90"
                 >
-                  <Check className="size-4 shrink-0 text-accent" />
+                  <Check className="size-4 shrink-0 text-primary" />
                   {item}
                 </li>
               ))}
@@ -102,7 +102,7 @@ export function MembershipCard() {
             <Button
               asChild
               size="lg"
-              className="mt-8 w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
+              className="mt-8 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
               <Link to="/dashboard" data-ocid="membership.start.link">
                 Start membership

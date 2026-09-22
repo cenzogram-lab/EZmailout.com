@@ -18,7 +18,7 @@ export function newId(prefix: string): string {
   return `${prefix}_${idCounter}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export const DEFAULT_FONT_FAMILY = "DM Sans";
+export const DEFAULT_FONT_FAMILY = "Geist";
 export const DEFAULT_TEXT_COLOR = "#0f172a";
 export const DEFAULT_FRONT_BG = "#ffffff";
 export const DEFAULT_BACK_BG = "#ffffff";

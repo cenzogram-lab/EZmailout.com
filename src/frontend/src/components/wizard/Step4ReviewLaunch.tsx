@@ -389,10 +389,10 @@ export function Step4ReviewLaunch() {
               </Alert>
             ) : (
               <Alert
-                className="border-accent/40 bg-accent/10 text-left"
+                className="border-primary/40 bg-primary/10 text-left"
                 data-ocid="review.dispatch.warning"
               >
-                <AlertCircle className="size-4 text-accent" />
+                <AlertCircle className="size-4 text-primary" />
                 <AlertTitle>Paid, but not yet handed to Click2Mail</AlertTitle>
                 <AlertDescription>
                   {dispatchResult?.error ?? "The print job was not submitted."}{" "}
@@ -422,7 +422,7 @@ export function Step4ReviewLaunch() {
               )}
               <Button
                 asChild
-                className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 data-ocid="review.view_tracking.link"
               >
                 <Link
@@ -588,7 +588,7 @@ export function Step4ReviewLaunch() {
           <Card className="bg-card" data-ocid="review.launch.card">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Rocket className="size-4 text-accent" /> Launch
+                <Rocket className="size-4 text-primary" /> Launch
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -704,7 +704,7 @@ export function Step4ReviewLaunch() {
                       size="lg"
                       onClick={handleRetry}
                       disabled={busy}
-                      className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                       data-ocid="review.launch.retry.button"
                     >
                       <RefreshCw className="size-4" /> Retry{" "}
@@ -716,7 +716,7 @@ export function Step4ReviewLaunch() {
                       size="lg"
                       onClick={() => void runPreparation("creating")}
                       disabled={launchDisabled}
-                      className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                       data-ocid="review.launch.button"
                     >
                       {busy ? (

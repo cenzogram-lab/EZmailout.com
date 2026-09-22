@@ -108,7 +108,7 @@ export function ReferralWidget() {
     <Card data-ocid="dashboard.referral.card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Gift className="size-4 text-accent" />
+          <Gift className="size-4 text-primary" />
           Referrals &amp; Rewards
         </CardTitle>
         <CardDescription>
@@ -155,7 +155,7 @@ export function ReferralWidget() {
                 <Button
                   type="button"
                   size="icon"
-                  className="size-9 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
+                  className="size-9 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={handleShare}
                   disabled={!referralLink}
                   aria-label="Share referral link"
@@ -200,7 +200,7 @@ export function ReferralWidget() {
             </div>
 
             {stats && !stats.subscriptionActive && (
-              <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-accent-foreground">
+              <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary-foreground">
                 Your membership is inactive. Rewards only accrue while it is
                 active — start or renew it to keep earning.
               </p>

@@ -96,7 +96,7 @@ export function StatusBadge({
 
 const PAYMENT_STYLES: Record<PaymentStatus, string> = {
   [PaymentStatus.Unpaid]:
-    "border-accent/40 bg-accent/15 text-accent-foreground",
+    "border-primary/40 bg-primary/15 text-primary-foreground",
   [PaymentStatus.Pending]: "border-border bg-muted text-muted-foreground",
   [PaymentStatus.Paid]:
     "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
@@ -137,7 +137,7 @@ const PRODUCTION_LABELS: Record<ProductionStatus, string> = {
 const PRODUCTION_STYLES: Record<ProductionStatus, string> = {
   [ProductionStatus.Draft]: "border-border bg-muted text-muted-foreground",
   [ProductionStatus.AwaitingPayment]:
-    "border-accent/40 bg-accent/15 text-accent-foreground",
+    "border-primary/40 bg-primary/15 text-primary-foreground",
   [ProductionStatus.ReadyToDispatch]:
     "border-primary/20 bg-primary/10 text-primary",
   [ProductionStatus.DocumentUploaded]:

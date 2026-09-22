@@ -78,7 +78,7 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         size="sm"
         onClick={login}
         disabled={isLoggingIn}
-        className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90"
+        className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
         data-ocid="nav.sign_in.button"
       >
         {isLoggingIn ? (
@@ -102,7 +102,7 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         data-ocid="nav.credits.link"
         title={principal ?? undefined}
       >
-        <Sparkles className="size-3.5 text-accent" />
+        <Sparkles className="size-3.5 text-primary" />
         {creditBalance.toLocaleString()} credits
         <span className="font-mono text-muted-foreground">· {short}</span>
       </Link>
@@ -136,7 +136,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-display text-lg font-bold tracking-tight text-primary">
               {BRAND.name}
-              <span className="text-accent">.</span>
+              <span className="text-primary">.</span>
             </span>
           </Link>
 

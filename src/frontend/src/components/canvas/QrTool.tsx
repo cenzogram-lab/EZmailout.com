@@ -128,7 +128,7 @@ export function QrTool() {
                 key={ex.label}
                 type="button"
                 onClick={() => setQrDestinationUrl(ex.value)}
-                className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:border-accent hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-foreground"
                 data-ocid={`canvas.qr.example.${ex.label.toLowerCase().replace(/\s+/g, "_")}`}
               >
                 <ex.icon className="size-3" /> {ex.label}
@@ -143,8 +143,8 @@ export function QrTool() {
             className={cn(
               "rounded-lg border p-3 text-left text-xs transition-smooth",
               mode === QrMode.DynamicTracking
-                ? "border-accent bg-accent/10"
-                : "hover:border-accent/50",
+                ? "border-primary bg-primary/10"
+                : "hover:border-primary/50",
             )}
             data-ocid="canvas.qr.mode.dynamic"
           >
@@ -164,8 +164,8 @@ export function QrTool() {
             className={cn(
               "rounded-lg border p-3 text-left text-xs transition-smooth",
               mode === QrMode.StaticUrl
-                ? "border-accent bg-accent/10"
-                : "hover:border-accent/50",
+                ? "border-primary bg-primary/10"
+                : "hover:border-primary/50",
             )}
             data-ocid="canvas.qr.mode.static"
           >
@@ -219,7 +219,7 @@ export function QrTool() {
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => add("front")}
-            className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
             data-ocid="canvas.qr.add_front"
           >
             <QrCode className="size-4" /> Add to front

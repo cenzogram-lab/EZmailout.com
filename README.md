@@ -12,17 +12,21 @@ an AI design studio, saved audience presets and referral rewards. Fulfilment run
 | Frontend | React 19 + TypeScript + Tailwind + shadcn/ui + Zustand + TanStack Router/Query + Vite (`src/frontend`) |
 | Integrations | Click2Mail (documents, address lists, jobs, IMb tracking), Stripe PaymentIntents + Elements, OpenAI (DALL·E 3, GPT-4o mini), Resend key slot |
 
-## Product ledger (100%–140% margin spread)
+## Product ledger (Click2Mail catalog, 100%–140% margin spread)
 
-| Layout | Click2Mail base | EZmailout retail | Margin |
+| Layout (Click2Mail document class) | Click2Mail base | EZmailout retail | Margin |
 | --- | --- | --- | --- |
-| 4×6 Postcard (First-Class) | $0.55 | **$1.15** | 109% |
-| 6×9 Postcard (Marketing Mail) | $0.57 | **$1.35** | 136% |
-| 6×11 Jumbo Postcard | $0.73 | **$1.65** | 126% |
-| 8.5×11 Letter (#10 envelope) | $0.70 | **$1.50** | 114% |
-| 6×18 Bifold / 11×17 Trifold | $0.95 | **$2.10** | 121% |
-| Snap Pack | $0.85 | **$1.95** | 129% |
-| Booklet | $1.60 | **$3.60** | 125% |
+| Postcard 3.5 x 5 / 4.25 x 6 (First-Class) | $0.55 | **$1.15** | 109% |
+| Postcard 4 x 9 / 5 x 8 / 6 x 9 (Marketing Mail) | $0.57 | **$1.35** | 136% |
+| Postcard 6 x 11 | $0.73 | **$1.65** | 126% |
+| Letter 8.5 x 11 (#10 double window) | $0.70 | **$1.50** | 114% |
+| Letter 8.5 x 14 (#10 double window) | $0.80 | **$1.70** | 112% |
+| Flyer 8.5 x 11 (bifold) / Brochure 11 x 8.5 (trifold) | $0.95 | **$2.10** | 121% |
+| Secure Self Mailer 8.5 x 11 | $0.85 | **$1.95** | 129% |
+| Booklet Self Mailer 8.5 x 11 | $1.60 | **$3.60** | 125% |
+
+Legacy layout keys (`4x6`, `6x18_bifold`, `11x17_trifold`, `8.5x11_perforated`, `multi_page`) resolve to the
+current rows in both the canister and the frontend.
 
 Authoritative copy: `src/backend/lib/pricing.mo` (mirrored in `src/frontend/src/lib/pricing.ts`).
 
