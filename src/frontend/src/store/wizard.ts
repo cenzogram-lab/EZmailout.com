@@ -17,6 +17,8 @@ import {
   makeTextBlock,
   withSide,
 } from "@/lib/canvas";
+import type { CatalogMailClass } from "@/lib/pricing";
+import { getPricingRow } from "@/lib/pricing";
 import { getLayoutDims } from "@/lib/printSpec";
 import type {
   CanvasAlignment,
@@ -29,11 +31,27 @@ import { create } from "zustand";
 
 const DEFAULT_LAYOUT = "6x9";
 
+/**
+ * Snapshot of the chosen Click2Mail document class, taken when the format is
+ * picked so the rest of the wizard and the invoice work from one source.
+ */
+export interface SelectedSpec {
+  layoutVariant: string;
+  documentClass: string;
+  widthInches: number;
+  heightInches: number;
+  unitPriceCents: number;
+  mailClass: CatalogMailClass;
+  supportedMailClasses: CatalogMailClass[];
+}
+
 interface WizardData {
   currentStep: number;
   campaignName: string;
   selectedProduct: ProductSelection | null;
   selectedLayout: string | null;
+  /** Persisted document class, trim size, unit price and mail class. */
+  selectedSpec: SelectedSpec | null;
   audienceType: WizardAudienceType | null;
   verifiedAddresses: VerifiedAddress[];
   recipientCount: number;
@@ -55,6 +73,8 @@ interface WizardActions {
   setCampaignName: (name: string) => void;
   setProduct: (product: ProductSelection) => void;
   setLayout: (layoutVariant: string) => void;
+  /** Switches the USPS mail class (only classes the product supports apply). */
+  setMailClass: (mailClass: CatalogMailClass) => void;
   setAudienceType: (type: WizardAudienceType) => void;
   setVerifiedAddresses: (addresses: VerifiedAddress[]) => void;
   setRecipientCount: (count: number) => void;
@@ -122,6 +142,7 @@ function initialData(): WizardData {
     campaignName: "",
     selectedProduct: null,
     selectedLayout: null,
+    selectedSpec: null,
     audienceType: null,
     verifiedAddresses: [],
     recipientCount: 0,
@@ -223,14 +244,34 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
   setCampaignName: (campaignName) => set({ campaignName }),
   setProduct: (selectedProduct) => set({ selectedProduct }),
   setLayout: (layoutVariant) =>
-    set((s) => ({
-      selectedLayout: layoutVariant,
-      canvas:
-        s.selectedLayout === layoutVariant
-          ? s.canvas
-          : emptyCanvasState(layoutVariant),
-      selectedElementId: null,
-    })),
+    set((s) => {
+      const row = getPricingRow(layoutVariant);
+      return {
+        selectedLayout: layoutVariant,
+        selectedSpec: row
+          ? {
+              layoutVariant: row.id,
+              documentClass: row.documentClass,
+              widthInches: row.widthInches,
+              heightInches: row.heightInches,
+              unitPriceCents: row.retailPriceCents,
+              mailClass: row.defaultMailClass,
+              supportedMailClasses: row.supportedMailClasses,
+            }
+          : null,
+        canvas:
+          s.selectedLayout === layoutVariant
+            ? s.canvas
+            : emptyCanvasState(layoutVariant),
+        selectedElementId: null,
+      };
+    }),
+  setMailClass: (mailClass) =>
+    set((s) =>
+      s.selectedSpec?.supportedMailClasses.includes(mailClass)
+        ? { selectedSpec: { ...s.selectedSpec, mailClass } }
+        : {},
+    ),
   setAudienceType: (audienceType) => set({ audienceType }),
   setVerifiedAddresses: (verifiedAddresses) => set({ verifiedAddresses }),
   setRecipientCount: (recipientCount) => set({ recipientCount }),

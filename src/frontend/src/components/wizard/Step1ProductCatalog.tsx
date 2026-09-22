@@ -13,11 +13,13 @@ import {
 } from "@/lib/catalog";
 import { layoutLabel, sizeLabel } from "@/lib/format";
 import {
+  type CatalogMailClass,
   type PricingRowUi,
   SUBSCRIPTION_PRICE_CENTS,
+  catalogMailClassLabel,
   formatCents,
   getPricingRow,
-  mailClassLabel,
+  mailClassDelivery,
   supportsBlackAndWhite,
 } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -57,7 +59,7 @@ export function AspectBadge({
         className,
       )}
       title={`${row.widthInches}″ × ${row.heightInches}″`}
-      data-ocid={`catalog.aspect.${row.layoutVariant}`}
+      data-ocid={`catalog.aspect.${row.id}`}
     >
       <span
         className="block rounded-[2px] border border-navy/60 bg-card"
@@ -70,54 +72,101 @@ export function AspectBadge({
 function SizeRow({
   row,
   selected,
+  mailClass,
   onSelect,
+  onMailClass,
 }: {
   row: PricingRowUi;
   selected: boolean;
+  mailClass: CatalogMailClass;
   onSelect: () => void;
+  onMailClass: (mailClass: CatalogMailClass) => void;
 }) {
+  const multiClass = row.supportedMailClasses.length > 1;
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
+    <div
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-smooth",
+        "rounded-xl border transition-smooth",
         selected
           ? "border-primary bg-primary/5 ring-2 ring-primary/20"
           : "border-border bg-card hover:border-primary/40",
       )}
-      data-ocid={`catalog.format.${row.layoutVariant}.button`}
+      data-ocid={`catalog.size.${row.id}.row`}
     >
-      <span
-        className={cn(
-          "flex size-5 shrink-0 items-center justify-center rounded-full border",
-          selected
-            ? "border-primary bg-primary text-primary-foreground"
-            : "border-border bg-card",
-        )}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={selected}
+        className="flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm"
+        data-ocid={`catalog.format.${row.id}.button`}
       >
-        {selected && <Check className="size-3" />}
-      </span>
-      <AspectBadge row={row} />
-      <span className="min-w-0 flex-1">
-        <span className="block font-medium leading-snug text-foreground">
-          {row.documentClass}
+        <span
+          className={cn(
+            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
+            selected
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card",
+          )}
+        >
+          {selected && <Check className="size-3" />}
         </span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          {sizeLabel(row.layoutVariant)}
-          {row.envelope ? ` · ${row.envelope}` : ""}
+        <AspectBadge row={row} className="mt-0.5" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium leading-snug text-foreground">
+            {row.documentClass}
+          </span>
+          <span
+            className="block font-mono text-xs text-muted-foreground"
+            data-ocid={`catalog.size.${row.id}.meta`}
+          >
+            {sizeLabel(row.id)} · {row.paperType}
+            {row.envelope ? ` · ${row.envelope}` : ""}
+          </span>
         </span>
-      </span>
-      <span className="hidden items-center gap-2 sm:flex">
-        <Badge variant="secondary" className="font-normal">
-          {mailClassLabel(row.mailClass)}
+        <Badge
+          className="mt-0.5 shrink-0 bg-primary text-primary-foreground"
+          data-ocid={`catalog.size.${row.id}.price`}
+        >
+          {formatCents(row.retailPriceCents)} / piece
         </Badge>
-      </span>
-      <Badge className="bg-primary text-primary-foreground">
-        {formatCents(row.retailPriceCents)} / piece
-      </Badge>
-    </button>
+      </button>
+      <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pl-[4.25rem]">
+        {row.supportedMailClasses.map((option) => {
+          const active = option === mailClass;
+          return (
+            <button
+              key={option}
+              type="button"
+              disabled={!multiClass}
+              onClick={() => {
+                if (!selected) onSelect();
+                onMailClass(option);
+              }}
+              aria-pressed={active}
+              title={
+                multiClass
+                  ? `Send this format as ${catalogMailClassLabel(option)}`
+                  : catalogMailClassLabel(option)
+              }
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[11px] font-medium transition-smooth",
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-muted/60 text-muted-foreground",
+                multiClass && !active && "hover:border-primary/50",
+                !multiClass && "cursor-default",
+              )}
+              data-ocid={`catalog.size.${row.id}.class.${option}`}
+            >
+              {catalogMailClassLabel(option)} · {mailClassDelivery(option)}
+            </button>
+          );
+        })}
+        {row.note ? (
+          <span className="text-[11px] text-muted-foreground">{row.note}</span>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -181,6 +230,8 @@ export function Step1ProductCatalog() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const setProduct = useWizardStore((s) => s.setProduct);
   const setLayout = useWizardStore((s) => s.setLayout);
+  const setMailClass = useWizardStore((s) => s.setMailClass);
+  const selectedSpec = useWizardStore((s) => s.selectedSpec);
   const setStep = useWizardStore((s) => s.setStep);
 
   const selectedCategory = selectedLayout
@@ -321,10 +372,16 @@ export function Step1ProductCatalog() {
           >
             {categoryRows(expanded).map((row) => (
               <SizeRow
-                key={row.layoutVariant}
+                key={row.id}
                 row={row}
-                selected={selectedLayout === row.layoutVariant}
-                onSelect={() => chooseFormat(expanded, row.layoutVariant)}
+                selected={selectedLayout === row.id}
+                mailClass={
+                  selectedLayout === row.id && selectedSpec
+                    ? selectedSpec.mailClass
+                    : row.defaultMailClass
+                }
+                onSelect={() => chooseFormat(expanded, row.id)}
+                onMailClass={setMailClass}
               />
             ))}
           </div>
@@ -361,9 +418,12 @@ export function Step1ProductCatalog() {
               <span className="font-medium text-foreground">
                 {selectedRow.documentClass}
               </span>{" "}
-              · {sizeLabel(selectedRow.layoutVariant)} ·{" "}
+              · {sizeLabel(selectedRow.id)} ·{" "}
               {formatCents(selectedRow.retailPriceCents)} per piece (
-              {mailClassLabel(selectedRow.mailClass)})
+              {catalogMailClassLabel(
+                selectedSpec?.mailClass ?? selectedRow.defaultMailClass,
+              )}
+              )
             </span>
           ) : (
             "Pick a size to continue."

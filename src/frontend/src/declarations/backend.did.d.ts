@@ -168,6 +168,7 @@ export interface CreateCampaignInput {
   'name' : string,
   'canvasState' : [] | [CanvasState],
   'recipients' : Array<VerifiedAddress>,
+  'mailClass' : [] | [MailClass],
   'qrDestinationUrl' : [] | [string],
   'designTemplateId' : [] | [string],
   'recipientCount' : bigint,

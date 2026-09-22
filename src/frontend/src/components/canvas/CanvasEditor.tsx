@@ -173,10 +173,13 @@ export function AddressZoneOverlay({
   dims,
   scale,
   subtle = false,
+  ocid = "canvas.editor.address_zone",
 }: {
   dims: LayoutDims;
   scale: number;
   subtle?: boolean;
+  /** Distinct id per surface — the editor and the 3D proof both draw the zone. */
+  ocid?: string;
 }) {
   const zone = dims.addressZone;
   if (!zone) return null;
@@ -192,7 +195,7 @@ export function AddressZoneOverlay({
         border: `${1 / scale}px dashed rgba(51, 65, 85, ${subtle ? 0.35 : 0.6})`,
         backgroundImage: `repeating-linear-gradient(45deg, rgba(51,65,85,${subtle ? 0.05 : 0.09}) 0 ${6 / scale}px, transparent ${6 / scale}px ${12 / scale}px)`,
       }}
-      data-ocid="canvas.editor.address_zone"
+      data-ocid={ocid}
     >
       <span
         className="rounded bg-white/85 px-2 py-1 text-center font-mono uppercase tracking-wide text-slate-600"

@@ -15,6 +15,11 @@ import {
 } from "@/hooks/use-backend";
 import { formatNumber, layoutLabel } from "@/lib/format";
 import {
+  catalogMailClassLabel,
+  catalogMailClassToWire,
+  isBaseRateOnly,
+} from "@/lib/pricing";
+import {
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
   getPricingRow,
@@ -121,6 +126,7 @@ export function Step4ReviewLaunch() {
   const campaignName = useWizardStore((s) => s.campaignName);
   const selectedProduct = useWizardStore((s) => s.selectedProduct);
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const selectedSpec = useWizardStore((s) => s.selectedSpec);
   const audienceType = useWizardStore((s) => s.audienceType);
   const recipientCount = useWizardStore((s) => s.recipientCount);
   const verifiedAddresses = useWizardStore((s) => s.verifiedAddresses);
@@ -159,7 +165,7 @@ export function Step4ReviewLaunch() {
   const unitCents = selectedLayout ? getUnitPriceCents(selectedLayout) : 0;
   const totalCents = unitCents * recipientCount;
   const productLabel = row
-    ? `${row.displayName}${
+    ? `${row.name}${
         selectedProduct?.colorOption === "bw" ? " (black & white)" : ""
       }`
     : null;
@@ -220,6 +226,9 @@ export function Step4ReviewLaunch() {
             .mutateAsync({
               name: state.campaignName.trim() || "Untitled campaign",
               product: state.selectedProduct,
+              mailClass: state.selectedSpec
+                ? catalogMailClassToWire(state.selectedSpec.mailClass)
+                : undefined,
               audienceType: toAudienceType(state.audienceType),
               recipients: state.verifiedAddresses,
               recipientCount: BigInt(state.recipientCount),
@@ -556,13 +565,27 @@ export function Step4ReviewLaunch() {
                   {audienceLabel(audienceType)}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Mail class</span>
+                <span
+                  className="font-medium text-foreground"
+                  data-ocid="review.invoice.mail_class"
+                >
+                  {selectedSpec
+                    ? catalogMailClassLabel(selectedSpec.mailClass)
+                    : "—"}
+                </span>
+              </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {formatNumber(recipientCount)} pieces ×{" "}
                   {formatCents(unitCents)}
                 </span>
-                <span className="font-medium text-foreground">
+                <span
+                  className="font-medium text-foreground"
+                  data-ocid="review.invoice.line_total"
+                >
                   {formatCents(totalCents)}
                 </span>
               </div>
@@ -570,6 +593,24 @@ export function Step4ReviewLaunch() {
                 <span>Printing, postage and CASS included</span>
                 <span>$0.00</span>
               </div>
+              {row?.note ? (
+                <div
+                  className="flex justify-between gap-3 text-xs text-muted-foreground"
+                  data-ocid="review.invoice.addon"
+                >
+                  <span>{row.note}</span>
+                  <span className="shrink-0">Included</span>
+                </div>
+              ) : null}
+              {row && isBaseRateOnly(row) ? (
+                <p
+                  className="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground"
+                  data-ocid="review.invoice.eddm_note"
+                >
+                  EDDM® is billed at the print base rate above; USPS saturation
+                  postage is added per carrier route once the routes are bound.
+                </p>
+              ) : null}
               <Separator />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium text-foreground">Total due</span>

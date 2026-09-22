@@ -98,6 +98,12 @@ export const VerifiedAddress = IDL.Record({
   'state' : IDL.Text,
   'zip_plus4' : IDL.Opt(IDL.Text),
 });
+export const MailClass = IDL.Variant({
+  'PriorityExpress' : IDL.Null,
+  'MarketingMail' : IDL.Null,
+  'FirstClass' : IDL.Null,
+  'Priority' : IDL.Null,
+});
 export const AudienceType = IDL.Variant({
   'SavedPreset' : IDL.Null,
   'CsvUpload' : IDL.Null,
@@ -130,6 +136,7 @@ export const CreateCampaignInput = IDL.Record({
   'name' : IDL.Text,
   'canvasState' : IDL.Opt(CanvasState),
   'recipients' : IDL.Vec(VerifiedAddress),
+  'mailClass' : IDL.Opt(MailClass),
   'qrDestinationUrl' : IDL.Opt(IDL.Text),
   'designTemplateId' : IDL.Opt(IDL.Text),
   'recipientCount' : IDL.Nat,
@@ -308,12 +315,6 @@ export const PaymentStatus = IDL.Variant({
   'Unpaid' : IDL.Null,
   'Waived' : IDL.Null,
   'Pending' : IDL.Null,
-});
-export const MailClass = IDL.Variant({
-  'PriorityExpress' : IDL.Null,
-  'MarketingMail' : IDL.Null,
-  'FirstClass' : IDL.Null,
-  'Priority' : IDL.Null,
 });
 export const PrintSpec = IDL.Record({
   'envelope' : IDL.Opt(IDL.Text),
@@ -718,6 +719,12 @@ export const idlFactory = ({ IDL }) => {
     'state' : IDL.Text,
     'zip_plus4' : IDL.Opt(IDL.Text),
   });
+  const MailClass = IDL.Variant({
+    'PriorityExpress' : IDL.Null,
+    'MarketingMail' : IDL.Null,
+    'FirstClass' : IDL.Null,
+    'Priority' : IDL.Null,
+  });
   const AudienceType = IDL.Variant({
     'SavedPreset' : IDL.Null,
     'CsvUpload' : IDL.Null,
@@ -750,6 +757,7 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'canvasState' : IDL.Opt(CanvasState),
     'recipients' : IDL.Vec(VerifiedAddress),
+    'mailClass' : IDL.Opt(MailClass),
     'qrDestinationUrl' : IDL.Opt(IDL.Text),
     'designTemplateId' : IDL.Opt(IDL.Text),
     'recipientCount' : IDL.Nat,
@@ -928,12 +936,6 @@ export const idlFactory = ({ IDL }) => {
     'Unpaid' : IDL.Null,
     'Waived' : IDL.Null,
     'Pending' : IDL.Null,
-  });
-  const MailClass = IDL.Variant({
-    'PriorityExpress' : IDL.Null,
-    'MarketingMail' : IDL.Null,
-    'FirstClass' : IDL.Null,
-    'Priority' : IDL.Null,
   });
   const PrintSpec = IDL.Record({
     'envelope' : IDL.Opt(IDL.Text),

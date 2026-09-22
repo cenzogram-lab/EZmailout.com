@@ -221,6 +221,9 @@ module {
   public type CreateCampaignInput = {
     name : Text;
     product : ProductSelection;
+    /// Overrides the ledger default when the product supports more than one
+    /// USPS mail class; ignored when the class is not supported.
+    mailClass : ?MailClass;
     audienceType : AudienceType;
     recipients : [Common.VerifiedAddress];
     recipientCount : Nat;

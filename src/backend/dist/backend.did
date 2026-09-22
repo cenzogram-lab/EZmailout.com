@@ -379,6 +379,7 @@ type CreateCampaignInput =
    audienceType: AudienceType;
    canvasState: opt CanvasState;
    designTemplateId: opt text;
+   mailClass: opt MailClass;
    name: text;
    product: ProductSelection;
    qrDestinationUrl: opt text;

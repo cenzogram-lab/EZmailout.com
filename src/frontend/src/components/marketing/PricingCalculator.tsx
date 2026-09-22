@@ -27,7 +27,7 @@ const MIN_QTY = 50;
 const MAX_QTY = 5000;
 const STEP = 10;
 const DEFAULT_QTY = 500;
-const DEFAULT_VARIANT = PRICING_LEDGER[0].layoutVariant;
+const DEFAULT_VARIANT = PRICING_LEDGER[0].id;
 
 function clampQty(value: number): number {
   if (!Number.isFinite(value)) return MIN_QTY;
@@ -49,7 +49,7 @@ interface Quote {
 function buildQuote(layoutVariant: string, qty: number): Quote {
   const row = getPricingRow(layoutVariant) ?? PRICING_LEDGER[0];
   const retailCents = row.retailPriceCents;
-  const benchmarkCents = getBenchmarkCents(row.layoutVariant);
+  const benchmarkCents = getBenchmarkCents(row.id);
   const ezTotalCents = qty * retailCents;
   const shopTotalCents = qty * benchmarkCents;
   const savingsCents = shopTotalCents - ezTotalCents;
@@ -134,10 +134,7 @@ export function PricingCalculator() {
                   <SelectGroup key={category.id}>
                     <SelectLabel>{category.name}</SelectLabel>
                     {categoryRows(category).map((item) => (
-                      <SelectItem
-                        key={item.layoutVariant}
-                        value={item.layoutVariant}
-                      >
+                      <SelectItem key={item.id} value={item.id}>
                         {item.documentClass} ·{" "}
                         {formatCents(item.retailPriceCents)}
                       </SelectItem>

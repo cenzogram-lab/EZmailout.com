@@ -42,7 +42,7 @@ mixin (
       case (?r) r;
       case null { return fail("Unknown layout variant: " # input.product.layoutVariant) };
     };
-    let printSpec = switch (PricingLib.printSpecFor(input.product)) {
+    let printSpec = switch (PricingLib.printSpecFor(input.product, input.mailClass)) {
       case (?s) s;
       case null { return fail("Unknown layout variant: " # input.product.layoutVariant) };
     };

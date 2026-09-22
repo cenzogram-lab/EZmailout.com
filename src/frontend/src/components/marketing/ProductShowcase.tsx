@@ -21,9 +21,9 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
     if (first) {
       store.setProduct({
         productType: category.productType,
-        layoutVariant: first.layoutVariant,
+        layoutVariant: first.id,
       });
-      store.setLayout(first.layoutVariant);
+      store.setLayout(first.id);
     }
     store.setStep(1);
     navigate({ to: "/wizard" });

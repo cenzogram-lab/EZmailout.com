@@ -1,477 +1,611 @@
 import { MailClass, ProductType } from "@/backend";
 
 /**
- * Retail pricing ledger for EZmailout products. Mirrors the authoritative
- * copy in `src/backend/lib/pricing.mo` — keep the two in sync.
+ * Click2Mail catalog mail classes. `StandardMarketing` is the catalog name for
+ * USPS Marketing Mail; `catalogMailClassToWire` maps it onto the canister's
+ * `MailClass.MarketingMail`.
  */
-export interface PricingRowUi {
-  layoutVariant: string;
-  productType: ProductType;
-  displayName: string;
+export type CatalogMailClass =
+  | "FirstClass"
+  | "StandardMarketing"
+  | "Priority"
+  | "PriorityExpress";
+
+/** One Click2Mail document class: its trim size, cost, retail price and print options. */
+export interface ProductSpec {
+  /** Layout-variant key persisted on campaign records. */
+  id: string;
+  /** Catalog category id (see `lib/catalog.ts`). */
+  category: string;
+  name: string;
+  /** Exact Click2Mail product name sent as `documentClass`. */
   documentClass: string;
-  layout: string;
-  mailClass: MailClass;
-  paperType: string;
-  printOption: string;
-  envelope: string | null;
-  baseCostCents: number;
-  retailPriceCents: number;
   widthInches: number;
   heightInches: number;
+  /** Click2Mail wholesale cost per piece, in dollars. */
+  cogsBase: number;
+  /** EZmailout member price per piece, in dollars. */
+  retailPrice: number;
+  defaultMailClass: CatalogMailClass;
+  supportedMailClasses: CatalogMailClass[];
+  /**
+   * True when the piece carries the USPS address block and IMb on the artwork
+   * the customer designs, so the studio reserves the lower-right clear zone.
+   * False for envelope-inserted formats, where Click2Mail generates the
+   * address page or envelope instead.
+   */
+  hasAddressBlock: boolean;
+  layout: string;
+  paperType: string;
+  envelope?: string;
+  /** Operational note shown in the catalog and on the invoice. */
+  note?: string;
+  // ── derived ───────────────────────────────────────────────────────────────
+  /** `cogsBase` in whole cents. */
+  baseCostCents: number;
+  /** `retailPrice` in whole cents. */
+  retailPriceCents: number;
+  /** Gross margin over cost, as a whole-number percentage. */
+  marginPercent: number;
+  productType: ProductType;
+  mailClass: MailClass;
+  printOption: string;
 }
 
-const GLOSS = "White Matte with Gloss UV Finish";
-const BOND = "White 24#";
-const WINDOW_10 = "#10 Double Window";
 const BOTH_SIDES = "Printing both sides";
-const POSTCARD_LAYOUT = "Double Sided Postcard";
-const LETTER_LAYOUT = "Address on Separate Page";
-const EDDM_LAYOUT = "EDDM Self Mailer";
+
+const PRODUCT_TYPES: Record<string, ProductType> = {
+  postcards: ProductType.Postcard,
+  letters: ProductType.Letter,
+  "certified-mail": ProductType.CertifiedMail,
+  eddm: ProductType.Eddm,
+  "priority-mail-plus": ProductType.PriorityMail,
+  "priority-mail-express": ProductType.PriorityMailExpress,
+  flyers: ProductType.Flyer,
+  "secure-mailers": ProductType.SnapPack,
+  notecards: ProductType.Notecard,
+  "rack-cards": ProductType.RackCard,
+  brochures: ProductType.Brochure,
+  "reply-mail": ProductType.ReplyMail,
+  booklets: ProductType.Booklet,
+  "card-stock": ProductType.CardStock,
+};
+
+/** Catalog mail class → the canister's wire enum. */
+export function catalogMailClassToWire(mailClass: CatalogMailClass): MailClass {
+  switch (mailClass) {
+    case "FirstClass":
+      return MailClass.FirstClass;
+    case "StandardMarketing":
+      return MailClass.MarketingMail;
+    case "Priority":
+      return MailClass.Priority;
+    case "PriorityExpress":
+      return MailClass.PriorityExpress;
+    default:
+      return MailClass.FirstClass;
+  }
+}
+
+type SpecInput = Omit<
+  ProductSpec,
+  | "baseCostCents"
+  | "retailPriceCents"
+  | "marginPercent"
+  | "productType"
+  | "mailClass"
+  | "printOption"
+>;
+
+function spec(input: SpecInput): ProductSpec {
+  const baseCostCents = Math.round(input.cogsBase * 100);
+  const retailPriceCents = Math.round(input.retailPrice * 100);
+  return {
+    ...input,
+    baseCostCents,
+    retailPriceCents,
+    marginPercent:
+      baseCostCents === 0
+        ? 0
+        : Math.round(
+            ((retailPriceCents - baseCostCents) * 100) / baseCostCents,
+          ),
+    productType: PRODUCT_TYPES[input.category] ?? ProductType.Postcard,
+    mailClass: catalogMailClassToWire(input.defaultMailClass),
+    printOption: BOTH_SIDES,
+  };
+}
 
 /**
- * Click2Mail catalog — one row per size on the Click2Mail product sheet, with
- * `documentClass` equal to the exact Click2Mail product name. Retail prices
- * keep the EZmailout 100–140 % spread over Click2Mail cost; rows marked
- * "tier" reuse the ledger tier of the closest priced format until the rate
- * card confirms them.
+ * The authoritative Click2Mail price matrix: 14 product families, 29 document
+ * classes. Costs and retail prices are the rates supplied by the operator;
+ * `marginPercent` is derived so any row outside the 100–140 % target band is
+ * visible rather than silently re-priced (see `marginOutliers()`).
+ *
+ * Mirrored by `src/backend/lib/pricing.mo` — change both.
  */
-export const PRICING_LEDGER: PricingRowUi[] = [
-  {
-    layoutVariant: "3.5x5",
-    productType: ProductType.Postcard,
-    displayName: "3.5×5 Mini Postcard",
+export const PRICING_LEDGER: ProductSpec[] = [
+  spec({
+    id: "3.5x5",
+    category: "postcards",
+    name: "3.5 × 5 Mini Postcard",
     documentClass: "Postcard 3.5 x 5",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 55, // tier: 4.25×6
-    retailPriceCents: 115,
-    widthInches: 5,
-    heightInches: 3.5,
-  },
-  {
-    layoutVariant: "4.25x6",
-    productType: ProductType.Postcard,
-    displayName: "4.25×6 Postcard",
-    documentClass: "Postcard 4.25 x 6",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 55,
-    retailPriceCents: 115,
-    widthInches: 6,
-    heightInches: 4.25,
-  },
-  {
-    layoutVariant: "4x9",
-    productType: ProductType.Postcard,
-    displayName: "4×9 Slim Postcard",
-    documentClass: "Postcard 4 x 9",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 57, // tier: 6×9
-    retailPriceCents: 135,
-    widthInches: 9,
-    heightInches: 4,
-  },
-  {
-    layoutVariant: "5x8",
-    productType: ProductType.Postcard,
-    displayName: "5×8 Postcard",
-    documentClass: "Postcard 5 x 8",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 57, // tier: 6×9
-    retailPriceCents: 135,
-    widthInches: 8,
+    widthInches: 3.5,
     heightInches: 5,
-  },
-  {
-    layoutVariant: "6x9",
-    productType: ProductType.Postcard,
-    displayName: "6×9 Postcard",
-    documentClass: "Postcard 6 x 9",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 57,
-    retailPriceCents: 135,
-    widthInches: 9,
+    cogsBase: 0.53,
+    retailPrice: 1.1,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "4.25x6",
+    category: "postcards",
+    name: "4.25 × 6 Postcard",
+    documentClass: "Postcard 4.25 x 6",
+    widthInches: 4.25,
     heightInches: 6,
-  },
-  {
-    layoutVariant: "6x11",
-    productType: ProductType.Postcard,
-    displayName: "6×11 Jumbo Postcard",
-    documentClass: "Postcard 6 x 11",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 73,
-    retailPriceCents: 165,
-    widthInches: 11,
-    heightInches: 6,
-  },
-  {
-    layoutVariant: "letter",
-    productType: ProductType.Letter,
-    displayName: "8.5×11 Letter",
-    documentClass: "Letter 8.5 x 11",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: WINDOW_10,
-    baseCostCents: 70,
-    retailPriceCents: 150,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "letter_legal",
-    productType: ProductType.Letter,
-    displayName: "8.5×14 Legal Letter",
-    documentClass: "Letter 8.5 x 14",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: WINDOW_10,
-    baseCostCents: 80, // tier: letter + legal stock
-    retailPriceCents: 170,
-    widthInches: 8.5,
-    heightInches: 14,
-  },
-  {
-    layoutVariant: "certified_self_mailer",
-    productType: ProductType.CertifiedMail,
-    displayName: "Certified Self Mailer 8.5×11",
-    documentClass: "Certified Self Mailer 8.5 x 11",
-    layout: "Certified Self Mailer",
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 895, // tier: certified postage
-    retailPriceCents: 1795,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "certified_green_card",
-    productType: ProductType.CertifiedMail,
-    displayName: "Certified Self Mailer with Green Card",
-    documentClass: "Certified Self Mailer With Green Card",
-    layout: "Certified Self Mailer",
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 1295, // tier: certified + return receipt
-    retailPriceCents: 2595,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "certified_letter",
-    productType: ProductType.CertifiedMail,
-    displayName: "Certified Letter 8.5×11",
-    documentClass: "Certified Letter 8.5 x 11",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: WINDOW_10,
-    baseCostCents: 925, // tier: certified postage
-    retailPriceCents: 1850,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "eddm_6.25x11",
-    productType: ProductType.Eddm,
-    displayName: "EDDM® Mailer 6.25×11",
-    documentClass: "EDDM® Mailer 6.25 x 11",
-    layout: EDDM_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 45, // tier: EDDM saturation postage
-    retailPriceCents: 95,
-    widthInches: 11,
-    heightInches: 6.25,
-  },
-  {
-    layoutVariant: "eddm_6.5x9",
-    productType: ProductType.Eddm,
-    displayName: "EDDM® Mailer 6.5×9",
-    documentClass: "EDDM® Mailer 6.5 x 9",
-    layout: EDDM_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 43, // tier: EDDM saturation postage
-    retailPriceCents: 90,
-    widthInches: 9,
-    heightInches: 6.5,
-  },
-  {
-    layoutVariant: "eddm_8.5x11",
-    productType: ProductType.Eddm,
-    displayName: "EDDM® Mailer 8.5×11",
-    documentClass: "EDDM® Mailer 8.5 x 11",
-    layout: EDDM_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 48, // tier: EDDM saturation postage
-    retailPriceCents: 99,
-    widthInches: 11,
-    heightInches: 8.5,
-  },
-  {
-    layoutVariant: "eddm_8.5x12",
-    productType: ProductType.Eddm,
-    displayName: "EDDM® Mailer 8.5×12",
-    documentClass: "EDDM® Mailer 8.5 x 12",
-    layout: EDDM_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 52, // tier: EDDM saturation postage
-    retailPriceCents: 109,
-    widthInches: 12,
-    heightInches: 8.5,
-  },
-  {
-    layoutVariant: "priority_letter",
-    productType: ProductType.PriorityMail,
-    displayName: "Priority Letter 8.5×11",
-    documentClass: "Priority Letter 8.5 x 11",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.Priority,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 995, // tier: Priority Mail postage
-    retailPriceCents: 1995,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "priority_express_letter",
-    productType: ProductType.PriorityMailExpress,
-    displayName: "Priority Mail® Express Letter 8.5×11",
-    documentClass: "Priority Mail® Express Letters 8.5 x 11",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.PriorityExpress,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 2995, // tier: Priority Mail Express postage
-    retailPriceCents: 5995,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "8.5x11_flyer",
-    productType: ProductType.Flyer,
-    displayName: "8.5×11 Flyer (bifold self-mailer)",
-    documentClass: "Flyer 8.5 x 11",
-    layout: "Bifold Self-Mailer",
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 95,
-    retailPriceCents: 210,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "8.5x11_secure",
-    productType: ProductType.SnapPack,
-    displayName: "8.5×11 Secure Self Mailer",
-    documentClass: "Secure Self Mailer 8.5 x 11",
-    layout: "Pressure Seal Snap Pack",
-    mailClass: MailClass.FirstClass,
-    paperType: "White 28#",
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 85,
-    retailPriceCents: 195,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "11x8.5_brochure",
-    productType: ProductType.Brochure,
-    displayName: "11×8.5 Brochure (trifold self-mailer)",
-    documentClass: "Brochure 11 x 8.5",
-    layout: "Trifold Self-Mailer",
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 95,
-    retailPriceCents: 210,
-    widthInches: 11,
-    heightInches: 8.5,
-  },
-  {
-    layoutVariant: "notecard_4.25x5.5",
-    productType: ProductType.Notecard,
-    displayName: "4.25×5.5 Notecard",
-    documentClass: "Notecard 4.25 x 5.5",
-    layout: "Flat Notecard",
-    mailClass: MailClass.FirstClass,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 62, // tier: postcard + envelope
-    retailPriceCents: 130,
-    widthInches: 5.5,
-    heightInches: 4.25,
-  },
-  {
-    layoutVariant: "folded_notecard_4.25x5.5",
-    productType: ProductType.Notecard,
-    displayName: "4.25×5.5 Folded Notecard",
-    documentClass: "Folded Notecard 4.25 x 5.5",
-    layout: "Folded Notecard",
-    mailClass: MailClass.FirstClass,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 85, // tier: folded card + envelope
-    retailPriceCents: 180,
-    widthInches: 5.5,
-    heightInches: 4.25,
-  },
-  {
-    layoutVariant: "rack_card_4x9",
-    productType: ProductType.RackCard,
-    displayName: "4×9 Rack Card",
-    documentClass: "Rack Card 4 x 9",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 57, // tier: 4×9 postcard
-    retailPriceCents: 135,
+    cogsBase: 0.55,
+    retailPrice: 1.15,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "4x9",
+    category: "postcards",
+    name: "4 × 9 Slim Postcard",
+    documentClass: "Postcard 4 x 9",
     widthInches: 4,
     heightInches: 9,
-  },
-  {
-    layoutVariant: "reply_postcard_4.25x6",
-    productType: ProductType.ReplyMail,
-    displayName: "4.25×6 Reply Postcard",
-    documentClass: "Reply Postcard 4.25 x 6",
-    layout: "Business Reply Postcard",
-    mailClass: MailClass.FirstClass,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 75, // tier: postcard + reply postage
-    retailPriceCents: 160,
+    cogsBase: 0.55,
+    retailPrice: 1.2,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "5x8",
+    category: "postcards",
+    name: "5 × 8 Postcard",
+    documentClass: "Postcard 5 x 8",
+    widthInches: 5,
+    heightInches: 8,
+    cogsBase: 0.54,
+    retailPrice: 1.25,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "6x9",
+    category: "postcards",
+    name: "6 × 9 Postcard",
+    documentClass: "Postcard 6 x 9",
     widthInches: 6,
-    heightInches: 4.25,
-  },
-  {
-    layoutVariant: "reply_letter",
-    productType: ProductType.ReplyMail,
-    displayName: "8.5×11 Reply Letter",
+    heightInches: 9,
+    cogsBase: 0.57,
+    retailPrice: 1.35,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing", "FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "6x11",
+    category: "postcards",
+    name: "6 × 11 Jumbo Postcard",
+    documentClass: "Postcard 6 x 11",
+    widthInches: 6,
+    heightInches: 11,
+    cogsBase: 0.73,
+    retailPrice: 1.65,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing", "FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "letter",
+    category: "letters",
+    name: "8.5 × 11 Letter",
+    documentClass: "Letter 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 0.59,
+    retailPrice: 1.5,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    envelope: "#10 Double Window",
+  }),
+  spec({
+    id: "letter_legal",
+    category: "letters",
+    name: "8.5 × 14 Legal Letter",
+    documentClass: "Letter 8.5 x 14",
+    widthInches: 8.5,
+    heightInches: 14,
+    cogsBase: 0.61,
+    retailPrice: 1.65,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    envelope: "#10 Double Window",
+  }),
+  spec({
+    id: "certified_self_mailer",
+    category: "certified-mail",
+    name: "Certified Self Mailer 8.5 × 11",
+    documentClass: "Certified Self Mailer 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 6.45,
+    retailPrice: 12.9,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Certified Self Mailer",
+    paperType: "White 24#",
+    note: "Includes the USPS Certified Mail fee and tracking.",
+  }),
+  spec({
+    id: "certified_letter",
+    category: "certified-mail",
+    name: "Certified Letter 8.5 × 11",
+    documentClass: "Certified Letter 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 6.66,
+    retailPrice: 13.5,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    envelope: "#10 Double Window",
+    note: "Includes the USPS Certified Mail fee and tracking.",
+  }),
+  spec({
+    id: "certified_green_card",
+    category: "certified-mail",
+    name: "Certified Self Mailer with Green Card Receipt",
+    documentClass: "Certified Self Mailer With Green Card Receipt",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 11.04,
+    retailPrice: 22.0,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Certified Self Mailer",
+    paperType: "White 24#",
+    note: "Includes the Certified Mail fee and the signed return receipt (ERR).",
+  }),
+  spec({
+    id: "eddm_6.5x9",
+    category: "eddm",
+    name: "EDDM® Mailer 6.5 × 9",
+    documentClass: "EDDM® Mailer 6.5 x 9",
+    widthInches: 6.5,
+    heightInches: 9,
+    cogsBase: 0.15,
+    retailPrice: 0.4,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "EDDM Self Mailer",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+  }),
+  spec({
+    id: "eddm_8.5x11",
+    category: "eddm",
+    name: "EDDM® Mailer 8.5 × 11",
+    documentClass: "EDDM® Mailer 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 0.16,
+    retailPrice: 0.42,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "EDDM Self Mailer",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+  }),
+  spec({
+    id: "eddm_6.25x11",
+    category: "eddm",
+    name: "EDDM® Mailer 6.25 × 11",
+    documentClass: "EDDM® Mailer 6.25 x 11",
+    widthInches: 6.25,
+    heightInches: 11,
+    cogsBase: 0.17,
+    retailPrice: 0.45,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "EDDM Self Mailer",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+  }),
+  spec({
+    id: "eddm_8.5x12",
+    category: "eddm",
+    name: "EDDM® Mailer 8.5 × 12",
+    documentClass: "EDDM® Mailer 8.5 x 12",
+    widthInches: 8.5,
+    heightInches: 12,
+    cogsBase: 0.22,
+    retailPrice: 0.55,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "EDDM Self Mailer",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+  }),
+  spec({
+    id: "priority_letter",
+    category: "priority-mail-plus",
+    name: "Priority Letter 8.5 × 11",
+    documentClass: "Priority Letter 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 11.66,
+    retailPrice: 22.5,
+    defaultMailClass: "Priority",
+    supportedMailClasses: ["Priority"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    note: "USPS Priority Mail®, 1–3 day delivery with tracking.",
+  }),
+  spec({
+    id: "priority_express_letter",
+    category: "priority-mail-express",
+    name: "Priority Mail® Express Letter 8.5 × 11",
+    documentClass: "Priority Mail® Express Letters 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 32.06,
+    retailPrice: 55.0,
+    defaultMailClass: "PriorityExpress",
+    supportedMailClasses: ["PriorityExpress"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    note: "USPS Priority Mail Express®, overnight to most locations.",
+  }),
+  spec({
+    id: "8.5x11_flyer",
+    category: "flyers",
+    name: "8.5 × 11 Flyer",
+    documentClass: "Flyer 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 0.57,
+    retailPrice: 1.45,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing", "FirstClass"],
+    hasAddressBlock: true,
+    layout: "Unfolded Flyer",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Printed flat (unfolded) and tabbed for mailing.",
+  }),
+  spec({
+    id: "11x8.5_brochure",
+    category: "brochures",
+    name: "11 × 8.5 Trifold Brochure",
+    documentClass: "Brochure 11 x 8.5",
+    widthInches: 11,
+    heightInches: 8.5,
+    cogsBase: 1.07,
+    retailPrice: 2.25,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing", "FirstClass"],
+    hasAddressBlock: true,
+    layout: "Trifold Self-Mailer",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "8.5x11_secure",
+    category: "secure-mailers",
+    name: "8.5 × 11 Secure Self Mailer",
+    documentClass: "Secure Self Mailer 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 0.58,
+    retailPrice: 1.95,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Pressure Seal Snap Pack",
+    paperType: "White 28#",
+    note: "Perforated, pressure-sealed — no envelope.",
+  }),
+  spec({
+    id: "notecard_4.25x5.5",
+    category: "notecards",
+    name: "4.25 × 5.5 Notecard",
+    documentClass: "Notecard 4.25 x 5.5",
+    widthInches: 4.25,
+    heightInches: 5.5,
+    cogsBase: 0.87,
+    retailPrice: 1.85,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Flat Notecard",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Flat card mailed in a matching envelope.",
+  }),
+  spec({
+    id: "folded_notecard_4.25x5.5",
+    category: "notecards",
+    name: "4.25 × 5.5 Folded Notecard",
+    documentClass: "Folded Notecard 4.25 x 5.5",
+    widthInches: 4.25,
+    heightInches: 5.5,
+    cogsBase: 1.04,
+    retailPrice: 2.25,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Folded Notecard",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Folded greeting card mailed in a matching envelope.",
+  }),
+  spec({
+    id: "rack_card_4x9",
+    category: "rack-cards",
+    name: "4 × 9 Rack Card",
+    documentClass: "Rack Card 4 x 9",
+    widthInches: 4,
+    heightInches: 9,
+    cogsBase: 0.55,
+    retailPrice: 1.25,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "Heavy Cardstock",
+  }),
+  spec({
+    id: "reply_postcard_4.25x6",
+    category: "reply-mail",
+    name: "4.25 × 6 Reply Postcard",
+    documentClass: "Reply Postcard 4.25 x 6",
+    widthInches: 4.25,
+    heightInches: 6,
+    cogsBase: 0.64,
+    retailPrice: 1.5,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: true,
+    layout: "Business Reply Postcard",
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Carries prepaid Business Reply postage for the response.",
+  }),
+  spec({
+    id: "reply_letter",
+    category: "reply-mail",
+    name: "8.5 × 11 Reply Letter",
     documentClass: "Reply Letter 8.5 x 11",
-    layout: LETTER_LAYOUT,
-    mailClass: MailClass.FirstClass,
-    paperType: BOND,
-    printOption: BOTH_SIDES,
-    envelope: WINDOW_10,
-    baseCostCents: 95, // tier: letter + reply envelope
-    retailPriceCents: 200,
     widthInches: 8.5,
     heightInches: 11,
-  },
-  {
-    layoutVariant: "8.5x11_booklet",
-    productType: ProductType.Booklet,
-    displayName: "8.5×11 Booklet Self Mailer",
+    cogsBase: 0.65,
+    retailPrice: 1.6,
+    defaultMailClass: "FirstClass",
+    supportedMailClasses: ["FirstClass"],
+    hasAddressBlock: false,
+    layout: "Address on Separate Page",
+    paperType: "White 24#",
+    envelope: "#10 Double Window",
+    note: "Double-window return envelope included.",
+  }),
+  spec({
+    id: "8.5x11_booklet",
+    category: "booklets",
+    name: "8.5 × 11 Booklet Self Mailer",
     documentClass: "Booklet Self Mailer 8.5 x 11",
+    widthInches: 8.5,
+    heightInches: 11,
+    cogsBase: 0.74,
+    retailPrice: 2.1,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
     layout: "Saddle Stitched Booklet",
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 160,
-    retailPriceCents: 360,
+    paperType: "White Matte with Gloss UV Finish",
+    note: "Multi-page, tabbed for mailing.",
+  }),
+  spec({
+    id: "booklet_address_front",
+    category: "booklets",
+    name: "8.5 × 11 Booklet · Address Front Page",
+    documentClass: "Booklet 8.5 x 11 - Address Front Page",
     widthInches: 8.5,
     heightInches: 11,
-  },
-  {
-    layoutVariant: "booklet_address_back",
-    productType: ProductType.Booklet,
-    displayName: "8.5×11 Booklet · Address Back Page",
-    documentClass: "Booklet Address Back Page 8.5 x 11",
-    layout: "Address on Back Page",
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 175, // tier: booklet + cover page
-    retailPriceCents: 385,
-    widthInches: 8.5,
-    heightInches: 11,
-  },
-  {
-    layoutVariant: "booklet_address_front",
-    productType: ProductType.Booklet,
-    displayName: "8.5×11 Booklet · Address Front Page",
-    documentClass: "Booklet Address Front Page 8.5 x 11",
+    cogsBase: 1.62,
+    retailPrice: 3.6,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
     layout: "Address on Front Page",
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 175, // tier: booklet + cover page
-    retailPriceCents: 385,
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "booklet_address_back",
+    category: "booklets",
+    name: "8.5 × 11 Booklet · Address Back Page",
+    documentClass: "Booklet 8.5 x 11 - Address Back Page",
     widthInches: 8.5,
     heightInches: 11,
-  },
-  {
-    layoutVariant: "card_stock_12x4.5",
-    productType: ProductType.CardStock,
-    displayName: "12×4.5 Card Stock",
+    cogsBase: 1.62,
+    retailPrice: 3.6,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "Address on Back Page",
+    paperType: "White Matte with Gloss UV Finish",
+  }),
+  spec({
+    id: "card_stock_12x4.5",
+    category: "card-stock",
+    name: "12 × 4.5 Card Stock",
     documentClass: "Card Stock Paper 12 x 4.5",
-    layout: POSTCARD_LAYOUT,
-    mailClass: MailClass.MarketingMail,
-    paperType: GLOSS,
-    printOption: BOTH_SIDES,
-    envelope: null,
-    baseCostCents: 60, // tier: 6×9 postcard
-    retailPriceCents: 130,
     widthInches: 12,
     heightInches: 4.5,
-  },
+    cogsBase: 0.65,
+    retailPrice: 1.65,
+    defaultMailClass: "StandardMarketing",
+    supportedMailClasses: ["StandardMarketing"],
+    hasAddressBlock: true,
+    layout: "Double Sided Postcard",
+    paperType: "Heavy Cardstock",
+  }),
 ];
+
+/** Rows whose margin falls outside the 100–140 % target band. */
+export function marginOutliers(): ProductSpec[] {
+  return PRICING_LEDGER.filter(
+    (row) => row.marginPercent < 100 || row.marginPercent > 140,
+  );
+}
+
+/** Back-compat alias: the ledger row type was previously called `PricingRowUi`. */
+export type PricingRowUi = ProductSpec;
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+/** Monthly EZmailout subscription price ($9.00). */
+export const SUBSCRIPTION_PRICE_CENTS = 900;
+
+export const PRODUCTION_TIME = "Next Day";
+export const COLOR_FULL = "Full Color";
+export const COLOR_BW = "Black and White";
+
+/**
+ * Typical local print-shop + postage quote, used only by the savings
+ * calculator. Derived as 1.3× the member rate rather than hand-maintained.
+ */
+export const PRINT_SHOP_MULTIPLIER = 1.3;
 
 /**
  * Layout variants that shipped before the Click2Mail catalog audit. Campaign
@@ -491,93 +625,17 @@ export function normalizeLayoutVariant(layoutVariant: string): string {
   return LEGACY_LAYOUT_VARIANTS[layoutVariant] ?? layoutVariant;
 }
 
-/** Monthly EZmailout subscription price ($9.00). */
-export const SUBSCRIPTION_PRICE_CENTS = 900;
-
-/** Typical local print-shop + postage price per piece, for the savings calculator. */
-export const PRINT_SHOP_BENCHMARK_CENTS: Record<string, number> = {
-  "3.5x5": 150,
-  "4.25x6": 150,
-  "4x9": 185,
-  "5x8": 185,
-  "6x9": 185,
-  "6x11": 225,
-  letter: 210,
-  letter_legal: 240,
-  certified_self_mailer: 2450,
-  certified_green_card: 3350,
-  certified_letter: 2495,
-  "eddm_6.25x11": 135,
-  "eddm_6.5x9": 125,
-  "eddm_8.5x11": 145,
-  "eddm_8.5x12": 155,
-  priority_letter: 2650,
-  priority_express_letter: 7900,
-  "8.5x11_flyer": 295,
-  "8.5x11_secure": 275,
-  "11x8.5_brochure": 295,
-  "notecard_4.25x5.5": 195,
-  "folded_notecard_4.25x5.5": 265,
-  rack_card_4x9: 185,
-  "reply_postcard_4.25x6": 225,
-  reply_letter: 275,
-  "8.5x11_booklet": 495,
-  booklet_address_back: 525,
-  booklet_address_front: 525,
-  "card_stock_12x4.5": 195,
-};
-
-export const PRODUCTION_TIME = "Next Day";
-export const COLOR_FULL = "Full Color";
-export const COLOR_BW = "Black and White";
+// ─── Lookups ────────────────────────────────────────────────────────────────
 
 /** Finds the ledger row for a layout variant. */
-export function getPricingRow(layoutVariant: string): PricingRowUi | undefined {
+export function getPricingRow(layoutVariant: string): ProductSpec | undefined {
   const key = normalizeLayoutVariant(layoutVariant);
-  return PRICING_LEDGER.find((row) => row.layoutVariant === key);
+  return PRICING_LEDGER.find((row) => row.id === key);
 }
 
 /** Ledger rows for one product type, in catalog order. */
-export function getPricingRowsFor(productType: ProductType): PricingRowUi[] {
+export function getPricingRowsFor(productType: ProductType): ProductSpec[] {
   return PRICING_LEDGER.filter((row) => row.productType === productType);
-}
-
-/** Letter-style products Click2Mail prints in black and white on request (mirrors `PricingLib.supportsBlackAndWhite`). */
-export function supportsBlackAndWhite(productType: ProductType): boolean {
-  return (
-    productType === ProductType.Letter ||
-    productType === ProductType.CertifiedMail ||
-    productType === ProductType.PriorityMail ||
-    productType === ProductType.PriorityMailExpress ||
-    productType === ProductType.ReplyMail
-  );
-}
-
-/** Products whose address side carries the USPS address block and IMb barcode. */
-export function hasAddressSide(productType: ProductType): boolean {
-  return (
-    productType === ProductType.Postcard ||
-    productType === ProductType.Eddm ||
-    productType === ProductType.RackCard ||
-    productType === ProductType.ReplyMail ||
-    productType === ProductType.CardStock
-  );
-}
-
-/** Human label for a USPS mail class. */
-export function mailClassLabel(mailClass: MailClass): string {
-  switch (mailClass) {
-    case MailClass.FirstClass:
-      return "First-Class";
-    case MailClass.MarketingMail:
-      return "Marketing Mail";
-    case MailClass.Priority:
-      return "Priority Mail";
-    case MailClass.PriorityExpress:
-      return "Priority Mail Express";
-    default:
-      return String(mailClass);
-  }
 }
 
 /** Retail unit price in cents (0 when the variant is unknown). */
@@ -590,23 +648,79 @@ export function getPrice(layoutVariant: string): number {
   return getUnitPriceCents(layoutVariant) / 100;
 }
 
-/** Print-shop benchmark price in cents (falls back to the retail price). */
+/** Print-shop benchmark price in cents for the savings calculator. */
 export function getBenchmarkCents(layoutVariant: string): number {
-  return (
-    PRINT_SHOP_BENCHMARK_CENTS[normalizeLayoutVariant(layoutVariant)] ??
-    getUnitPriceCents(layoutVariant)
-  );
+  return Math.round(getUnitPriceCents(layoutVariant) * PRINT_SHOP_MULTIPLIER);
 }
 
 /** Gross margin in cents for a ledger row. */
-export function marginCents(row: PricingRowUi): number {
+export function marginCents(row: ProductSpec): number {
   return row.retailPriceCents - row.baseCostCents;
 }
 
-/** Gross margin as a whole-number percentage of base cost (matches `lib/pricing.mo`). */
-export function marginPercent(row: PricingRowUi): number {
-  if (row.baseCostCents === 0) return 0;
-  return Math.floor((marginCents(row) * 100) / row.baseCostCents);
+// ─── Product capabilities ───────────────────────────────────────────────────
+
+/** Letter-style products Click2Mail prints in black and white on request. */
+export function supportsBlackAndWhite(productType: ProductType): boolean {
+  return (
+    productType === ProductType.Letter ||
+    productType === ProductType.CertifiedMail ||
+    productType === ProductType.PriorityMail ||
+    productType === ProductType.PriorityMailExpress ||
+    productType === ProductType.ReplyMail
+  );
+}
+
+/**
+ * True when the studio must reserve the USPS address + IMb clear zone on the
+ * artwork (see `ProductSpec.hasAddressBlock`).
+ */
+export function hasAddressSide(layoutVariant: string): boolean {
+  return getPricingRow(layoutVariant)?.hasAddressBlock ?? false;
+}
+
+/** EDDM® rows price print only; saturation postage is added per carrier route. */
+export function isBaseRateOnly(row: ProductSpec): boolean {
+  return row.productType === ProductType.Eddm;
+}
+
+// ─── Labels ─────────────────────────────────────────────────────────────────
+
+/** Human label for the canister's wire mail class. */
+export function mailClassLabel(mailClass: MailClass): string {
+  switch (mailClass) {
+    case MailClass.FirstClass:
+      return "First-Class";
+    case MailClass.MarketingMail:
+      return "Standard / Marketing Mail";
+    case MailClass.Priority:
+      return "Priority Mail®";
+    case MailClass.PriorityExpress:
+      return "Priority Mail® Express";
+    default:
+      return String(mailClass);
+  }
+}
+
+/** Human label for a catalog mail class. */
+export function catalogMailClassLabel(mailClass: CatalogMailClass): string {
+  return mailClassLabel(catalogMailClassToWire(mailClass));
+}
+
+/** Short delivery-speed chip copy for a catalog mail class. */
+export function mailClassDelivery(mailClass: CatalogMailClass): string {
+  switch (mailClass) {
+    case "FirstClass":
+      return "2–5 days";
+    case "StandardMarketing":
+      return "5–12 days";
+    case "Priority":
+      return "1–3 days";
+    case "PriorityExpress":
+      return "Overnight";
+    default:
+      return "";
+  }
 }
 
 const usd = new Intl.NumberFormat("en-US", {

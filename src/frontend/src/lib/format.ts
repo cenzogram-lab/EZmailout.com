@@ -56,7 +56,7 @@ export function layoutLabel(variant: string): string {
   const row = getPricingRow(variant);
   if (!row) return variant;
   const inches = `${row.widthInches}″ × ${row.heightInches}″`;
-  switch (row.layoutVariant) {
+  switch (row.id) {
     case "8.5x11_flyer":
       return `${inches} Flyer (bifold)`;
     case "11x8.5_brochure":

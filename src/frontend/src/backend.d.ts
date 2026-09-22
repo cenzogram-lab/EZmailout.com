@@ -341,6 +341,7 @@ export interface CreateCampaignInput {
     audienceType: AudienceType;
     canvasState?: CanvasState;
     designTemplateId?: string;
+    mailClass?: MailClass;
     name: string;
     product: ProductSelection;
     qrDestinationUrl?: string;

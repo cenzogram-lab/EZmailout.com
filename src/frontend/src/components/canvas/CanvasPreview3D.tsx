@@ -44,7 +44,12 @@ function Face({
       data-ocid={`canvas.preview.face.${sideKey}`}
     >
       {sideKey === "back" && (
-        <AddressZoneOverlay dims={dims} scale={scale} subtle />
+        <AddressZoneOverlay
+          dims={dims}
+          scale={scale}
+          subtle
+          ocid="canvas.preview.address_zone"
+        />
       )}
       {elements.map((el) => {
         if (el.kind === "text") {

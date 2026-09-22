@@ -75,7 +75,7 @@ export const CATALOG: CatalogCategory[] = [
     blurb:
       "Saturation flats delivered to every address on the carrier routes you pick.",
     icon: "eddm",
-    variants: ["eddm_6.25x11", "eddm_6.5x9", "eddm_8.5x11", "eddm_8.5x12"],
+    variants: ["eddm_6.5x9", "eddm_8.5x11", "eddm_6.25x11", "eddm_8.5x12"],
     note: "EDDM® drops are priced per household on the routes you choose in the audience step.",
   },
   {
@@ -100,7 +100,7 @@ export const CATALOG: CatalogCategory[] = [
     id: "flyers",
     productType: ProductType.Flyer,
     name: "Flyers",
-    blurb: "8.5×11 flyers folded in half and tabbed shut — no envelope needed.",
+    blurb: "8.5×11 flyers printed flat and tabbed shut — no envelope needed.",
     icon: "flyer",
     variants: ["8.5x11_flyer"],
   },
@@ -173,7 +173,7 @@ export const CATALOG: CatalogCategory[] = [
 export function categoryForVariant(
   layoutVariant: string,
 ): CatalogCategory | undefined {
-  const row = PRICING_LEDGER.find((r) => r.layoutVariant === layoutVariant);
+  const row = PRICING_LEDGER.find((r) => r.id === layoutVariant);
   return CATALOG.find(
     (c) =>
       c.variants.includes(layoutVariant) ||
@@ -193,7 +193,7 @@ export function categoryForProductType(
 /** Ledger rows of a category in sheet order. */
 export function categoryRows(category: CatalogCategory): PricingRowUi[] {
   return category.variants
-    .map((v) => PRICING_LEDGER.find((r) => r.layoutVariant === v))
+    .map((v) => PRICING_LEDGER.find((r) => r.id === v))
     .filter((r): r is PricingRowUi => r !== undefined);
 }
 

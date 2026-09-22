@@ -4,7 +4,6 @@ import {
   COLOR_FULL,
   PRODUCTION_TIME,
   getPricingRow,
-  hasAddressSide,
   supportsBlackAndWhite,
 } from "@/lib/pricing";
 
@@ -62,7 +61,7 @@ export function getLayoutDims(layoutVariant: string): LayoutDims {
   const designWidth = Math.round(widthInches * DESIGN_PPI);
   const designHeight = Math.round(heightInches * DESIGN_PPI);
   const dims: LayoutDims = {
-    layoutVariant: row?.layoutVariant ?? layoutVariant,
+    layoutVariant: row?.id ?? layoutVariant,
     widthInches,
     heightInches,
     designWidth,
@@ -72,7 +71,7 @@ export function getLayoutDims(layoutVariant: string): LayoutDims {
     safeInsetInches: SAFE_INSET_INCHES,
     hasBackSide: true,
   };
-  if (row && hasAddressSide(row.productType) && !row.envelope) {
+  if (row?.hasAddressBlock) {
     // USPS reserves the lower-right area of the address side for the
     // delivery address, postage indicia and IMb barcode.
     const x = Math.round(designWidth / 2);
