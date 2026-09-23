@@ -286,7 +286,12 @@ export function CampaignDetailPage() {
     if (!campaign) return;
     try {
       const result = await syncMutation.mutateAsync(campaign.id);
-      if (result.ok) {
+      if (result.ok && result.cached) {
+        // Inside the backend's 10-minute sync cooldown: no lookup was made.
+        toast.info(
+          "Tracking was checked in the last 10 minutes — showing the latest status.",
+        );
+      } else if (result.ok) {
         const count = Number(result.newEvents);
         toast.success(
           count > 0

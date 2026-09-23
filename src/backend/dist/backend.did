@@ -106,6 +106,7 @@ type TextBlockState =
  };
 type SyncResult = 
  record {
+   cached: bool;
    error: opt text;
    newEvents: nat;
    ok: bool;

@@ -44,6 +44,15 @@ mixin (
   /// pay for the same outcalls twice.
   transient var pollRunning : Bool = false;
 
+  /// Owners may trigger a live tracking lookup at most once per campaign in
+  /// this window; one lookup is two outcalls and about 24.6 B cycles.
+  transient let syncCooldownNanos : Int = 10 * 60 * 1_000_000_000;
+
+  /// Time of the last live Click2Mail lookup per campaign, from any path
+  /// (owner, admin or the timer). Transient: it only rate-limits, so losing it
+  /// on upgrade costs at most one extra lookup per campaign.
+  transient let syncCooldowns = Map.empty<Text, Int>();
+
   /// Owner or admin. Unowned legacy records are admin-only.
   private func isOwner(record : Types.CampaignRecord, caller : Principal) : Bool {
     CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
@@ -228,14 +237,14 @@ mixin (
   // ─── Tracking ────────────────────────────────────────────────────────────
 
   private func syncOne(record : Types.CampaignRecord) : async Types.SyncResult {
-    let jobId = switch (record.c2mJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0 } } };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Click2Mail credentials not configured"; status = ?record.status; newEvents = 0 } } };
+    let jobId = switch (record.c2mJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
+    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Click2Mail credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
     let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
     let headers = Click2Mail.jsonHeaders(auth, "application/json");
     let jobResp = await Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
     let trackResp = await Http.get(base # "/jobs/" # jobId # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
     if (not Http.isSuccess(jobResp) and not Http.isSuccess(trackResp)) {
-      return { ok = false; error = ?responseError("Tracking lookup failed", jobResp); status = ?record.status; newEvents = 0 };
+      return { ok = false; error = ?responseError("Tracking lookup failed", jobResp); status = ?record.status; newEvents = 0; cached = false };
     };
     let statuses = List.empty<Text>();
     if (Http.isSuccess(jobResp)) {
@@ -259,15 +268,34 @@ mixin (
       };
       case null {};
     };
-    { ok = true; error = null; status = ?record.status; newEvents };
+    { ok = true; error = null; status = ?record.status; newEvents; cached = false };
   };
 
   /// Polls Click2Mail for IMb scan events and advances the 5-stage timeline.
+  /// Owners get the stored state instead of a new lookup within 10 minutes of
+  /// the last one; controllers and the admin are not rate-limited.
   public shared ({ caller }) func syncClick2MailTracking(campaignId : Text) : async Types.SyncResult {
     switch (campaigns.get(campaignId)) {
-      case null { { ok = false; error = ?"Campaign not found"; status = null; newEvents = 0 } };
+      case null { { ok = false; error = ?"Campaign not found"; status = null; newEvents = 0; cached = false } };
       case (?record) {
-        if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized"; status = null; newEvents = 0 } };
+        if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized"; status = null; newEvents = 0; cached = false } };
+        // Only a call that will reach Click2Mail is rate-limited; the early
+        // returns in `syncOne` cost nothing. Checked and stamped before the
+        // first await, so concurrent calls cannot both get through.
+        if (record.c2mJobId != null and AdminLib.hasClick2Mail(adminKeysState)) {
+          let now = Time.now();
+          if (not AdminLib.isAdmin(adminKeysState, caller)) {
+            switch (syncCooldowns.get(campaignId)) {
+              case (?lastSync) {
+                if (now - lastSync < syncCooldownNanos) {
+                  return { ok = true; error = null; status = ?record.status; newEvents = 0; cached = true };
+                };
+              };
+              case null {};
+            };
+          };
+          syncCooldowns.add(campaignId, now);
+        };
         await syncOne(record);
       };
     };
@@ -286,6 +314,7 @@ mixin (
     var synced = 0;
     try {
       for (r in pending.values()) {
+        syncCooldowns.add(r.id, Time.now());
         ignore await syncOne(r);
         synced += 1;
       };

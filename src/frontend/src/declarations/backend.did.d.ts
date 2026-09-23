@@ -396,6 +396,7 @@ export interface SyncResult {
   'status' : [] | [CampaignStatus],
   'newEvents' : bigint,
   'error' : [] | [string],
+  'cached' : boolean,
 }
 export interface TextBlockState {
   'x' : number,

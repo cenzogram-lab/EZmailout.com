@@ -497,6 +497,7 @@ export const SyncResult = IDL.Record({
   'status' : IDL.Opt(CampaignStatus),
   'newEvents' : IDL.Nat,
   'error' : IDL.Opt(IDL.Text),
+  'cached' : IDL.Bool,
 });
 export const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
 export const http_request_result = IDL.Record({
@@ -1119,6 +1120,7 @@ export const idlFactory = ({ IDL }) => {
     'status' : IDL.Opt(CampaignStatus),
     'newEvents' : IDL.Nat,
     'error' : IDL.Opt(IDL.Text),
+    'cached' : IDL.Bool,
   });
   const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_request_result = IDL.Record({

@@ -29331,7 +29331,8 @@ const SyncResult = Record({
   "ok": Bool,
   "status": Opt(CampaignStatus$1),
   "newEvents": Nat,
-  "error": Opt(Text)
+  "error": Opt(Text),
+  "cached": Bool
 });
 const http_header = Record({ "value": Text, "name": Text });
 const http_request_result = Record({
@@ -29949,7 +29950,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "ok": IDL2.Bool,
     "status": IDL2.Opt(CampaignStatus2),
     "newEvents": IDL2.Nat,
-    "error": IDL2.Opt(IDL2.Text)
+    "error": IDL2.Opt(IDL2.Text),
+    "cached": IDL2.Bool
   });
   const http_header2 = IDL2.Record({ "value": IDL2.Text, "name": IDL2.Text });
   const http_request_result2 = IDL2.Record({
@@ -73678,7 +73680,11 @@ function CampaignDetailPage() {
     if (!campaign) return;
     try {
       const result = await syncMutation.mutateAsync(campaign.id);
-      if (result.ok) {
+      if (result.ok && result.cached) {
+        ue.info(
+          "Tracking was checked in the last 10 minutes — showing the latest status."
+        );
+      } else if (result.ok) {
         const count2 = Number(result.newEvents);
         ue.success(
           count2 > 0 ? `Tracking synced — ${formatNumber(count2)} new event${count2 === 1 ? "" : "s"}.` : "Tracking synced — no new events yet."

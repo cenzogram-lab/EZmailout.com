@@ -278,6 +278,9 @@ module {
     error : ?Text;
     status : ?CampaignStatus;
     newEvents : Nat;
+    /// True when the call was inside the sync cooldown: `status` is the stored
+    /// state and no Click2Mail lookup was made.
+    cached : Bool;
   };
 
   public type WebhookResult = {

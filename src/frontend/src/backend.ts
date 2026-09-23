@@ -151,6 +151,7 @@ export interface TextBlockState {
     zIndex: bigint;
 }
 export interface SyncResult {
+    cached: boolean;
     error?: string;
     newEvents: bigint;
     ok: boolean;
