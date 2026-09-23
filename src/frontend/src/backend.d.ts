@@ -108,6 +108,17 @@ export interface SyncResult {
     ok: boolean;
     status?: CampaignStatus;
 }
+export interface SupportTicketView {
+    createdAt: bigint;
+    email: string;
+    emailStatus?: string;
+    id: string;
+    message: string;
+    name: string;
+    pagePath: string;
+    subject: string;
+    userId?: string;
+}
 export interface SupportTicketResult {
     error?: string;
     ok: boolean;
@@ -119,16 +130,6 @@ export interface SupportTicketInput {
     name: string;
     pagePath?: string;
     subject: string;
-}
-export interface SupportTicket {
-    createdAt: bigint;
-    email: string;
-    id: string;
-    message: string;
-    name: string;
-    pagePath: string;
-    subject: string;
-    userId?: string;
 }
 export interface StampyTurn {
     content: string;
@@ -517,6 +518,7 @@ export interface AdminKeysView {
     sandboxCheckout: boolean;
     stripePublishableKey?: string;
     stripeSecretKeyMasked?: string;
+    supportEmailAddress?: string;
     webhookPath: string;
     webhookSecretMasked?: string;
 }
@@ -530,6 +532,7 @@ export interface AdminKeysInput {
     sandboxCheckout?: boolean;
     stripePublishableKey?: string;
     stripeSecretKey?: string;
+    supportEmailAddress?: string;
     webhookSecret?: string;
 }
 export interface AddressVerificationResult {
@@ -584,7 +587,7 @@ export interface backendInterface {
     http_request(arg0: HttpRequest): Promise<HttpResponse>;
     http_request_update(arg0: HttpRequest): Promise<HttpResponse>;
     listPresets(): Promise<Array<AudiencePresetShared>>;
-    listSupportTickets(): Promise<Array<SupportTicket>>;
+    listSupportTickets(): Promise<Array<SupportTicketView>>;
     pollActiveTracking(): Promise<bigint>;
     resolveTrackingLink(arg0: string, arg1: string | null): Promise<TrackingResolveResult>;
     saveAdminKeys(arg0: AdminKeysInput): Promise<ApiResult>;

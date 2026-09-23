@@ -5,6 +5,7 @@ import AddressLib "../lib/address";
 import AdminLib "../lib/admin";
 import Http "../lib/http";
 import OpenAi "../lib/openai";
+import Resend "../lib/resend";
 import Stampy "../lib/stampy";
 import Map "mo:core/Map";
 import List "mo:core/List";
@@ -13,6 +14,7 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
+import Timer "mo:core/Timer";
 
 mixin (
   supportTickets : List.List<Support.SupportTicket>,
@@ -38,9 +40,20 @@ mixin (
   transient let maxTurnChars : Nat = 1_000;
   transient let maxReplyChars : Nat = 2_000;
 
+  // Every emailed ticket is an HTTPS outcall plus a Resend send. Signed-out
+  // visitors can file tickets and Internet Identity principals are free, so
+  // this is a global cap; tickets past it are still stored, just not emailed.
+  transient let emailsPerHour : Nat = 60;
+
   /// Rolling one-hour usage per principal. Transient: it only rate-limits.
   transient let ticketUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
   transient let chatUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
+  transient let emailUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
+
+  /// How each ticket's email notification went, by ticket id. Transient: the
+  /// ticket itself is stable; losing a status on upgrade loses no ticket.
+  transient let emailStatus = Map.empty<Text, Text>();
+  transient let emailQueued : Text = "Queued for email";
 
   private func charge(usage : Map.Map<Text, { var windowStart : Int; var count : Nat }>, key : Text, limit : Nat) : Bool {
     let now = Time.now();
@@ -63,12 +76,6 @@ mixin (
     if (clean.size() <= max) clean else Text.fromArray(clean.toArray().sliceToArray(0, max));
   };
 
-  private func looksLikeEmail(e : Text) : Bool {
-    if (e.size() < 6 or e.size() > maxEmailChars or e.contains(#char ' ')) { return false };
-    let parts = e.split(#char '@').toArray();
-    parts.size() == 2 and parts[0].size() > 0 and parts[1].contains(#char '.') and not parts[1].startsWith(#char '.') and not parts[1].endsWith(#char '.');
-  };
-
   // ─── Support tickets ─────────────────────────────────────────────────────
 
   /// Files a support ticket. Signed-out visitors may file too.
@@ -79,7 +86,7 @@ mixin (
     let subject = AddressLib.sanitizeText(input.subject);
     let message = AddressLib.sanitizeText(input.message);
     if (name == "" or name.size() > maxNameChars) { return fail("Enter your name (up to " # maxNameChars.toText() # " characters)") };
-    if (not looksLikeEmail(email)) { return fail("Enter a valid email address so we can reply") };
+    if (not AdminLib.looksLikeEmail(email)) { return fail("Enter a valid email address so we can reply") };
     if (subject == "" or subject.size() > maxSubjectChars) { return fail("Enter a subject (up to " # maxSubjectChars.toText() # " characters)") };
     if (message == "" or message.size() > maxMessageChars) { return fail("Enter a message (up to " # maxMessageChars.toText() # " characters)") };
     if (supportTickets.size() >= maxStoredTickets) { return fail("The support inbox is full right now; please try again later") };
@@ -87,7 +94,7 @@ mixin (
     let limit = if (anonymous) ticketsPerHourAnonymous else ticketsPerHourSignedIn;
     if (not charge(ticketUsage, caller.toText(), limit)) { return fail("Too many tickets in the last hour; please try again later") };
     let id = "tkt_" # (supportTickets.size() + 1).toText();
-    supportTickets.add({
+    let ticket : Support.SupportTicket = {
       id;
       userId = if (anonymous) null else ?caller.toText();
       name;
@@ -96,16 +103,64 @@ mixin (
       message;
       pagePath = switch (input.pagePath) { case (?p) clipSupport(p, 200); case null "" };
       createdAt = Time.now();
-    });
+    };
+    supportTickets.add(ticket);
+    // The email goes out from a one-shot timer, in its own message: the caller
+    // gets their reply without waiting on Resend, and nothing that happens to
+    // the email can roll back the ticket stored here.
+    if (AdminLib.canEmailSupport(adminKeysState)) {
+      emailStatus.add(id, emailQueued);
+      ignore Timer.setTimer<system>(#seconds 0, func() : async () { await forwardTicket(ticket) });
+    } else {
+      emailStatus.add(id, "Not emailed: Resend key or support email not configured");
+    };
     { ok = true; error = null; ticketId = ?id };
   };
 
-  /// Newest tickets first, at most 200. Controllers and the admin only.
-  public shared query ({ caller }) func listSupportTickets() : async [Support.SupportTicket] {
+  /// Emails one stored ticket to the support address through Resend.
+  private func forwardTicket(t : Support.SupportTicket) : async () {
+    let (apiKey, to) = switch (adminKeysState.resendKey, adminKeysState.supportEmailAddress) {
+      case (?k, ?e) (k, e);
+      case _ {
+        emailStatus.add(t.id, "Not emailed: Resend key or support email not configured");
+        return;
+      };
+    };
+    if (not charge(emailUsage, "all", emailsPerHour)) {
+      emailStatus.add(t.id, "Not emailed: hourly email limit reached");
+      return;
+    };
+    let opts = { AdminLib.outcallOptions(adminKeysState, 4_000) with transformContext = Http.maskSuccessBody };
+    try {
+      let resp = await Http.postText(Resend.emailsUrl, Resend.headers(apiKey, "ezmailout-ticket-" # t.id), Resend.ticketEmailBody(t, to), opts, transformFn);
+      emailStatus.add(t.id, if (Http.isSuccess(resp)) { "Emailed to " # to } else { "Email failed: " # Resend.errorMessage(resp.status, resp.body) });
+    } finally {
+      // Runs even if the continuation traps: never leave a ticket "queued".
+      if (emailStatus.get(t.id) == ?emailQueued) {
+        emailStatus.add(t.id, "Email failed: the send was interrupted");
+      };
+    };
+  };
+
+  /// Newest tickets first, at most 200, with their email status. Controllers
+  /// and the admin only. Reads stored state only, so it is deterministic.
+  public shared query ({ caller }) func listSupportTickets() : async [Support.SupportTicketView] {
     if (not AdminLib.isAdmin(adminKeysState, caller)) { Runtime.trap("Only a controller or the admin can read support tickets") };
-    let out = List.empty<Support.SupportTicket>();
+    let out = List.empty<Support.SupportTicketView>();
     for (t in supportTickets.reverseValues()) {
-      if (out.size() < 200) { out.add(t) };
+      if (out.size() < 200) {
+        out.add({
+          id = t.id;
+          userId = t.userId;
+          name = t.name;
+          email = t.email;
+          subject = t.subject;
+          message = t.message;
+          pagePath = t.pagePath;
+          createdAt = t.createdAt;
+          emailStatus = emailStatus.get(t.id);
+        });
+      };
     };
     out.toArray();
   };

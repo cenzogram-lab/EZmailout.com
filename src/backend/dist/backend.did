@@ -112,6 +112,18 @@ type SyncResult =
    ok: bool;
    status: opt CampaignStatus;
  };
+type SupportTicketView = 
+ record {
+   createdAt: int;
+   email: text;
+   emailStatus: opt text;
+   id: text;
+   message: text;
+   name: text;
+   pagePath: text;
+   subject: text;
+   userId: opt text;
+ };
 type SupportTicketResult = 
  record {
    error: opt text;
@@ -125,17 +137,6 @@ type SupportTicketInput =
    name: text;
    pagePath: opt text;
    subject: text;
- };
-type SupportTicket = 
- record {
-   createdAt: int;
-   email: text;
-   id: text;
-   message: text;
-   name: text;
-   pagePath: text;
-   subject: text;
-   userId: opt text;
  };
 type StampyTurn = 
  record {
@@ -576,6 +577,7 @@ type AdminKeysView =
    sandboxCheckout: bool;
    stripePublishableKey: opt text;
    stripeSecretKeyMasked: opt text;
+   supportEmailAddress: opt text;
    webhookPath: text;
    webhookSecretMasked: opt text;
  };
@@ -590,6 +592,7 @@ type AdminKeysInput =
    sandboxCheckout: opt bool;
    stripePublishableKey: opt text;
    stripeSecretKey: opt text;
+   supportEmailAddress: opt text;
    webhookSecret: opt text;
  };
 type AddressVerificationResult = 
@@ -632,7 +635,6 @@ service : {
   exportCampaignRecipients: (campaignId: text) -> (opt text) query;
   generateAiCopy: (input: AiCopyInput) -> (AiCopyResult);
   generateAiImage: (prompt: text, size: AiImageSize) -> (AiImageResult);
-  /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   getAdminKeys: () -> (AdminKeysView) query;
   getAiPricing: () -> (AiPricing) query;
   getCampaign: (id: text) -> (opt CampaignRecordShared) query;
@@ -653,7 +655,7 @@ service : {
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   http_request_update: (req: HttpRequest) -> (HttpResponse);
   listPresets: () -> (vec AudiencePresetShared) query;
-  listSupportTickets: () -> (vec SupportTicket) query;
+  listSupportTickets: () -> (vec SupportTicketView) query;
   pollActiveTracking: () -> (nat);
   resolveTrackingLink: (code: text, userAgent: opt text) ->
    (TrackingResolveResult);

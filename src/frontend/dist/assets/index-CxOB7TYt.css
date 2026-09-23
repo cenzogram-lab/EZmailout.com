@@ -4073,6 +4073,11 @@ body {
 	color: rgb(16 185 129 / var(--tw-text-opacity, 1));
 }
 
+.text-emerald-600 {
+	--tw-text-opacity: 1;
+	color: rgb(5 150 105 / var(--tw-text-opacity, 1));
+}
+
 .text-emerald-brand {
 	--tw-text-opacity: 1;
 	color: oklch(var(--emerald) / var(--tw-text-opacity, 1));

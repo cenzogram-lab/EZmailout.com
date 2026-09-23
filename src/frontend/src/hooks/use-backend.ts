@@ -31,9 +31,9 @@ import type {
   ReferralStats,
   StampyReply,
   StampyTurn,
-  SupportTicket,
   SupportTicketInput,
   SupportTicketResult,
+  SupportTicketView,
   SyncResult,
   TrackingEvent,
   TrackingResolveResult,
@@ -611,7 +611,7 @@ export function useSubmitSupportTicket() {
 /** Admin inbox. Only enable for an admin: the canister traps for anyone else. */
 export function useSupportTickets(enabled: boolean) {
   const { actor, ready } = useBackendActor();
-  return useQuery<SupportTicket[]>({
+  return useQuery<SupportTicketView[]>({
     queryKey: ["supportTickets"],
     queryFn: async () => (actor ? actor.listSupportTickets() : []),
     enabled: ready && enabled,

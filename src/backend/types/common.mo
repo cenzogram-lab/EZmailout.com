@@ -70,6 +70,8 @@ module {
     var outcallProxyUrl : ?Text;
     var sandboxCheckout : Bool;
     var adminPrincipal : ?Text;
+    /// Where new support tickets are emailed through Resend; null = don't email.
+    var supportEmailAddress : ?Text;
   };
 
   /// Input for `saveAdminKeys`. Per field: `null` = leave unchanged, `?""` = clear, `?value` = set.
@@ -84,6 +86,7 @@ module {
     webhookSecret : ?Text;
     outcallProxyUrl : ?Text;
     sandboxCheckout : ?Bool;
+    supportEmailAddress : ?Text;
   };
 
   /// Masked view returned by `getAdminKeys` (secrets expose only their last 4 characters).
@@ -101,6 +104,7 @@ module {
     adminPrincipal : ?Text;
     callerIsAdmin : Bool;
     webhookPath : Text;
+    supportEmailAddress : ?Text;
   };
 
   /// Non-secret configuration the frontend needs to gate features.

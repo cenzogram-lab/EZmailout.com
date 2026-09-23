@@ -1,0 +1,41 @@
+// Certified asset canister configuration (ic-assets format). `match` is a
+// glob on the asset path; when several rules set the same header, the rule
+// later in this file wins.
+//
+// Deep links (/wizard?step=2, /campaigns, /dashboard, /admin, /t/<code>) need
+// no rule here: the asset canister answers a path that matches no file with
+// /index.html, and the client-side router takes it from there.
+[
+  {
+    // Default for everything, including index.html and env.json: revalidate
+    // on every load, so a new deploy is picked up at once. index.html must
+    // never be cached long — it names the hashed bundles of the current
+    // deploy, and a stale copy points at bundles that no longer exist.
+    match: "**/*",
+    headers: {
+      "Cache-Control": "public, max-age=0, must-revalidate",
+    },
+  },
+  {
+    // Vite's content-hashed bundles: any change ships under a new file name,
+    // so they are safe to cache for a year.
+    match: "assets/index-*.js",
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  },
+  {
+    match: "assets/index-*.css",
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  },
+  {
+    // Self-hosted fonts keep fixed names (they come from public/), so cache
+    // them for a week rather than forever.
+    match: "assets/fonts/**/*",
+    headers: {
+      "Cache-Control": "public, max-age=604800",
+    },
+  },
+]

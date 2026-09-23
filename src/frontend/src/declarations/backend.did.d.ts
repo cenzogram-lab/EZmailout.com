@@ -37,6 +37,7 @@ export interface AdminKeysInput {
   'sandboxCheckout' : [] | [boolean],
   'click2mailPassword' : [] | [string],
   'stripeSecretKey' : [] | [string],
+  'supportEmailAddress' : [] | [string],
   'openAiKey' : [] | [string],
   'stripePublishableKey' : [] | [string],
   'outcallProxyUrl' : [] | [string],
@@ -47,6 +48,7 @@ export interface AdminKeysView {
   'click2mailUsername' : [] | [string],
   'click2mailEnvironment' : Click2MailEnvironment,
   'sandboxCheckout' : boolean,
+  'supportEmailAddress' : [] | [string],
   'callerIsAdmin' : boolean,
   'stripePublishableKey' : [] | [string],
   'webhookSecretMasked' : [] | [string],
@@ -399,16 +401,6 @@ export interface StampyReply {
 export type StampyRole = { 'User' : null } |
   { 'Assistant' : null };
 export interface StampyTurn { 'content' : string, 'role' : StampyRole }
-export interface SupportTicket {
-  'id' : string,
-  'subject' : string,
-  'userId' : [] | [string],
-  'name' : string,
-  'createdAt' : bigint,
-  'pagePath' : string,
-  'email' : string,
-  'message' : string,
-}
 export interface SupportTicketInput {
   'subject' : string,
   'name' : string,
@@ -420,6 +412,17 @@ export interface SupportTicketResult {
   'ok' : boolean,
   'ticketId' : [] | [string],
   'error' : [] | [string],
+}
+export interface SupportTicketView {
+  'id' : string,
+  'subject' : string,
+  'userId' : [] | [string],
+  'name' : string,
+  'createdAt' : bigint,
+  'pagePath' : string,
+  'email' : string,
+  'message' : string,
+  'emailStatus' : [] | [string],
 }
 export interface SyncResult {
   'ok' : boolean,
@@ -559,7 +562,7 @@ export interface _SERVICE {
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
   'listPresets' : ActorMethod<[], Array<AudiencePresetShared>>,
-  'listSupportTickets' : ActorMethod<[], Array<SupportTicket>>,
+  'listSupportTickets' : ActorMethod<[], Array<SupportTicketView>>,
   'pollActiveTracking' : ActorMethod<[], bigint>,
   'resolveTrackingLink' : ActorMethod<
     [string, [] | [string]],

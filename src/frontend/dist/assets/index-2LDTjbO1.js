@@ -29120,6 +29120,7 @@ const AdminKeysView = Record({
   "click2mailUsername": Opt(Text),
   "click2mailEnvironment": Click2MailEnvironment$1,
   "sandboxCheckout": Bool,
+  "supportEmailAddress": Opt(Text),
   "callerIsAdmin": Bool,
   "stripePublishableKey": Opt(Text),
   "webhookSecretMasked": Opt(Text),
@@ -29311,7 +29312,7 @@ const AudiencePresetShared = Record({
   "sourceCampaignId": Opt(Text),
   "recipientCount": Nat
 });
-const SupportTicket = Record({
+const SupportTicketView = Record({
   "id": Text,
   "subject": Text,
   "userId": Opt(Text),
@@ -29319,7 +29320,8 @@ const SupportTicket = Record({
   "createdAt": Int,
   "pagePath": Text,
   "email": Text,
-  "message": Text
+  "message": Text,
+  "emailStatus": Opt(Text)
 });
 const TrackingResolveResult = Record({
   "ok": Bool,
@@ -29335,6 +29337,7 @@ const AdminKeysInput = Record({
   "sandboxCheckout": Opt(Bool),
   "click2mailPassword": Opt(Text),
   "stripeSecretKey": Opt(Text),
+  "supportEmailAddress": Opt(Text),
   "openAiKey": Opt(Text),
   "stripePublishableKey": Opt(Text),
   "outcallProxyUrl": Opt(Text)
@@ -29455,7 +29458,11 @@ Service({
   "http_request": Func([HttpRequest], [HttpResponse], ["query"]),
   "http_request_update": Func([HttpRequest], [HttpResponse], []),
   "listPresets": Func([], [Vec(AudiencePresetShared)], ["query"]),
-  "listSupportTickets": Func([], [Vec(SupportTicket)], ["query"]),
+  "listSupportTickets": Func(
+    [],
+    [Vec(SupportTicketView)],
+    ["query"]
+  ),
   "pollActiveTracking": Func([], [Nat], []),
   "resolveTrackingLink": Func(
     [Text, Opt(Text)],
@@ -29775,6 +29782,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "click2mailUsername": IDL2.Opt(IDL2.Text),
     "click2mailEnvironment": Click2MailEnvironment2,
     "sandboxCheckout": IDL2.Bool,
+    "supportEmailAddress": IDL2.Opt(IDL2.Text),
     "callerIsAdmin": IDL2.Bool,
     "stripePublishableKey": IDL2.Opt(IDL2.Text),
     "webhookSecretMasked": IDL2.Opt(IDL2.Text),
@@ -29966,7 +29974,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "sourceCampaignId": IDL2.Opt(IDL2.Text),
     "recipientCount": IDL2.Nat
   });
-  const SupportTicket2 = IDL2.Record({
+  const SupportTicketView2 = IDL2.Record({
     "id": IDL2.Text,
     "subject": IDL2.Text,
     "userId": IDL2.Opt(IDL2.Text),
@@ -29974,7 +29982,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "createdAt": IDL2.Int,
     "pagePath": IDL2.Text,
     "email": IDL2.Text,
-    "message": IDL2.Text
+    "message": IDL2.Text,
+    "emailStatus": IDL2.Opt(IDL2.Text)
   });
   const TrackingResolveResult2 = IDL2.Record({
     "ok": IDL2.Bool,
@@ -29990,6 +29999,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "sandboxCheckout": IDL2.Opt(IDL2.Bool),
     "click2mailPassword": IDL2.Opt(IDL2.Text),
     "stripeSecretKey": IDL2.Opt(IDL2.Text),
+    "supportEmailAddress": IDL2.Opt(IDL2.Text),
     "openAiKey": IDL2.Opt(IDL2.Text),
     "stripePublishableKey": IDL2.Opt(IDL2.Text),
     "outcallProxyUrl": IDL2.Opt(IDL2.Text)
@@ -30110,7 +30120,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "http_request": IDL2.Func([HttpRequest2], [HttpResponse2], ["query"]),
     "http_request_update": IDL2.Func([HttpRequest2], [HttpResponse2], []),
     "listPresets": IDL2.Func([], [IDL2.Vec(AudiencePresetShared2)], ["query"]),
-    "listSupportTickets": IDL2.Func([], [IDL2.Vec(SupportTicket2)], ["query"]),
+    "listSupportTickets": IDL2.Func(
+      [],
+      [IDL2.Vec(SupportTicketView2)],
+      ["query"]
+    ),
     "pollActiveTracking": IDL2.Func([], [IDL2.Nat], []),
     "resolveTrackingLink": IDL2.Func(
       [IDL2.Text, IDL2.Opt(IDL2.Text)],
@@ -76940,6 +76954,20 @@ function AdminPage() {
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
                   SecretField,
                   {
+                    label: "Support Notification Email",
+                    field: "supportEmailAddress",
+                    draft,
+                    setDraft,
+                    masked: view == null ? void 0 : view.supportEmailAddress,
+                    secret: false,
+                    optional: true,
+                    placeholder: "support@yourdomain.com",
+                    helper: "New support tickets are emailed here through Resend, with the customer as reply-to. Sent from notifications@ezmailout.com, so verify that domain in Resend."
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  SecretField,
+                  {
                     label: "OpenAI API Key",
                     field: "openAiKey",
                     draft,
@@ -77271,6 +77299,14 @@ function SupportInboxCard() {
             t.pagePath ? ` · from ${t.pagePath}` : "",
             t.userId ? " · signed in" : " · signed out"
           ] }),
+          t.emailStatus ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: t.emailStatus.startsWith("Emailed") ? "text-xs text-emerald-600" : t.emailStatus.startsWith("Email failed") ? "text-xs text-destructive" : "text-xs text-muted-foreground",
+              "data-ocid": `admin.support.ticket.${t.id}.email_status`,
+              children: t.emailStatus
+            }
+          ) : null,
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "whitespace-pre-wrap text-sm", children: t.message })
         ]
       },

@@ -285,6 +285,7 @@ export const AdminKeysView = IDL.Record({
   'click2mailUsername' : IDL.Opt(IDL.Text),
   'click2mailEnvironment' : Click2MailEnvironment,
   'sandboxCheckout' : IDL.Bool,
+  'supportEmailAddress' : IDL.Opt(IDL.Text),
   'callerIsAdmin' : IDL.Bool,
   'stripePublishableKey' : IDL.Opt(IDL.Text),
   'webhookSecretMasked' : IDL.Opt(IDL.Text),
@@ -476,7 +477,7 @@ export const AudiencePresetShared = IDL.Record({
   'sourceCampaignId' : IDL.Opt(IDL.Text),
   'recipientCount' : IDL.Nat,
 });
-export const SupportTicket = IDL.Record({
+export const SupportTicketView = IDL.Record({
   'id' : IDL.Text,
   'subject' : IDL.Text,
   'userId' : IDL.Opt(IDL.Text),
@@ -485,6 +486,7 @@ export const SupportTicket = IDL.Record({
   'pagePath' : IDL.Text,
   'email' : IDL.Text,
   'message' : IDL.Text,
+  'emailStatus' : IDL.Opt(IDL.Text),
 });
 export const TrackingResolveResult = IDL.Record({
   'ok' : IDL.Bool,
@@ -500,6 +502,7 @@ export const AdminKeysInput = IDL.Record({
   'sandboxCheckout' : IDL.Opt(IDL.Bool),
   'click2mailPassword' : IDL.Opt(IDL.Text),
   'stripeSecretKey' : IDL.Opt(IDL.Text),
+  'supportEmailAddress' : IDL.Opt(IDL.Text),
   'openAiKey' : IDL.Opt(IDL.Text),
   'stripePublishableKey' : IDL.Opt(IDL.Text),
   'outcallProxyUrl' : IDL.Opt(IDL.Text),
@@ -621,7 +624,11 @@ export const idlService = IDL.Service({
   'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
   'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
-  'listSupportTickets' : IDL.Func([], [IDL.Vec(SupportTicket)], ['query']),
+  'listSupportTickets' : IDL.Func(
+      [],
+      [IDL.Vec(SupportTicketView)],
+      ['query'],
+    ),
   'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
   'resolveTrackingLink' : IDL.Func(
       [IDL.Text, IDL.Opt(IDL.Text)],
@@ -944,6 +951,7 @@ export const idlFactory = ({ IDL }) => {
     'click2mailUsername' : IDL.Opt(IDL.Text),
     'click2mailEnvironment' : Click2MailEnvironment,
     'sandboxCheckout' : IDL.Bool,
+    'supportEmailAddress' : IDL.Opt(IDL.Text),
     'callerIsAdmin' : IDL.Bool,
     'stripePublishableKey' : IDL.Opt(IDL.Text),
     'webhookSecretMasked' : IDL.Opt(IDL.Text),
@@ -1135,7 +1143,7 @@ export const idlFactory = ({ IDL }) => {
     'sourceCampaignId' : IDL.Opt(IDL.Text),
     'recipientCount' : IDL.Nat,
   });
-  const SupportTicket = IDL.Record({
+  const SupportTicketView = IDL.Record({
     'id' : IDL.Text,
     'subject' : IDL.Text,
     'userId' : IDL.Opt(IDL.Text),
@@ -1144,6 +1152,7 @@ export const idlFactory = ({ IDL }) => {
     'pagePath' : IDL.Text,
     'email' : IDL.Text,
     'message' : IDL.Text,
+    'emailStatus' : IDL.Opt(IDL.Text),
   });
   const TrackingResolveResult = IDL.Record({
     'ok' : IDL.Bool,
@@ -1159,6 +1168,7 @@ export const idlFactory = ({ IDL }) => {
     'sandboxCheckout' : IDL.Opt(IDL.Bool),
     'click2mailPassword' : IDL.Opt(IDL.Text),
     'stripeSecretKey' : IDL.Opt(IDL.Text),
+    'supportEmailAddress' : IDL.Opt(IDL.Text),
     'openAiKey' : IDL.Opt(IDL.Text),
     'stripePublishableKey' : IDL.Opt(IDL.Text),
     'outcallProxyUrl' : IDL.Opt(IDL.Text),
@@ -1279,7 +1289,11 @@ export const idlFactory = ({ IDL }) => {
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
     'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
-    'listSupportTickets' : IDL.Func([], [IDL.Vec(SupportTicket)], ['query']),
+    'listSupportTickets' : IDL.Func(
+        [],
+        [IDL.Vec(SupportTicketView)],
+        ['query'],
+      ),
     'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
     'resolveTrackingLink' : IDL.Func(
         [IDL.Text, IDL.Opt(IDL.Text)],

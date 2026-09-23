@@ -68,7 +68,8 @@ type TextField =
   | "resendKey"
   | "openAiKey"
   | "webhookSecret"
-  | "outcallProxyUrl";
+  | "outcallProxyUrl"
+  | "supportEmailAddress";
 
 /** Draft values: `undefined` = untouched (unchanged on save), `""` = clear. */
 type Draft = Partial<Record<TextField, string>>;
@@ -598,6 +599,17 @@ export function AdminPage() {
                       placeholder="re_…"
                     />
                     <SecretField
+                      label="Support Notification Email"
+                      field="supportEmailAddress"
+                      draft={draft}
+                      setDraft={setDraft}
+                      masked={view?.supportEmailAddress}
+                      secret={false}
+                      optional
+                      placeholder="support@yourdomain.com"
+                      helper="New support tickets are emailed here through Resend, with the customer as reply-to. Sent from notifications@ezmailout.com, so verify that domain in Resend."
+                    />
+                    <SecretField
                       label="OpenAI API Key"
                       field="openAiKey"
                       draft={draft}
@@ -933,6 +945,20 @@ function SupportInboxCard() {
                   {t.pagePath ? ` · from ${t.pagePath}` : ""}
                   {t.userId ? " · signed in" : " · signed out"}
                 </p>
+                {t.emailStatus ? (
+                  <p
+                    className={
+                      t.emailStatus.startsWith("Emailed")
+                        ? "text-xs text-emerald-600"
+                        : t.emailStatus.startsWith("Email failed")
+                          ? "text-xs text-destructive"
+                          : "text-xs text-muted-foreground"
+                    }
+                    data-ocid={`admin.support.ticket.${t.id}.email_status`}
+                  >
+                    {t.emailStatus}
+                  </p>
+                ) : null}
                 <p className="whitespace-pre-wrap text-sm">{t.message}</p>
               </li>
             ))}

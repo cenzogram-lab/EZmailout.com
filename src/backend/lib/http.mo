@@ -38,11 +38,22 @@ module {
     maxResponseBytes : Nat64;
     isReplicated : Bool;
     proxyUrl : ?Text;
+    /// Passed to `transform`; `maskSuccessBody` or empty.
+    transformContext : Blob;
   };
 
-  /// Strips response headers so replicas reach consensus on the body only.
+  /// Transform context for calls whose success body is only volatile ids
+  /// (e.g. Resend's `{"id":"<uuid>"}`): a 2xx body is dropped so every
+  /// replica sees the same response. Error bodies are kept for diagnosis.
+  public let maskSuccessBody : Blob = "mask-success-body";
+
+  /// Strips response headers so replicas reach consensus on status and body,
+  /// and blanks the body of a successful call tagged `maskSuccessBody`.
+  /// Deterministic: depends only on the response and the context.
   public func transform(input : TransformationInput) : TransformationOutput {
-    { status = input.response.status; body = input.response.body; headers = [] };
+    let status = input.response.status;
+    let masked = input.context == maskSuccessBody and status >= 200 and status < 300;
+    { status; body = if (masked) Blob.empty() else input.response.body; headers = [] };
   };
 
   /// Cycles required by the management canister for an outcall of the given
@@ -56,7 +67,7 @@ module {
   };
 
   public func defaultOptions(proxyUrl : ?Text) : RequestOptions {
-    { maxResponseBytes = 256_000; isReplicated = false; proxyUrl };
+    { maxResponseBytes = 256_000; isReplicated = false; proxyUrl; transformContext = Blob.empty() };
   };
 
   /// Performs an HTTPS outcall. Never traps: failures are reported as
@@ -89,7 +100,7 @@ module {
       method = switch (method) { case (#get) #get; case (#post) #post };
       headers = icHeaders;
       body;
-      transform = ?{ function = transformFn; context = Blob.fromArray([]) };
+      transform = ?{ function = transformFn; context = options.transformContext };
       is_replicated = ?options.isReplicated;
     };
     let cycles = cyclesFor(requestBytes, maxResp);

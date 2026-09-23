@@ -49,6 +49,18 @@ module {
     if (t == "") { null } else { ?t };
   };
 
+  /// Minimal shape check for an address we will send mail to or reply to.
+  public func looksLikeEmail(e : Text) : Bool {
+    if (e.size() < 6 or e.size() > 254 or e.contains(#char ' ')) { return false };
+    let parts = e.split(#char '@').toArray();
+    parts.size() == 2 and parts[0].size() > 0 and parts[1].contains(#char '.') and not parts[1].startsWith(#char '.') and not parts[1].endsWith(#char '.');
+  };
+
+  /// Resend key and a support address are both set, so tickets can be emailed.
+  public func canEmailSupport(state : Common.AdminState) : Bool {
+    state.resendKey != null and state.supportEmailAddress != null;
+  };
+
   public func hasClick2Mail(state : Common.AdminState) : Bool {
     state.click2mailUsername != null and state.click2mailPassword != null;
   };
@@ -61,7 +73,7 @@ module {
   };
 
   public func outcallOptions(state : Common.AdminState, maxResponseBytes : Nat64) : Http.RequestOptions {
-    { maxResponseBytes; isReplicated = false; proxyUrl = state.outcallProxyUrl };
+    { maxResponseBytes; isReplicated = false; proxyUrl = state.outcallProxyUrl; transformContext = "" : Blob };
   };
 
   public func publicConfig(state : Common.AdminState) : Common.PublicConfig {

@@ -15,6 +15,20 @@ module {
     createdAt : Int;
   };
 
+  /// A ticket as the admin inbox shows it, with how its email notification
+  /// went. `emailStatus` is null for tickets filed before the last upgrade.
+  public type SupportTicketView = {
+    id : Text;
+    userId : ?Text;
+    name : Text;
+    email : Text;
+    subject : Text;
+    message : Text;
+    pagePath : Text;
+    createdAt : Int;
+    emailStatus : ?Text;
+  };
+
   public type SupportTicketInput = {
     name : Text;
     email : Text;

@@ -15,6 +15,22 @@ mixin (adminKeysState : Common.AdminState) {
     if (not AdminLib.authorizeAdmin(adminKeysState, caller)) {
       return { ok = false; error = ?"Unauthorized: only the admin principal or a canister controller may update keys" };
     };
+    // Validated before anything is written, so a bad address saves nothing.
+    let supportEmail : ?(?Text) = switch (keys.supportEmailAddress) {
+      case null null;
+      case (?raw) {
+        switch (AdminLib.sanitizeKey(raw)) {
+          case null { ?null };
+          case (?e) {
+            let lower = e.toLower();
+            if (not AdminLib.looksLikeEmail(lower)) {
+              return { ok = false; error = ?"Support notification email is not a valid address" };
+            };
+            ??lower;
+          };
+        };
+      };
+    };
     adminKeysState.click2mailUsername := applyText(adminKeysState.click2mailUsername, keys.click2mailUsername);
     adminKeysState.click2mailPassword := applyText(adminKeysState.click2mailPassword, keys.click2mailPassword);
     adminKeysState.stripeSecretKey := applyText(adminKeysState.stripeSecretKey, keys.stripeSecretKey);
@@ -29,6 +45,10 @@ mixin (adminKeysState : Common.AdminState) {
     };
     switch (keys.sandboxCheckout) {
       case (?b) { adminKeysState.sandboxCheckout := b };
+      case null {};
+    };
+    switch (supportEmail) {
+      case (?email) { adminKeysState.supportEmailAddress := email };
       case null {};
     };
     { ok = true; error = null };
@@ -52,6 +72,7 @@ mixin (adminKeysState : Common.AdminState) {
       adminPrincipal = adminKeysState.adminPrincipal;
       callerIsAdmin = isAdmin;
       webhookPath = AdminLib.webhookPath;
+      supportEmailAddress = if (visible) adminKeysState.supportEmailAddress else null;
     };
   };
 
