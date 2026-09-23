@@ -159,7 +159,10 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
             minSize: MIN_HEADLINE,
             fontWeight: 800,
           });
-          const priceH = bandHeight(1, { fontSize: priceSize, fontWeight: 800 });
+          const priceH = bandHeight(1, {
+            fontSize: priceSize,
+            fontWeight: 800,
+          });
           const detailSize = Math.max(9, Math.round(headSize * 0.45));
           const detailH = measuredHeight(detail, {
             width: half,
@@ -294,7 +297,10 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
             minSize: MIN_HEADLINE,
             fontWeight: 800,
           });
-          const titleH = bandHeight(2, { fontSize: titleSize, fontWeight: 800 });
+          const titleH = bandHeight(2, {
+            fontSize: titleSize,
+            fontWeight: 800,
+          });
           const dateSize = Math.max(9, Math.round(titleSize * 0.5));
           const dateH = measuredHeight(date, {
             width: w,
