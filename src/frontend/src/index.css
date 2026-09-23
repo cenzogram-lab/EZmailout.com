@@ -279,3 +279,16 @@
     opacity: 0.7;
   }
 }
+
+/* In the chat launcher and panel the idle avatar's red "unread" dot would
+ * contradict the green "active" dot, so it is hidden there. */
+.stampy-launcher .stampy-notify-dot {
+  display: none;
+}
+
+/* The Stampy launcher owns the bottom-right corner (56px + 20px margin).
+ * Focus moves and scrollIntoView stop this far above the viewport bottom, so
+ * a focused button is never parked underneath it. */
+html {
+  scroll-padding-bottom: 6rem;
+}

@@ -544,3 +544,13 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
   setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
   reset: () => set(initialData()),
 }));
+
+/**
+ * The step a deep link such as `/wizard?step=3` may open. Steps 2–4 are sized
+ * from the mail piece chosen in Step 1 (audience pricing, the artboard, the
+ * invoice), so until one is chosen every deep link lands on Step 1.
+ */
+export function reachableWizardStep(requested: number): number {
+  const step = Math.min(4, Math.max(1, Math.round(requested)));
+  return step > 1 && !useWizardStore.getState().selectedLayout ? 1 : step;
+}

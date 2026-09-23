@@ -28847,6 +28847,13 @@ const ApiResult = Record({
   "ok": Bool,
   "error": Opt(Text)
 });
+const StampyRole$1 = Variant({ "User": Null, "Assistant": Null });
+const StampyTurn = Record({ "content": Text, "role": StampyRole$1 });
+const StampyReply = Record({
+  "ok": Bool,
+  "error": Opt(Text),
+  "reply": Opt(Text)
+});
 const PaymentState = Variant({
   "Failed": Null,
   "Succeeded": Null,
@@ -29304,6 +29311,16 @@ const AudiencePresetShared = Record({
   "sourceCampaignId": Opt(Text),
   "recipientCount": Nat
 });
+const SupportTicket = Record({
+  "id": Text,
+  "subject": Text,
+  "userId": Opt(Text),
+  "name": Text,
+  "createdAt": Int,
+  "pagePath": Text,
+  "email": Text,
+  "message": Text
+});
 const TrackingResolveResult = Record({
   "ok": Bool,
   "campaignId": Opt(Text),
@@ -29325,6 +29342,18 @@ const AdminKeysInput = Record({
 const PresetResult = Record({
   "ok": Bool,
   "presetId": Opt(Text),
+  "error": Opt(Text)
+});
+const SupportTicketInput = Record({
+  "subject": Text,
+  "name": Text,
+  "pagePath": Opt(Text),
+  "email": Text,
+  "message": Text
+});
+const SupportTicketResult = Record({
+  "ok": Bool,
+  "ticketId": Opt(Text),
   "error": Opt(Text)
 });
 const SyncResult = Record({
@@ -29351,6 +29380,7 @@ const TransformationOutput = Record({
 });
 Service({
   "applyReferralReward": Func([Text], [ApiResult], []),
+  "askStampy": Func([Vec(StampyTurn)], [StampyReply], []),
   "confirmPayment": Func([Text], [ConfirmPaymentResult], []),
   "createCampaign": Func(
     [CreateCampaignInput],
@@ -29425,6 +29455,7 @@ Service({
   "http_request": Func([HttpRequest], [HttpResponse], ["query"]),
   "http_request_update": Func([HttpRequest], [HttpResponse], []),
   "listPresets": Func([], [Vec(AudiencePresetShared)], ["query"]),
+  "listSupportTickets": Func([], [Vec(SupportTicket)], ["query"]),
   "pollActiveTracking": Func([], [Nat], []),
   "resolveTrackingLink": Func(
     [Text, Opt(Text)],
@@ -29436,6 +29467,11 @@ Service({
   "savePreset": Func(
     [Text, Vec(VerifiedAddress), Opt(Text)],
     [PresetResult],
+    []
+  ),
+  "submitSupportTicket": Func(
+    [SupportTicketInput],
+    [SupportTicketResult],
     []
   ),
   "syncClick2MailTracking": Func([Text], [SyncResult], []),
@@ -29465,6 +29501,13 @@ const idlFactory = ({ IDL: IDL2 }) => {
   const ApiResult2 = IDL2.Record({
     "ok": IDL2.Bool,
     "error": IDL2.Opt(IDL2.Text)
+  });
+  const StampyRole2 = IDL2.Variant({ "User": IDL2.Null, "Assistant": IDL2.Null });
+  const StampyTurn2 = IDL2.Record({ "content": IDL2.Text, "role": StampyRole2 });
+  const StampyReply2 = IDL2.Record({
+    "ok": IDL2.Bool,
+    "error": IDL2.Opt(IDL2.Text),
+    "reply": IDL2.Opt(IDL2.Text)
   });
   const PaymentState2 = IDL2.Variant({
     "Failed": IDL2.Null,
@@ -29923,6 +29966,16 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "sourceCampaignId": IDL2.Opt(IDL2.Text),
     "recipientCount": IDL2.Nat
   });
+  const SupportTicket2 = IDL2.Record({
+    "id": IDL2.Text,
+    "subject": IDL2.Text,
+    "userId": IDL2.Opt(IDL2.Text),
+    "name": IDL2.Text,
+    "createdAt": IDL2.Int,
+    "pagePath": IDL2.Text,
+    "email": IDL2.Text,
+    "message": IDL2.Text
+  });
   const TrackingResolveResult2 = IDL2.Record({
     "ok": IDL2.Bool,
     "campaignId": IDL2.Opt(IDL2.Text),
@@ -29944,6 +29997,18 @@ const idlFactory = ({ IDL: IDL2 }) => {
   const PresetResult2 = IDL2.Record({
     "ok": IDL2.Bool,
     "presetId": IDL2.Opt(IDL2.Text),
+    "error": IDL2.Opt(IDL2.Text)
+  });
+  const SupportTicketInput2 = IDL2.Record({
+    "subject": IDL2.Text,
+    "name": IDL2.Text,
+    "pagePath": IDL2.Opt(IDL2.Text),
+    "email": IDL2.Text,
+    "message": IDL2.Text
+  });
+  const SupportTicketResult2 = IDL2.Record({
+    "ok": IDL2.Bool,
+    "ticketId": IDL2.Opt(IDL2.Text),
     "error": IDL2.Opt(IDL2.Text)
   });
   const SyncResult2 = IDL2.Record({
@@ -29970,6 +30035,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
   });
   return IDL2.Service({
     "applyReferralReward": IDL2.Func([IDL2.Text], [ApiResult2], []),
+    "askStampy": IDL2.Func([IDL2.Vec(StampyTurn2)], [StampyReply2], []),
     "confirmPayment": IDL2.Func([IDL2.Text], [ConfirmPaymentResult2], []),
     "createCampaign": IDL2.Func(
       [CreateCampaignInput2],
@@ -30044,6 +30110,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "http_request": IDL2.Func([HttpRequest2], [HttpResponse2], ["query"]),
     "http_request_update": IDL2.Func([HttpRequest2], [HttpResponse2], []),
     "listPresets": IDL2.Func([], [IDL2.Vec(AudiencePresetShared2)], ["query"]),
+    "listSupportTickets": IDL2.Func([], [IDL2.Vec(SupportTicket2)], ["query"]),
     "pollActiveTracking": IDL2.Func([], [IDL2.Nat], []),
     "resolveTrackingLink": IDL2.Func(
       [IDL2.Text, IDL2.Opt(IDL2.Text)],
@@ -30055,6 +30122,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "savePreset": IDL2.Func(
       [IDL2.Text, IDL2.Vec(VerifiedAddress2), IDL2.Opt(IDL2.Text)],
       [PresetResult2],
+      []
+    ),
+    "submitSupportTicket": IDL2.Func(
+      [SupportTicketInput2],
+      [SupportTicketResult2],
       []
     ),
     "syncClick2MailTracking": IDL2.Func([IDL2.Text], [SyncResult2], []),
@@ -30088,6 +30160,11 @@ var TrackingSource = /* @__PURE__ */ ((TrackingSource2) => {
   TrackingSource2["Webhook"] = "Webhook";
   return TrackingSource2;
 })(TrackingSource || {});
+var StampyRole = /* @__PURE__ */ ((StampyRole2) => {
+  StampyRole2["Assistant"] = "Assistant";
+  StampyRole2["User"] = "User";
+  return StampyRole2;
+})(StampyRole || {});
 var QrMode = /* @__PURE__ */ ((QrMode2) => {
   QrMode2["DynamicTracking"] = "DynamicTracking";
   QrMode2["StaticUrl"] = "StaticUrl";
@@ -30288,6 +30365,9 @@ class Backend {
   async applyReferralReward(arg0) {
     return this._call("applyReferralReward", [arg0]);
   }
+  async askStampy(arg0) {
+    return this._call("askStampy", [arg0]);
+  }
   async confirmPayment(arg0) {
     return this._call("confirmPayment", [arg0]);
   }
@@ -30378,6 +30458,9 @@ class Backend {
   async listPresets() {
     return this._call("listPresets", []);
   }
+  async listSupportTickets() {
+    return this._call("listSupportTickets", []);
+  }
   async pollActiveTracking() {
     return this._call("pollActiveTracking", []);
   }
@@ -30392,6 +30475,9 @@ class Backend {
   }
   async savePreset(arg0, arg1, arg2) {
     return this._call("savePreset", [arg0, arg1, arg2]);
+  }
+  async submitSupportTicket(arg0) {
+    return this._call("submitSupportTicket", [arg0]);
   }
   async syncClick2MailTracking(arg0) {
     return this._call("syncClick2MailTracking", [arg0]);
@@ -30426,6 +30512,5332 @@ function createActor(canisterId, _uploadFile, _downloadFile, options = {}) {
   });
   return new Backend(actor, _uploadFile, _downloadFile, options.processError);
 }
+function useStampyId() {
+  return `stampy-${reactExports.useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}
+function StampyChatAvatarIdle({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 64 64",
+      width: 64,
+      height: 64,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-chat-avatar",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("defs", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-chat-avatar-avClip1`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "32", cy: "32", r: "31" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-chat-avatar-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "32", cy: "32", r: "31", fill: "#F4F4F4" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { clipPath: `url(#${uid}-chat-avatar-avClip1)`, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "translate(-8 -2) scale(0.2)", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M136 272 L160 262 L290 380 L262 396 Z",
+                      fill: "#9C6B38",
+                      clipPath: `url(#${uid}-chat-avatar-bodyClip)`
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                      fill: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                      fill: "#E5402A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "187",
+                      y: "290",
+                      width: "26",
+                      height: "30",
+                      fill: "#FBF6EC",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "187",
+                      y: "290",
+                      width: "26",
+                      height: "30",
+                      fill: "none",
+                      stroke: "#E5402A",
+                      strokeWidth: "5",
+                      strokeDasharray: "0 6.5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                      fill: "#E5402A",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "g",
+                    {
+                      stroke: "#16204A",
+                      strokeWidth: "4",
+                      strokeLinejoin: "round",
+                      strokeLinecap: "round",
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "0",
+                            y: "0",
+                            width: "46",
+                            height: "30",
+                            rx: "3",
+                            fill: "#FBF6EC"
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "33",
+                            y: "19",
+                            width: "9",
+                            height: "8",
+                            fill: "#E5402A",
+                            stroke: "none"
+                          }
+                        )
+                      ]
+                    }
+                  ) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "g",
+                    {
+                      stroke: "#16204A",
+                      strokeWidth: "4",
+                      strokeLinejoin: "round",
+                      strokeLinecap: "round",
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "0",
+                            y: "0",
+                            width: "46",
+                            height: "30",
+                            rx: "3",
+                            fill: "#FBF6EC"
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "33",
+                            y: "19",
+                            width: "9",
+                            height: "8",
+                            fill: "#E5402A",
+                            stroke: "none"
+                          }
+                        )
+                      ]
+                    }
+                  ) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "248",
+                      y: "318",
+                      width: "72",
+                      height: "54",
+                      rx: "10",
+                      fill: "#C89A63"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                      fill: "#9C6B38"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "284",
+                      cy: "346",
+                      r: "5",
+                      fill: "#E5402A",
+                      strokeWidth: "4"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { stroke: "#16204A", strokeWidth: "6", strokeLinejoin: "round", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z",
+                  fill: "#D9924A"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                  fill: "#D9924A"
+                }
+              )
+            ] }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                      fill: "#D9924A",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "158",
+                      cy: "210",
+                      rx: "11",
+                      ry: "7",
+                      fill: "#F4A38E",
+                      stroke: "none",
+                      opacity: "0.8"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "244",
+                      cy: "210",
+                      rx: "11",
+                      ry: "7",
+                      fill: "#F4A38E",
+                      stroke: "none",
+                      opacity: "0.8"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M162 156 Q174 149 186 155",
+                      fill: "none",
+                      strokeWidth: "5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M216 155 Q228 149 240 156",
+                      fill: "none",
+                      strokeWidth: "5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "174", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "228", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "177.5",
+                      cy: "174",
+                      r: "3.5",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "231.5",
+                      cy: "174",
+                      r: "3.5",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "5",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M200 214 L200 222" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M182 222 Q200 226 218 222 Q214 242 200 242 Q186 242 182 222 Z",
+                      fill: "#8E2A22",
+                      strokeWidth: "4.5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "200",
+                      cy: "236",
+                      rx: "8",
+                      ry: "5",
+                      fill: "#F48C7E",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                      fill: "#16204A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "195",
+                      cy: "201",
+                      rx: "4",
+                      ry: "2",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z",
+                      fill: "#6366f1"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M149 104 L255 104 L254 120 L150 120 Z",
+                      fill: "#E5402A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z",
+                      fill: "#16204A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "189",
+                      y: "76",
+                      width: "28",
+                      height: "19",
+                      rx: "3",
+                      fill: "#C89A63",
+                      strokeWidth: "4"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M191 79 L203 88 L215 79", fill: "none", strokeWidth: "3" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M172 72 Q182 66 192 66",
+                      fill: "none",
+                      stroke: "#FFFFFF",
+                      strokeWidth: "4",
+                      opacity: "0.5"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { strokeLinecap: "round", strokeLinejoin: "round", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M110 156 C106 56 294 56 290 156",
+                  fill: "none",
+                  stroke: "#16204A",
+                  strokeWidth: "22"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M110 156 C106 56 294 56 290 156",
+                  fill: "none",
+                  stroke: "#6366f1",
+                  strokeWidth: "11"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "rect",
+                {
+                  x: "92",
+                  y: "136",
+                  width: "36",
+                  height: "52",
+                  rx: "14",
+                  fill: "#6366f1",
+                  stroke: "#16204A",
+                  strokeWidth: "6"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "rect",
+                {
+                  x: "272",
+                  y: "136",
+                  width: "36",
+                  height: "52",
+                  rx: "14",
+                  fill: "#6366f1",
+                  stroke: "#16204A",
+                  strokeWidth: "6"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M290 184 Q288 236 240 238",
+                  fill: "none",
+                  stroke: "#16204A",
+                  strokeWidth: "9"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "circle",
+                {
+                  cx: "236",
+                  cy: "238",
+                  r: "11",
+                  fill: "#6366f1",
+                  stroke: "#16204A",
+                  strokeWidth: "6"
+                }
+              )
+            ] })
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "circle",
+            {
+              cx: "32",
+              cy: "32",
+              r: "31",
+              fill: "none",
+              stroke: "#6366f1",
+              strokeWidth: "2"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "circle",
+            {
+              cx: "54",
+              cy: "10",
+              r: "6.5",
+              fill: "#E5402A",
+              stroke: "#FFFFFF",
+              strokeWidth: "2.5",
+              className: "stampy-notify-dot"
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function StampyChatAvatarThinking({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 64 64",
+      width: 64,
+      height: 64,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-chat-avatar-thinking",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("defs", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-chat-avatar-thinking-avClip2`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "32", cy: "32", r: "31" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-chat-avatar-thinking-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "32", cy: "32", r: "31", fill: "#F4F4F4" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { clipPath: `url(#${uid}-chat-avatar-thinking-avClip2)`, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "translate(-11 0) scale(0.2)", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M136 272 L160 262 L290 380 L262 396 Z",
+                      fill: "#9C6B38",
+                      clipPath: `url(#${uid}-chat-avatar-thinking-bodyClip)`
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                      fill: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                      fill: "#E5402A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "187",
+                      y: "290",
+                      width: "26",
+                      height: "30",
+                      fill: "#FBF6EC",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "187",
+                      y: "290",
+                      width: "26",
+                      height: "30",
+                      fill: "none",
+                      stroke: "#E5402A",
+                      strokeWidth: "5",
+                      strokeDasharray: "0 6.5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                      fill: "#E5402A",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "g",
+                    {
+                      stroke: "#16204A",
+                      strokeWidth: "4",
+                      strokeLinejoin: "round",
+                      strokeLinecap: "round",
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "0",
+                            y: "0",
+                            width: "46",
+                            height: "30",
+                            rx: "3",
+                            fill: "#FBF6EC"
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "33",
+                            y: "19",
+                            width: "9",
+                            height: "8",
+                            fill: "#E5402A",
+                            stroke: "none"
+                          }
+                        )
+                      ]
+                    }
+                  ) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "g",
+                    {
+                      stroke: "#16204A",
+                      strokeWidth: "4",
+                      strokeLinejoin: "round",
+                      strokeLinecap: "round",
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "0",
+                            y: "0",
+                            width: "46",
+                            height: "30",
+                            rx: "3",
+                            fill: "#FBF6EC"
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "rect",
+                          {
+                            x: "33",
+                            y: "19",
+                            width: "9",
+                            height: "8",
+                            fill: "#E5402A",
+                            stroke: "none"
+                          }
+                        )
+                      ]
+                    }
+                  ) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "248",
+                      y: "318",
+                      width: "72",
+                      height: "54",
+                      rx: "10",
+                      fill: "#C89A63"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                      fill: "#9C6B38"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "284",
+                      cy: "346",
+                      r: "5",
+                      fill: "#E5402A",
+                      strokeWidth: "4"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "rotate(-14 200 200)", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M146 128 C138 96 122 72 102 68 C94 94 104 126 126 146 Z",
+                  fill: "#D9924A",
+                  stroke: "#16204A",
+                  strokeWidth: "6",
+                  strokeLinejoin: "round"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                  fill: "#D9924A",
+                  stroke: "#16204A",
+                  strokeWidth: "6",
+                  strokeLinejoin: "round"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "g",
+                {
+                  stroke: "#16204A",
+                  strokeWidth: "6",
+                  strokeLinejoin: "round",
+                  strokeLinecap: "round",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                        fill: "#FFFFFF"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                        fill: "#D9924A",
+                        stroke: "none"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "ellipse",
+                      {
+                        cx: "158",
+                        cy: "210",
+                        rx: "11",
+                        ry: "7",
+                        fill: "#F4A38E",
+                        stroke: "none",
+                        opacity: "0.8"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "ellipse",
+                      {
+                        cx: "244",
+                        cy: "210",
+                        rx: "11",
+                        ry: "7",
+                        fill: "#F4A38E",
+                        stroke: "none",
+                        opacity: "0.8"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M162 156 Q174 149 186 155",
+                        fill: "none",
+                        strokeWidth: "5"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M216 155 Q228 149 240 156",
+                        fill: "none",
+                        strokeWidth: "5"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "circle",
+                      {
+                        cx: "174",
+                        cy: "178",
+                        r: "10",
+                        fill: "#16204A",
+                        stroke: "none"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "circle",
+                      {
+                        cx: "228",
+                        cy: "178",
+                        r: "10",
+                        fill: "#16204A",
+                        stroke: "none"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "circle",
+                      {
+                        cx: "177.5",
+                        cy: "174",
+                        r: "3.5",
+                        fill: "#FFFFFF",
+                        stroke: "none"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "circle",
+                      {
+                        cx: "231.5",
+                        cy: "174",
+                        r: "3.5",
+                        fill: "#FFFFFF",
+                        stroke: "none"
+                      }
+                    )
+                  ]
+                }
+              ) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "g",
+                {
+                  stroke: "#16204A",
+                  strokeWidth: "5",
+                  strokeLinejoin: "round",
+                  strokeLinecap: "round",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                        fill: "#16204A"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "ellipse",
+                      {
+                        cx: "195",
+                        cy: "201",
+                        rx: "4",
+                        ry: "2",
+                        fill: "#FFFFFF",
+                        stroke: "none"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M200 214 L200 222 M186 226 Q193 232 200 222 Q207 232 214 226",
+                        fill: "none",
+                        strokeWidth: "4.5"
+                      }
+                    )
+                  ]
+                }
+              ) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "g",
+                {
+                  stroke: "#16204A",
+                  strokeWidth: "6",
+                  strokeLinejoin: "round",
+                  strokeLinecap: "round",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z",
+                        fill: "#6366f1"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M149 104 L255 104 L254 120 L150 120 Z",
+                        fill: "#E5402A"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z",
+                        fill: "#16204A"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "rect",
+                      {
+                        x: "189",
+                        y: "76",
+                        width: "28",
+                        height: "19",
+                        rx: "3",
+                        fill: "#C89A63",
+                        strokeWidth: "4"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M191 79 L203 88 L215 79",
+                        fill: "none",
+                        strokeWidth: "3"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "path",
+                      {
+                        d: "M172 72 Q182 66 192 66",
+                        fill: "none",
+                        stroke: "#FFFFFF",
+                        strokeWidth: "4",
+                        opacity: "0.5"
+                      }
+                    )
+                  ]
+                }
+              ) })
+            ] })
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "circle",
+            {
+              cx: "32",
+              cy: "32",
+              r: "31",
+              fill: "none",
+              stroke: "#6366f1",
+              strokeWidth: "2"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "circle",
+            {
+              cx: "40",
+              cy: "20",
+              r: "1.8",
+              fill: "#FFFFFF",
+              stroke: "#6366f1",
+              strokeWidth: "1.2"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "rect",
+            {
+              x: "40",
+              y: "4",
+              width: "24",
+              height: "13",
+              rx: "6.5",
+              fill: "#FFFFFF",
+              stroke: "#6366f1",
+              strokeWidth: "1.6"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { className: "stampy-dots", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "circle",
+              {
+                cx: "46",
+                cy: "10.5",
+                r: "2",
+                fill: "#6366f1",
+                className: "stampy-dot"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "circle",
+              {
+                cx: "52",
+                cy: "10.5",
+                r: "2",
+                fill: "#6366f1",
+                className: "stampy-dot"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "circle",
+              {
+                cx: "58",
+                cy: "10.5",
+                r: "2",
+                fill: "#6366f1",
+                className: "stampy-dot"
+              }
+            )
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+function StampyStep1Catalog({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 180 180",
+      width: 180,
+      height: 180,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-step-1",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsx("defs", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-step-1-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "scale(0.45)", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M136 272 L160 262 L290 380 L262 396 Z",
+                    fill: "#9C6B38",
+                    clipPath: `url(#${uid}-step-1-bodyClip)`
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                    fill: "#E5402A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "#FBF6EC",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "none",
+                    stroke: "#E5402A",
+                    strokeWidth: "5",
+                    strokeDasharray: "0 6.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                    fill: "#E5402A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "248",
+                    y: "318",
+                    width: "72",
+                    height: "54",
+                    rx: "10",
+                    fill: "#C89A63"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                    fill: "#9C6B38"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "284", cy: "346", r: "5", fill: "#E5402A", strokeWidth: "4" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { stroke: "#16204A", strokeWidth: "6", strokeLinejoin: "round", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z",
+                fill: "#D9924A"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                fill: "#D9924A"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                    fill: "#D9924A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "158",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "244",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M162 156 Q174 149 186 155", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M216 155 Q228 149 240 156", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "174", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "228", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "177.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "231.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M200 214 L200 222" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M182 222 Q200 226 218 222 Q214 242 200 242 Q186 242 182 222 Z",
+                    fill: "#8E2A22",
+                    strokeWidth: "4.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "200",
+                    cy: "236",
+                    rx: "8",
+                    ry: "5",
+                    fill: "#F48C7E",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                    fill: "#16204A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "195",
+                    cy: "201",
+                    rx: "4",
+                    ry: "2",
+                    fill: "#FFFFFF",
+                    stroke: "none"
+                  }
+                )
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "rotate(-9 200 124) translate(2 8)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z",
+                    fill: "#6366f1"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M149 104 L255 104 L254 120 L150 120 Z", fill: "#E5402A" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z",
+                    fill: "#16204A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "189",
+                    y: "76",
+                    width: "28",
+                    height: "19",
+                    rx: "3",
+                    fill: "#C89A63",
+                    strokeWidth: "4"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M191 79 L203 88 L215 79", fill: "none", strokeWidth: "3" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M172 72 Q182 66 192 66",
+                    fill: "none",
+                    stroke: "#FFFFFF",
+                    strokeWidth: "4",
+                    opacity: "0.5"
+                  }
+                )
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              transform: "rotate(-12 70 80)",
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "10",
+                    y: "30",
+                    width: "124",
+                    height: "80",
+                    rx: "6",
+                    fill: "#FBF6EC",
+                    strokeWidth: "6"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M72 42 L72 98", fill: "none", strokeWidth: "3", opacity: "0.5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M22 50 L58 50 M22 62 L52 62 M22 74 L58 74",
+                    fill: "none",
+                    stroke: "#6366f1",
+                    strokeWidth: "5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "104",
+                    y: "38",
+                    width: "20",
+                    height: "22",
+                    fill: "#E5402A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "104",
+                    y: "38",
+                    width: "20",
+                    height: "22",
+                    fill: "none",
+                    stroke: "#FBF6EC",
+                    strokeWidth: "4",
+                    strokeDasharray: "0 5.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M82 78 L122 78 M82 90 L112 90",
+                    fill: "none",
+                    strokeWidth: "3.5",
+                    opacity: "0.5"
+                  }
+                )
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M140 330 C116 290 90 214 82 164 C78 142 106 136 112 158 C122 208 146 274 168 300 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "94", cy: "130", rx: "26", ry: "22", fill: "#FFFFFF" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M82 110 L82 122 M96 108 L96 120 M108 112 L108 122",
+                    fill: "none",
+                    strokeWidth: "4"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M158 30 L162 44 L176 48 L162 52 L158 66 L154 52 L140 48 L154 44 Z",
+                    fill: "#6366f1",
+                    strokeWidth: "3.5"
+                  }
+                )
+              ]
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function StampyStep2Audience({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 180 180",
+      width: 180,
+      height: 180,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-step-2",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsx("defs", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-step-2-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "scale(0.45)", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M136 272 L160 262 L290 380 L262 396 Z",
+                    fill: "#9C6B38",
+                    clipPath: `url(#${uid}-step-2-bodyClip)`
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                    fill: "#E5402A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "#FBF6EC",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "none",
+                    stroke: "#E5402A",
+                    strokeWidth: "5",
+                    strokeDasharray: "0 6.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                    fill: "#E5402A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "248",
+                    y: "318",
+                    width: "72",
+                    height: "54",
+                    rx: "10",
+                    fill: "#C89A63"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                    fill: "#9C6B38"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "284", cy: "346", r: "5", fill: "#E5402A", strokeWidth: "4" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "translate(0 6) rotate(7 200 180)", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { stroke: "#16204A", strokeWidth: "6", strokeLinejoin: "round", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z",
+                  fill: "#D9924A"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "path",
+                {
+                  d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                  fill: "#D9924A"
+                }
+              )
+            ] }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                      fill: "#D9924A",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "158",
+                      cy: "210",
+                      rx: "11",
+                      ry: "7",
+                      fill: "#F4A38E",
+                      stroke: "none",
+                      opacity: "0.8"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "244",
+                      cy: "210",
+                      rx: "11",
+                      ry: "7",
+                      fill: "#F4A38E",
+                      stroke: "none",
+                      opacity: "0.8"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M162 156 Q174 149 186 155", fill: "none", strokeWidth: "5" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M216 155 Q228 149 240 156", fill: "none", strokeWidth: "5" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "174", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "228", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "177.5",
+                      cy: "174",
+                      r: "3.5",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "231.5",
+                      cy: "174",
+                      r: "3.5",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "5",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                      fill: "#16204A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "ellipse",
+                    {
+                      cx: "195",
+                      cy: "201",
+                      rx: "4",
+                      ry: "2",
+                      fill: "#FFFFFF",
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M200 214 L200 222 M186 226 Q193 232 200 222 Q207 232 214 226",
+                      fill: "none",
+                      strokeWidth: "4.5"
+                    }
+                  )
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "g",
+              {
+                stroke: "#16204A",
+                strokeWidth: "6",
+                strokeLinejoin: "round",
+                strokeLinecap: "round",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z",
+                      fill: "#6366f1"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M149 104 L255 104 L254 120 L150 120 Z", fill: "#E5402A" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z",
+                      fill: "#16204A"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "189",
+                      y: "76",
+                      width: "28",
+                      height: "19",
+                      rx: "3",
+                      fill: "#C89A63",
+                      strokeWidth: "4"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M191 79 L203 88 L215 79", fill: "none", strokeWidth: "3" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M172 72 Q182 66 192 66",
+                      fill: "none",
+                      stroke: "#FFFFFF",
+                      strokeWidth: "4",
+                      opacity: "0.5"
+                    }
+                  )
+                ]
+              }
+            ) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M34 316 L142 296 L142 376 L34 396 Z", fill: "#F4F4F4" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M142 296 L262 316 L262 396 L142 376 Z", fill: "#E4E5FC" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M262 316 L370 296 L370 376 L262 396 Z", fill: "#F4F4F4" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M60 374 Q110 336 170 352 T340 330",
+                    fill: "none",
+                    stroke: "#6366f1",
+                    strokeWidth: "4",
+                    strokeDasharray: "2 9"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M208 362 C196 346 192 338 192 330 C192 320 199 314 208 314 C217 314 224 320 224 330 C224 338 220 346 208 362 Z",
+                    fill: "#E5402A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "208", cy: "330", r: "5", fill: "#FFFFFF", stroke: "none" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { strokeLinecap: "round", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M244 366 L286 398", stroke: "#16204A", strokeWidth: "22" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M244 366 L286 398", stroke: "#9C6B38", strokeWidth: "11" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "circle",
+              {
+                cx: "212",
+                cy: "336",
+                r: "46",
+                fill: "#DDE6FF",
+                fillOpacity: "0.45",
+                stroke: "#16204A",
+                strokeWidth: "18"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "circle",
+              {
+                cx: "212",
+                cy: "336",
+                r: "46",
+                fill: "none",
+                stroke: "#D4A043",
+                strokeWidth: "9"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M184 318 Q192 302 210 298",
+                fill: "none",
+                stroke: "#FFFFFF",
+                strokeWidth: "6"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "ellipse",
+              {
+                cx: "276",
+                cy: "384",
+                rx: "20",
+                ry: "16",
+                fill: "#FFFFFF",
+                stroke: "#16204A",
+                strokeWidth: "6"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M266 372 L268 382 M278 370 L278 380",
+                stroke: "#16204A",
+                strokeWidth: "4"
+              }
+            )
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+function StampyStep3Studio({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 180 180",
+      width: 180,
+      height: 180,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-step-3",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsx("defs", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-step-3-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "scale(0.45)", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M136 272 L160 262 L290 380 L262 396 Z",
+                    fill: "#9C6B38",
+                    clipPath: `url(#${uid}-step-3-bodyClip)`
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                    fill: "#E5402A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "#FBF6EC",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "none",
+                    stroke: "#E5402A",
+                    strokeWidth: "5",
+                    strokeDasharray: "0 6.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                    fill: "#E5402A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "248",
+                    y: "318",
+                    width: "72",
+                    height: "54",
+                    rx: "10",
+                    fill: "#C89A63"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                    fill: "#9C6B38"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "284", cy: "346", r: "5", fill: "#E5402A", strokeWidth: "4" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { stroke: "#16204A", strokeWidth: "6", strokeLinejoin: "round", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z",
+                fill: "#D9924A"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                fill: "#D9924A"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                    fill: "#D9924A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "158",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "244",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M162 156 Q174 149 186 155", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M216 155 Q228 149 240 156", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "174", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "228", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "177.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "231.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              transform: "rotate(-10 200 230)",
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "96",
+                    y: "224",
+                    width: "156",
+                    height: "13",
+                    rx: "6.5",
+                    fill: "#C89A63"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "250", y: "221", width: "24", height: "19", rx: "3", fill: "#C7CAD8" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M274 221 Q304 220 320 230 Q304 241 274 240 Z",
+                    fill: "#6366f1"
+                  }
+                )
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                    fill: "#16204A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "195",
+                    cy: "201",
+                    rx: "4",
+                    ry: "2",
+                    fill: "#FFFFFF",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 214 L200 222 M186 226 Q193 232 200 222 Q207 232 214 226",
+                    fill: "none",
+                    strokeWidth: "4.5"
+                  }
+                )
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              transform: "rotate(-10 204 96)",
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M206 70 L212 50", fill: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M134 124 C118 90 162 66 210 68 C258 70 286 96 268 124 Q200 138 134 124 Z",
+                    fill: "#6366f1"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M140 116 Q200 128 262 116",
+                    fill: "none",
+                    strokeWidth: "4",
+                    opacity: "0.6"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M170 84 Q186 76 204 76",
+                    fill: "none",
+                    stroke: "#FFFFFF",
+                    strokeWidth: "4",
+                    opacity: "0.5"
+                  }
+                )
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              transform: "rotate(-14 110 330)",
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M34 332 C34 294 88 280 140 290 C188 300 198 332 176 348 C160 360 150 346 136 354 C122 362 132 384 102 386 C62 388 34 364 34 332 Z",
+                    fill: "#E3C49A",
+                    strokeWidth: "6"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "64", cy: "322", r: "12", fill: "#6366f1" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "94", cy: "304", r: "12", fill: "#E5402A" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "128", cy: "302", r: "11", fill: "#22A06B" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "68", cy: "358", r: "11", fill: "#D9924A" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "100", cy: "340", r: "10", fill: "#F4F4F4" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "166", cy: "362", rx: "22", ry: "18", fill: "#FFFFFF" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M156 350 L156 360 M168 348 L168 358",
+                    fill: "none",
+                    strokeWidth: "4"
+                  }
+                )
+              ]
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function StampyStep4Preflight({ title, ...props }) {
+  const uid = useStampyId();
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "svg",
+    {
+      viewBox: "0 0 180 180",
+      width: 180,
+      height: 180,
+      xmlns: "http://www.w3.org/2000/svg",
+      "data-stampy": "stampy-step-4",
+      role: "img",
+      "aria-label": title,
+      "aria-hidden": title ? void 0 : true,
+      ...props,
+      children: [
+        title ? /* @__PURE__ */ jsxRuntimeExports.jsx("title", { children: title }) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsx("defs", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("clipPath", { id: `${uid}-step-4-bodyClip`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "scale(0.45)", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M136 272 L160 262 L290 380 L262 396 Z",
+                    fill: "#9C6B38",
+                    clipPath: `url(#${uid}-step-4-bodyClip)`
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z",
+                    fill: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z",
+                    fill: "#E5402A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "#FBF6EC",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "187",
+                    y: "290",
+                    width: "26",
+                    height: "30",
+                    fill: "none",
+                    stroke: "#E5402A",
+                    strokeWidth: "5",
+                    strokeDasharray: "0 6.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z",
+                    fill: "#E5402A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(252 304) rotate(-12)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("g", { transform: "translate(276 298) rotate(10)", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "g",
+                  {
+                    stroke: "#16204A",
+                    strokeWidth: "4",
+                    strokeLinejoin: "round",
+                    strokeLinecap: "round",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "0",
+                          y: "0",
+                          width: "46",
+                          height: "30",
+                          rx: "3",
+                          fill: "#FBF6EC"
+                        }
+                      ),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M2 2 L23 17 L44 2", fill: "none", strokeWidth: "3.5" }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "rect",
+                        {
+                          x: "33",
+                          y: "19",
+                          width: "9",
+                          height: "8",
+                          fill: "#E5402A",
+                          stroke: "none"
+                        }
+                      )
+                    ]
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "248",
+                    y: "318",
+                    width: "72",
+                    height: "54",
+                    rx: "10",
+                    fill: "#C89A63"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z",
+                    fill: "#9C6B38"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "284", cy: "346", r: "5", fill: "#E5402A", strokeWidth: "4" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { stroke: "#16204A", strokeWidth: "6", strokeLinejoin: "round", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z",
+                fill: "#D9924A"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "path",
+              {
+                d: "M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z",
+                fill: "#D9924A"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z",
+                    fill: "#FFFFFF"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z",
+                    fill: "#D9924A",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "158",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "244",
+                    cy: "210",
+                    rx: "11",
+                    ry: "7",
+                    fill: "#F4A38E",
+                    stroke: "none",
+                    opacity: "0.8"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M162 156 Q174 149 186 155", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M216 155 Q228 149 240 156", fill: "none", strokeWidth: "5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "174", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "228", cy: "178", r: "10", fill: "#16204A", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "177.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "231.5", cy: "174", r: "3.5", fill: "#FFFFFF", stroke: "none" })
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "5",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "200", cy: "216", rx: "36", ry: "25", fill: "#FBF6EC" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M200 214 L200 222" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M182 222 Q200 226 218 222 Q214 242 200 242 Q186 242 182 222 Z",
+                    fill: "#8E2A22",
+                    strokeWidth: "4.5"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "200",
+                    cy: "236",
+                    rx: "8",
+                    ry: "5",
+                    fill: "#F48C7E",
+                    stroke: "none"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z",
+                    fill: "#16204A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "ellipse",
+                  {
+                    cx: "195",
+                    cy: "201",
+                    rx: "4",
+                    ry: "2",
+                    fill: "#FFFFFF",
+                    stroke: "none"
+                  }
+                )
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("g", { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z",
+                    fill: "#6366f1"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M149 104 L255 104 L254 120 L150 120 Z", fill: "#E5402A" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z",
+                    fill: "#16204A"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "189",
+                    y: "76",
+                    width: "28",
+                    height: "19",
+                    rx: "3",
+                    fill: "#C89A63",
+                    strokeWidth: "4"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M191 79 L203 88 L215 79", fill: "none", strokeWidth: "3" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M172 72 Q182 66 192 66",
+                    fill: "none",
+                    stroke: "#FFFFFF",
+                    strokeWidth: "4",
+                    opacity: "0.5"
+                  }
+                )
+              ]
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "g",
+            {
+              stroke: "#16204A",
+              strokeWidth: "6",
+              strokeLinejoin: "round",
+              strokeLinecap: "round",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "116",
+                    y: "270",
+                    width: "168",
+                    height: "126",
+                    rx: "12",
+                    fill: "#9C6B38"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "rect",
+                  {
+                    x: "130",
+                    y: "288",
+                    width: "140",
+                    height: "102",
+                    rx: "4",
+                    fill: "#F4F4F4",
+                    strokeWidth: "4"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "170", y: "260", width: "60", height: "22", rx: "6", fill: "#C7CAD8" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { strokeWidth: "4", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "144",
+                      y: "302",
+                      width: "14",
+                      height: "14",
+                      rx: "2",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "144",
+                      y: "326",
+                      width: "14",
+                      height: "14",
+                      rx: "2",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "rect",
+                    {
+                      x: "144",
+                      y: "350",
+                      width: "14",
+                      height: "14",
+                      rx: "2",
+                      fill: "#FFFFFF"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M146 309 L150 313 L157 304 M146 333 L150 337 L157 328 M146 357 L150 361 L157 352",
+                      fill: "none",
+                      stroke: "#6366f1"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M168 309 L204 309 M168 333 L196 333 M168 357 L200 357",
+                      fill: "none",
+                      opacity: "0.45"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("g", { transform: "rotate(-14 238 350)", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "circle",
+                    {
+                      cx: "238",
+                      cy: "350",
+                      r: "26",
+                      fill: "none",
+                      stroke: "#22A06B",
+                      strokeWidth: "4.5"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "path",
+                    {
+                      d: "M226 350 L235 359 L251 341",
+                      fill: "none",
+                      stroke: "#22A06B",
+                      strokeWidth: "7"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "120", cy: "330", rx: "18", ry: "22", fill: "#FFFFFF" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "280", cy: "330", rx: "18", ry: "22", fill: "#FFFFFF" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "path",
+                  {
+                    d: "M110 322 L118 322 M110 334 L118 334 M282 322 L290 322 M282 334 L290 334",
+                    fill: "none",
+                    strokeWidth: "4"
+                  }
+                )
+              ]
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function setRef(ref, value) {
+  if (typeof ref === "function") {
+    return ref(value);
+  } else if (ref !== null && ref !== void 0) {
+    ref.current = value;
+  }
+}
+function composeRefs(...refs) {
+  return (node) => {
+    let hasCleanup = false;
+    const cleanups = refs.map((ref) => {
+      const cleanup = setRef(ref, node);
+      if (!hasCleanup && typeof cleanup == "function") {
+        hasCleanup = true;
+      }
+      return cleanup;
+    });
+    if (hasCleanup) {
+      return () => {
+        for (let i = 0; i < cleanups.length; i++) {
+          const cleanup = cleanups[i];
+          if (typeof cleanup == "function") {
+            cleanup();
+          } else {
+            setRef(refs[i], null);
+          }
+        }
+      };
+    }
+  };
+}
+function useComposedRefs(...refs) {
+  return reactExports.useCallback(composeRefs(...refs), refs);
+}
+function createContext2(rootComponentName, defaultContext) {
+  const Context = reactExports.createContext(defaultContext);
+  const Provider2 = (props) => {
+    const { children, ...context2 } = props;
+    const value = reactExports.useMemo(() => context2, Object.values(context2));
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
+  };
+  Provider2.displayName = rootComponentName + "Provider";
+  function useContext2(consumerName) {
+    const context2 = reactExports.useContext(Context);
+    if (context2) return context2;
+    if (defaultContext !== void 0) return defaultContext;
+    throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
+  }
+  return [Provider2, useContext2];
+}
+function createContextScope$1(scopeName, createContextScopeDeps = []) {
+  let defaultContexts = [];
+  function createContext3(rootComponentName, defaultContext) {
+    const BaseContext = reactExports.createContext(defaultContext);
+    const index2 = defaultContexts.length;
+    defaultContexts = [...defaultContexts, defaultContext];
+    const Provider2 = (props) => {
+      var _a2;
+      const { scope, children, ...context2 } = props;
+      const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
+      const value = reactExports.useMemo(() => context2, Object.values(context2));
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
+    };
+    Provider2.displayName = rootComponentName + "Provider";
+    function useContext2(consumerName, scope) {
+      var _a2;
+      const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
+      const context2 = reactExports.useContext(Context);
+      if (context2) return context2;
+      if (defaultContext !== void 0) return defaultContext;
+      throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
+    }
+    return [Provider2, useContext2];
+  }
+  const createScope = () => {
+    const scopeContexts = defaultContexts.map((defaultContext) => {
+      return reactExports.createContext(defaultContext);
+    });
+    return function useScope(scope) {
+      const contexts = (scope == null ? void 0 : scope[scopeName]) || scopeContexts;
+      return reactExports.useMemo(
+        () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
+        [scope, contexts]
+      );
+    };
+  };
+  createScope.scopeName = scopeName;
+  return [createContext3, composeContextScopes$1(createScope, ...createContextScopeDeps)];
+}
+function composeContextScopes$1(...scopes) {
+  const baseScope = scopes[0];
+  if (scopes.length === 1) return baseScope;
+  const createScope = () => {
+    const scopeHooks = scopes.map((createScope2) => ({
+      useScope: createScope2(),
+      scopeName: createScope2.scopeName
+    }));
+    return function useComposedScopes(overrideScopes) {
+      const nextScopes = scopeHooks.reduce((nextScopes2, { useScope, scopeName }) => {
+        const scopeProps = useScope(overrideScopes);
+        const currentScope = scopeProps[`__scope${scopeName}`];
+        return { ...nextScopes2, ...currentScope };
+      }, {});
+      return reactExports.useMemo(() => ({ [`__scope${baseScope.scopeName}`]: nextScopes }), [nextScopes]);
+    };
+  };
+  createScope.scopeName = baseScope.scopeName;
+  return createScope;
+}
+function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+  return function handleEvent(event) {
+    originalEventHandler == null ? void 0 : originalEventHandler(event);
+    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
+      return ourEventHandler == null ? void 0 : ourEventHandler(event);
+    }
+  };
+}
+var useLayoutEffect2 = (globalThis == null ? void 0 : globalThis.document) ? reactExports.useLayoutEffect : () => {
+};
+var useInsertionEffect = React$5[" useInsertionEffect ".trim().toString()] || useLayoutEffect2;
+function useControllableState({
+  prop,
+  defaultProp,
+  onChange = () => {
+  },
+  caller
+}) {
+  const [uncontrolledProp, setUncontrolledProp, onChangeRef] = useUncontrolledState({
+    defaultProp,
+    onChange
+  });
+  const isControlled = prop !== void 0;
+  const value = isControlled ? prop : uncontrolledProp;
+  {
+    const isControlledRef = reactExports.useRef(prop !== void 0);
+    reactExports.useEffect(() => {
+      const wasControlled = isControlledRef.current;
+      if (wasControlled !== isControlled) {
+        const from = wasControlled ? "controlled" : "uncontrolled";
+        const to = isControlled ? "controlled" : "uncontrolled";
+        console.warn(
+          `${caller} is changing from ${from} to ${to}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`
+        );
+      }
+      isControlledRef.current = isControlled;
+    }, [isControlled, caller]);
+  }
+  const setValue = reactExports.useCallback(
+    (nextValue) => {
+      var _a2;
+      if (isControlled) {
+        const value2 = isFunction$2(nextValue) ? nextValue(prop) : nextValue;
+        if (value2 !== prop) {
+          (_a2 = onChangeRef.current) == null ? void 0 : _a2.call(onChangeRef, value2);
+        }
+      } else {
+        setUncontrolledProp(nextValue);
+      }
+    },
+    [isControlled, prop, setUncontrolledProp, onChangeRef]
+  );
+  return [value, setValue];
+}
+function useUncontrolledState({
+  defaultProp,
+  onChange
+}) {
+  const [value, setValue] = reactExports.useState(defaultProp);
+  const prevValueRef = reactExports.useRef(value);
+  const onChangeRef = reactExports.useRef(onChange);
+  useInsertionEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  reactExports.useEffect(() => {
+    var _a2;
+    if (prevValueRef.current !== value) {
+      (_a2 = onChangeRef.current) == null ? void 0 : _a2.call(onChangeRef, value);
+      prevValueRef.current = value;
+    }
+  }, [value, prevValueRef]);
+  return [value, setValue, onChangeRef];
+}
+function isFunction$2(value) {
+  return typeof value === "function";
+}
+function usePrevious$2(value) {
+  const ref = reactExports.useRef({ value, previous: value });
+  return reactExports.useMemo(() => {
+    if (ref.current.value !== value) {
+      ref.current.previous = ref.current.value;
+      ref.current.value = value;
+    }
+    return ref.current.previous;
+  }, [value]);
+}
+function useSize(element) {
+  const [size2, setSize] = reactExports.useState(void 0);
+  useLayoutEffect2(() => {
+    if (element) {
+      setSize({ width: element.offsetWidth, height: element.offsetHeight });
+      const resizeObserver = new ResizeObserver((entries) => {
+        if (!Array.isArray(entries)) {
+          return;
+        }
+        if (!entries.length) {
+          return;
+        }
+        const entry = entries[0];
+        let width;
+        let height;
+        if ("borderBoxSize" in entry) {
+          const borderSizeEntry = entry["borderBoxSize"];
+          const borderSize = Array.isArray(borderSizeEntry) ? borderSizeEntry[0] : borderSizeEntry;
+          width = borderSize["inlineSize"];
+          height = borderSize["blockSize"];
+        } else {
+          width = element.offsetWidth;
+          height = element.offsetHeight;
+        }
+        setSize({ width, height });
+      });
+      resizeObserver.observe(element, { box: "border-box" });
+      return () => resizeObserver.unobserve(element);
+    } else {
+      setSize(void 0);
+    }
+  }, [element]);
+  return size2;
+}
+function useStateMachine(initialState, machine) {
+  return reactExports.useReducer((state, event) => {
+    const nextState = machine[state][event];
+    return nextState ?? state;
+  }, initialState);
+}
+var Presence = (props) => {
+  const { present, children } = props;
+  const presence = usePresence(present);
+  const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
+  const ref = useComposedRefs(presence.ref, getElementRef$2(child));
+  const forceMount = typeof children === "function";
+  return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
+};
+Presence.displayName = "Presence";
+function usePresence(present) {
+  const [node, setNode] = reactExports.useState();
+  const stylesRef = reactExports.useRef(null);
+  const prevPresentRef = reactExports.useRef(present);
+  const prevAnimationNameRef = reactExports.useRef("none");
+  const initialState = present ? "mounted" : "unmounted";
+  const [state, send] = useStateMachine(initialState, {
+    mounted: {
+      UNMOUNT: "unmounted",
+      ANIMATION_OUT: "unmountSuspended"
+    },
+    unmountSuspended: {
+      MOUNT: "mounted",
+      ANIMATION_END: "unmounted"
+    },
+    unmounted: {
+      MOUNT: "mounted"
+    }
+  });
+  reactExports.useEffect(() => {
+    const currentAnimationName = getAnimationName(stylesRef.current);
+    prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
+  }, [state]);
+  useLayoutEffect2(() => {
+    const styles = stylesRef.current;
+    const wasPresent = prevPresentRef.current;
+    const hasPresentChanged = wasPresent !== present;
+    if (hasPresentChanged) {
+      const prevAnimationName = prevAnimationNameRef.current;
+      const currentAnimationName = getAnimationName(styles);
+      if (present) {
+        send("MOUNT");
+      } else if (currentAnimationName === "none" || (styles == null ? void 0 : styles.display) === "none") {
+        send("UNMOUNT");
+      } else {
+        const isAnimating = prevAnimationName !== currentAnimationName;
+        if (wasPresent && isAnimating) {
+          send("ANIMATION_OUT");
+        } else {
+          send("UNMOUNT");
+        }
+      }
+      prevPresentRef.current = present;
+    }
+  }, [present, send]);
+  useLayoutEffect2(() => {
+    if (node) {
+      let timeoutId;
+      const ownerWindow = node.ownerDocument.defaultView ?? window;
+      const handleAnimationEnd = (event) => {
+        const currentAnimationName = getAnimationName(stylesRef.current);
+        const isCurrentAnimation = currentAnimationName.includes(CSS.escape(event.animationName));
+        if (event.target === node && isCurrentAnimation) {
+          send("ANIMATION_END");
+          if (!prevPresentRef.current) {
+            const currentFillMode = node.style.animationFillMode;
+            node.style.animationFillMode = "forwards";
+            timeoutId = ownerWindow.setTimeout(() => {
+              if (node.style.animationFillMode === "forwards") {
+                node.style.animationFillMode = currentFillMode;
+              }
+            });
+          }
+        }
+      };
+      const handleAnimationStart = (event) => {
+        if (event.target === node) {
+          prevAnimationNameRef.current = getAnimationName(stylesRef.current);
+        }
+      };
+      node.addEventListener("animationstart", handleAnimationStart);
+      node.addEventListener("animationcancel", handleAnimationEnd);
+      node.addEventListener("animationend", handleAnimationEnd);
+      return () => {
+        ownerWindow.clearTimeout(timeoutId);
+        node.removeEventListener("animationstart", handleAnimationStart);
+        node.removeEventListener("animationcancel", handleAnimationEnd);
+        node.removeEventListener("animationend", handleAnimationEnd);
+      };
+    } else {
+      send("ANIMATION_END");
+    }
+  }, [node, send]);
+  return {
+    isPresent: ["mounted", "unmountSuspended"].includes(state),
+    ref: reactExports.useCallback((node2) => {
+      stylesRef.current = node2 ? getComputedStyle(node2) : null;
+      setNode(node2);
+    }, [])
+  };
+}
+function getAnimationName(styles) {
+  return (styles == null ? void 0 : styles.animationName) || "none";
+}
+function getElementRef$2(element) {
+  var _a2, _b2;
+  let getter = (_a2 = Object.getOwnPropertyDescriptor(element.props, "ref")) == null ? void 0 : _a2.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = (_b2 = Object.getOwnPropertyDescriptor(element, "ref")) == null ? void 0 : _b2.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+// @__NO_SIDE_EFFECTS__
+function createSlot$1(ownerName) {
+  const SlotClone = /* @__PURE__ */ createSlotClone$1(ownerName);
+  const Slot2 = reactExports.forwardRef((props, forwardedRef) => {
+    const { children, ...slotProps } = props;
+    const childrenArray = reactExports.Children.toArray(children);
+    const slottable = childrenArray.find(isSlottable$1);
+    if (slottable) {
+      const newElement = slottable.props.children;
+      const newChildren = childrenArray.map((child) => {
+        if (child === slottable) {
+          if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
+          return reactExports.isValidElement(newElement) ? newElement.props.children : null;
+        } else {
+          return child;
+        }
+      });
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone, { ...slotProps, ref: forwardedRef, children });
+  });
+  Slot2.displayName = `${ownerName}.Slot`;
+  return Slot2;
+}
+// @__NO_SIDE_EFFECTS__
+function createSlotClone$1(ownerName) {
+  const SlotClone = reactExports.forwardRef((props, forwardedRef) => {
+    const { children, ...slotProps } = props;
+    if (reactExports.isValidElement(children)) {
+      const childrenRef = getElementRef$1(children);
+      const props2 = mergeProps$1(slotProps, children.props);
+      if (children.type !== reactExports.Fragment) {
+        props2.ref = forwardedRef ? composeRefs(forwardedRef, childrenRef) : childrenRef;
+      }
+      return reactExports.cloneElement(children, props2);
+    }
+    return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
+  });
+  SlotClone.displayName = `${ownerName}.SlotClone`;
+  return SlotClone;
+}
+var SLOTTABLE_IDENTIFIER$1 = Symbol("radix.slottable");
+// @__NO_SIDE_EFFECTS__
+function createSlottable(ownerName) {
+  const Slottable2 = ({ children }) => {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
+  };
+  Slottable2.displayName = `${ownerName}.Slottable`;
+  Slottable2.__radixId = SLOTTABLE_IDENTIFIER$1;
+  return Slottable2;
+}
+function isSlottable$1(child) {
+  return reactExports.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER$1;
+}
+function mergeProps$1(slotProps, childProps) {
+  const overrideProps = { ...childProps };
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args) => {
+          const result = childPropValue(...args);
+          slotPropValue(...args);
+          return result;
+        };
+      } else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    } else if (propName === "style") {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === "className") {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
+    }
+  }
+  return { ...slotProps, ...overrideProps };
+}
+function getElementRef$1(element) {
+  var _a2, _b2;
+  let getter = (_a2 = Object.getOwnPropertyDescriptor(element.props, "ref")) == null ? void 0 : _a2.get;
+  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.ref;
+  }
+  getter = (_b2 = Object.getOwnPropertyDescriptor(element, "ref")) == null ? void 0 : _b2.get;
+  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return element.props.ref;
+  }
+  return element.props.ref || element.ref;
+}
+var NODES$1 = [
+  "a",
+  "button",
+  "div",
+  "form",
+  "h2",
+  "h3",
+  "img",
+  "input",
+  "label",
+  "li",
+  "nav",
+  "ol",
+  "p",
+  "select",
+  "span",
+  "svg",
+  "ul"
+];
+var Primitive$1 = NODES$1.reduce((primitive, node) => {
+  const Slot2 = /* @__PURE__ */ createSlot$1(`Primitive.${node}`);
+  const Node2 = reactExports.forwardRef((props, forwardedRef) => {
+    const { asChild, ...primitiveProps } = props;
+    const Comp = asChild ? Slot2 : node;
+    if (typeof window !== "undefined") {
+      window[Symbol.for("radix-ui")] = true;
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
+  });
+  Node2.displayName = `Primitive.${node}`;
+  return { ...primitive, [node]: Node2 };
+}, {});
+function dispatchDiscreteCustomEvent(target, event) {
+  if (target) reactDomExports.flushSync(() => target.dispatchEvent(event));
+}
+var CHECKBOX_NAME = "Checkbox";
+var [createCheckboxContext] = createContextScope$1(CHECKBOX_NAME);
+var [CheckboxProviderImpl, useCheckboxContext] = createCheckboxContext(CHECKBOX_NAME);
+function CheckboxProvider(props) {
+  const {
+    __scopeCheckbox,
+    checked: checkedProp,
+    children,
+    defaultChecked,
+    disabled,
+    form,
+    name,
+    onCheckedChange,
+    required,
+    value = "on",
+    // @ts-expect-error
+    internal_do_not_use_render
+  } = props;
+  const [checked, setChecked] = useControllableState({
+    prop: checkedProp,
+    defaultProp: defaultChecked ?? false,
+    onChange: onCheckedChange,
+    caller: CHECKBOX_NAME
+  });
+  const [control, setControl] = reactExports.useState(null);
+  const [bubbleInput, setBubbleInput] = reactExports.useState(null);
+  const hasConsumerStoppedPropagationRef = reactExports.useRef(false);
+  const isFormControl = control ? !!form || !!control.closest("form") : (
+    // We set this to true by default so that events bubble to forms without JS (SSR)
+    true
+  );
+  const context2 = {
+    checked,
+    disabled,
+    setChecked,
+    control,
+    setControl,
+    name,
+    form,
+    value,
+    hasConsumerStoppedPropagationRef,
+    required,
+    defaultChecked: isIndeterminate(defaultChecked) ? false : defaultChecked,
+    isFormControl,
+    bubbleInput,
+    setBubbleInput
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    CheckboxProviderImpl,
+    {
+      scope: __scopeCheckbox,
+      ...context2,
+      children: isFunction$1(internal_do_not_use_render) ? internal_do_not_use_render(context2) : children
+    }
+  );
+}
+var TRIGGER_NAME$4 = "CheckboxTrigger";
+var CheckboxTrigger = reactExports.forwardRef(
+  ({ __scopeCheckbox, onKeyDown, onClick, ...checkboxProps }, forwardedRef) => {
+    const {
+      control,
+      value,
+      disabled,
+      checked,
+      required,
+      setControl,
+      setChecked,
+      hasConsumerStoppedPropagationRef,
+      isFormControl,
+      bubbleInput
+    } = useCheckboxContext(TRIGGER_NAME$4, __scopeCheckbox);
+    const composedRefs = useComposedRefs(forwardedRef, setControl);
+    const initialCheckedStateRef = reactExports.useRef(checked);
+    reactExports.useEffect(() => {
+      const form = control == null ? void 0 : control.form;
+      if (form) {
+        const reset = () => setChecked(initialCheckedStateRef.current);
+        form.addEventListener("reset", reset);
+        return () => form.removeEventListener("reset", reset);
+      }
+    }, [control, setChecked]);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$1.button,
+      {
+        type: "button",
+        role: "checkbox",
+        "aria-checked": isIndeterminate(checked) ? "mixed" : checked,
+        "aria-required": required,
+        "data-state": getState$2(checked),
+        "data-disabled": disabled ? "" : void 0,
+        disabled,
+        value,
+        ...checkboxProps,
+        ref: composedRefs,
+        onKeyDown: composeEventHandlers(onKeyDown, (event) => {
+          if (event.key === "Enter") event.preventDefault();
+        }),
+        onClick: composeEventHandlers(onClick, (event) => {
+          setChecked((prevChecked) => isIndeterminate(prevChecked) ? true : !prevChecked);
+          if (bubbleInput && isFormControl) {
+            hasConsumerStoppedPropagationRef.current = event.isPropagationStopped();
+            if (!hasConsumerStoppedPropagationRef.current) event.stopPropagation();
+          }
+        })
+      }
+    );
+  }
+);
+CheckboxTrigger.displayName = TRIGGER_NAME$4;
+var Checkbox$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const {
+      __scopeCheckbox,
+      name,
+      checked,
+      defaultChecked,
+      required,
+      disabled,
+      value,
+      onCheckedChange,
+      form,
+      ...checkboxProps
+    } = props;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      CheckboxProvider,
+      {
+        __scopeCheckbox,
+        checked,
+        defaultChecked,
+        disabled,
+        required,
+        onCheckedChange,
+        name,
+        form,
+        value,
+        internal_do_not_use_render: ({ isFormControl }) => /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            CheckboxTrigger,
+            {
+              ...checkboxProps,
+              ref: forwardedRef,
+              __scopeCheckbox
+            }
+          ),
+          isFormControl && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            CheckboxBubbleInput,
+            {
+              __scopeCheckbox
+            }
+          )
+        ] })
+      }
+    );
+  }
+);
+Checkbox$1.displayName = CHECKBOX_NAME;
+var INDICATOR_NAME$1 = "CheckboxIndicator";
+var CheckboxIndicator = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeCheckbox, forceMount, ...indicatorProps } = props;
+    const context2 = useCheckboxContext(INDICATOR_NAME$1, __scopeCheckbox);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Presence,
+      {
+        present: forceMount || isIndeterminate(context2.checked) || context2.checked === true,
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Primitive$1.span,
+          {
+            "data-state": getState$2(context2.checked),
+            "data-disabled": context2.disabled ? "" : void 0,
+            ...indicatorProps,
+            ref: forwardedRef,
+            style: { pointerEvents: "none", ...props.style }
+          }
+        )
+      }
+    );
+  }
+);
+CheckboxIndicator.displayName = INDICATOR_NAME$1;
+var BUBBLE_INPUT_NAME$3 = "CheckboxBubbleInput";
+var CheckboxBubbleInput = reactExports.forwardRef(
+  ({ __scopeCheckbox, ...props }, forwardedRef) => {
+    const {
+      control,
+      hasConsumerStoppedPropagationRef,
+      checked,
+      defaultChecked,
+      required,
+      disabled,
+      name,
+      value,
+      form,
+      bubbleInput,
+      setBubbleInput
+    } = useCheckboxContext(BUBBLE_INPUT_NAME$3, __scopeCheckbox);
+    const composedRefs = useComposedRefs(forwardedRef, setBubbleInput);
+    const prevChecked = usePrevious$2(checked);
+    const controlSize = useSize(control);
+    reactExports.useEffect(() => {
+      const input = bubbleInput;
+      if (!input) return;
+      const inputProto = window.HTMLInputElement.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(
+        inputProto,
+        "checked"
+      );
+      const setChecked = descriptor.set;
+      const bubbles = !hasConsumerStoppedPropagationRef.current;
+      if (prevChecked !== checked && setChecked) {
+        const event = new Event("click", { bubbles });
+        input.indeterminate = isIndeterminate(checked);
+        setChecked.call(input, isIndeterminate(checked) ? false : checked);
+        input.dispatchEvent(event);
+      }
+    }, [bubbleInput, prevChecked, checked, hasConsumerStoppedPropagationRef]);
+    const defaultCheckedRef = reactExports.useRef(isIndeterminate(checked) ? false : checked);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$1.input,
+      {
+        type: "checkbox",
+        "aria-hidden": true,
+        defaultChecked: defaultChecked ?? defaultCheckedRef.current,
+        required,
+        disabled,
+        name,
+        value,
+        form,
+        ...props,
+        tabIndex: -1,
+        ref: composedRefs,
+        style: {
+          ...props.style,
+          ...controlSize,
+          position: "absolute",
+          pointerEvents: "none",
+          opacity: 0,
+          margin: 0,
+          // We transform because the input is absolutely positioned but we have
+          // rendered it **after** the button. This pulls it back to sit on top
+          // of the button.
+          transform: "translateX(-100%)"
+        }
+      }
+    );
+  }
+);
+CheckboxBubbleInput.displayName = BUBBLE_INPUT_NAME$3;
+function isFunction$1(value) {
+  return typeof value === "function";
+}
+function isIndeterminate(checked) {
+  return checked === "indeterminate";
+}
+function getState$2(checked) {
+  return isIndeterminate(checked) ? "indeterminate" : checked ? "checked" : "unchecked";
+}
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+const toCamelCase = (string) => string.replace(
+  /^([A-Z])|[\s-_]+(\w)/g,
+  (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase()
+);
+const toPascalCase = (string) => {
+  const camelCase = toCamelCase(string);
+  return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
+};
+const mergeClasses = (...classes) => classes.filter((className, index2, array) => {
+  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index2;
+}).join(" ").trim();
+const hasA11yProp = (props) => {
+  for (const prop in props) {
+    if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
+      return true;
+    }
+  }
+};
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+var defaultAttributes = {
+  xmlns: "http://www.w3.org/2000/svg",
+  width: 24,
+  height: 24,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const Icon$1 = reactExports.forwardRef(
+  ({
+    color = "currentColor",
+    size: size2 = 24,
+    strokeWidth = 2,
+    absoluteStrokeWidth,
+    className = "",
+    children,
+    iconNode,
+    ...rest
+  }, ref) => reactExports.createElement(
+    "svg",
+    {
+      ref,
+      ...defaultAttributes,
+      width: size2,
+      height: size2,
+      stroke: color,
+      strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size2) : strokeWidth,
+      className: mergeClasses("lucide", className),
+      ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
+      ...rest
+    },
+    [
+      ...iconNode.map(([tag, attrs]) => reactExports.createElement(tag, attrs)),
+      ...Array.isArray(children) ? children : [children]
+    ]
+  )
+);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const createLucideIcon = (iconName, iconNode) => {
+  const Component2 = reactExports.forwardRef(
+    ({ className, ...props }, ref) => reactExports.createElement(Icon$1, {
+      ref,
+      iconNode,
+      className: mergeClasses(
+        `lucide-${toKebabCase(toPascalCase(iconName))}`,
+        `lucide-${iconName}`,
+        className
+      ),
+      ...props
+    })
+  );
+  Component2.displayName = toPascalCase(iconName);
+  return Component2;
+};
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1R = [
+  ["path", { d: "M2 12h20", key: "9i4pu4" }],
+  ["path", { d: "M10 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4", key: "11f1s0" }],
+  ["path", { d: "M10 8V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4", key: "t14dx9" }],
+  ["path", { d: "M20 16v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1", key: "1w07xs" }],
+  ["path", { d: "M14 8V7c0-1.1.9-2 2-2h2a2 2 0 0 1 2 2v1", key: "1apec2" }]
+];
+const AlignCenterHorizontal = createLucideIcon("align-center-horizontal", __iconNode$1R);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1Q = [
+  ["path", { d: "M12 2v20", key: "t6zp3m" }],
+  ["path", { d: "M8 10H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h4", key: "14d6g8" }],
+  ["path", { d: "M16 10h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4", key: "1e2lrw" }],
+  ["path", { d: "M8 20H7a2 2 0 0 1-2-2v-2c0-1.1.9-2 2-2h1", key: "1fkdwx" }],
+  ["path", { d: "M16 14h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1", key: "1euafb" }]
+];
+const AlignCenterVertical = createLucideIcon("align-center-vertical", __iconNode$1Q);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1P = [
+  ["path", { d: "M17 12H7", key: "16if0g" }],
+  ["path", { d: "M19 18H5", key: "18s9l3" }],
+  ["path", { d: "M21 6H3", key: "1jwq7v" }]
+];
+const AlignCenter = createLucideIcon("align-center", __iconNode$1P);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1O = [
+  ["rect", { width: "16", height: "6", x: "2", y: "4", rx: "2", key: "10wcwx" }],
+  ["rect", { width: "9", height: "6", x: "9", y: "14", rx: "2", key: "4p5bwg" }],
+  ["path", { d: "M22 22V2", key: "12ipfv" }]
+];
+const AlignEndVertical = createLucideIcon("align-end-vertical", __iconNode$1O);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1N = [
+  ["rect", { width: "6", height: "16", x: "4", y: "2", rx: "2", key: "z5wdxg" }],
+  ["rect", { width: "6", height: "9", x: "14", y: "9", rx: "2", key: "um7a8w" }],
+  ["path", { d: "M22 22H2", key: "19qnx5" }]
+];
+const AlignEndHorizontal = createLucideIcon("align-end-horizontal", __iconNode$1N);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1M = [
+  ["path", { d: "M15 12H3", key: "6jk70r" }],
+  ["path", { d: "M17 18H3", key: "1amg6g" }],
+  ["path", { d: "M21 6H3", key: "1jwq7v" }]
+];
+const AlignLeft = createLucideIcon("align-left", __iconNode$1M);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1L = [
+  ["path", { d: "M21 12H9", key: "dn1m92" }],
+  ["path", { d: "M21 18H7", key: "1ygte8" }],
+  ["path", { d: "M21 6H3", key: "1jwq7v" }]
+];
+const AlignRight = createLucideIcon("align-right", __iconNode$1L);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1K = [
+  ["rect", { width: "6", height: "16", x: "4", y: "6", rx: "2", key: "1n4dg1" }],
+  ["rect", { width: "6", height: "9", x: "14", y: "6", rx: "2", key: "17khns" }],
+  ["path", { d: "M22 2H2", key: "fhrpnj" }]
+];
+const AlignStartHorizontal = createLucideIcon("align-start-horizontal", __iconNode$1K);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1J = [
+  ["rect", { width: "9", height: "6", x: "6", y: "14", rx: "2", key: "lpm2y7" }],
+  ["rect", { width: "16", height: "6", x: "6", y: "4", rx: "2", key: "rdj6ps" }],
+  ["path", { d: "M2 2v20", key: "1ivd8o" }]
+];
+const AlignStartVertical = createLucideIcon("align-start-vertical", __iconNode$1J);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1I = [
+  ["path", { d: "M12 17V3", key: "1cwfxf" }],
+  ["path", { d: "m6 11 6 6 6-6", key: "12ii2o" }],
+  ["path", { d: "M19 21H5", key: "150jfl" }]
+];
+const ArrowDownToLine = createLucideIcon("arrow-down-to-line", __iconNode$1I);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1H = [
+  ["path", { d: "M12 5v14", key: "s699le" }],
+  ["path", { d: "m19 12-7 7-7-7", key: "1idqje" }]
+];
+const ArrowDown = createLucideIcon("arrow-down", __iconNode$1H);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1G = [
+  ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
+  ["path", { d: "M19 12H5", key: "x3x0zl" }]
+];
+const ArrowLeft = createLucideIcon("arrow-left", __iconNode$1G);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1F = [
+  ["path", { d: "M5 12h14", key: "1ays0h" }],
+  ["path", { d: "m12 5 7 7-7 7", key: "xquz4c" }]
+];
+const ArrowRight = createLucideIcon("arrow-right", __iconNode$1F);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1E = [
+  ["path", { d: "M7 7h10v10", key: "1tivn9" }],
+  ["path", { d: "M7 17 17 7", key: "1vkiza" }]
+];
+const ArrowUpRight = createLucideIcon("arrow-up-right", __iconNode$1E);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1D = [
+  ["path", { d: "M5 3h14", key: "7usisc" }],
+  ["path", { d: "m18 13-6-6-6 6", key: "1kf1n9" }],
+  ["path", { d: "M12 7v14", key: "1akyts" }]
+];
+const ArrowUpToLine = createLucideIcon("arrow-up-to-line", __iconNode$1D);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1C = [
+  ["path", { d: "m5 12 7-7 7 7", key: "hav0vg" }],
+  ["path", { d: "M12 19V5", key: "x0mq9r" }]
+];
+const ArrowUp = createLucideIcon("arrow-up", __iconNode$1C);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1B = [
+  [
+    "path",
+    {
+      d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z",
+      key: "3c2336"
+    }
+  ],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+const BadgeCheck = createLucideIcon("badge-check", __iconNode$1B);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1A = [
+  ["path", { d: "M3 5v14", key: "1nt18q" }],
+  ["path", { d: "M8 5v14", key: "1ybrkv" }],
+  ["path", { d: "M12 5v14", key: "s699le" }],
+  ["path", { d: "M17 5v14", key: "ycjyhj" }],
+  ["path", { d: "M21 5v14", key: "nzette" }]
+];
+const Barcode = createLucideIcon("barcode", __iconNode$1A);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1z = [
+  ["path", { d: "m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z", key: "1fy3hk" }],
+  ["line", { x1: "12", x2: "12", y1: "7", y2: "13", key: "1cppfj" }],
+  ["line", { x1: "15", x2: "9", y1: "10", y2: "10", key: "1gty7f" }]
+];
+const BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode$1z);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1y = [
+  ["path", { d: "m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z", key: "1fy3hk" }]
+];
+const Bookmark = createLucideIcon("bookmark", __iconNode$1y);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1x = [
+  ["rect", { width: "16", height: "20", x: "4", y: "2", rx: "2", key: "1nb95v" }],
+  ["line", { x1: "8", x2: "16", y1: "6", y2: "6", key: "x4nwl0" }],
+  ["line", { x1: "16", x2: "16", y1: "14", y2: "18", key: "wjye3r" }],
+  ["path", { d: "M16 10h.01", key: "1m94wz" }],
+  ["path", { d: "M12 10h.01", key: "1nrarc" }],
+  ["path", { d: "M8 10h.01", key: "19clt8" }],
+  ["path", { d: "M12 14h.01", key: "1etili" }],
+  ["path", { d: "M8 14h.01", key: "6423bh" }],
+  ["path", { d: "M12 18h.01", key: "mhygvu" }],
+  ["path", { d: "M8 18h.01", key: "lrp35t" }]
+];
+const Calculator = createLucideIcon("calculator", __iconNode$1x);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1w = [
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
+  ["path", { d: "M3 10h18", key: "8toen8" }],
+  ["path", { d: "m9 16 2 2 4-4", key: "19s6y9" }]
+];
+const CalendarCheck = createLucideIcon("calendar-check", __iconNode$1w);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1v = [
+  ["path", { d: "M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5", key: "1osxxc" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["path", { d: "M3 10h5", key: "r794hk" }],
+  ["path", { d: "M17.5 17.5 16 16.3V14", key: "akvzfd" }],
+  ["circle", { cx: "16", cy: "16", r: "6", key: "qoo3c4" }]
+];
+const CalendarClock = createLucideIcon("calendar-clock", __iconNode$1v);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1u = [
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
+  ["path", { d: "M3 10h18", key: "8toen8" }],
+  ["path", { d: "M8 14h.01", key: "6423bh" }],
+  ["path", { d: "M12 14h.01", key: "1etili" }],
+  ["path", { d: "M16 14h.01", key: "1gbofw" }],
+  ["path", { d: "M8 18h.01", key: "lrp35t" }],
+  ["path", { d: "M12 18h.01", key: "mhygvu" }],
+  ["path", { d: "M16 18h.01", key: "kzsmim" }]
+];
+const CalendarDays = createLucideIcon("calendar-days", __iconNode$1u);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1t = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$1t);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1s = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$1s);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1r = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
+const ChevronLeft = createLucideIcon("chevron-left", __iconNode$1r);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1q = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+const ChevronRight = createLucideIcon("chevron-right", __iconNode$1q);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1p = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
+const ChevronUp = createLucideIcon("chevron-up", __iconNode$1p);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1o = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
+  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
+];
+const CircleAlert = createLucideIcon("circle-alert", __iconNode$1o);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1n = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+const CircleCheck = createLucideIcon("circle-check", __iconNode$1n);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1m = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
+  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
+];
+const CircleX = createLucideIcon("circle-x", __iconNode$1m);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1l = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["polyline", { points: "12 6 12 12 16 14", key: "68esgv" }]
+];
+const Clock = createLucideIcon("clock", __iconNode$1l);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1k = [
+  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
+  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
+];
+const Copy = createLucideIcon("copy", __iconNode$1k);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1j = [
+  ["rect", { width: "20", height: "14", x: "2", y: "5", rx: "2", key: "ynyp8z" }],
+  ["line", { x1: "2", x2: "22", y1: "10", y2: "10", key: "1b3vmo" }]
+];
+const CreditCard = createLucideIcon("credit-card", __iconNode$1j);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1i = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "22", x2: "18", y1: "12", y2: "12", key: "l9bcsi" }],
+  ["line", { x1: "6", x2: "2", y1: "12", y2: "12", key: "13hhkx" }],
+  ["line", { x1: "12", x2: "12", y1: "6", y2: "2", key: "10w3f3" }],
+  ["line", { x1: "12", x2: "12", y1: "22", y2: "18", key: "15g9kq" }]
+];
+const Crosshair = createLucideIcon("crosshair", __iconNode$1i);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1h = [
+  [
+    "path",
+    {
+      d: "M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z",
+      key: "1vdc57"
+    }
+  ],
+  ["path", { d: "M5 21h14", key: "11awu3" }]
+];
+const Crown = createLucideIcon("crown", __iconNode$1h);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1g = [
+  ["path", { d: "M12 15V3", key: "m9g1x1" }],
+  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
+  ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
+];
+const Download = createLucideIcon("download", __iconNode$1g);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1f = [
+  ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
+  ["path", { d: "M10 14 21 3", key: "gplh6r" }],
+  ["path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", key: "a6xqqp" }]
+];
+const ExternalLink = createLucideIcon("external-link", __iconNode$1f);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1e = [
+  [
+    "path",
+    {
+      d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
+      key: "ct8e1f"
+    }
+  ],
+  ["path", { d: "M14.084 14.158a3 3 0 0 1-4.242-4.242", key: "151rxh" }],
+  [
+    "path",
+    {
+      d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
+      key: "13bj9a"
+    }
+  ],
+  ["path", { d: "m2 2 20 20", key: "1ooewy" }]
+];
+const EyeOff = createLucideIcon("eye-off", __iconNode$1e);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1d = [
+  [
+    "path",
+    {
+      d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
+      key: "1nclc0"
+    }
+  ],
+  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
+];
+const Eye = createLucideIcon("eye", __iconNode$1d);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1c = [
+  ["path", { d: "M12 16h.01", key: "1drbdi" }],
+  ["path", { d: "M16 16h.01", key: "1f9h7w" }],
+  [
+    "path",
+    {
+      d: "M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z",
+      key: "1iv0i2"
+    }
+  ],
+  ["path", { d: "M8 16h.01", key: "18s6g9" }]
+];
+const Factory = createLucideIcon("factory", __iconNode$1c);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1b = [
+  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
+  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
+  ["circle", { cx: "10", cy: "12", r: "2", key: "737tya" }],
+  ["path", { d: "m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22", key: "wt3hpn" }]
+];
+const FileImage = createLucideIcon("file-image", __iconNode$1b);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1a = [
+  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
+  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
+  ["path", { d: "M8 13h2", key: "yr2amv" }],
+  ["path", { d: "M14 13h2", key: "un5t4a" }],
+  ["path", { d: "M8 17h2", key: "2yhykz" }],
+  ["path", { d: "M14 17h2", key: "10kma7" }]
+];
+const FileSpreadsheet = createLucideIcon("file-spreadsheet", __iconNode$1a);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$19 = [
+  ["path", { d: "M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4", key: "1nerag" }],
+  ["path", { d: "M14 13.12c0 2.38 0 6.38-1 8.88", key: "o46ks0" }],
+  ["path", { d: "M17.29 21.02c.12-.6.43-2.3.5-3.02", key: "ptglia" }],
+  ["path", { d: "M2 12a10 10 0 0 1 18-6", key: "ydlgp0" }],
+  ["path", { d: "M2 16h.01", key: "1gqxmh" }],
+  ["path", { d: "M21.8 16c.2-2 .131-5.354 0-6", key: "drycrb" }],
+  ["path", { d: "M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2", key: "1tidbn" }],
+  ["path", { d: "M8.65 22c.21-.66.45-1.32.57-2", key: "13wd9y" }],
+  ["path", { d: "M9 6.8a6 6 0 0 1 9 5.2v2", key: "1fr1j5" }]
+];
+const Fingerprint = createLucideIcon("fingerprint", __iconNode$19);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$18 = [
+  [
+    "path",
+    {
+      d: "M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2",
+      key: "18mbvz"
+    }
+  ],
+  ["path", { d: "M6.453 15h11.094", key: "3shlmq" }],
+  ["path", { d: "M8.5 2h7", key: "csnxdl" }]
+];
+const FlaskConical = createLucideIcon("flask-conical", __iconNode$18);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$17 = [
+  ["path", { d: "M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3", key: "1i73f7" }],
+  ["path", { d: "M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3", key: "saxlbk" }],
+  ["path", { d: "M12 20v2", key: "1lh1kg" }],
+  ["path", { d: "M12 14v2", key: "8jcxud" }],
+  ["path", { d: "M12 8v2", key: "1woqiv" }],
+  ["path", { d: "M12 2v2", key: "tus03m" }]
+];
+const FlipHorizontal = createLucideIcon("flip-horizontal", __iconNode$17);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$16 = [
+  ["rect", { x: "3", y: "8", width: "18", height: "4", rx: "1", key: "bkv52" }],
+  ["path", { d: "M12 8v13", key: "1c76mn" }],
+  ["path", { d: "M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7", key: "6wjy6b" }],
+  [
+    "path",
+    {
+      d: "M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5",
+      key: "1ihvrl"
+    }
+  ]
+];
+const Gift = createLucideIcon("gift", __iconNode$16);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$15 = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
+  ["path", { d: "M2 12h20", key: "9i4pu4" }]
+];
+const Globe = createLucideIcon("globe", __iconNode$15);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$14 = [
+  ["path", { d: "M4 12h8", key: "17cfdx" }],
+  ["path", { d: "M4 18V6", key: "1rz3zl" }],
+  ["path", { d: "M12 18V6", key: "zqpxq5" }],
+  ["path", { d: "m17 12 3-2v8", key: "1hhhft" }]
+];
+const Heading1 = createLucideIcon("heading-1", __iconNode$14);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$13 = [
+  ["path", { d: "M4 12h8", key: "17cfdx" }],
+  ["path", { d: "M4 18V6", key: "1rz3zl" }],
+  ["path", { d: "M12 18V6", key: "zqpxq5" }],
+  ["path", { d: "M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1", key: "9jr5yi" }]
+];
+const Heading2 = createLucideIcon("heading-2", __iconNode$13);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$12 = [
+  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+  ["path", { d: "M3 3v5h5", key: "1xhq8a" }],
+  ["path", { d: "M12 7v5l4 2", key: "1fdv2h" }]
+];
+const History = createLucideIcon("history", __iconNode$12);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$11 = [
+  ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
+  [
+    "path",
+    {
+      d: "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+      key: "1d0kgt"
+    }
+  ]
+];
+const House = createLucideIcon("house", __iconNode$11);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$10 = [
+  ["path", { d: "M16 5h6", key: "1vod17" }],
+  ["path", { d: "M19 2v6", key: "4bpg5p" }],
+  ["path", { d: "M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5", key: "1ue2ih" }],
+  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }],
+  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }]
+];
+const ImagePlus = createLucideIcon("image-plus", __iconNode$10);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$$ = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
+  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
+  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
+];
+const Image$1 = createLucideIcon("image", __iconNode$$);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$_ = [
+  ["polyline", { points: "22 12 16 12 14 15 10 15 8 12 2 12", key: "o97t9d" }],
+  [
+    "path",
+    {
+      d: "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+      key: "oot6mr"
+    }
+  ]
+];
+const Inbox = createLucideIcon("inbox", __iconNode$_);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$Z = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "M12 16v-4", key: "1dtifu" }],
+  ["path", { d: "M12 8h.01", key: "e9boi3" }]
+];
+const Info = createLucideIcon("info", __iconNode$Z);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$Y = [
+  [
+    "path",
+    {
+      d: "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
+      key: "1s6t7t"
+    }
+  ],
+  ["circle", { cx: "16.5", cy: "7.5", r: ".5", fill: "currentColor", key: "w0ekpg" }]
+];
+const KeyRound = createLucideIcon("key-round", __iconNode$Y);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$X = [
+  [
+    "path",
+    {
+      d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
+      key: "zw3jo"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
+      key: "1wduqc"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
+      key: "kqbvx6"
+    }
+  ]
+];
+const Layers = createLucideIcon("layers", __iconNode$X);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$W = [
+  ["rect", { width: "7", height: "9", x: "3", y: "3", rx: "1", key: "10lvy0" }],
+  ["rect", { width: "7", height: "5", x: "14", y: "3", rx: "1", key: "16une8" }],
+  ["rect", { width: "7", height: "9", x: "14", y: "12", rx: "1", key: "1hutg5" }],
+  ["rect", { width: "7", height: "5", x: "3", y: "16", rx: "1", key: "ldoo1y" }]
+];
+const LayoutDashboard = createLucideIcon("layout-dashboard", __iconNode$W);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$V = [
+  ["rect", { width: "18", height: "7", x: "3", y: "3", rx: "1", key: "f1a2em" }],
+  ["rect", { width: "9", height: "7", x: "3", y: "14", rx: "1", key: "jqznyg" }],
+  ["rect", { width: "5", height: "7", x: "16", y: "14", rx: "1", key: "q5h2i8" }]
+];
+const LayoutTemplate = createLucideIcon("layout-template", __iconNode$V);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$U = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m4.93 4.93 4.24 4.24", key: "1ymg45" }],
+  ["path", { d: "m14.83 9.17 4.24-4.24", key: "1cb5xl" }],
+  ["path", { d: "m14.83 14.83 4.24 4.24", key: "q42g0n" }],
+  ["path", { d: "m9.17 14.83-4.24 4.24", key: "bqpfvv" }],
+  ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }]
+];
+const LifeBuoy = createLucideIcon("life-buoy", __iconNode$U);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$T = [
+  [
+    "path",
+    {
+      d: "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5",
+      key: "1gvzjb"
+    }
+  ],
+  ["path", { d: "M9 18h6", key: "x1upvd" }],
+  ["path", { d: "M10 22h4", key: "ceow96" }]
+];
+const Lightbulb = createLucideIcon("lightbulb", __iconNode$T);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$S = [
+  ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
+  ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
+  ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
+];
+const Link2 = createLucideIcon("link-2", __iconNode$S);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$R = [
+  ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
+  ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }],
+  ["path", { d: "M13 6h8", key: "15sg57" }],
+  ["path", { d: "M13 12h8", key: "h98zly" }],
+  ["path", { d: "M13 18h8", key: "oe0vm4" }]
+];
+const ListChecks = createLucideIcon("list-checks", __iconNode$R);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$Q = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
+const LoaderCircle = createLucideIcon("loader-circle", __iconNode$Q);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$P = [
+  ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "1w4ew1" }],
+  ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "fwvmzm" }]
+];
+const Lock = createLucideIcon("lock", __iconNode$P);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$O = [
+  ["path", { d: "m16 17 5-5-5-5", key: "1bji2h" }],
+  ["path", { d: "M21 12H9", key: "dn1m92" }],
+  ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", key: "1uf3rs" }]
+];
+const LogOut = createLucideIcon("log-out", __iconNode$O);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$N = [
+  ["path", { d: "M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h9", key: "1j9vog" }],
+  ["path", { d: "m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7", key: "1ocrg3" }],
+  ["path", { d: "m17 17 4 4", key: "1b3523" }],
+  ["path", { d: "m21 17-4 4", key: "uinynz" }]
+];
+const MailX = createLucideIcon("mail-x", __iconNode$N);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$M = [
+  [
+    "path",
+    {
+      d: "M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z",
+      key: "1lbycx"
+    }
+  ],
+  ["polyline", { points: "15,9 18,9 18,11", key: "1pm9c0" }],
+  ["path", { d: "M6.5 5C9 5 11 7 11 9.5V17a2 2 0 0 1-2 2", key: "15i455" }],
+  ["line", { x1: "6", x2: "7", y1: "10", y2: "10", key: "1e2scm" }]
+];
+const Mailbox = createLucideIcon("mailbox", __iconNode$M);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$L = [
+  ["path", { d: "m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7", key: "132q7q" }],
+  ["rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", key: "izxlao" }]
+];
+const Mail = createLucideIcon("mail", __iconNode$L);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$K = [
+  [
+    "path",
+    {
+      d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0",
+      key: "1r0f0z"
+    }
+  ],
+  ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
+];
+const MapPin = createLucideIcon("map-pin", __iconNode$K);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$J = [
+  ["path", { d: "M4 12h16", key: "1lakjw" }],
+  ["path", { d: "M4 18h16", key: "19g7jn" }],
+  ["path", { d: "M4 6h16", key: "1o0s65" }]
+];
+const Menu = createLucideIcon("menu", __iconNode$J);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$I = [["path", { d: "M5 12h14", key: "1ays0h" }]];
+const Minus = createLucideIcon("minus", __iconNode$I);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$H = [
+  [
+    "path",
+    {
+      d: "M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z",
+      key: "e79jfc"
+    }
+  ],
+  ["circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor", key: "1okk4w" }],
+  ["circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor", key: "f64h9f" }],
+  ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor", key: "qy21gx" }],
+  ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor", key: "fotxhn" }]
+];
+const Palette = createLucideIcon("palette", __iconNode$H);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$G = [
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
+  ["path", { d: "M9 3v18", key: "fh3hqa" }],
+  ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
+];
+const PanelLeftClose = createLucideIcon("panel-left-close", __iconNode$G);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$F = [
+  ["path", { d: "M5.8 11.3 2 22l10.7-3.79", key: "gwxi1d" }],
+  ["path", { d: "M4 3h.01", key: "1vcuye" }],
+  ["path", { d: "M22 8h.01", key: "1mrtc2" }],
+  ["path", { d: "M15 2h.01", key: "1cjtqr" }],
+  ["path", { d: "M22 20h.01", key: "1mrys2" }],
+  [
+    "path",
+    {
+      d: "m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10",
+      key: "hbicv8"
+    }
+  ],
+  [
+    "path",
+    { d: "m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17", key: "1i94pl" }
+  ],
+  ["path", { d: "m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7", key: "1cofks" }],
+  [
+    "path",
+    {
+      d: "M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z",
+      key: "4kbmks"
+    }
+  ]
+];
+const PartyPopper = createLucideIcon("party-popper", __iconNode$F);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$E = [
+  ["path", { d: "M12 20h9", key: "t2du7b" }],
+  [
+    "path",
+    {
+      d: "M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z",
+      key: "1ykcvy"
+    }
+  ]
+];
+const PenLine = createLucideIcon("pen-line", __iconNode$E);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$D = [
+  [
+    "path",
+    {
+      d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+      key: "1a8usu"
+    }
+  ],
+  ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
+];
+const Pencil = createLucideIcon("pencil", __iconNode$D);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$C = [
+  [
+    "path",
+    {
+      d: "M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384",
+      key: "9njp5v"
+    }
+  ]
+];
+const Phone = createLucideIcon("phone", __iconNode$C);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$B = [
+  ["path", { d: "M13 4v16", key: "8vvj80" }],
+  ["path", { d: "M17 4v16", key: "7dpous" }],
+  ["path", { d: "M19 4H9.5a4.5 4.5 0 0 0 0 9H13", key: "sh4n9v" }]
+];
+const Pilcrow = createLucideIcon("pilcrow", __iconNode$B);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$A = [
+  ["path", { d: "M5 12h14", key: "1ays0h" }],
+  ["path", { d: "M12 5v14", key: "s699le" }]
+];
+const Plus = createLucideIcon("plus", __iconNode$A);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$z = [
+  [
+    "path",
+    {
+      d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2",
+      key: "143wyd"
+    }
+  ],
+  ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6", key: "1itne7" }],
+  ["rect", { x: "6", y: "14", width: "12", height: "8", rx: "1", key: "1ue0tg" }]
+];
+const Printer = createLucideIcon("printer", __iconNode$z);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$y = [
+  ["rect", { width: "5", height: "5", x: "3", y: "3", rx: "1", key: "1tu5fj" }],
+  ["rect", { width: "5", height: "5", x: "16", y: "3", rx: "1", key: "1v8r4q" }],
+  ["rect", { width: "5", height: "5", x: "3", y: "16", rx: "1", key: "1x03jg" }],
+  ["path", { d: "M21 16h-3a2 2 0 0 0-2 2v3", key: "177gqh" }],
+  ["path", { d: "M21 21v.01", key: "ents32" }],
+  ["path", { d: "M12 7v3a2 2 0 0 1-2 2H7", key: "8crl2c" }],
+  ["path", { d: "M3 12h.01", key: "nlz23k" }],
+  ["path", { d: "M12 3h.01", key: "n36tog" }],
+  ["path", { d: "M12 16v.01", key: "133mhm" }],
+  ["path", { d: "M16 12h1", key: "1slzba" }],
+  ["path", { d: "M21 12v.01", key: "1lwtk9" }],
+  ["path", { d: "M12 21v-1", key: "1880an" }]
+];
+const QrCode = createLucideIcon("qr-code", __iconNode$y);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$x = [
+  [
+    "path",
+    { d: "M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z", key: "q3az6g" }
+  ],
+  ["path", { d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8", key: "1h4pet" }],
+  ["path", { d: "M12 17.5v-11", key: "1jc1ny" }]
+];
+const Receipt = createLucideIcon("receipt", __iconNode$x);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$w = [
+  ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }],
+  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
+  ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }],
+  ["path", { d: "M8 16H3v5", key: "1cv678" }]
+];
+const RefreshCw = createLucideIcon("refresh-cw", __iconNode$w);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$v = [
+  ["path", { d: "m17 2 4 4-4 4", key: "nntrym" }],
+  ["path", { d: "M3 11v-1a4 4 0 0 1 4-4h14", key: "84bu3i" }],
+  ["path", { d: "m7 22-4-4 4-4", key: "1wqhfi" }],
+  ["path", { d: "M21 13v1a4 4 0 0 1-4 4H3", key: "1rx37r" }]
+];
+const Repeat = createLucideIcon("repeat", __iconNode$v);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$u = [
+  [
+    "path",
+    {
+      d: "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z",
+      key: "m3kijz"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z",
+      key: "1fmvmk"
+    }
+  ],
+  ["path", { d: "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0", key: "1f8sc4" }],
+  ["path", { d: "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5", key: "qeys4" }]
+];
+const Rocket = createLucideIcon("rocket", __iconNode$u);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$t = [
+  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+  ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
+];
+const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$t);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$s = [
+  ["path", { d: "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", key: "1p45f6" }],
+  ["path", { d: "M21 3v5h-5", key: "1q7to0" }]
+];
+const RotateCw = createLucideIcon("rotate-cw", __iconNode$s);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$r = [
+  ["circle", { cx: "6", cy: "19", r: "3", key: "1kj8tv" }],
+  ["path", { d: "M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15", key: "1d8sl" }],
+  ["circle", { cx: "18", cy: "5", r: "3", key: "gq8acd" }]
+];
+const Route$1 = createLucideIcon("route", __iconNode$r);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$q = [
+  [
+    "path",
+    {
+      d: "M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+      key: "1c8476"
+    }
+  ],
+  ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
+  ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
+];
+const Save = createLucideIcon("save", __iconNode$q);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$p = [
+  ["path", { d: "M3 7V5a2 2 0 0 1 2-2h2", key: "aa7l1z" }],
+  ["path", { d: "M17 3h2a2 2 0 0 1 2 2v2", key: "4qcy5o" }],
+  ["path", { d: "M21 17v2a2 2 0 0 1-2 2h-2", key: "6vwrx8" }],
+  ["path", { d: "M7 21H5a2 2 0 0 1-2-2v-2", key: "ioqczr" }],
+  ["circle", { cx: "12", cy: "12", r: "1", key: "41hilf" }],
+  [
+    "path",
+    {
+      d: "M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0",
+      key: "11ak4c"
+    }
+  ]
+];
+const ScanEye = createLucideIcon("scan-eye", __iconNode$p);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$o = [
+  ["path", { d: "M3 7V5a2 2 0 0 1 2-2h2", key: "aa7l1z" }],
+  ["path", { d: "M17 3h2a2 2 0 0 1 2 2v2", key: "4qcy5o" }],
+  ["path", { d: "M21 17v2a2 2 0 0 1-2 2h-2", key: "6vwrx8" }],
+  ["path", { d: "M7 21H5a2 2 0 0 1-2-2v-2", key: "ioqczr" }],
+  ["path", { d: "M7 12h10", key: "b7w52i" }]
+];
+const ScanLine = createLucideIcon("scan-line", __iconNode$o);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$n = [
+  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
+  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
+];
+const Search = createLucideIcon("search", __iconNode$n);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$m = [
+  [
+    "path",
+    {
+      d: "M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z",
+      key: "1ffxy3"
+    }
+  ],
+  ["path", { d: "m21.854 2.147-10.94 10.939", key: "12cjpa" }]
+];
+const Send = createLucideIcon("send", __iconNode$m);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$l = [
+  [
+    "path",
+    {
+      d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
+      key: "1qme2f"
+    }
+  ],
+  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
+];
+const Settings = createLucideIcon("settings", __iconNode$l);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$k = [
+  [
+    "path",
+    {
+      d: "M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z",
+      key: "1bo67w"
+    }
+  ],
+  ["rect", { x: "3", y: "14", width: "7", height: "7", rx: "1", key: "1bkyp8" }],
+  ["circle", { cx: "17.5", cy: "17.5", r: "3.5", key: "w3z12y" }]
+];
+const Shapes = createLucideIcon("shapes", __iconNode$k);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$j = [
+  ["circle", { cx: "18", cy: "5", r: "3", key: "gq8acd" }],
+  ["circle", { cx: "6", cy: "12", r: "3", key: "w7nqdw" }],
+  ["circle", { cx: "18", cy: "19", r: "3", key: "1xt0gg" }],
+  ["line", { x1: "8.59", x2: "15.42", y1: "13.51", y2: "17.49", key: "47mynk" }],
+  ["line", { x1: "15.41", x2: "8.59", y1: "6.51", y2: "10.49", key: "1n3mei" }]
+];
+const Share2 = createLucideIcon("share-2", __iconNode$j);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$i = [
+  [
+    "path",
+    {
+      d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+      key: "oel41y"
+    }
+  ],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+const ShieldCheck = createLucideIcon("shield-check", __iconNode$i);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$h = [
+  [
+    "path",
+    {
+      d: "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
+      key: "4pj2yx"
+    }
+  ],
+  ["path", { d: "M20 3v4", key: "1olli1" }],
+  ["path", { d: "M22 5h-4", key: "1gvqau" }],
+  ["path", { d: "M4 17v2", key: "vumght" }],
+  ["path", { d: "M5 18H3", key: "zchphs" }]
+];
+const Sparkles = createLucideIcon("sparkles", __iconNode$h);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$g = [
+  [
+    "path",
+    {
+      d: "M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z",
+      key: "xwnzip"
+    }
+  ],
+  ["path", { d: "M5 3a2 2 0 0 0-2 2", key: "y57alp" }],
+  ["path", { d: "M19 3a2 2 0 0 1 2 2", key: "18rm91" }],
+  ["path", { d: "M5 21a2 2 0 0 1-2-2", key: "sbafld" }],
+  ["path", { d: "M9 3h1", key: "1yesri" }],
+  ["path", { d: "M9 21h2", key: "1qve2z" }],
+  ["path", { d: "M14 3h1", key: "1ec4yj" }],
+  ["path", { d: "M3 9v1", key: "1r0deq" }],
+  ["path", { d: "M21 9v2", key: "p14lih" }],
+  ["path", { d: "M3 14v1", key: "vnatye" }]
+];
+const SquareDashedMousePointer = createLucideIcon("square-dashed-mouse-pointer", __iconNode$g);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$f = [
+  ["path", { d: "M5 22h14", key: "ehvnwv" }],
+  [
+    "path",
+    {
+      d: "M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z",
+      key: "1sy9ra"
+    }
+  ],
+  [
+    "path",
+    { d: "M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13", key: "cnxgux" }
+  ]
+];
+const Stamp = createLucideIcon("stamp", __iconNode$f);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$e = [
+  [
+    "path",
+    {
+      d: "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z",
+      key: "vktsd0"
+    }
+  ],
+  ["circle", { cx: "7.5", cy: "7.5", r: ".5", fill: "currentColor", key: "kqv944" }]
+];
+const Tag = createLucideIcon("tag", __iconNode$e);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$d = [
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
+];
+const Trash2 = createLucideIcon("trash-2", __iconNode$d);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$c = [
+  ["path", { d: "M16 17h6v-6", key: "t6n2it" }],
+  ["path", { d: "m22 17-8.5-8.5-5 5L2 7", key: "x473p" }]
+];
+const TrendingDown = createLucideIcon("trending-down", __iconNode$c);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$b = [
+  [
+    "path",
+    {
+      d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
+      key: "wmoenq"
+    }
+  ],
+  ["path", { d: "M12 9v4", key: "juzpu7" }],
+  ["path", { d: "M12 17h.01", key: "p32p05" }]
+];
+const TriangleAlert = createLucideIcon("triangle-alert", __iconNode$b);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$a = [
+  ["path", { d: "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2", key: "wrbu53" }],
+  ["path", { d: "M15 18H9", key: "1lyqi6" }],
+  [
+    "path",
+    {
+      d: "M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14",
+      key: "lysw3i"
+    }
+  ],
+  ["circle", { cx: "17", cy: "18", r: "2", key: "332jqn" }],
+  ["circle", { cx: "7", cy: "18", r: "2", key: "19iecd" }]
+];
+const Truck = createLucideIcon("truck", __iconNode$a);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$9 = [
+  ["path", { d: "M12 4v16", key: "1654pz" }],
+  ["path", { d: "M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2", key: "e0r10z" }],
+  ["path", { d: "M9 20h6", key: "s66wpe" }]
+];
+const Type2 = createLucideIcon("type", __iconNode$9);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$8 = [
+  ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
+  ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
+];
+const Undo2 = createLucideIcon("undo-2", __iconNode$8);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$7 = [
+  [
+    "path",
+    {
+      d: "m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71",
+      key: "yqzxt4"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71",
+      key: "4qinb0"
+    }
+  ],
+  ["line", { x1: "8", x2: "8", y1: "2", y2: "5", key: "1041cp" }],
+  ["line", { x1: "2", x2: "5", y1: "8", y2: "8", key: "14m1p5" }],
+  ["line", { x1: "16", x2: "16", y1: "19", y2: "22", key: "rzdirn" }],
+  ["line", { x1: "19", x2: "22", y1: "16", y2: "16", key: "ox905f" }]
+];
+const Unlink = createLucideIcon("unlink", __iconNode$7);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$6 = [
+  ["path", { d: "M12 3v12", key: "1x0j5s" }],
+  ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
+  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
+];
+const Upload = createLucideIcon("upload", __iconNode$6);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$5 = [
+  ["circle", { cx: "12", cy: "8", r: "5", key: "1hypcn" }],
+  ["path", { d: "M20 21a8 8 0 0 0-16 0", key: "rfgkzh" }]
+];
+const UserRound = createLucideIcon("user-round", __iconNode$5);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$4 = [
+  ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
+  ["path", { d: "M16 3.128a4 4 0 0 1 0 7.744", key: "16gr8j" }],
+  ["path", { d: "M22 21v-2a4 4 0 0 0-3-3.87", key: "kshegd" }],
+  ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
+];
+const Users = createLucideIcon("users", __iconNode$4);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$3 = [
+  ["path", { d: "m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8", key: "n7qcjb" }],
+  [
+    "path",
+    { d: "M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7", key: "d0u48b" }
+  ],
+  ["path", { d: "m2.1 21.8 6.4-6.3", key: "yn04lh" }],
+  ["path", { d: "m19 5-7 7", key: "194lzd" }]
+];
+const UtensilsCrossed = createLucideIcon("utensils-crossed", __iconNode$3);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$2 = [
+  [
+    "path",
+    {
+      d: "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72",
+      key: "ul74o6"
+    }
+  ],
+  ["path", { d: "m14 7 3 3", key: "1r5n42" }],
+  ["path", { d: "M5 6v4", key: "ilb8ba" }],
+  ["path", { d: "M19 14v4", key: "blhpug" }],
+  ["path", { d: "M10 2v2", key: "7u0qdc" }],
+  ["path", { d: "M7 8H3", key: "zfb6yr" }],
+  ["path", { d: "M21 16h-4", key: "1cnmox" }],
+  ["path", { d: "M11 3H9", key: "1obp7u" }]
+];
+const WandSparkles = createLucideIcon("wand-sparkles", __iconNode$2);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$1 = [
+  [
+    "path",
+    {
+      d: "M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2",
+      key: "q3hayz"
+    }
+  ],
+  ["path", { d: "m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06", key: "1go1hn" }],
+  ["path", { d: "m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8", key: "qlwsc0" }]
+];
+const Webhook = createLucideIcon("webhook", __iconNode$1);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode = [
+  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+];
+const X = createLucideIcon("x", __iconNode);
 function r(e) {
   var t, f2, n = "";
   if ("string" == typeof e || "number" == typeof e) n += e;
@@ -30439,46 +35851,6 @@ function clsx() {
   for (var e, t, f2 = 0, n = "", o = arguments.length; f2 < o; f2++) (e = arguments[f2]) && (t = r(e)) && (n && (n += " "), n += t);
   return n;
 }
-const falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
-const cx = clsx;
-const cva = (base, config) => (props) => {
-  var _config_compoundVariants;
-  if ((config === null || config === void 0 ? void 0 : config.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
-  const { variants, defaultVariants } = config;
-  const getVariantClassNames = Object.keys(variants).map((variant) => {
-    const variantProp = props === null || props === void 0 ? void 0 : props[variant];
-    const defaultVariantProp = defaultVariants === null || defaultVariants === void 0 ? void 0 : defaultVariants[variant];
-    if (variantProp === null) return null;
-    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
-    return variants[variant][variantKey];
-  });
-  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
-    let [key, value] = param;
-    if (value === void 0) {
-      return acc;
-    }
-    acc[key] = value;
-    return acc;
-  }, {});
-  const getCompoundVariantClassNames = config === null || config === void 0 ? void 0 : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
-    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
-    return Object.entries(compoundVariantOptions).every((param2) => {
-      let [key, value] = param2;
-      return Array.isArray(value) ? value.includes({
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key]) : {
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key] === value;
-    }) ? [
-      ...acc,
-      cvClass,
-      cvClassName
-    ] : acc;
-  }, []);
-  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
-};
 const CLASS_PART_SEPARATOR = "-";
 const createClassGroupUtils = (config) => {
   const classMap = createClassMap(config);
@@ -32941,97 +38313,171 @@ const twMerge = /* @__PURE__ */ createTailwindMerge(getDefaultConfig);
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
-const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
-  {
-    variants: {
-      variant: {
-        default: "bg-card text-card-foreground",
-        destructive: "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
-      }
-    },
-    defaultVariants: {
-      variant: "default"
-    }
-  }
-);
-function Alert({
-  className,
-  variant,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "alert",
-      role: "alert",
-      className: cn(alertVariants({ variant }), className),
-      ...props
-    }
-  );
-}
-function AlertTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "alert-title",
-      className: cn(
-        "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function AlertDescription({
+function Checkbox({
   className,
   ...props
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
+    Checkbox$1,
     {
-      "data-slot": "alert-description",
+      "data-slot": "checkbox",
       className: cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+        "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
         className
       ),
-      ...props
-    }
-  );
-}
-function setRef(ref, value) {
-  if (typeof ref === "function") {
-    return ref(value);
-  } else if (ref !== null && ref !== void 0) {
-    ref.current = value;
-  }
-}
-function composeRefs(...refs) {
-  return (node) => {
-    let hasCleanup = false;
-    const cleanups = refs.map((ref) => {
-      const cleanup = setRef(ref, node);
-      if (!hasCleanup && typeof cleanup == "function") {
-        hasCleanup = true;
-      }
-      return cleanup;
-    });
-    if (hasCleanup) {
-      return () => {
-        for (let i = 0; i < cleanups.length; i++) {
-          const cleanup = cleanups[i];
-          if (typeof cleanup == "function") {
-            cleanup();
-          } else {
-            setRef(refs[i], null);
-          }
+      ...props,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        CheckboxIndicator,
+        {
+          "data-slot": "checkbox-indicator",
+          className: "flex items-center justify-center text-current transition-none",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "size-3.5" })
         }
-      };
+      )
+    }
+  );
+}
+const createStoreImpl = (createState) => {
+  let state;
+  const listeners = /* @__PURE__ */ new Set();
+  const setState = (partial, replace) => {
+    const nextState = typeof partial === "function" ? partial(state) : partial;
+    if (!Object.is(nextState, state)) {
+      const previousState = state;
+      state = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state, nextState);
+      listeners.forEach((listener) => listener(state, previousState));
     }
   };
+  const getState2 = () => state;
+  const getInitialState = () => initialState;
+  const subscribe2 = (listener) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+  const api = { setState, getState: getState2, getInitialState, subscribe: subscribe2 };
+  const initialState = state = createState(setState, getState2, api);
+  return api;
+};
+const createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
+const identity = (arg) => arg;
+function useStore$1(api, selector = identity) {
+  const slice = React$4.useSyncExternalStore(
+    api.subscribe,
+    React$4.useCallback(() => selector(api.getState()), [api, selector]),
+    React$4.useCallback(() => selector(api.getInitialState()), [api, selector])
+  );
+  React$4.useDebugValue(slice);
+  return slice;
 }
-function useComposedRefs(...refs) {
-  return reactExports.useCallback(composeRefs(...refs), refs);
+const createImpl = (createState) => {
+  const api = createStore(createState);
+  const useBoundStore = (selector) => useStore$1(api, selector);
+  Object.assign(useBoundStore, api);
+  return useBoundStore;
+};
+const create = (createState) => createImpl;
+const HIDE_STAMPY_TIPS_KEY = "ezmailout_hide_stampy_tips";
+function readHidden() {
+  try {
+    return window.localStorage.getItem(HIDE_STAMPY_TIPS_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+function writeHidden(hidden) {
+  try {
+    if (hidden) window.localStorage.setItem(HIDE_STAMPY_TIPS_KEY, "true");
+    else window.localStorage.removeItem(HIDE_STAMPY_TIPS_KEY);
+  } catch {
+  }
+}
+const useStampyTips = create()((set) => ({
+  hidden: readHidden(),
+  dismissed: {},
+  setHidden: (hidden) => {
+    writeHidden(hidden);
+    set(hidden ? { hidden } : { hidden, dismissed: {} });
+  },
+  dismiss: (id) => set((s) => ({ dismissed: { ...s.dismissed, [id]: true } }))
+}));
+function StampyTip({
+  id,
+  mascot: Mascot,
+  children,
+  compact = false,
+  className
+}) {
+  const hidden = useStampyTips((s) => s.hidden);
+  const dismissed = useStampyTips((s) => s.dismissed[id] === true);
+  const setHidden = useStampyTips((s) => s.setHidden);
+  const dismiss = useStampyTips((s) => s.dismiss);
+  const checkboxId = reactExports.useId();
+  if (hidden || dismissed) return null;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "aside",
+    {
+      "aria-label": "Tip from Stampy",
+      className: cn(
+        "relative flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 shadow-xs",
+        compact ? "px-3 py-2" : "gap-4 p-4",
+        className
+      ),
+      "data-ocid": `stampy.tip.${id}`,
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Mascot,
+          {
+            className: cn("shrink-0", compact ? "size-14" : "size-20 sm:size-24")
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1 pr-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: cn(
+                "font-medium leading-snug text-foreground",
+                compact ? "text-xs" : "text-sm"
+              ),
+              children
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2 flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Checkbox,
+              {
+                id: checkboxId,
+                checked: false,
+                onCheckedChange: (checked) => {
+                  if (checked === true) setHidden(true);
+                },
+                "data-ocid": `stampy.tip.${id}.hide_all`
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "label",
+              {
+                htmlFor: checkboxId,
+                className: "cursor-pointer select-none text-xs text-muted-foreground",
+                children: "Don't show tips"
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => dismiss(id),
+            className: "absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-[#575859] transition-smooth hover:bg-card hover:text-foreground",
+            "aria-label": "Close this tip",
+            title: "Close this tip",
+            "data-ocid": `stampy.tip.${id}.dismiss`,
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { className: "size-4" })
+          }
+        )
+      ]
+    }
+  );
 }
 var REACT_LAZY_TYPE = Symbol.for("react.lazy");
 var use = React$5[" use ".trim().toString()];
@@ -33042,15 +38488,15 @@ function isLazyComponent(element) {
   return element != null && typeof element === "object" && "$$typeof" in element && element.$$typeof === REACT_LAZY_TYPE && "_payload" in element && isPromiseLike(element._payload);
 }
 // @__NO_SIDE_EFFECTS__
-function createSlot$1(ownerName) {
-  const SlotClone = /* @__PURE__ */ createSlotClone$1(ownerName);
+function createSlot(ownerName) {
+  const SlotClone = /* @__PURE__ */ createSlotClone(ownerName);
   const Slot2 = reactExports.forwardRef((props, forwardedRef) => {
     let { children, ...slotProps } = props;
     if (isLazyComponent(children) && typeof use === "function") {
       children = use(children._payload);
     }
     const childrenArray = reactExports.Children.toArray(children);
-    const slottable = childrenArray.find(isSlottable$1);
+    const slottable = childrenArray.find(isSlottable);
     if (slottable) {
       const newElement = slottable.props.children;
       const newChildren = childrenArray.map((child) => {
@@ -33068,17 +38514,17 @@ function createSlot$1(ownerName) {
   Slot2.displayName = `${ownerName}.Slot`;
   return Slot2;
 }
-var Slot$2 = /* @__PURE__ */ createSlot$1("Slot");
+var Slot$2 = /* @__PURE__ */ createSlot("Slot");
 // @__NO_SIDE_EFFECTS__
-function createSlotClone$1(ownerName) {
+function createSlotClone(ownerName) {
   const SlotClone = reactExports.forwardRef((props, forwardedRef) => {
     let { children, ...slotProps } = props;
     if (isLazyComponent(children) && typeof use === "function") {
       children = use(children._payload);
     }
     if (reactExports.isValidElement(children)) {
-      const childrenRef = getElementRef$2(children);
-      const props2 = mergeProps$1(slotProps, children.props);
+      const childrenRef = getElementRef(children);
+      const props2 = mergeProps(slotProps, children.props);
       if (children.type !== reactExports.Fragment) {
         props2.ref = forwardedRef ? composeRefs(forwardedRef, childrenRef) : childrenRef;
       }
@@ -33089,11 +38535,11 @@ function createSlotClone$1(ownerName) {
   SlotClone.displayName = `${ownerName}.SlotClone`;
   return SlotClone;
 }
-var SLOTTABLE_IDENTIFIER$1 = Symbol("radix.slottable");
-function isSlottable$1(child) {
-  return reactExports.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER$1;
+var SLOTTABLE_IDENTIFIER = Symbol("radix.slottable");
+function isSlottable(child) {
+  return reactExports.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
 }
-function mergeProps$1(slotProps, childProps) {
+function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
   for (const propName in childProps) {
     const slotPropValue = slotProps[propName];
@@ -33117,7 +38563,7 @@ function mergeProps$1(slotProps, childProps) {
   }
   return { ...slotProps, ...overrideProps };
 }
-function getElementRef$2(element) {
+function getElementRef(element) {
   var _a2, _b2;
   let getter = (_a2 = Object.getOwnPropertyDescriptor(element.props, "ref")) == null ? void 0 : _a2.get;
   let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
@@ -33131,6 +38577,46 @@ function getElementRef$2(element) {
   }
   return element.props.ref || element.ref;
 }
+const falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
+const cx = clsx;
+const cva = (base, config) => (props) => {
+  var _config_compoundVariants;
+  if ((config === null || config === void 0 ? void 0 : config.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
+  const { variants, defaultVariants } = config;
+  const getVariantClassNames = Object.keys(variants).map((variant) => {
+    const variantProp = props === null || props === void 0 ? void 0 : props[variant];
+    const defaultVariantProp = defaultVariants === null || defaultVariants === void 0 ? void 0 : defaultVariants[variant];
+    if (variantProp === null) return null;
+    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
+    return variants[variant][variantKey];
+  });
+  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
+    let [key, value] = param;
+    if (value === void 0) {
+      return acc;
+    }
+    acc[key] = value;
+    return acc;
+  }, {});
+  const getCompoundVariantClassNames = config === null || config === void 0 ? void 0 : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
+    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
+    return Object.entries(compoundVariantOptions).every((param2) => {
+      let [key, value] = param2;
+      return Array.isArray(value) ? value.includes({
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key]) : {
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key] === value;
+    }) ? [
+      ...acc,
+      cvClass,
+      cvClassName
+    ] : acc;
+  }, []);
+  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
+};
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
@@ -33174,58 +38660,18 @@ function Button({
     }
   );
 }
-function Card({ className, ...props }) {
+function Input({ className, type, ...props }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
+    "input",
     {
-      "data-slot": "card",
+      type,
+      "data-slot": "input",
       className: cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className
       ),
-      ...props
-    }
-  );
-}
-function CardHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "card-header",
-      className: cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function CardTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "card-title",
-      className: cn("leading-none font-semibold", className),
-      ...props
-    }
-  );
-}
-function CardDescription({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "card-description",
-      className: cn("text-muted-foreground text-sm", className),
-      ...props
-    }
-  );
-}
-function CardContent({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "card-content",
-      className: cn("px-6", className),
       ...props
     }
   );
@@ -33595,5080 +39041,36 @@ function useSaveAdminKeys() {
     }
   });
 }
-const createStoreImpl = (createState) => {
-  let state;
-  const listeners = /* @__PURE__ */ new Set();
-  const setState = (partial, replace) => {
-    const nextState = typeof partial === "function" ? partial(state) : partial;
-    if (!Object.is(nextState, state)) {
-      const previousState = state;
-      state = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state, nextState);
-      listeners.forEach((listener) => listener(state, previousState));
-    }
-  };
-  const getState2 = () => state;
-  const getInitialState = () => initialState;
-  const subscribe2 = (listener) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  };
-  const api = { setState, getState: getState2, getInitialState, subscribe: subscribe2 };
-  const initialState = state = createState(setState, getState2, api);
-  return api;
-};
-const createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
-const identity = (arg) => arg;
-function useStore$1(api, selector = identity) {
-  const slice = React$4.useSyncExternalStore(
-    api.subscribe,
-    React$4.useCallback(() => selector(api.getState()), [api, selector]),
-    React$4.useCallback(() => selector(api.getInitialState()), [api, selector])
-  );
-  React$4.useDebugValue(slice);
-  return slice;
-}
-const createImpl = (createState) => {
-  const api = createStore(createState);
-  const useBoundStore = (selector) => useStore$1(api, selector);
-  Object.assign(useBoundStore, api);
-  return useBoundStore;
-};
-const create = (createState) => createImpl;
-const REF_KEY = "ez_ref";
-function readStoredReferral() {
-  try {
-    return window.localStorage.getItem(REF_KEY);
-  } catch {
-    return null;
-  }
-}
-const useAccountStore = create()((set) => ({
-  account: null,
-  creditBalance: 0,
-  subscriptionActive: false,
-  topUpOpen: false,
-  pendingReferralCode: readStoredReferral(),
-  setAccount: (account) => set({
-    account,
-    creditBalance: account ? Number(account.creditBalance) : 0,
-    subscriptionActive: account ? account.subscriptionActive : false
-  }),
-  setCreditBalance: (balance) => set({ creditBalance: Number(balance) }),
-  setTopUpOpen: (topUpOpen) => set({ topUpOpen }),
-  setPendingReferralCode: (code) => {
-    try {
-      if (code) window.localStorage.setItem(REF_KEY, code);
-      else window.localStorage.removeItem(REF_KEY);
-    } catch {
-    }
-    set({ pendingReferralCode: code });
-  }
-}));
-function useAccountSync() {
-  const {
-    identity: identity2,
-    isAuthenticated,
-    login,
-    clear,
-    isInitializing,
-    isLoggingIn
-  } = useInternetIdentity();
-  const principal = (identity2 == null ? void 0 : identity2.getPrincipal().toString()) ?? null;
-  const accountQuery = useMyAccount(isAuthenticated);
-  const ensureAccount = useEnsureAccount();
-  const setAccount = useAccountStore((s) => s.setAccount);
-  const pendingReferralCode = useAccountStore((s) => s.pendingReferralCode);
-  const setPendingReferralCode = useAccountStore(
-    (s) => s.setPendingReferralCode
-  );
-  const account = useAccountStore((s) => s.account);
-  const creditBalance = useAccountStore((s) => s.creditBalance);
-  const subscriptionActive = useAccountStore((s) => s.subscriptionActive);
-  const ensuredFor = reactExports.useRef(null);
-  reactExports.useEffect(() => {
-    if (!isAuthenticated) {
-      ensuredFor.current = null;
-      setAccount(null);
-    }
-  }, [isAuthenticated, setAccount]);
-  reactExports.useEffect(() => {
-    if (accountQuery.data !== void 0 && isAuthenticated) {
-      setAccount(accountQuery.data);
-    }
-  }, [accountQuery.data, isAuthenticated, setAccount]);
-  reactExports.useEffect(() => {
-    if (!isAuthenticated || !principal) return;
-    if (accountQuery.isLoading) return;
-    if (ensuredFor.current === principal) return;
-    if (accountQuery.data) {
-      ensuredFor.current = principal;
-      return;
-    }
-    ensuredFor.current = principal;
-    ensureAccount.mutateAsync({ referralCode: pendingReferralCode, email: null }).then((result) => {
-      if (result.ok && result.account) {
-        setAccount(result.account);
-        if (pendingReferralCode) setPendingReferralCode(null);
-      }
-    }).catch(() => {
-      ensuredFor.current = null;
-    });
-  }, [
-    isAuthenticated,
-    principal,
-    accountQuery.isLoading,
-    accountQuery.data,
-    ensureAccount,
-    pendingReferralCode,
-    setAccount,
-    setPendingReferralCode
-  ]);
-  return {
-    account,
-    creditBalance,
-    subscriptionActive,
-    isAuthenticated,
-    isInitializing,
-    isLoggingIn,
-    principal,
-    login,
-    logout: clear,
-    refresh: accountQuery.refetch
-  };
-}
-var propTypes = { exports: {} };
-var ReactPropTypesSecret$1 = "SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED";
-var ReactPropTypesSecret_1 = ReactPropTypesSecret$1;
-var ReactPropTypesSecret = ReactPropTypesSecret_1;
-function emptyFunction() {
-}
-function emptyFunctionWithReset() {
-}
-emptyFunctionWithReset.resetWarningCache = emptyFunction;
-var factoryWithThrowingShims = function() {
-  function shim2(props, propName, componentName, location2, propFullName, secret) {
-    if (secret === ReactPropTypesSecret) {
-      return;
-    }
-    var err = new Error(
-      "Calling PropTypes validators directly is not supported by the `prop-types` package. Use PropTypes.checkPropTypes() to call them. Read more at http://fb.me/use-check-prop-types"
-    );
-    err.name = "Invariant Violation";
-    throw err;
-  }
-  shim2.isRequired = shim2;
-  function getShim() {
-    return shim2;
-  }
-  var ReactPropTypes = {
-    array: shim2,
-    bigint: shim2,
-    bool: shim2,
-    func: shim2,
-    number: shim2,
-    object: shim2,
-    string: shim2,
-    symbol: shim2,
-    any: shim2,
-    arrayOf: getShim,
-    element: shim2,
-    elementType: shim2,
-    instanceOf: getShim,
-    node: shim2,
-    objectOf: getShim,
-    oneOf: getShim,
-    oneOfType: getShim,
-    shape: getShim,
-    exact: getShim,
-    checkPropTypes: emptyFunctionWithReset,
-    resetWarningCache: emptyFunction
-  };
-  ReactPropTypes.PropTypes = ReactPropTypes;
-  return ReactPropTypes;
-};
-{
-  propTypes.exports = factoryWithThrowingShims();
-}
-var propTypesExports = propTypes.exports;
-const PropTypes = /* @__PURE__ */ getDefaultExportFromCjs(propTypesExports);
-function _arrayLikeToArray(r2, a2) {
-  (null == a2 || a2 > r2.length) && (a2 = r2.length);
-  for (var e = 0, n = Array(a2); e < a2; e++) n[e] = r2[e];
-  return n;
-}
-function _arrayWithHoles(r2) {
-  if (Array.isArray(r2)) return r2;
-}
-function _defineProperty(e, r2, t) {
-  return (r2 = _toPropertyKey(r2)) in e ? Object.defineProperty(e, r2, {
-    value: t,
-    enumerable: true,
-    configurable: true,
-    writable: true
-  }) : e[r2] = t, e;
-}
-function _iterableToArrayLimit(r2, l2) {
-  var t = null == r2 ? null : "undefined" != typeof Symbol && r2[Symbol.iterator] || r2["@@iterator"];
-  if (null != t) {
-    var e, n, i, u2, a2 = [], f2 = true, o = false;
-    try {
-      if (i = (t = t.call(r2)).next, 0 === l2) ;
-      else for (; !(f2 = (e = i.call(t)).done) && (a2.push(e.value), a2.length !== l2); f2 = true) ;
-    } catch (r3) {
-      o = true, n = r3;
-    } finally {
-      try {
-        if (!f2 && null != t.return && (u2 = t.return(), Object(u2) !== u2)) return;
-      } finally {
-        if (o) throw n;
-      }
-    }
-    return a2;
-  }
-}
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-function ownKeys(e, r2) {
-  var t = Object.keys(e);
-  if (Object.getOwnPropertySymbols) {
-    var o = Object.getOwnPropertySymbols(e);
-    r2 && (o = o.filter(function(r3) {
-      return Object.getOwnPropertyDescriptor(e, r3).enumerable;
-    })), t.push.apply(t, o);
-  }
-  return t;
-}
-function _objectSpread2(e) {
-  for (var r2 = 1; r2 < arguments.length; r2++) {
-    var t = null != arguments[r2] ? arguments[r2] : {};
-    r2 % 2 ? ownKeys(Object(t), true).forEach(function(r3) {
-      _defineProperty(e, r3, t[r3]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r3) {
-      Object.defineProperty(e, r3, Object.getOwnPropertyDescriptor(t, r3));
-    });
-  }
-  return e;
-}
-function _objectWithoutProperties(e, t) {
-  if (null == e) return {};
-  var o, r2, i = _objectWithoutPropertiesLoose(e, t);
-  if (Object.getOwnPropertySymbols) {
-    var n = Object.getOwnPropertySymbols(e);
-    for (r2 = 0; r2 < n.length; r2++) o = n[r2], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
-  }
-  return i;
-}
-function _objectWithoutPropertiesLoose(r2, e) {
-  if (null == r2) return {};
-  var t = {};
-  for (var n in r2) if ({}.hasOwnProperty.call(r2, n)) {
-    if (-1 !== e.indexOf(n)) continue;
-    t[n] = r2[n];
-  }
-  return t;
-}
-function _slicedToArray(r2, e) {
-  return _arrayWithHoles(r2) || _iterableToArrayLimit(r2, e) || _unsupportedIterableToArray(r2, e) || _nonIterableRest();
-}
-function _toPrimitive(t, r2) {
-  if ("object" != typeof t || !t) return t;
-  var e = t[Symbol.toPrimitive];
-  if (void 0 !== e) {
-    var i = e.call(t, r2);
-    if ("object" != typeof i) return i;
-    throw new TypeError("@@toPrimitive must return a primitive value.");
-  }
-  return ("string" === r2 ? String : Number)(t);
-}
-function _toPropertyKey(t) {
-  var i = _toPrimitive(t, "string");
-  return "symbol" == typeof i ? i : i + "";
-}
-function _typeof$1(o) {
-  "@babel/helpers - typeof";
-  return _typeof$1 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-    return typeof o2;
-  } : function(o2) {
-    return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-  }, _typeof$1(o);
-}
-function _unsupportedIterableToArray(r2, a2) {
-  if (r2) {
-    if ("string" == typeof r2) return _arrayLikeToArray(r2, a2);
-    var t = {}.toString.call(r2).slice(8, -1);
-    return "Object" === t && r2.constructor && (t = r2.constructor.name), "Map" === t || "Set" === t ? Array.from(r2) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r2, a2) : void 0;
-  }
-}
-var useAttachEvent = function useAttachEvent2(element, event, cb) {
-  var cbDefined = !!cb;
-  var cbRef = React$4.useRef(cb);
-  React$4.useEffect(function() {
-    cbRef.current = cb;
-  }, [cb]);
-  React$4.useEffect(function() {
-    if (!cbDefined || !element) {
-      return function() {
-      };
-    }
-    var decoratedCb = function decoratedCb2() {
-      if (cbRef.current) {
-        return cbRef.current.apply(cbRef, arguments);
-      }
-      return void 0;
-    };
-    element.on(event, decoratedCb);
-    return function() {
-      element.off(event, decoratedCb);
-    };
-  }, [cbDefined, event, element, cbRef]);
-};
-var usePrevious$2 = function usePrevious(value) {
-  var ref = React$4.useRef(value);
-  React$4.useEffect(function() {
-    ref.current = value;
-  }, [value]);
-  return ref.current;
-};
-var isUnknownObject = function isUnknownObject2(raw) {
-  return raw !== null && _typeof$1(raw) === "object";
-};
-var isPromise$1 = function isPromise(raw) {
-  return isUnknownObject(raw) && typeof raw.then === "function";
-};
-var isStripe = function isStripe2(raw) {
-  return isUnknownObject(raw) && typeof raw.elements === "function" && typeof raw.createToken === "function" && typeof raw.createPaymentMethod === "function" && typeof raw.confirmCardPayment === "function";
-};
-var PLAIN_OBJECT_STR = "[object Object]";
-var isEqual = function isEqual2(left, right) {
-  if (!isUnknownObject(left) || !isUnknownObject(right)) {
-    return left === right;
-  }
-  var leftArray = Array.isArray(left);
-  var rightArray = Array.isArray(right);
-  if (leftArray !== rightArray) return false;
-  var leftPlainObject = Object.prototype.toString.call(left) === PLAIN_OBJECT_STR;
-  var rightPlainObject = Object.prototype.toString.call(right) === PLAIN_OBJECT_STR;
-  if (leftPlainObject !== rightPlainObject) return false;
-  if (!leftPlainObject && !leftArray) return left === right;
-  var leftKeys = Object.keys(left);
-  var rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
-  var keySet = {};
-  for (var i = 0; i < leftKeys.length; i += 1) {
-    keySet[leftKeys[i]] = true;
-  }
-  for (var _i2 = 0; _i2 < rightKeys.length; _i2 += 1) {
-    keySet[rightKeys[_i2]] = true;
-  }
-  var allKeys = Object.keys(keySet);
-  if (allKeys.length !== leftKeys.length) {
-    return false;
-  }
-  var l2 = left;
-  var r2 = right;
-  var pred = function pred2(key) {
-    return isEqual2(l2[key], r2[key]);
-  };
-  return allKeys.every(pred);
-};
-var extractAllowedOptionsUpdates = function extractAllowedOptionsUpdates2(options, prevOptions, immutableKeys) {
-  if (!isUnknownObject(options)) {
-    return null;
-  }
-  return Object.keys(options).reduce(function(newOptions, key) {
-    var isUpdated = !isUnknownObject(prevOptions) || !isEqual(options[key], prevOptions[key]);
-    if (immutableKeys.includes(key)) {
-      if (isUpdated) {
-        console.warn("Unsupported prop change: options.".concat(key, " is not a mutable property."));
-      }
-      return newOptions;
-    }
-    if (!isUpdated) {
-      return newOptions;
-    }
-    return _objectSpread2(_objectSpread2({}, newOptions || {}), {}, _defineProperty({}, key, options[key]));
-  }, null);
-};
-var INVALID_STRIPE_ERROR$1 = "Invalid prop `stripe` supplied to `Elements`. We recommend using the `loadStripe` utility from `@stripe/stripe-js`. See https://stripe.com/docs/stripe-js/react#elements-props-stripe for details.";
-var validateStripe = function validateStripe2(maybeStripe) {
-  var errorMsg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : INVALID_STRIPE_ERROR$1;
-  if (maybeStripe === null || isStripe(maybeStripe)) {
-    return maybeStripe;
-  }
-  throw new Error(errorMsg);
-};
-var parseStripeProp = function parseStripeProp2(raw) {
-  var errorMsg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : INVALID_STRIPE_ERROR$1;
-  if (isPromise$1(raw)) {
-    return {
-      tag: "async",
-      stripePromise: Promise.resolve(raw).then(function(result) {
-        return validateStripe(result, errorMsg);
-      })
-    };
-  }
-  var stripe = validateStripe(raw, errorMsg);
-  if (stripe === null) {
-    return {
-      tag: "empty"
-    };
-  }
-  return {
-    tag: "sync",
-    stripe
-  };
-};
-var registerWithStripeJs = function registerWithStripeJs2(stripe) {
-  if (!stripe || !stripe._registerWrapper || !stripe.registerAppInfo) {
-    return;
-  }
-  stripe._registerWrapper({
-    name: "react-stripe-js",
-    version: "6.10.0"
-  });
-  stripe.registerAppInfo({
-    name: "react-stripe-js",
-    version: "6.10.0",
-    url: "https://stripe.com/docs/stripe-js/react"
-  });
-};
-var ElementsContext = /* @__PURE__ */ React$4.createContext(null);
-ElementsContext.displayName = "ElementsContext";
-var parseElementsContext = function parseElementsContext2(ctx, useCase) {
-  if (!ctx) {
-    throw new Error("Could not find Elements context; You need to wrap the part of your app that ".concat(useCase, " in an <Elements> provider."));
-  }
-  return ctx;
-};
-var Elements = function Elements2(_ref) {
-  var rawStripeProp = _ref.stripe, options = _ref.options, children = _ref.children;
-  var parsed = React$4.useMemo(function() {
-    return parseStripeProp(rawStripeProp);
-  }, [rawStripeProp]);
-  var _React$useState = React$4.useState(function() {
-    return {
-      stripe: parsed.tag === "sync" ? parsed.stripe : null,
-      elements: parsed.tag === "sync" ? parsed.stripe.elements(options) : null
-    };
-  }), _React$useState2 = _slicedToArray(_React$useState, 2), ctx = _React$useState2[0], setContext = _React$useState2[1];
-  React$4.useEffect(function() {
-    var isMounted = true;
-    var safeSetContext = function safeSetContext2(stripe) {
-      setContext(function(ctx2) {
-        if (ctx2.stripe) return ctx2;
-        return {
-          stripe,
-          elements: stripe.elements(options)
-        };
-      });
-    };
-    if (parsed.tag === "async" && !ctx.stripe) {
-      parsed.stripePromise.then(function(stripe) {
-        if (stripe && isMounted) {
-          safeSetContext(stripe);
-        }
-      });
-    } else if (parsed.tag === "sync" && !ctx.stripe) {
-      safeSetContext(parsed.stripe);
-    }
-    return function() {
-      isMounted = false;
-    };
-  }, [parsed, ctx, options]);
-  var prevStripe = usePrevious$2(rawStripeProp);
-  React$4.useEffect(function() {
-    if (prevStripe !== null && prevStripe !== rawStripeProp) {
-      console.warn("Unsupported prop change on Elements: You cannot change the `stripe` prop after setting it.");
-    }
-  }, [prevStripe, rawStripeProp]);
-  var prevOptions = usePrevious$2(options);
-  React$4.useEffect(function() {
-    if (!ctx.elements) {
-      return;
-    }
-    var updates = extractAllowedOptionsUpdates(options, prevOptions, ["clientSecret", "fonts"]);
-    if (updates) {
-      ctx.elements.update(updates);
-    }
-  }, [options, prevOptions, ctx.elements]);
-  React$4.useEffect(function() {
-    registerWithStripeJs(ctx.stripe);
-  }, [ctx.stripe]);
-  return /* @__PURE__ */ React$4.createElement(ElementsContext.Provider, {
-    value: ctx
-  }, children);
-};
-Elements.propTypes = {
-  stripe: PropTypes.any,
-  options: PropTypes.object
-};
-var useElementsContextWithUseCase = function useElementsContextWithUseCase2(useCaseMessage) {
-  var ctx = React$4.useContext(ElementsContext);
-  return parseElementsContext(ctx, useCaseMessage);
-};
-var useElements = function useElements2() {
-  var _useElementsContextWi = useElementsContextWithUseCase("calls useElements()"), elements = _useElementsContextWi.elements;
-  return elements;
-};
-({
-  children: PropTypes.func.isRequired
-});
-var CheckoutContext = /* @__PURE__ */ React$4.createContext(null);
-CheckoutContext.displayName = "CheckoutContext";
-var useElementsOrCheckoutContextWithUseCase = function useElementsOrCheckoutContextWithUseCase2(useCaseString) {
-  var checkout = React$4.useContext(CheckoutContext);
-  var elements = React$4.useContext(ElementsContext);
-  if (checkout) {
-    if (elements) {
-      throw new Error("You cannot wrap the part of your app that ".concat(useCaseString, " in both a checkout provider and <Elements> provider."));
-    } else {
-      return checkout;
-    }
-  } else {
-    return parseElementsContext(elements, useCaseString);
-  }
-};
-var _excluded = ["mode"];
-var capitalized = function capitalized2(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-var createElementComponent = function createElementComponent2(type, isServer2, customDisplayName) {
-  var displayName = "".concat(capitalized(type), "Element");
-  var ClientElement = function ClientElement2(_ref) {
-    var id = _ref.id, className = _ref.className, _ref$options = _ref.options, options = _ref$options === void 0 ? {} : _ref$options, onBlur = _ref.onBlur, onFocus = _ref.onFocus, onReady = _ref.onReady, onChange = _ref.onChange, onEscape = _ref.onEscape, onClick = _ref.onClick, onLoadError = _ref.onLoadError, onLoaderStart = _ref.onLoaderStart, onNetworksChange = _ref.onNetworksChange, onConfirm = _ref.onConfirm, onCancel = _ref.onCancel, onShippingAddressChange = _ref.onShippingAddressChange, onShippingRateChange = _ref.onShippingRateChange, onSavedPaymentMethodRemove = _ref.onSavedPaymentMethodRemove, onSavedPaymentMethodUpdate = _ref.onSavedPaymentMethodUpdate, onAvailablePaymentMethodsChange = _ref.onAvailablePaymentMethodsChange;
-    var ctx = useElementsOrCheckoutContextWithUseCase("mounts <".concat(displayName, ">"));
-    var elements = "elements" in ctx ? ctx.elements : null;
-    var checkoutState = "checkoutState" in ctx ? ctx.checkoutState : null;
-    var checkoutSdk = (checkoutState === null || checkoutState === void 0 ? void 0 : checkoutState.type) === "success" || (checkoutState === null || checkoutState === void 0 ? void 0 : checkoutState.type) === "loading" ? checkoutState.sdk : null;
-    var _React$useState = React$4.useState(null), _React$useState2 = _slicedToArray(_React$useState, 2), element = _React$useState2[0], setElement = _React$useState2[1];
-    var elementRef = React$4.useRef(null);
-    var domNode = React$4.useRef(null);
-    useAttachEvent(element, "blur", onBlur);
-    useAttachEvent(element, "focus", onFocus);
-    useAttachEvent(element, "escape", onEscape);
-    useAttachEvent(element, "click", onClick);
-    useAttachEvent(element, "loaderror", onLoadError);
-    useAttachEvent(element, "loaderstart", onLoaderStart);
-    useAttachEvent(element, "networkschange", onNetworksChange);
-    useAttachEvent(element, "confirm", onConfirm);
-    useAttachEvent(element, "cancel", onCancel);
-    useAttachEvent(element, "shippingaddresschange", onShippingAddressChange);
-    useAttachEvent(element, "shippingratechange", onShippingRateChange);
-    useAttachEvent(element, "savedpaymentmethodremove", onSavedPaymentMethodRemove);
-    useAttachEvent(element, "savedpaymentmethodupdate", onSavedPaymentMethodUpdate);
-    useAttachEvent(element, "availablepaymentmethodschange", onAvailablePaymentMethodsChange);
-    useAttachEvent(element, "change", onChange);
-    var readyCallback;
-    if (onReady) {
-      if (type === "expressCheckout") {
-        readyCallback = onReady;
-      } else {
-        readyCallback = function readyCallback2() {
-          onReady(element);
-        };
-      }
-    }
-    useAttachEvent(element, "ready", readyCallback);
-    React$4.useLayoutEffect(function() {
-      if (elementRef.current === null && domNode.current !== null && (elements || checkoutSdk)) {
-        var newElement = null;
-        if (checkoutSdk) {
-          var elementsSdk = checkoutSdk;
-          var formSdk = checkoutSdk;
-          switch (type) {
-            case "paymentForm":
-              newElement = formSdk.createForm(options);
-              break;
-            case "payment":
-              newElement = elementsSdk.createPaymentElement(options);
-              break;
-            case "address":
-              if ("mode" in options) {
-                var mode2 = options.mode, restOptions = _objectWithoutProperties(options, _excluded);
-                if (mode2 === "shipping") {
-                  newElement = elementsSdk.createShippingAddressElement(restOptions);
-                } else if (mode2 === "billing") {
-                  newElement = elementsSdk.createBillingAddressElement(restOptions);
-                } else {
-                  throw new Error("Invalid options.mode. mode must be 'billing' or 'shipping'.");
-                }
-              } else {
-                throw new Error("You must supply options.mode. mode must be 'billing' or 'shipping'.");
-              }
-              break;
-            case "expressCheckout":
-              newElement = elementsSdk.createExpressCheckoutElement(options);
-              break;
-            case "currencySelector":
-              newElement = checkoutSdk.createCurrencySelectorElement();
-              break;
-            case "taxId":
-              newElement = elementsSdk.createTaxIdElement(options);
-              break;
-            case "contactDetails":
-              newElement = elementsSdk.createContactDetailsElement();
-              break;
-            case "linkSignup":
-              if ("createLinkSignupElement" in checkoutSdk) {
-                newElement = checkoutSdk.createLinkSignupElement(options);
-              } else {
-                throw new Error("<LinkSignupElement> requires <CheckoutElementsProvider> and is not supported inside <CheckoutFormProvider>.");
-              }
-              break;
-            case "terms":
-              newElement = elementsSdk.createTermsElement(options);
-              break;
-            default:
-              throw new Error("<".concat(displayName, "> is not supported inside a checkout provider. Use an <Elements> provider instead."));
-          }
-        } else if (elements) {
-          newElement = elements.create(type, options);
-        }
-        elementRef.current = newElement;
-        setElement(newElement);
-        if (newElement) {
-          newElement.mount(domNode.current);
-        }
-      }
-    }, [elements, checkoutSdk, options]);
-    var prevOptions = usePrevious$2(options);
-    React$4.useEffect(function() {
-      if (!elementRef.current) {
-        return;
-      }
-      var updates = extractAllowedOptionsUpdates(options, prevOptions, ["paymentRequest"]);
-      if (updates && "update" in elementRef.current) {
-        elementRef.current.update(updates);
-      }
-    }, [options, prevOptions]);
-    React$4.useLayoutEffect(function() {
-      return function() {
-        if (elementRef.current && typeof elementRef.current.destroy === "function") {
-          try {
-            elementRef.current.destroy();
-            elementRef.current = null;
-          } catch (error) {
-          }
-        }
-      };
-    }, []);
-    return /* @__PURE__ */ React$4.createElement("div", {
-      id,
-      className,
-      ref: domNode
-    });
-  };
-  var ServerElement = function ServerElement2(props) {
-    useElementsOrCheckoutContextWithUseCase("mounts <".concat(displayName, ">"));
-    var id = props.id, className = props.className;
-    return /* @__PURE__ */ React$4.createElement("div", {
-      id,
-      className
-    });
-  };
-  var Element2 = isServer2 ? ServerElement : ClientElement;
-  Element2.propTypes = {
-    id: PropTypes.string,
-    className: PropTypes.string,
-    onChange: PropTypes.func,
-    onBlur: PropTypes.func,
-    onFocus: PropTypes.func,
-    onReady: PropTypes.func,
-    onEscape: PropTypes.func,
-    onClick: PropTypes.func,
-    onLoadError: PropTypes.func,
-    onLoaderStart: PropTypes.func,
-    onNetworksChange: PropTypes.func,
-    onConfirm: PropTypes.func,
-    onCancel: PropTypes.func,
-    onShippingAddressChange: PropTypes.func,
-    onShippingRateChange: PropTypes.func,
-    onSavedPaymentMethodRemove: PropTypes.func,
-    onSavedPaymentMethodUpdate: PropTypes.func,
-    onAvailablePaymentMethodsChange: PropTypes.func,
-    options: PropTypes.object
-  };
-  Element2.displayName = displayName;
-  Element2.__elementType = type;
-  return Element2;
-};
-var isServer = typeof window === "undefined";
-var EmbeddedCheckoutContext = /* @__PURE__ */ React$4.createContext(null);
-EmbeddedCheckoutContext.displayName = "EmbeddedCheckoutProviderContext";
-var useStripe = function useStripe2() {
-  var _useElementsOrCheckou = useElementsOrCheckoutContextWithUseCase("calls useStripe()"), stripe = _useElementsOrCheckou.stripe;
-  return stripe;
-};
-createElementComponent("auBankAccount", isServer);
-createElementComponent("card", isServer);
-createElementComponent("cardNumber", isServer);
-createElementComponent("cardExpiry", isServer);
-createElementComponent("cardCvc", isServer);
-createElementComponent("currencySelector", isServer);
-createElementComponent("iban", isServer);
-var PaymentElement = createElementComponent("payment", isServer);
-createElementComponent("expressCheckout", isServer);
-createElementComponent("paymentRequestButton", isServer);
-createElementComponent("linkAuthentication", isServer);
-createElementComponent("linkSignup", isServer);
-createElementComponent("contactDetails", isServer);
-createElementComponent("address", isServer);
-createElementComponent("shippingAddress", isServer);
-createElementComponent("paymentMethodMessaging", isServer);
-createElementComponent("taxId", isServer);
-createElementComponent("issuingCardNumberDisplay", isServer);
-createElementComponent("issuingCardCvcDisplay", isServer);
-createElementComponent("issuingCardExpiryDisplay", isServer);
-createElementComponent("issuingCardPinDisplay", isServer);
-createElementComponent("issuingCardCopyButton", isServer);
-createElementComponent("terms", isServer);
-function _typeof(obj) {
-  "@babel/helpers - typeof";
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    _typeof = function(obj2) {
-      return typeof obj2;
-    };
-  } else {
-    _typeof = function(obj2) {
-      return obj2 && typeof Symbol === "function" && obj2.constructor === Symbol && obj2 !== Symbol.prototype ? "symbol" : typeof obj2;
-    };
-  }
-  return _typeof(obj);
-}
-var RELEASE_TRAIN = "dahlia";
-var runtimeVersionToUrlVersion = function runtimeVersionToUrlVersion2(version2) {
-  return version2 === 3 ? "v3" : version2;
-};
-var ORIGIN = "https://js.stripe.com";
-var STRIPE_JS_URL = "".concat(ORIGIN, "/").concat(RELEASE_TRAIN, "/stripe.js");
-var V3_URL_REGEX = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;
-var STRIPE_JS_URL_REGEX = /^https:\/\/js\.stripe\.com\/(v3|[a-z]+)\/stripe\.js(\?.*)?$/;
-var EXISTING_SCRIPT_MESSAGE = "loadStripe.setLoadParameters was called but an existing Stripe.js script already exists in the document; existing script parameters will be used";
-var isStripeJSURL = function isStripeJSURL2(url) {
-  return V3_URL_REGEX.test(url) || STRIPE_JS_URL_REGEX.test(url);
-};
-var findScript = function findScript2() {
-  var scripts = document.querySelectorAll('script[src^="'.concat(ORIGIN, '"]'));
-  for (var i = 0; i < scripts.length; i++) {
-    var script = scripts[i];
-    if (!isStripeJSURL(script.src)) {
-      continue;
-    }
-    return script;
-  }
-  return null;
-};
-var injectScript = function injectScript2(params) {
-  var queryString = "";
-  var script = document.createElement("script");
-  script.src = "".concat(STRIPE_JS_URL).concat(queryString);
-  var headOrBody = document.head || document.body;
-  if (!headOrBody) {
-    throw new Error("Expected document.body not to be null. Stripe.js requires a <body> element.");
-  }
-  headOrBody.appendChild(script);
-  return script;
-};
-var registerWrapper = function registerWrapper2(stripe, startTime) {
-  if (!stripe || !stripe._registerWrapper) {
-    return;
-  }
-  stripe._registerWrapper({
-    name: "stripe-js",
-    version: "9.16.0",
-    startTime
-  });
-};
-var stripePromise$1 = null;
-var onErrorListener = null;
-var onLoadListener = null;
-var onError = function onError2(reject) {
-  return function(cause) {
-    reject(new Error("Failed to load Stripe.js", {
-      cause
-    }));
-  };
-};
-var onLoad = function onLoad2(resolve2, reject) {
-  return function() {
-    if (window.Stripe) {
-      resolve2(window.Stripe);
-    } else {
-      reject(new Error("Stripe.js not available"));
-    }
-  };
-};
-var loadScript = function loadScript2(params) {
-  if (stripePromise$1 !== null) {
-    return stripePromise$1;
-  }
-  stripePromise$1 = new Promise(function(resolve2, reject) {
-    if (typeof window === "undefined" || typeof document === "undefined") {
-      resolve2(null);
-      return;
-    }
-    if (window.Stripe) {
-      resolve2(window.Stripe);
-      return;
-    }
-    try {
-      var script = findScript();
-      if (script && params) ;
-      else if (!script) {
-        script = injectScript(params);
-      } else if (script && onLoadListener !== null && onErrorListener !== null) {
-        var _script$parentNode;
-        script.removeEventListener("load", onLoadListener);
-        script.removeEventListener("error", onErrorListener);
-        (_script$parentNode = script.parentNode) === null || _script$parentNode === void 0 ? void 0 : _script$parentNode.removeChild(script);
-        script = injectScript(params);
-      }
-      onLoadListener = onLoad(resolve2, reject);
-      onErrorListener = onError(reject);
-      script.addEventListener("load", onLoadListener);
-      script.addEventListener("error", onErrorListener);
-    } catch (error) {
-      reject(error);
-      return;
+function useAskStampy() {
+  const { actor } = useBackendActor();
+  return useMutation({
+    mutationFn: async (turns) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.askStampy(turns);
     }
   });
-  return stripePromise$1["catch"](function(error) {
-    stripePromise$1 = null;
-    return Promise.reject(error);
-  });
-};
-var initStripe = function initStripe2(maybeStripe, args, startTime) {
-  if (maybeStripe === null) {
-    return null;
-  }
-  var pk = args[0];
-  if (typeof pk !== "string") {
-    throw new Error("Expected publishable key to be of type string, got type ".concat(_typeof(pk), " instead."));
-  }
-  var isTestKey = pk.match(/^pk_test/);
-  var version2 = runtimeVersionToUrlVersion(maybeStripe.version);
-  var expectedVersion = RELEASE_TRAIN;
-  if (isTestKey && version2 !== expectedVersion) {
-    console.warn("Stripe.js@".concat(version2, " was loaded on the page, but @stripe/stripe-js@").concat("9.16.0", " expected Stripe.js@").concat(expectedVersion, ". This may result in unexpected behavior. For more information, see https://docs.stripe.com/sdks/stripejs-versioning"));
-  }
-  var stripe = maybeStripe.apply(void 0, args);
-  registerWrapper(stripe, startTime);
-  return stripe;
-};
-var stripePromise;
-var loadCalled = false;
-var getStripePromise = function getStripePromise2() {
-  if (stripePromise) {
-    return stripePromise;
-  }
-  stripePromise = loadScript(null)["catch"](function(error) {
-    stripePromise = null;
-    return Promise.reject(error);
-  });
-  return stripePromise;
-};
-Promise.resolve().then(function() {
-  return getStripePromise();
-})["catch"](function(error) {
-  if (!loadCalled) {
-    console.warn(error);
-  }
-});
-var loadStripe = function loadStripe2() {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
-  }
-  loadCalled = true;
-  var startTime = Date.now();
-  return getStripePromise().then(function(maybeStripe) {
-    return initStripe(maybeStripe, args, startTime);
-  });
-};
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-const toCamelCase = (string) => string.replace(
-  /^([A-Z])|[\s-_]+(\w)/g,
-  (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase()
-);
-const toPascalCase = (string) => {
-  const camelCase = toCamelCase(string);
-  return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
-};
-const mergeClasses = (...classes) => classes.filter((className, index2, array) => {
-  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index2;
-}).join(" ").trim();
-const hasA11yProp = (props) => {
-  for (const prop in props) {
-    if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
-      return true;
-    }
-  }
-};
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-var defaultAttributes = {
-  xmlns: "http://www.w3.org/2000/svg",
-  width: 24,
-  height: 24,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round",
-  strokeLinejoin: "round"
-};
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const Icon$1 = reactExports.forwardRef(
-  ({
-    color = "currentColor",
-    size: size2 = 24,
-    strokeWidth = 2,
-    absoluteStrokeWidth,
-    className = "",
-    children,
-    iconNode,
-    ...rest
-  }, ref) => reactExports.createElement(
-    "svg",
-    {
-      ref,
-      ...defaultAttributes,
-      width: size2,
-      height: size2,
-      stroke: color,
-      strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size2) : strokeWidth,
-      className: mergeClasses("lucide", className),
-      ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
-      ...rest
+}
+function useSubmitSupportTicket() {
+  const queryClient2 = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation({
+    mutationFn: async (input) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.submitSupportTicket(input);
     },
-    [
-      ...iconNode.map(([tag, attrs]) => reactExports.createElement(tag, attrs)),
-      ...Array.isArray(children) ? children : [children]
-    ]
-  )
-);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const createLucideIcon = (iconName, iconNode) => {
-  const Component2 = reactExports.forwardRef(
-    ({ className, ...props }, ref) => reactExports.createElement(Icon$1, {
-      ref,
-      iconNode,
-      className: mergeClasses(
-        `lucide-${toKebabCase(toPascalCase(iconName))}`,
-        `lucide-${iconName}`,
-        className
-      ),
-      ...props
-    })
-  );
-  Component2.displayName = toPascalCase(iconName);
-  return Component2;
-};
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1O = [
-  ["path", { d: "M2 12h20", key: "9i4pu4" }],
-  ["path", { d: "M10 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4", key: "11f1s0" }],
-  ["path", { d: "M10 8V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4", key: "t14dx9" }],
-  ["path", { d: "M20 16v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1", key: "1w07xs" }],
-  ["path", { d: "M14 8V7c0-1.1.9-2 2-2h2a2 2 0 0 1 2 2v1", key: "1apec2" }]
-];
-const AlignCenterHorizontal = createLucideIcon("align-center-horizontal", __iconNode$1O);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1N = [
-  ["path", { d: "M12 2v20", key: "t6zp3m" }],
-  ["path", { d: "M8 10H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h4", key: "14d6g8" }],
-  ["path", { d: "M16 10h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4", key: "1e2lrw" }],
-  ["path", { d: "M8 20H7a2 2 0 0 1-2-2v-2c0-1.1.9-2 2-2h1", key: "1fkdwx" }],
-  ["path", { d: "M16 14h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1", key: "1euafb" }]
-];
-const AlignCenterVertical = createLucideIcon("align-center-vertical", __iconNode$1N);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1M = [
-  ["path", { d: "M17 12H7", key: "16if0g" }],
-  ["path", { d: "M19 18H5", key: "18s9l3" }],
-  ["path", { d: "M21 6H3", key: "1jwq7v" }]
-];
-const AlignCenter = createLucideIcon("align-center", __iconNode$1M);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1L = [
-  ["rect", { width: "16", height: "6", x: "2", y: "4", rx: "2", key: "10wcwx" }],
-  ["rect", { width: "9", height: "6", x: "9", y: "14", rx: "2", key: "4p5bwg" }],
-  ["path", { d: "M22 22V2", key: "12ipfv" }]
-];
-const AlignEndVertical = createLucideIcon("align-end-vertical", __iconNode$1L);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1K = [
-  ["rect", { width: "6", height: "16", x: "4", y: "2", rx: "2", key: "z5wdxg" }],
-  ["rect", { width: "6", height: "9", x: "14", y: "9", rx: "2", key: "um7a8w" }],
-  ["path", { d: "M22 22H2", key: "19qnx5" }]
-];
-const AlignEndHorizontal = createLucideIcon("align-end-horizontal", __iconNode$1K);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1J = [
-  ["path", { d: "M15 12H3", key: "6jk70r" }],
-  ["path", { d: "M17 18H3", key: "1amg6g" }],
-  ["path", { d: "M21 6H3", key: "1jwq7v" }]
-];
-const AlignLeft = createLucideIcon("align-left", __iconNode$1J);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1I = [
-  ["path", { d: "M21 12H9", key: "dn1m92" }],
-  ["path", { d: "M21 18H7", key: "1ygte8" }],
-  ["path", { d: "M21 6H3", key: "1jwq7v" }]
-];
-const AlignRight = createLucideIcon("align-right", __iconNode$1I);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1H = [
-  ["rect", { width: "6", height: "16", x: "4", y: "6", rx: "2", key: "1n4dg1" }],
-  ["rect", { width: "6", height: "9", x: "14", y: "6", rx: "2", key: "17khns" }],
-  ["path", { d: "M22 2H2", key: "fhrpnj" }]
-];
-const AlignStartHorizontal = createLucideIcon("align-start-horizontal", __iconNode$1H);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1G = [
-  ["rect", { width: "9", height: "6", x: "6", y: "14", rx: "2", key: "lpm2y7" }],
-  ["rect", { width: "16", height: "6", x: "6", y: "4", rx: "2", key: "rdj6ps" }],
-  ["path", { d: "M2 2v20", key: "1ivd8o" }]
-];
-const AlignStartVertical = createLucideIcon("align-start-vertical", __iconNode$1G);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1F = [
-  ["path", { d: "M12 17V3", key: "1cwfxf" }],
-  ["path", { d: "m6 11 6 6 6-6", key: "12ii2o" }],
-  ["path", { d: "M19 21H5", key: "150jfl" }]
-];
-const ArrowDownToLine = createLucideIcon("arrow-down-to-line", __iconNode$1F);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1E = [
-  ["path", { d: "M12 5v14", key: "s699le" }],
-  ["path", { d: "m19 12-7 7-7-7", key: "1idqje" }]
-];
-const ArrowDown = createLucideIcon("arrow-down", __iconNode$1E);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1D = [
-  ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
-  ["path", { d: "M19 12H5", key: "x3x0zl" }]
-];
-const ArrowLeft = createLucideIcon("arrow-left", __iconNode$1D);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1C = [
-  ["path", { d: "M5 12h14", key: "1ays0h" }],
-  ["path", { d: "m12 5 7 7-7 7", key: "xquz4c" }]
-];
-const ArrowRight = createLucideIcon("arrow-right", __iconNode$1C);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1B = [
-  ["path", { d: "M5 3h14", key: "7usisc" }],
-  ["path", { d: "m18 13-6-6-6 6", key: "1kf1n9" }],
-  ["path", { d: "M12 7v14", key: "1akyts" }]
-];
-const ArrowUpToLine = createLucideIcon("arrow-up-to-line", __iconNode$1B);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1A = [
-  ["path", { d: "m5 12 7-7 7 7", key: "hav0vg" }],
-  ["path", { d: "M12 19V5", key: "x0mq9r" }]
-];
-const ArrowUp = createLucideIcon("arrow-up", __iconNode$1A);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1z = [
-  [
-    "path",
-    {
-      d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z",
-      key: "3c2336"
-    }
-  ],
-  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
-];
-const BadgeCheck = createLucideIcon("badge-check", __iconNode$1z);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1y = [
-  ["path", { d: "M3 5v14", key: "1nt18q" }],
-  ["path", { d: "M8 5v14", key: "1ybrkv" }],
-  ["path", { d: "M12 5v14", key: "s699le" }],
-  ["path", { d: "M17 5v14", key: "ycjyhj" }],
-  ["path", { d: "M21 5v14", key: "nzette" }]
-];
-const Barcode = createLucideIcon("barcode", __iconNode$1y);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1x = [
-  ["path", { d: "m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z", key: "1fy3hk" }],
-  ["line", { x1: "12", x2: "12", y1: "7", y2: "13", key: "1cppfj" }],
-  ["line", { x1: "15", x2: "9", y1: "10", y2: "10", key: "1gty7f" }]
-];
-const BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode$1x);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1w = [
-  ["path", { d: "m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z", key: "1fy3hk" }]
-];
-const Bookmark = createLucideIcon("bookmark", __iconNode$1w);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1v = [
-  ["rect", { width: "16", height: "20", x: "4", y: "2", rx: "2", key: "1nb95v" }],
-  ["line", { x1: "8", x2: "16", y1: "6", y2: "6", key: "x4nwl0" }],
-  ["line", { x1: "16", x2: "16", y1: "14", y2: "18", key: "wjye3r" }],
-  ["path", { d: "M16 10h.01", key: "1m94wz" }],
-  ["path", { d: "M12 10h.01", key: "1nrarc" }],
-  ["path", { d: "M8 10h.01", key: "19clt8" }],
-  ["path", { d: "M12 14h.01", key: "1etili" }],
-  ["path", { d: "M8 14h.01", key: "6423bh" }],
-  ["path", { d: "M12 18h.01", key: "mhygvu" }],
-  ["path", { d: "M8 18h.01", key: "lrp35t" }]
-];
-const Calculator = createLucideIcon("calculator", __iconNode$1v);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1u = [
-  ["path", { d: "M8 2v4", key: "1cmpym" }],
-  ["path", { d: "M16 2v4", key: "4m81vk" }],
-  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
-  ["path", { d: "M3 10h18", key: "8toen8" }],
-  ["path", { d: "m9 16 2 2 4-4", key: "19s6y9" }]
-];
-const CalendarCheck = createLucideIcon("calendar-check", __iconNode$1u);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1t = [
-  ["path", { d: "M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5", key: "1osxxc" }],
-  ["path", { d: "M16 2v4", key: "4m81vk" }],
-  ["path", { d: "M8 2v4", key: "1cmpym" }],
-  ["path", { d: "M3 10h5", key: "r794hk" }],
-  ["path", { d: "M17.5 17.5 16 16.3V14", key: "akvzfd" }],
-  ["circle", { cx: "16", cy: "16", r: "6", key: "qoo3c4" }]
-];
-const CalendarClock = createLucideIcon("calendar-clock", __iconNode$1t);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1s = [
-  ["path", { d: "M8 2v4", key: "1cmpym" }],
-  ["path", { d: "M16 2v4", key: "4m81vk" }],
-  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
-  ["path", { d: "M3 10h18", key: "8toen8" }],
-  ["path", { d: "M8 14h.01", key: "6423bh" }],
-  ["path", { d: "M12 14h.01", key: "1etili" }],
-  ["path", { d: "M16 14h.01", key: "1gbofw" }],
-  ["path", { d: "M8 18h.01", key: "lrp35t" }],
-  ["path", { d: "M12 18h.01", key: "mhygvu" }],
-  ["path", { d: "M16 18h.01", key: "kzsmim" }]
-];
-const CalendarDays = createLucideIcon("calendar-days", __iconNode$1s);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1r = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$1r);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1q = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$1q);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1p = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
-const ChevronLeft = createLucideIcon("chevron-left", __iconNode$1p);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1o = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-const ChevronRight = createLucideIcon("chevron-right", __iconNode$1o);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1n = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
-const ChevronUp = createLucideIcon("chevron-up", __iconNode$1n);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1m = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
-  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
-];
-const CircleAlert = createLucideIcon("circle-alert", __iconNode$1m);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1l = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
-];
-const CircleCheck = createLucideIcon("circle-check", __iconNode$1l);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1k = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
-  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
-];
-const CircleX = createLucideIcon("circle-x", __iconNode$1k);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1j = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["polyline", { points: "12 6 12 12 16 14", key: "68esgv" }]
-];
-const Clock = createLucideIcon("clock", __iconNode$1j);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1i = [
-  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
-  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
-];
-const Copy = createLucideIcon("copy", __iconNode$1i);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1h = [
-  ["rect", { width: "20", height: "14", x: "2", y: "5", rx: "2", key: "ynyp8z" }],
-  ["line", { x1: "2", x2: "22", y1: "10", y2: "10", key: "1b3vmo" }]
-];
-const CreditCard = createLucideIcon("credit-card", __iconNode$1h);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1g = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "22", x2: "18", y1: "12", y2: "12", key: "l9bcsi" }],
-  ["line", { x1: "6", x2: "2", y1: "12", y2: "12", key: "13hhkx" }],
-  ["line", { x1: "12", x2: "12", y1: "6", y2: "2", key: "10w3f3" }],
-  ["line", { x1: "12", x2: "12", y1: "22", y2: "18", key: "15g9kq" }]
-];
-const Crosshair = createLucideIcon("crosshair", __iconNode$1g);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1f = [
-  [
-    "path",
-    {
-      d: "M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z",
-      key: "1vdc57"
-    }
-  ],
-  ["path", { d: "M5 21h14", key: "11awu3" }]
-];
-const Crown = createLucideIcon("crown", __iconNode$1f);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1e = [
-  ["path", { d: "M12 15V3", key: "m9g1x1" }],
-  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
-  ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
-];
-const Download = createLucideIcon("download", __iconNode$1e);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1d = [
-  ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
-  ["path", { d: "M10 14 21 3", key: "gplh6r" }],
-  ["path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", key: "a6xqqp" }]
-];
-const ExternalLink = createLucideIcon("external-link", __iconNode$1d);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1c = [
-  [
-    "path",
-    {
-      d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
-      key: "ct8e1f"
-    }
-  ],
-  ["path", { d: "M14.084 14.158a3 3 0 0 1-4.242-4.242", key: "151rxh" }],
-  [
-    "path",
-    {
-      d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
-      key: "13bj9a"
-    }
-  ],
-  ["path", { d: "m2 2 20 20", key: "1ooewy" }]
-];
-const EyeOff = createLucideIcon("eye-off", __iconNode$1c);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1b = [
-  [
-    "path",
-    {
-      d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
-      key: "1nclc0"
-    }
-  ],
-  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
-];
-const Eye = createLucideIcon("eye", __iconNode$1b);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1a = [
-  ["path", { d: "M12 16h.01", key: "1drbdi" }],
-  ["path", { d: "M16 16h.01", key: "1f9h7w" }],
-  [
-    "path",
-    {
-      d: "M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z",
-      key: "1iv0i2"
-    }
-  ],
-  ["path", { d: "M8 16h.01", key: "18s6g9" }]
-];
-const Factory = createLucideIcon("factory", __iconNode$1a);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$19 = [
-  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
-  ["circle", { cx: "10", cy: "12", r: "2", key: "737tya" }],
-  ["path", { d: "m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22", key: "wt3hpn" }]
-];
-const FileImage = createLucideIcon("file-image", __iconNode$19);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$18 = [
-  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
-  ["path", { d: "M8 13h2", key: "yr2amv" }],
-  ["path", { d: "M14 13h2", key: "un5t4a" }],
-  ["path", { d: "M8 17h2", key: "2yhykz" }],
-  ["path", { d: "M14 17h2", key: "10kma7" }]
-];
-const FileSpreadsheet = createLucideIcon("file-spreadsheet", __iconNode$18);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$17 = [
-  ["path", { d: "M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4", key: "1nerag" }],
-  ["path", { d: "M14 13.12c0 2.38 0 6.38-1 8.88", key: "o46ks0" }],
-  ["path", { d: "M17.29 21.02c.12-.6.43-2.3.5-3.02", key: "ptglia" }],
-  ["path", { d: "M2 12a10 10 0 0 1 18-6", key: "ydlgp0" }],
-  ["path", { d: "M2 16h.01", key: "1gqxmh" }],
-  ["path", { d: "M21.8 16c.2-2 .131-5.354 0-6", key: "drycrb" }],
-  ["path", { d: "M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2", key: "1tidbn" }],
-  ["path", { d: "M8.65 22c.21-.66.45-1.32.57-2", key: "13wd9y" }],
-  ["path", { d: "M9 6.8a6 6 0 0 1 9 5.2v2", key: "1fr1j5" }]
-];
-const Fingerprint = createLucideIcon("fingerprint", __iconNode$17);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$16 = [
-  [
-    "path",
-    {
-      d: "M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2",
-      key: "18mbvz"
-    }
-  ],
-  ["path", { d: "M6.453 15h11.094", key: "3shlmq" }],
-  ["path", { d: "M8.5 2h7", key: "csnxdl" }]
-];
-const FlaskConical = createLucideIcon("flask-conical", __iconNode$16);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$15 = [
-  ["path", { d: "M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3", key: "1i73f7" }],
-  ["path", { d: "M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3", key: "saxlbk" }],
-  ["path", { d: "M12 20v2", key: "1lh1kg" }],
-  ["path", { d: "M12 14v2", key: "8jcxud" }],
-  ["path", { d: "M12 8v2", key: "1woqiv" }],
-  ["path", { d: "M12 2v2", key: "tus03m" }]
-];
-const FlipHorizontal = createLucideIcon("flip-horizontal", __iconNode$15);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$14 = [
-  ["rect", { x: "3", y: "8", width: "18", height: "4", rx: "1", key: "bkv52" }],
-  ["path", { d: "M12 8v13", key: "1c76mn" }],
-  ["path", { d: "M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7", key: "6wjy6b" }],
-  [
-    "path",
-    {
-      d: "M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5",
-      key: "1ihvrl"
-    }
-  ]
-];
-const Gift = createLucideIcon("gift", __iconNode$14);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$13 = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
-  ["path", { d: "M2 12h20", key: "9i4pu4" }]
-];
-const Globe = createLucideIcon("globe", __iconNode$13);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$12 = [
-  ["path", { d: "M4 12h8", key: "17cfdx" }],
-  ["path", { d: "M4 18V6", key: "1rz3zl" }],
-  ["path", { d: "M12 18V6", key: "zqpxq5" }],
-  ["path", { d: "m17 12 3-2v8", key: "1hhhft" }]
-];
-const Heading1 = createLucideIcon("heading-1", __iconNode$12);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$11 = [
-  ["path", { d: "M4 12h8", key: "17cfdx" }],
-  ["path", { d: "M4 18V6", key: "1rz3zl" }],
-  ["path", { d: "M12 18V6", key: "zqpxq5" }],
-  ["path", { d: "M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1", key: "9jr5yi" }]
-];
-const Heading2 = createLucideIcon("heading-2", __iconNode$11);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$10 = [
-  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
-  ["path", { d: "M3 3v5h5", key: "1xhq8a" }],
-  ["path", { d: "M12 7v5l4 2", key: "1fdv2h" }]
-];
-const History = createLucideIcon("history", __iconNode$10);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$$ = [
-  ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
-  [
-    "path",
-    {
-      d: "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-      key: "1d0kgt"
-    }
-  ]
-];
-const House = createLucideIcon("house", __iconNode$$);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$_ = [
-  ["path", { d: "M16 5h6", key: "1vod17" }],
-  ["path", { d: "M19 2v6", key: "4bpg5p" }],
-  ["path", { d: "M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5", key: "1ue2ih" }],
-  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }]
-];
-const ImagePlus = createLucideIcon("image-plus", __iconNode$_);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$Z = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
-  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
-];
-const Image$1 = createLucideIcon("image", __iconNode$Z);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$Y = [
-  ["polyline", { points: "22 12 16 12 14 15 10 15 8 12 2 12", key: "o97t9d" }],
-  [
-    "path",
-    {
-      d: "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
-      key: "oot6mr"
-    }
-  ]
-];
-const Inbox = createLucideIcon("inbox", __iconNode$Y);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$X = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "M12 16v-4", key: "1dtifu" }],
-  ["path", { d: "M12 8h.01", key: "e9boi3" }]
-];
-const Info = createLucideIcon("info", __iconNode$X);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$W = [
-  [
-    "path",
-    {
-      d: "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
-      key: "1s6t7t"
-    }
-  ],
-  ["circle", { cx: "16.5", cy: "7.5", r: ".5", fill: "currentColor", key: "w0ekpg" }]
-];
-const KeyRound = createLucideIcon("key-round", __iconNode$W);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$V = [
-  [
-    "path",
-    {
-      d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
-      key: "zw3jo"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
-      key: "1wduqc"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
-      key: "kqbvx6"
-    }
-  ]
-];
-const Layers = createLucideIcon("layers", __iconNode$V);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$U = [
-  ["rect", { width: "7", height: "9", x: "3", y: "3", rx: "1", key: "10lvy0" }],
-  ["rect", { width: "7", height: "5", x: "14", y: "3", rx: "1", key: "16une8" }],
-  ["rect", { width: "7", height: "9", x: "14", y: "12", rx: "1", key: "1hutg5" }],
-  ["rect", { width: "7", height: "5", x: "3", y: "16", rx: "1", key: "ldoo1y" }]
-];
-const LayoutDashboard = createLucideIcon("layout-dashboard", __iconNode$U);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$T = [
-  ["rect", { width: "18", height: "7", x: "3", y: "3", rx: "1", key: "f1a2em" }],
-  ["rect", { width: "9", height: "7", x: "3", y: "14", rx: "1", key: "jqznyg" }],
-  ["rect", { width: "5", height: "7", x: "16", y: "14", rx: "1", key: "q5h2i8" }]
-];
-const LayoutTemplate = createLucideIcon("layout-template", __iconNode$T);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$S = [
-  ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
-  ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
-  ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
-];
-const Link2 = createLucideIcon("link-2", __iconNode$S);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$R = [
-  ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
-  ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }],
-  ["path", { d: "M13 6h8", key: "15sg57" }],
-  ["path", { d: "M13 12h8", key: "h98zly" }],
-  ["path", { d: "M13 18h8", key: "oe0vm4" }]
-];
-const ListChecks = createLucideIcon("list-checks", __iconNode$R);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$Q = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
-const LoaderCircle = createLucideIcon("loader-circle", __iconNode$Q);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$P = [
-  ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "1w4ew1" }],
-  ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "fwvmzm" }]
-];
-const Lock = createLucideIcon("lock", __iconNode$P);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$O = [
-  ["path", { d: "m16 17 5-5-5-5", key: "1bji2h" }],
-  ["path", { d: "M21 12H9", key: "dn1m92" }],
-  ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", key: "1uf3rs" }]
-];
-const LogOut = createLucideIcon("log-out", __iconNode$O);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$N = [
-  ["path", { d: "M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h9", key: "1j9vog" }],
-  ["path", { d: "m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7", key: "1ocrg3" }],
-  ["path", { d: "m17 17 4 4", key: "1b3523" }],
-  ["path", { d: "m21 17-4 4", key: "uinynz" }]
-];
-const MailX = createLucideIcon("mail-x", __iconNode$N);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$M = [
-  [
-    "path",
-    {
-      d: "M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z",
-      key: "1lbycx"
-    }
-  ],
-  ["polyline", { points: "15,9 18,9 18,11", key: "1pm9c0" }],
-  ["path", { d: "M6.5 5C9 5 11 7 11 9.5V17a2 2 0 0 1-2 2", key: "15i455" }],
-  ["line", { x1: "6", x2: "7", y1: "10", y2: "10", key: "1e2scm" }]
-];
-const Mailbox = createLucideIcon("mailbox", __iconNode$M);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$L = [
-  ["path", { d: "m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7", key: "132q7q" }],
-  ["rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", key: "izxlao" }]
-];
-const Mail = createLucideIcon("mail", __iconNode$L);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$K = [
-  [
-    "path",
-    {
-      d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0",
-      key: "1r0f0z"
-    }
-  ],
-  ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
-];
-const MapPin = createLucideIcon("map-pin", __iconNode$K);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$J = [
-  ["path", { d: "M4 12h16", key: "1lakjw" }],
-  ["path", { d: "M4 18h16", key: "19g7jn" }],
-  ["path", { d: "M4 6h16", key: "1o0s65" }]
-];
-const Menu = createLucideIcon("menu", __iconNode$J);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$I = [["path", { d: "M5 12h14", key: "1ays0h" }]];
-const Minus = createLucideIcon("minus", __iconNode$I);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$H = [
-  [
-    "path",
-    {
-      d: "M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z",
-      key: "e79jfc"
-    }
-  ],
-  ["circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor", key: "1okk4w" }],
-  ["circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor", key: "f64h9f" }],
-  ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor", key: "qy21gx" }],
-  ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor", key: "fotxhn" }]
-];
-const Palette = createLucideIcon("palette", __iconNode$H);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$G = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
-  ["path", { d: "M9 3v18", key: "fh3hqa" }],
-  ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
-];
-const PanelLeftClose = createLucideIcon("panel-left-close", __iconNode$G);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$F = [
-  ["path", { d: "M5.8 11.3 2 22l10.7-3.79", key: "gwxi1d" }],
-  ["path", { d: "M4 3h.01", key: "1vcuye" }],
-  ["path", { d: "M22 8h.01", key: "1mrtc2" }],
-  ["path", { d: "M15 2h.01", key: "1cjtqr" }],
-  ["path", { d: "M22 20h.01", key: "1mrys2" }],
-  [
-    "path",
-    {
-      d: "m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10",
-      key: "hbicv8"
-    }
-  ],
-  [
-    "path",
-    { d: "m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17", key: "1i94pl" }
-  ],
-  ["path", { d: "m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7", key: "1cofks" }],
-  [
-    "path",
-    {
-      d: "M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z",
-      key: "4kbmks"
-    }
-  ]
-];
-const PartyPopper = createLucideIcon("party-popper", __iconNode$F);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$E = [
-  ["path", { d: "M12 20h9", key: "t2du7b" }],
-  [
-    "path",
-    {
-      d: "M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z",
-      key: "1ykcvy"
-    }
-  ]
-];
-const PenLine = createLucideIcon("pen-line", __iconNode$E);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$D = [
-  [
-    "path",
-    {
-      d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
-      key: "1a8usu"
-    }
-  ],
-  ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
-];
-const Pencil = createLucideIcon("pencil", __iconNode$D);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$C = [
-  [
-    "path",
-    {
-      d: "M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384",
-      key: "9njp5v"
-    }
-  ]
-];
-const Phone = createLucideIcon("phone", __iconNode$C);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$B = [
-  ["path", { d: "M13 4v16", key: "8vvj80" }],
-  ["path", { d: "M17 4v16", key: "7dpous" }],
-  ["path", { d: "M19 4H9.5a4.5 4.5 0 0 0 0 9H13", key: "sh4n9v" }]
-];
-const Pilcrow = createLucideIcon("pilcrow", __iconNode$B);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$A = [
-  ["path", { d: "M5 12h14", key: "1ays0h" }],
-  ["path", { d: "M12 5v14", key: "s699le" }]
-];
-const Plus = createLucideIcon("plus", __iconNode$A);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$z = [
-  [
-    "path",
-    {
-      d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2",
-      key: "143wyd"
-    }
-  ],
-  ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6", key: "1itne7" }],
-  ["rect", { x: "6", y: "14", width: "12", height: "8", rx: "1", key: "1ue0tg" }]
-];
-const Printer = createLucideIcon("printer", __iconNode$z);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$y = [
-  ["rect", { width: "5", height: "5", x: "3", y: "3", rx: "1", key: "1tu5fj" }],
-  ["rect", { width: "5", height: "5", x: "16", y: "3", rx: "1", key: "1v8r4q" }],
-  ["rect", { width: "5", height: "5", x: "3", y: "16", rx: "1", key: "1x03jg" }],
-  ["path", { d: "M21 16h-3a2 2 0 0 0-2 2v3", key: "177gqh" }],
-  ["path", { d: "M21 21v.01", key: "ents32" }],
-  ["path", { d: "M12 7v3a2 2 0 0 1-2 2H7", key: "8crl2c" }],
-  ["path", { d: "M3 12h.01", key: "nlz23k" }],
-  ["path", { d: "M12 3h.01", key: "n36tog" }],
-  ["path", { d: "M12 16v.01", key: "133mhm" }],
-  ["path", { d: "M16 12h1", key: "1slzba" }],
-  ["path", { d: "M21 12v.01", key: "1lwtk9" }],
-  ["path", { d: "M12 21v-1", key: "1880an" }]
-];
-const QrCode = createLucideIcon("qr-code", __iconNode$y);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$x = [
-  [
-    "path",
-    { d: "M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z", key: "q3az6g" }
-  ],
-  ["path", { d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8", key: "1h4pet" }],
-  ["path", { d: "M12 17.5v-11", key: "1jc1ny" }]
-];
-const Receipt = createLucideIcon("receipt", __iconNode$x);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$w = [
-  ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }],
-  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
-  ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }],
-  ["path", { d: "M8 16H3v5", key: "1cv678" }]
-];
-const RefreshCw = createLucideIcon("refresh-cw", __iconNode$w);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$v = [
-  ["path", { d: "m17 2 4 4-4 4", key: "nntrym" }],
-  ["path", { d: "M3 11v-1a4 4 0 0 1 4-4h14", key: "84bu3i" }],
-  ["path", { d: "m7 22-4-4 4-4", key: "1wqhfi" }],
-  ["path", { d: "M21 13v1a4 4 0 0 1-4 4H3", key: "1rx37r" }]
-];
-const Repeat = createLucideIcon("repeat", __iconNode$v);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$u = [
-  [
-    "path",
-    {
-      d: "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z",
-      key: "m3kijz"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z",
-      key: "1fmvmk"
-    }
-  ],
-  ["path", { d: "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0", key: "1f8sc4" }],
-  ["path", { d: "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5", key: "qeys4" }]
-];
-const Rocket = createLucideIcon("rocket", __iconNode$u);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$t = [
-  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
-  ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
-];
-const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$t);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$s = [
-  ["path", { d: "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", key: "1p45f6" }],
-  ["path", { d: "M21 3v5h-5", key: "1q7to0" }]
-];
-const RotateCw = createLucideIcon("rotate-cw", __iconNode$s);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$r = [
-  ["circle", { cx: "6", cy: "19", r: "3", key: "1kj8tv" }],
-  ["path", { d: "M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15", key: "1d8sl" }],
-  ["circle", { cx: "18", cy: "5", r: "3", key: "gq8acd" }]
-];
-const Route$1 = createLucideIcon("route", __iconNode$r);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$q = [
-  [
-    "path",
-    {
-      d: "M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
-      key: "1c8476"
-    }
-  ],
-  ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
-  ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
-];
-const Save = createLucideIcon("save", __iconNode$q);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$p = [
-  ["path", { d: "M3 7V5a2 2 0 0 1 2-2h2", key: "aa7l1z" }],
-  ["path", { d: "M17 3h2a2 2 0 0 1 2 2v2", key: "4qcy5o" }],
-  ["path", { d: "M21 17v2a2 2 0 0 1-2 2h-2", key: "6vwrx8" }],
-  ["path", { d: "M7 21H5a2 2 0 0 1-2-2v-2", key: "ioqczr" }],
-  ["circle", { cx: "12", cy: "12", r: "1", key: "41hilf" }],
-  [
-    "path",
-    {
-      d: "M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0",
-      key: "11ak4c"
-    }
-  ]
-];
-const ScanEye = createLucideIcon("scan-eye", __iconNode$p);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$o = [
-  ["path", { d: "M3 7V5a2 2 0 0 1 2-2h2", key: "aa7l1z" }],
-  ["path", { d: "M17 3h2a2 2 0 0 1 2 2v2", key: "4qcy5o" }],
-  ["path", { d: "M21 17v2a2 2 0 0 1-2 2h-2", key: "6vwrx8" }],
-  ["path", { d: "M7 21H5a2 2 0 0 1-2-2v-2", key: "ioqczr" }],
-  ["path", { d: "M7 12h10", key: "b7w52i" }]
-];
-const ScanLine = createLucideIcon("scan-line", __iconNode$o);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$n = [
-  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
-  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
-];
-const Search = createLucideIcon("search", __iconNode$n);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$m = [
-  [
-    "path",
-    {
-      d: "M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z",
-      key: "1ffxy3"
-    }
-  ],
-  ["path", { d: "m21.854 2.147-10.94 10.939", key: "12cjpa" }]
-];
-const Send = createLucideIcon("send", __iconNode$m);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$l = [
-  [
-    "path",
-    {
-      d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
-      key: "1qme2f"
-    }
-  ],
-  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
-];
-const Settings = createLucideIcon("settings", __iconNode$l);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$k = [
-  [
-    "path",
-    {
-      d: "M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z",
-      key: "1bo67w"
-    }
-  ],
-  ["rect", { x: "3", y: "14", width: "7", height: "7", rx: "1", key: "1bkyp8" }],
-  ["circle", { cx: "17.5", cy: "17.5", r: "3.5", key: "w3z12y" }]
-];
-const Shapes = createLucideIcon("shapes", __iconNode$k);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$j = [
-  ["circle", { cx: "18", cy: "5", r: "3", key: "gq8acd" }],
-  ["circle", { cx: "6", cy: "12", r: "3", key: "w7nqdw" }],
-  ["circle", { cx: "18", cy: "19", r: "3", key: "1xt0gg" }],
-  ["line", { x1: "8.59", x2: "15.42", y1: "13.51", y2: "17.49", key: "47mynk" }],
-  ["line", { x1: "15.41", x2: "8.59", y1: "6.51", y2: "10.49", key: "1n3mei" }]
-];
-const Share2 = createLucideIcon("share-2", __iconNode$j);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$i = [
-  [
-    "path",
-    {
-      d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
-      key: "oel41y"
-    }
-  ],
-  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
-];
-const ShieldCheck = createLucideIcon("shield-check", __iconNode$i);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$h = [
-  [
-    "path",
-    {
-      d: "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
-      key: "4pj2yx"
-    }
-  ],
-  ["path", { d: "M20 3v4", key: "1olli1" }],
-  ["path", { d: "M22 5h-4", key: "1gvqau" }],
-  ["path", { d: "M4 17v2", key: "vumght" }],
-  ["path", { d: "M5 18H3", key: "zchphs" }]
-];
-const Sparkles = createLucideIcon("sparkles", __iconNode$h);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$g = [
-  [
-    "path",
-    {
-      d: "M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z",
-      key: "xwnzip"
-    }
-  ],
-  ["path", { d: "M5 3a2 2 0 0 0-2 2", key: "y57alp" }],
-  ["path", { d: "M19 3a2 2 0 0 1 2 2", key: "18rm91" }],
-  ["path", { d: "M5 21a2 2 0 0 1-2-2", key: "sbafld" }],
-  ["path", { d: "M9 3h1", key: "1yesri" }],
-  ["path", { d: "M9 21h2", key: "1qve2z" }],
-  ["path", { d: "M14 3h1", key: "1ec4yj" }],
-  ["path", { d: "M3 9v1", key: "1r0deq" }],
-  ["path", { d: "M21 9v2", key: "p14lih" }],
-  ["path", { d: "M3 14v1", key: "vnatye" }]
-];
-const SquareDashedMousePointer = createLucideIcon("square-dashed-mouse-pointer", __iconNode$g);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$f = [
-  ["path", { d: "M5 22h14", key: "ehvnwv" }],
-  [
-    "path",
-    {
-      d: "M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z",
-      key: "1sy9ra"
-    }
-  ],
-  [
-    "path",
-    { d: "M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13", key: "cnxgux" }
-  ]
-];
-const Stamp = createLucideIcon("stamp", __iconNode$f);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$e = [
-  [
-    "path",
-    {
-      d: "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z",
-      key: "vktsd0"
-    }
-  ],
-  ["circle", { cx: "7.5", cy: "7.5", r: ".5", fill: "currentColor", key: "kqv944" }]
-];
-const Tag = createLucideIcon("tag", __iconNode$e);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$d = [
-  ["path", { d: "M3 6h18", key: "d0wm0j" }],
-  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
-  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
-  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
-  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
-];
-const Trash2 = createLucideIcon("trash-2", __iconNode$d);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$c = [
-  ["path", { d: "M16 17h6v-6", key: "t6n2it" }],
-  ["path", { d: "m22 17-8.5-8.5-5 5L2 7", key: "x473p" }]
-];
-const TrendingDown = createLucideIcon("trending-down", __iconNode$c);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$b = [
-  [
-    "path",
-    {
-      d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
-      key: "wmoenq"
-    }
-  ],
-  ["path", { d: "M12 9v4", key: "juzpu7" }],
-  ["path", { d: "M12 17h.01", key: "p32p05" }]
-];
-const TriangleAlert = createLucideIcon("triangle-alert", __iconNode$b);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$a = [
-  ["path", { d: "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2", key: "wrbu53" }],
-  ["path", { d: "M15 18H9", key: "1lyqi6" }],
-  [
-    "path",
-    {
-      d: "M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14",
-      key: "lysw3i"
-    }
-  ],
-  ["circle", { cx: "17", cy: "18", r: "2", key: "332jqn" }],
-  ["circle", { cx: "7", cy: "18", r: "2", key: "19iecd" }]
-];
-const Truck = createLucideIcon("truck", __iconNode$a);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$9 = [
-  ["path", { d: "M12 4v16", key: "1654pz" }],
-  ["path", { d: "M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2", key: "e0r10z" }],
-  ["path", { d: "M9 20h6", key: "s66wpe" }]
-];
-const Type2 = createLucideIcon("type", __iconNode$9);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$8 = [
-  ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
-  ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
-];
-const Undo2 = createLucideIcon("undo-2", __iconNode$8);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$7 = [
-  [
-    "path",
-    {
-      d: "m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71",
-      key: "yqzxt4"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71",
-      key: "4qinb0"
-    }
-  ],
-  ["line", { x1: "8", x2: "8", y1: "2", y2: "5", key: "1041cp" }],
-  ["line", { x1: "2", x2: "5", y1: "8", y2: "8", key: "14m1p5" }],
-  ["line", { x1: "16", x2: "16", y1: "19", y2: "22", key: "rzdirn" }],
-  ["line", { x1: "19", x2: "22", y1: "16", y2: "16", key: "ox905f" }]
-];
-const Unlink = createLucideIcon("unlink", __iconNode$7);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$6 = [
-  ["path", { d: "M12 3v12", key: "1x0j5s" }],
-  ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
-  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
-];
-const Upload = createLucideIcon("upload", __iconNode$6);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$5 = [
-  ["circle", { cx: "12", cy: "8", r: "5", key: "1hypcn" }],
-  ["path", { d: "M20 21a8 8 0 0 0-16 0", key: "rfgkzh" }]
-];
-const UserRound = createLucideIcon("user-round", __iconNode$5);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$4 = [
-  ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
-  ["path", { d: "M16 3.128a4 4 0 0 1 0 7.744", key: "16gr8j" }],
-  ["path", { d: "M22 21v-2a4 4 0 0 0-3-3.87", key: "kshegd" }],
-  ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
-];
-const Users = createLucideIcon("users", __iconNode$4);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$3 = [
-  ["path", { d: "m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8", key: "n7qcjb" }],
-  [
-    "path",
-    { d: "M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7", key: "d0u48b" }
-  ],
-  ["path", { d: "m2.1 21.8 6.4-6.3", key: "yn04lh" }],
-  ["path", { d: "m19 5-7 7", key: "194lzd" }]
-];
-const UtensilsCrossed = createLucideIcon("utensils-crossed", __iconNode$3);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$2 = [
-  [
-    "path",
-    {
-      d: "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72",
-      key: "ul74o6"
-    }
-  ],
-  ["path", { d: "m14 7 3 3", key: "1r5n42" }],
-  ["path", { d: "M5 6v4", key: "ilb8ba" }],
-  ["path", { d: "M19 14v4", key: "blhpug" }],
-  ["path", { d: "M10 2v2", key: "7u0qdc" }],
-  ["path", { d: "M7 8H3", key: "zfb6yr" }],
-  ["path", { d: "M21 16h-4", key: "1cnmox" }],
-  ["path", { d: "M11 3H9", key: "1obp7u" }]
-];
-const WandSparkles = createLucideIcon("wand-sparkles", __iconNode$2);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$1 = [
-  [
-    "path",
-    {
-      d: "M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2",
-      key: "q3hayz"
-    }
-  ],
-  ["path", { d: "m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06", key: "1go1hn" }],
-  ["path", { d: "m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8", key: "qlwsc0" }]
-];
-const Webhook = createLucideIcon("webhook", __iconNode$1);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode = [
-  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
-  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
-];
-const X = createLucideIcon("x", __iconNode);
-function SignInPrompt({
-  message = "Sign in with Internet Identity to continue."
-}) {
-  const { login, isLoggingIn, isInitializing } = useAccountSync();
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Card,
-    {
-      className: "border-dashed bg-muted/30",
-      "data-ocid": "auth.sign_in_prompt.card",
-      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(CardContent, { className: "flex flex-col items-center gap-3 py-8 text-center", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Fingerprint, { className: "size-6" }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "max-w-sm text-sm text-muted-foreground", children: message }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          Button,
-          {
-            onClick: login,
-            disabled: isLoggingIn || isInitializing,
-            className: "gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
-            "data-ocid": "auth.sign_in_prompt.button",
-            children: [
-              isLoggingIn ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Fingerprint, { className: "size-4" }),
-              "Sign in with Internet Identity"
-            ]
-          }
-        )
-      ] })
-    }
-  );
-}
-const stripeCache = /* @__PURE__ */ new Map();
-function getStripe(publishableKey) {
-  let promise = stripeCache.get(publishableKey);
-  if (!promise) {
-    promise = loadStripe(publishableKey);
-    stripeCache.set(publishableKey, promise);
-  }
-  return promise;
-}
-function PaymentForm({
-  amountLabel,
-  submitLabel,
-  onConfirmed,
-  onCancel
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [submitting, setSubmitting] = reactExports.useState(false);
-  const [error, setError] = reactExports.useState(null);
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-    setSubmitting(true);
-    setError(null);
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-      confirmParams: { return_url: `${window.location.origin}/dashboard` }
-    });
-    if (stripeError) {
-      setError(stripeError.message ?? "Payment was not completed.");
-      setSubmitting(false);
-      return;
-    }
-    if (paymentIntent && paymentIntent.status !== "succeeded" && paymentIntent.status !== "processing") {
-      setError(`Payment status: ${paymentIntent.status}`);
-      setSubmitting(false);
-      return;
-    }
-    await onConfirmed();
-    setSubmitting(false);
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "form",
-    {
-      onSubmit: handleSubmit,
-      className: "space-y-4",
-      "data-ocid": "checkout.payment.form",
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(PaymentElement, { options: { layout: "tabs" } }),
-        error && /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { variant: "destructive", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "size-4" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: error })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between gap-3", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "inline-flex items-center gap-1.5 text-xs text-muted-foreground", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(Lock, { className: "size-3.5" }),
-            " Secured by Stripe"
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
-            onCancel && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Button,
-              {
-                type: "button",
-                variant: "ghost",
-                onClick: onCancel,
-                "data-ocid": "checkout.cancel.button",
-                children: "Cancel"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs(
-              Button,
-              {
-                type: "submit",
-                disabled: !stripe || !elements || submitting,
-                className: "gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
-                "data-ocid": "checkout.pay.button",
-                children: [
-                  submitting ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CreditCard, { className: "size-4" }),
-                  submitLabel,
-                  " ",
-                  amountLabel
-                ]
-              }
-            )
-          ] })
-        ] })
-      ]
-    }
-  );
-}
-function StripeCheckout({
-  purpose,
-  reference = null,
-  pack = null,
-  amountLabel,
-  title = "Checkout",
-  description,
-  submitLabel = "Pay",
-  onSuccess,
-  onCancel
-}) {
-  const { isAuthenticated } = useAccountSync();
-  const createIntent = useCreatePaymentIntent();
-  const confirmPayment = useConfirmPayment();
-  const setCreditBalance = useAccountStore((s) => s.setCreditBalance);
-  const [phase, setPhase] = reactExports.useState({ kind: "idle" });
-  const started = reactExports.useRef(false);
-  const finish = reactExports.useCallback(
-    async (paymentIntentId) => {
-      setPhase({ kind: "confirming", paymentIntentId });
-      try {
-        const result = await confirmPayment.mutateAsync(paymentIntentId);
-        if (!result.ok) {
-          setPhase({
-            kind: "error",
-            message: result.error ?? "Payment could not be confirmed.",
-            paymentIntentId
-          });
-          return;
-        }
-        if (result.creditBalance !== void 0)
-          setCreditBalance(result.creditBalance);
-        setPhase({ kind: "done", result });
-        onSuccess(result);
-      } catch (e) {
-        setPhase({
-          kind: "error",
-          message: e instanceof Error ? e.message : "Confirmation failed.",
-          paymentIntentId
-        });
-      }
-    },
-    [confirmPayment, onSuccess, setCreditBalance]
-  );
-  const start = reactExports.useCallback(async () => {
-    setPhase({ kind: "creating" });
-    try {
-      const intent = await createIntent.mutateAsync({
-        purpose,
-        reference,
-        pack
-      });
-      if (!intent.ok) {
-        setPhase({
-          kind: "error",
-          message: intent.error ?? "Could not start checkout."
-        });
-        return;
-      }
-      if (intent.waived) {
-        const result = {
-          ok: true,
-          state: void 0,
-          creditBalance: void 0,
-          campaignId: void 0,
-          subscriptionActive: true,
-          referralRewardApplied: false
-        };
-        setPhase({ kind: "done", result });
-        onSuccess(result);
-        return;
-      }
-      if (!intent.paymentIntentId) {
-        setPhase({
-          kind: "error",
-          message: "Checkout did not return a payment id."
-        });
-        return;
-      }
-      if (intent.sandbox || !intent.clientSecret) {
-        await finish(intent.paymentIntentId);
-        return;
-      }
-      if (!intent.publishableKey) {
-        setPhase({
-          kind: "error",
-          message: "Stripe publishable key is not configured (Admin → Stripe Publishable Key)."
-        });
-        return;
-      }
-      setPhase({
-        kind: "elements",
-        clientSecret: intent.clientSecret,
-        paymentIntentId: intent.paymentIntentId,
-        publishableKey: intent.publishableKey
-      });
-    } catch (e) {
-      setPhase({
-        kind: "error",
-        message: e instanceof Error ? e.message : "Could not start checkout."
-      });
-    }
-  }, [createIntent, purpose, reference, pack, finish, onSuccess]);
-  reactExports.useEffect(() => {
-    if (!isAuthenticated || started.current) return;
-    started.current = true;
-    void start();
-  }, [isAuthenticated, start]);
-  const stripePromise2 = reactExports.useMemo(
-    () => phase.kind === "elements" ? getStripe(phase.publishableKey) : null,
-    [phase]
-  );
-  if (!isAuthenticated) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SignInPrompt, { message: "Sign in with Internet Identity to check out securely." });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { "data-ocid": "checkout.card", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(CardHeader, { className: "pb-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "flex items-center gap-2 text-base", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(ShieldCheck, { className: "size-4 text-emerald-brand" }),
-        title
-      ] }),
-      description && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: description })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(CardContent, { children: [
-      (phase.kind === "idle" || phase.kind === "creating") && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 py-6 text-sm text-muted-foreground", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }),
-        " Preparing secure checkout…"
-      ] }),
-      phase.kind === "confirming" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 py-6 text-sm text-muted-foreground", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }),
-        " Confirming payment with the ledger…"
-      ] }),
-      phase.kind === "elements" && stripePromise2 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Elements,
-        {
-          stripe: stripePromise2,
-          options: {
-            clientSecret: phase.clientSecret,
-            appearance: {
-              theme: "stripe",
-              variables: {
-                colorPrimary: "#f97316",
-                borderRadius: "10px",
-                fontFamily: "Geist, sans-serif"
-              }
-            }
-          },
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            PaymentForm,
-            {
-              amountLabel,
-              submitLabel,
-              onConfirmed: () => finish(phase.paymentIntentId),
-              onCancel
-            }
-          )
-        }
-      ),
-      phase.kind === "done" && /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { className: "border-emerald-brand/40 bg-emerald-brand/10", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(ShieldCheck, { className: "size-4 text-emerald-brand" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(AlertTitle, { children: "Payment confirmed" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: phase.result.referralRewardApplied ? "Your referrer just earned a free month. Thanks for joining through their link!" : "Your payment has been recorded on the ledger." })
-      ] }),
-      phase.kind === "error" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { variant: "destructive", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "size-4" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertTitle, { children: "Checkout problem" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: phase.message })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
-          phase.paymentIntentId ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
-            {
-              variant: "outline",
-              onClick: () => finish(phase.paymentIntentId),
-              "data-ocid": "checkout.retry_confirm.button",
-              children: "Re-check payment"
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
-            {
-              variant: "outline",
-              onClick: () => void start(),
-              "data-ocid": "checkout.retry.button",
-              children: "Try again"
-            }
-          ),
-          onCancel && /* @__PURE__ */ jsxRuntimeExports.jsx(Button, { variant: "ghost", onClick: onCancel, children: "Cancel" })
-        ] })
-      ] })
-    ] })
-  ] });
-}
-function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
-  return function handleEvent(event) {
-    originalEventHandler == null ? void 0 : originalEventHandler(event);
-    if (checkForDefaultPrevented === false || !event.defaultPrevented) {
-      return ourEventHandler == null ? void 0 : ourEventHandler(event);
-    }
-  };
-}
-function createContext2(rootComponentName, defaultContext) {
-  const Context = reactExports.createContext(defaultContext);
-  const Provider2 = (props) => {
-    const { children, ...context2 } = props;
-    const value = reactExports.useMemo(() => context2, Object.values(context2));
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
-  };
-  Provider2.displayName = rootComponentName + "Provider";
-  function useContext2(consumerName) {
-    const context2 = reactExports.useContext(Context);
-    if (context2) return context2;
-    if (defaultContext !== void 0) return defaultContext;
-    throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
-  }
-  return [Provider2, useContext2];
-}
-function createContextScope$1(scopeName, createContextScopeDeps = []) {
-  let defaultContexts = [];
-  function createContext3(rootComponentName, defaultContext) {
-    const BaseContext = reactExports.createContext(defaultContext);
-    const index2 = defaultContexts.length;
-    defaultContexts = [...defaultContexts, defaultContext];
-    const Provider2 = (props) => {
-      var _a2;
-      const { scope, children, ...context2 } = props;
-      const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const value = reactExports.useMemo(() => context2, Object.values(context2));
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
-    };
-    Provider2.displayName = rootComponentName + "Provider";
-    function useContext2(consumerName, scope) {
-      var _a2;
-      const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const context2 = reactExports.useContext(Context);
-      if (context2) return context2;
-      if (defaultContext !== void 0) return defaultContext;
-      throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
-    }
-    return [Provider2, useContext2];
-  }
-  const createScope = () => {
-    const scopeContexts = defaultContexts.map((defaultContext) => {
-      return reactExports.createContext(defaultContext);
-    });
-    return function useScope(scope) {
-      const contexts = (scope == null ? void 0 : scope[scopeName]) || scopeContexts;
-      return reactExports.useMemo(
-        () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
-        [scope, contexts]
-      );
-    };
-  };
-  createScope.scopeName = scopeName;
-  return [createContext3, composeContextScopes$1(createScope, ...createContextScopeDeps)];
-}
-function composeContextScopes$1(...scopes) {
-  const baseScope = scopes[0];
-  if (scopes.length === 1) return baseScope;
-  const createScope = () => {
-    const scopeHooks = scopes.map((createScope2) => ({
-      useScope: createScope2(),
-      scopeName: createScope2.scopeName
-    }));
-    return function useComposedScopes(overrideScopes) {
-      const nextScopes = scopeHooks.reduce((nextScopes2, { useScope, scopeName }) => {
-        const scopeProps = useScope(overrideScopes);
-        const currentScope = scopeProps[`__scope${scopeName}`];
-        return { ...nextScopes2, ...currentScope };
-      }, {});
-      return reactExports.useMemo(() => ({ [`__scope${baseScope.scopeName}`]: nextScopes }), [nextScopes]);
-    };
-  };
-  createScope.scopeName = baseScope.scopeName;
-  return createScope;
-}
-var useLayoutEffect2 = (globalThis == null ? void 0 : globalThis.document) ? reactExports.useLayoutEffect : () => {
-};
-var useReactId = React$5[" useId ".trim().toString()] || (() => void 0);
-var count$1 = 0;
-function useId(deterministicId) {
-  const [id, setId] = reactExports.useState(useReactId());
-  useLayoutEffect2(() => {
-    setId((reactId) => reactId ?? String(count$1++));
-  }, [deterministicId]);
-  return deterministicId || (id ? `radix-${id}` : "");
-}
-var useInsertionEffect = React$5[" useInsertionEffect ".trim().toString()] || useLayoutEffect2;
-function useControllableState({
-  prop,
-  defaultProp,
-  onChange = () => {
-  },
-  caller
-}) {
-  const [uncontrolledProp, setUncontrolledProp, onChangeRef] = useUncontrolledState({
-    defaultProp,
-    onChange
-  });
-  const isControlled = prop !== void 0;
-  const value = isControlled ? prop : uncontrolledProp;
-  {
-    const isControlledRef = reactExports.useRef(prop !== void 0);
-    reactExports.useEffect(() => {
-      const wasControlled = isControlledRef.current;
-      if (wasControlled !== isControlled) {
-        const from = wasControlled ? "controlled" : "uncontrolled";
-        const to = isControlled ? "controlled" : "uncontrolled";
-        console.warn(
-          `${caller} is changing from ${from} to ${to}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`
-        );
-      }
-      isControlledRef.current = isControlled;
-    }, [isControlled, caller]);
-  }
-  const setValue = reactExports.useCallback(
-    (nextValue) => {
-      var _a2;
-      if (isControlled) {
-        const value2 = isFunction$1(nextValue) ? nextValue(prop) : nextValue;
-        if (value2 !== prop) {
-          (_a2 = onChangeRef.current) == null ? void 0 : _a2.call(onChangeRef, value2);
-        }
-      } else {
-        setUncontrolledProp(nextValue);
-      }
-    },
-    [isControlled, prop, setUncontrolledProp, onChangeRef]
-  );
-  return [value, setValue];
-}
-function useUncontrolledState({
-  defaultProp,
-  onChange
-}) {
-  const [value, setValue] = reactExports.useState(defaultProp);
-  const prevValueRef = reactExports.useRef(value);
-  const onChangeRef = reactExports.useRef(onChange);
-  useInsertionEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
-  reactExports.useEffect(() => {
-    var _a2;
-    if (prevValueRef.current !== value) {
-      (_a2 = onChangeRef.current) == null ? void 0 : _a2.call(onChangeRef, value);
-      prevValueRef.current = value;
-    }
-  }, [value, prevValueRef]);
-  return [value, setValue, onChangeRef];
-}
-function isFunction$1(value) {
-  return typeof value === "function";
-}
-// @__NO_SIDE_EFFECTS__
-function createSlot(ownerName) {
-  const SlotClone = /* @__PURE__ */ createSlotClone(ownerName);
-  const Slot2 = reactExports.forwardRef((props, forwardedRef) => {
-    const { children, ...slotProps } = props;
-    const childrenArray = reactExports.Children.toArray(children);
-    const slottable = childrenArray.find(isSlottable);
-    if (slottable) {
-      const newElement = slottable.props.children;
-      const newChildren = childrenArray.map((child) => {
-        if (child === slottable) {
-          if (reactExports.Children.count(newElement) > 1) return reactExports.Children.only(null);
-          return reactExports.isValidElement(newElement) ? newElement.props.children : null;
-        } else {
-          return child;
-        }
-      });
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone, { ...slotProps, ref: forwardedRef, children: reactExports.isValidElement(newElement) ? reactExports.cloneElement(newElement, void 0, newChildren) : null });
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(SlotClone, { ...slotProps, ref: forwardedRef, children });
-  });
-  Slot2.displayName = `${ownerName}.Slot`;
-  return Slot2;
-}
-// @__NO_SIDE_EFFECTS__
-function createSlotClone(ownerName) {
-  const SlotClone = reactExports.forwardRef((props, forwardedRef) => {
-    const { children, ...slotProps } = props;
-    if (reactExports.isValidElement(children)) {
-      const childrenRef = getElementRef$1(children);
-      const props2 = mergeProps(slotProps, children.props);
-      if (children.type !== reactExports.Fragment) {
-        props2.ref = forwardedRef ? composeRefs(forwardedRef, childrenRef) : childrenRef;
-      }
-      return reactExports.cloneElement(children, props2);
-    }
-    return reactExports.Children.count(children) > 1 ? reactExports.Children.only(null) : null;
-  });
-  SlotClone.displayName = `${ownerName}.SlotClone`;
-  return SlotClone;
-}
-var SLOTTABLE_IDENTIFIER = Symbol("radix.slottable");
-// @__NO_SIDE_EFFECTS__
-function createSlottable(ownerName) {
-  const Slottable2 = ({ children }) => {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children });
-  };
-  Slottable2.displayName = `${ownerName}.Slottable`;
-  Slottable2.__radixId = SLOTTABLE_IDENTIFIER;
-  return Slottable2;
-}
-function isSlottable(child) {
-  return reactExports.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
-}
-function mergeProps(slotProps, childProps) {
-  const overrideProps = { ...childProps };
-  for (const propName in childProps) {
-    const slotPropValue = slotProps[propName];
-    const childPropValue = childProps[propName];
-    const isHandler = /^on[A-Z]/.test(propName);
-    if (isHandler) {
-      if (slotPropValue && childPropValue) {
-        overrideProps[propName] = (...args) => {
-          const result = childPropValue(...args);
-          slotPropValue(...args);
-          return result;
-        };
-      } else if (slotPropValue) {
-        overrideProps[propName] = slotPropValue;
-      }
-    } else if (propName === "style") {
-      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
-    } else if (propName === "className") {
-      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(" ");
-    }
-  }
-  return { ...slotProps, ...overrideProps };
-}
-function getElementRef$1(element) {
-  var _a2, _b2;
-  let getter = (_a2 = Object.getOwnPropertyDescriptor(element.props, "ref")) == null ? void 0 : _a2.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = (_b2 = Object.getOwnPropertyDescriptor(element, "ref")) == null ? void 0 : _b2.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-var NODES$1 = [
-  "a",
-  "button",
-  "div",
-  "form",
-  "h2",
-  "h3",
-  "img",
-  "input",
-  "label",
-  "li",
-  "nav",
-  "ol",
-  "p",
-  "select",
-  "span",
-  "svg",
-  "ul"
-];
-var Primitive$1 = NODES$1.reduce((primitive, node) => {
-  const Slot2 = /* @__PURE__ */ createSlot(`Primitive.${node}`);
-  const Node2 = reactExports.forwardRef((props, forwardedRef) => {
-    const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot2 : node;
-    if (typeof window !== "undefined") {
-      window[Symbol.for("radix-ui")] = true;
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
-  });
-  Node2.displayName = `Primitive.${node}`;
-  return { ...primitive, [node]: Node2 };
-}, {});
-function dispatchDiscreteCustomEvent(target, event) {
-  if (target) reactDomExports.flushSync(() => target.dispatchEvent(event));
-}
-function useCallbackRef$1(callback) {
-  const callbackRef = reactExports.useRef(callback);
-  reactExports.useEffect(() => {
-    callbackRef.current = callback;
-  });
-  return reactExports.useMemo(() => (...args) => {
-    var _a2;
-    return (_a2 = callbackRef.current) == null ? void 0 : _a2.call(callbackRef, ...args);
-  }, []);
-}
-function useEscapeKeydown(onEscapeKeyDownProp, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
-  const onEscapeKeyDown = useCallbackRef$1(onEscapeKeyDownProp);
-  reactExports.useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        onEscapeKeyDown(event);
-      }
-    };
-    ownerDocument.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => ownerDocument.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [onEscapeKeyDown, ownerDocument]);
-}
-var DISMISSABLE_LAYER_NAME = "DismissableLayer";
-var CONTEXT_UPDATE = "dismissableLayer.update";
-var POINTER_DOWN_OUTSIDE = "dismissableLayer.pointerDownOutside";
-var FOCUS_OUTSIDE = "dismissableLayer.focusOutside";
-var originalBodyPointerEvents;
-var DismissableLayerContext = reactExports.createContext({
-  layers: /* @__PURE__ */ new Set(),
-  layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
-  branches: /* @__PURE__ */ new Set()
-});
-var DismissableLayer = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      disableOutsidePointerEvents = false,
-      onEscapeKeyDown,
-      onPointerDownOutside,
-      onFocusOutside,
-      onInteractOutside,
-      onDismiss,
-      ...layerProps
-    } = props;
-    const context2 = reactExports.useContext(DismissableLayerContext);
-    const [node, setNode] = reactExports.useState(null);
-    const ownerDocument = (node == null ? void 0 : node.ownerDocument) ?? (globalThis == null ? void 0 : globalThis.document);
-    const [, force] = reactExports.useState({});
-    const composedRefs = useComposedRefs(forwardedRef, (node2) => setNode(node2));
-    const layers = Array.from(context2.layers);
-    const [highestLayerWithOutsidePointerEventsDisabled] = [...context2.layersWithOutsidePointerEventsDisabled].slice(-1);
-    const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
-    const index2 = node ? layers.indexOf(node) : -1;
-    const isBodyPointerEventsDisabled = context2.layersWithOutsidePointerEventsDisabled.size > 0;
-    const isPointerEventsEnabled = index2 >= highestLayerWithOutsidePointerEventsDisabledIndex;
-    const pointerDownOutside = usePointerDownOutside((event) => {
-      const target = event.target;
-      const isPointerDownOnBranch = [...context2.branches].some((branch) => branch.contains(target));
-      if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
-      onPointerDownOutside == null ? void 0 : onPointerDownOutside(event);
-      onInteractOutside == null ? void 0 : onInteractOutside(event);
-      if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
-    }, ownerDocument);
-    const focusOutside = useFocusOutside((event) => {
-      const target = event.target;
-      const isFocusInBranch = [...context2.branches].some((branch) => branch.contains(target));
-      if (isFocusInBranch) return;
-      onFocusOutside == null ? void 0 : onFocusOutside(event);
-      onInteractOutside == null ? void 0 : onInteractOutside(event);
-      if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
-    }, ownerDocument);
-    useEscapeKeydown((event) => {
-      const isHighestLayer = index2 === context2.layers.size - 1;
-      if (!isHighestLayer) return;
-      onEscapeKeyDown == null ? void 0 : onEscapeKeyDown(event);
-      if (!event.defaultPrevented && onDismiss) {
-        event.preventDefault();
-        onDismiss();
-      }
-    }, ownerDocument);
-    reactExports.useEffect(() => {
-      if (!node) return;
-      if (disableOutsidePointerEvents) {
-        if (context2.layersWithOutsidePointerEventsDisabled.size === 0) {
-          originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
-          ownerDocument.body.style.pointerEvents = "none";
-        }
-        context2.layersWithOutsidePointerEventsDisabled.add(node);
-      }
-      context2.layers.add(node);
-      dispatchUpdate();
-      return () => {
-        if (disableOutsidePointerEvents && context2.layersWithOutsidePointerEventsDisabled.size === 1) {
-          ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
-        }
-      };
-    }, [node, ownerDocument, disableOutsidePointerEvents, context2]);
-    reactExports.useEffect(() => {
-      return () => {
-        if (!node) return;
-        context2.layers.delete(node);
-        context2.layersWithOutsidePointerEventsDisabled.delete(node);
-        dispatchUpdate();
-      };
-    }, [node, context2]);
-    reactExports.useEffect(() => {
-      const handleUpdate = () => force({});
-      document.addEventListener(CONTEXT_UPDATE, handleUpdate);
-      return () => document.removeEventListener(CONTEXT_UPDATE, handleUpdate);
-    }, []);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$1.div,
-      {
-        ...layerProps,
-        ref: composedRefs,
-        style: {
-          pointerEvents: isBodyPointerEventsDisabled ? isPointerEventsEnabled ? "auto" : "none" : void 0,
-          ...props.style
-        },
-        onFocusCapture: composeEventHandlers(props.onFocusCapture, focusOutside.onFocusCapture),
-        onBlurCapture: composeEventHandlers(props.onBlurCapture, focusOutside.onBlurCapture),
-        onPointerDownCapture: composeEventHandlers(
-          props.onPointerDownCapture,
-          pointerDownOutside.onPointerDownCapture
-        )
-      }
-    );
-  }
-);
-DismissableLayer.displayName = DISMISSABLE_LAYER_NAME;
-var BRANCH_NAME = "DismissableLayerBranch";
-var DismissableLayerBranch = reactExports.forwardRef((props, forwardedRef) => {
-  const context2 = reactExports.useContext(DismissableLayerContext);
-  const ref = reactExports.useRef(null);
-  const composedRefs = useComposedRefs(forwardedRef, ref);
-  reactExports.useEffect(() => {
-    const node = ref.current;
-    if (node) {
-      context2.branches.add(node);
-      return () => {
-        context2.branches.delete(node);
-      };
-    }
-  }, [context2.branches]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...props, ref: composedRefs });
-});
-DismissableLayerBranch.displayName = BRANCH_NAME;
-function usePointerDownOutside(onPointerDownOutside, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
-  const handlePointerDownOutside = useCallbackRef$1(onPointerDownOutside);
-  const isPointerInsideReactTreeRef = reactExports.useRef(false);
-  const handleClickRef = reactExports.useRef(() => {
-  });
-  reactExports.useEffect(() => {
-    const handlePointerDown = (event) => {
-      if (event.target && !isPointerInsideReactTreeRef.current) {
-        let handleAndDispatchPointerDownOutsideEvent2 = function() {
-          handleAndDispatchCustomEvent(
-            POINTER_DOWN_OUTSIDE,
-            handlePointerDownOutside,
-            eventDetail,
-            { discrete: true }
-          );
-        };
-        const eventDetail = { originalEvent: event };
-        if (event.pointerType === "touch") {
-          ownerDocument.removeEventListener("click", handleClickRef.current);
-          handleClickRef.current = handleAndDispatchPointerDownOutsideEvent2;
-          ownerDocument.addEventListener("click", handleClickRef.current, { once: true });
-        } else {
-          handleAndDispatchPointerDownOutsideEvent2();
-        }
-      } else {
-        ownerDocument.removeEventListener("click", handleClickRef.current);
-      }
-      isPointerInsideReactTreeRef.current = false;
-    };
-    const timerId = window.setTimeout(() => {
-      ownerDocument.addEventListener("pointerdown", handlePointerDown);
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-      ownerDocument.removeEventListener("pointerdown", handlePointerDown);
-      ownerDocument.removeEventListener("click", handleClickRef.current);
-    };
-  }, [ownerDocument, handlePointerDownOutside]);
-  return {
-    // ensures we check React component tree (not just DOM tree)
-    onPointerDownCapture: () => isPointerInsideReactTreeRef.current = true
-  };
-}
-function useFocusOutside(onFocusOutside, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
-  const handleFocusOutside = useCallbackRef$1(onFocusOutside);
-  const isFocusInsideReactTreeRef = reactExports.useRef(false);
-  reactExports.useEffect(() => {
-    const handleFocus = (event) => {
-      if (event.target && !isFocusInsideReactTreeRef.current) {
-        const eventDetail = { originalEvent: event };
-        handleAndDispatchCustomEvent(FOCUS_OUTSIDE, handleFocusOutside, eventDetail, {
-          discrete: false
-        });
-      }
-    };
-    ownerDocument.addEventListener("focusin", handleFocus);
-    return () => ownerDocument.removeEventListener("focusin", handleFocus);
-  }, [ownerDocument, handleFocusOutside]);
-  return {
-    onFocusCapture: () => isFocusInsideReactTreeRef.current = true,
-    onBlurCapture: () => isFocusInsideReactTreeRef.current = false
-  };
-}
-function dispatchUpdate() {
-  const event = new CustomEvent(CONTEXT_UPDATE);
-  document.dispatchEvent(event);
-}
-function handleAndDispatchCustomEvent(name, handler, detail, { discrete }) {
-  const target = detail.originalEvent.target;
-  const event = new CustomEvent(name, { bubbles: false, cancelable: true, detail });
-  if (handler) target.addEventListener(name, handler, { once: true });
-  if (discrete) {
-    dispatchDiscreteCustomEvent(target, event);
-  } else {
-    target.dispatchEvent(event);
-  }
-}
-var AUTOFOCUS_ON_MOUNT = "focusScope.autoFocusOnMount";
-var AUTOFOCUS_ON_UNMOUNT = "focusScope.autoFocusOnUnmount";
-var EVENT_OPTIONS$1 = { bubbles: false, cancelable: true };
-var FOCUS_SCOPE_NAME = "FocusScope";
-var FocusScope = reactExports.forwardRef((props, forwardedRef) => {
-  const {
-    loop = false,
-    trapped = false,
-    onMountAutoFocus: onMountAutoFocusProp,
-    onUnmountAutoFocus: onUnmountAutoFocusProp,
-    ...scopeProps
-  } = props;
-  const [container, setContainer] = reactExports.useState(null);
-  const onMountAutoFocus = useCallbackRef$1(onMountAutoFocusProp);
-  const onUnmountAutoFocus = useCallbackRef$1(onUnmountAutoFocusProp);
-  const lastFocusedElementRef = reactExports.useRef(null);
-  const composedRefs = useComposedRefs(forwardedRef, (node) => setContainer(node));
-  const focusScope = reactExports.useRef({
-    paused: false,
-    pause() {
-      this.paused = true;
-    },
-    resume() {
-      this.paused = false;
-    }
-  }).current;
-  reactExports.useEffect(() => {
-    if (trapped) {
-      let handleFocusIn2 = function(event) {
-        if (focusScope.paused || !container) return;
-        const target = event.target;
-        if (container.contains(target)) {
-          lastFocusedElementRef.current = target;
-        } else {
-          focus(lastFocusedElementRef.current, { select: true });
-        }
-      }, handleFocusOut2 = function(event) {
-        if (focusScope.paused || !container) return;
-        const relatedTarget = event.relatedTarget;
-        if (relatedTarget === null) return;
-        if (!container.contains(relatedTarget)) {
-          focus(lastFocusedElementRef.current, { select: true });
-        }
-      }, handleMutations2 = function(mutations) {
-        const focusedElement = document.activeElement;
-        if (focusedElement !== document.body) return;
-        for (const mutation of mutations) {
-          if (mutation.removedNodes.length > 0) focus(container);
-        }
-      };
-      document.addEventListener("focusin", handleFocusIn2);
-      document.addEventListener("focusout", handleFocusOut2);
-      const mutationObserver = new MutationObserver(handleMutations2);
-      if (container) mutationObserver.observe(container, { childList: true, subtree: true });
-      return () => {
-        document.removeEventListener("focusin", handleFocusIn2);
-        document.removeEventListener("focusout", handleFocusOut2);
-        mutationObserver.disconnect();
-      };
-    }
-  }, [trapped, container, focusScope.paused]);
-  reactExports.useEffect(() => {
-    if (container) {
-      focusScopesStack.add(focusScope);
-      const previouslyFocusedElement = document.activeElement;
-      const hasFocusedCandidate = container.contains(previouslyFocusedElement);
-      if (!hasFocusedCandidate) {
-        const mountEvent = new CustomEvent(AUTOFOCUS_ON_MOUNT, EVENT_OPTIONS$1);
-        container.addEventListener(AUTOFOCUS_ON_MOUNT, onMountAutoFocus);
-        container.dispatchEvent(mountEvent);
-        if (!mountEvent.defaultPrevented) {
-          focusFirst$1(removeLinks(getTabbableCandidates(container)), { select: true });
-          if (document.activeElement === previouslyFocusedElement) {
-            focus(container);
-          }
-        }
-      }
-      return () => {
-        container.removeEventListener(AUTOFOCUS_ON_MOUNT, onMountAutoFocus);
-        setTimeout(() => {
-          const unmountEvent = new CustomEvent(AUTOFOCUS_ON_UNMOUNT, EVENT_OPTIONS$1);
-          container.addEventListener(AUTOFOCUS_ON_UNMOUNT, onUnmountAutoFocus);
-          container.dispatchEvent(unmountEvent);
-          if (!unmountEvent.defaultPrevented) {
-            focus(previouslyFocusedElement ?? document.body, { select: true });
-          }
-          container.removeEventListener(AUTOFOCUS_ON_UNMOUNT, onUnmountAutoFocus);
-          focusScopesStack.remove(focusScope);
-        }, 0);
-      };
-    }
-  }, [container, onMountAutoFocus, onUnmountAutoFocus, focusScope]);
-  const handleKeyDown = reactExports.useCallback(
-    (event) => {
-      if (!loop && !trapped) return;
-      if (focusScope.paused) return;
-      const isTabKey = event.key === "Tab" && !event.altKey && !event.ctrlKey && !event.metaKey;
-      const focusedElement = document.activeElement;
-      if (isTabKey && focusedElement) {
-        const container2 = event.currentTarget;
-        const [first, last2] = getTabbableEdges(container2);
-        const hasTabbableElementsInside = first && last2;
-        if (!hasTabbableElementsInside) {
-          if (focusedElement === container2) event.preventDefault();
-        } else {
-          if (!event.shiftKey && focusedElement === last2) {
-            event.preventDefault();
-            if (loop) focus(first, { select: true });
-          } else if (event.shiftKey && focusedElement === first) {
-            event.preventDefault();
-            if (loop) focus(last2, { select: true });
-          }
-        }
-      }
-    },
-    [loop, trapped, focusScope.paused]
-  );
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
-});
-FocusScope.displayName = FOCUS_SCOPE_NAME;
-function focusFirst$1(candidates, { select = false } = {}) {
-  const previouslyFocusedElement = document.activeElement;
-  for (const candidate of candidates) {
-    focus(candidate, { select });
-    if (document.activeElement !== previouslyFocusedElement) return;
-  }
-}
-function getTabbableEdges(container) {
-  const candidates = getTabbableCandidates(container);
-  const first = findVisible(candidates, container);
-  const last2 = findVisible(candidates.reverse(), container);
-  return [first, last2];
-}
-function getTabbableCandidates(container) {
-  const nodes = [];
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, {
-    acceptNode: (node) => {
-      const isHiddenInput = node.tagName === "INPUT" && node.type === "hidden";
-      if (node.disabled || node.hidden || isHiddenInput) return NodeFilter.FILTER_SKIP;
-      return node.tabIndex >= 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    onSuccess: () => {
+      queryClient2.invalidateQueries({ queryKey: ["supportTickets"] });
     }
   });
-  while (walker.nextNode()) nodes.push(walker.currentNode);
-  return nodes;
 }
-function findVisible(elements, container) {
-  for (const element of elements) {
-    if (!isHidden(element, { upTo: container })) return element;
-  }
-}
-function isHidden(node, { upTo }) {
-  if (getComputedStyle(node).visibility === "hidden") return true;
-  while (node) {
-    if (upTo !== void 0 && node === upTo) return false;
-    if (getComputedStyle(node).display === "none") return true;
-    node = node.parentElement;
-  }
-  return false;
-}
-function isSelectableInput(element) {
-  return element instanceof HTMLInputElement && "select" in element;
-}
-function focus(element, { select = false } = {}) {
-  if (element && element.focus) {
-    const previouslyFocusedElement = document.activeElement;
-    element.focus({ preventScroll: true });
-    if (element !== previouslyFocusedElement && isSelectableInput(element) && select)
-      element.select();
-  }
-}
-var focusScopesStack = createFocusScopesStack();
-function createFocusScopesStack() {
-  let stack = [];
-  return {
-    add(focusScope) {
-      const activeFocusScope = stack[0];
-      if (focusScope !== activeFocusScope) {
-        activeFocusScope == null ? void 0 : activeFocusScope.pause();
-      }
-      stack = arrayRemove(stack, focusScope);
-      stack.unshift(focusScope);
-    },
-    remove(focusScope) {
-      var _a2;
-      stack = arrayRemove(stack, focusScope);
-      (_a2 = stack[0]) == null ? void 0 : _a2.resume();
-    }
-  };
-}
-function arrayRemove(array, item) {
-  const updatedArray = [...array];
-  const index2 = updatedArray.indexOf(item);
-  if (index2 !== -1) {
-    updatedArray.splice(index2, 1);
-  }
-  return updatedArray;
-}
-function removeLinks(items) {
-  return items.filter((item) => item.tagName !== "A");
-}
-var PORTAL_NAME$3 = "Portal";
-var Portal$3 = reactExports.forwardRef((props, forwardedRef) => {
-  var _a2;
-  const { container: containerProp, ...portalProps } = props;
-  const [mounted, setMounted] = reactExports.useState(false);
-  useLayoutEffect2(() => setMounted(true), []);
-  const container = containerProp || mounted && ((_a2 = globalThis == null ? void 0 : globalThis.document) == null ? void 0 : _a2.body);
-  return container ? vt.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...portalProps, ref: forwardedRef }), container) : null;
-});
-Portal$3.displayName = PORTAL_NAME$3;
-function useStateMachine(initialState, machine) {
-  return reactExports.useReducer((state, event) => {
-    const nextState = machine[state][event];
-    return nextState ?? state;
-  }, initialState);
-}
-var Presence = (props) => {
-  const { present, children } = props;
-  const presence = usePresence(present);
-  const child = typeof children === "function" ? children({ present: presence.isPresent }) : reactExports.Children.only(children);
-  const ref = useComposedRefs(presence.ref, getElementRef(child));
-  const forceMount = typeof children === "function";
-  return forceMount || presence.isPresent ? reactExports.cloneElement(child, { ref }) : null;
-};
-Presence.displayName = "Presence";
-function usePresence(present) {
-  const [node, setNode] = reactExports.useState();
-  const stylesRef = reactExports.useRef(null);
-  const prevPresentRef = reactExports.useRef(present);
-  const prevAnimationNameRef = reactExports.useRef("none");
-  const initialState = present ? "mounted" : "unmounted";
-  const [state, send] = useStateMachine(initialState, {
-    mounted: {
-      UNMOUNT: "unmounted",
-      ANIMATION_OUT: "unmountSuspended"
-    },
-    unmountSuspended: {
-      MOUNT: "mounted",
-      ANIMATION_END: "unmounted"
-    },
-    unmounted: {
-      MOUNT: "mounted"
-    }
+function useSupportTickets(enabled) {
+  const { actor, ready } = useBackendActor();
+  return useQuery({
+    queryKey: ["supportTickets"],
+    queryFn: async () => actor ? actor.listSupportTickets() : [],
+    enabled: ready && enabled,
+    refetchInterval: 6e4
   });
-  reactExports.useEffect(() => {
-    const currentAnimationName = getAnimationName(stylesRef.current);
-    prevAnimationNameRef.current = state === "mounted" ? currentAnimationName : "none";
-  }, [state]);
-  useLayoutEffect2(() => {
-    const styles = stylesRef.current;
-    const wasPresent = prevPresentRef.current;
-    const hasPresentChanged = wasPresent !== present;
-    if (hasPresentChanged) {
-      const prevAnimationName = prevAnimationNameRef.current;
-      const currentAnimationName = getAnimationName(styles);
-      if (present) {
-        send("MOUNT");
-      } else if (currentAnimationName === "none" || (styles == null ? void 0 : styles.display) === "none") {
-        send("UNMOUNT");
-      } else {
-        const isAnimating = prevAnimationName !== currentAnimationName;
-        if (wasPresent && isAnimating) {
-          send("ANIMATION_OUT");
-        } else {
-          send("UNMOUNT");
-        }
-      }
-      prevPresentRef.current = present;
-    }
-  }, [present, send]);
-  useLayoutEffect2(() => {
-    if (node) {
-      let timeoutId;
-      const ownerWindow = node.ownerDocument.defaultView ?? window;
-      const handleAnimationEnd = (event) => {
-        const currentAnimationName = getAnimationName(stylesRef.current);
-        const isCurrentAnimation = currentAnimationName.includes(CSS.escape(event.animationName));
-        if (event.target === node && isCurrentAnimation) {
-          send("ANIMATION_END");
-          if (!prevPresentRef.current) {
-            const currentFillMode = node.style.animationFillMode;
-            node.style.animationFillMode = "forwards";
-            timeoutId = ownerWindow.setTimeout(() => {
-              if (node.style.animationFillMode === "forwards") {
-                node.style.animationFillMode = currentFillMode;
-              }
-            });
-          }
-        }
-      };
-      const handleAnimationStart = (event) => {
-        if (event.target === node) {
-          prevAnimationNameRef.current = getAnimationName(stylesRef.current);
-        }
-      };
-      node.addEventListener("animationstart", handleAnimationStart);
-      node.addEventListener("animationcancel", handleAnimationEnd);
-      node.addEventListener("animationend", handleAnimationEnd);
-      return () => {
-        ownerWindow.clearTimeout(timeoutId);
-        node.removeEventListener("animationstart", handleAnimationStart);
-        node.removeEventListener("animationcancel", handleAnimationEnd);
-        node.removeEventListener("animationend", handleAnimationEnd);
-      };
-    } else {
-      send("ANIMATION_END");
-    }
-  }, [node, send]);
-  return {
-    isPresent: ["mounted", "unmountSuspended"].includes(state),
-    ref: reactExports.useCallback((node2) => {
-      stylesRef.current = node2 ? getComputedStyle(node2) : null;
-      setNode(node2);
-    }, [])
-  };
-}
-function getAnimationName(styles) {
-  return (styles == null ? void 0 : styles.animationName) || "none";
-}
-function getElementRef(element) {
-  var _a2, _b2;
-  let getter = (_a2 = Object.getOwnPropertyDescriptor(element.props, "ref")) == null ? void 0 : _a2.get;
-  let mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.ref;
-  }
-  getter = (_b2 = Object.getOwnPropertyDescriptor(element, "ref")) == null ? void 0 : _b2.get;
-  mayWarn = getter && "isReactWarning" in getter && getter.isReactWarning;
-  if (mayWarn) {
-    return element.props.ref;
-  }
-  return element.props.ref || element.ref;
-}
-var count = 0;
-function useFocusGuards() {
-  reactExports.useEffect(() => {
-    const edgeGuards = document.querySelectorAll("[data-radix-focus-guard]");
-    document.body.insertAdjacentElement("afterbegin", edgeGuards[0] ?? createFocusGuard());
-    document.body.insertAdjacentElement("beforeend", edgeGuards[1] ?? createFocusGuard());
-    count++;
-    return () => {
-      if (count === 1) {
-        document.querySelectorAll("[data-radix-focus-guard]").forEach((node) => node.remove());
-      }
-      count--;
-    };
-  }, []);
-}
-function createFocusGuard() {
-  const element = document.createElement("span");
-  element.setAttribute("data-radix-focus-guard", "");
-  element.tabIndex = 0;
-  element.style.outline = "none";
-  element.style.opacity = "0";
-  element.style.position = "fixed";
-  element.style.pointerEvents = "none";
-  return element;
-}
-var __assign = function() {
-  __assign = Object.assign || function __assign2(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-      s = arguments[i];
-      for (var p2 in s) if (Object.prototype.hasOwnProperty.call(s, p2)) t[p2] = s[p2];
-    }
-    return t;
-  };
-  return __assign.apply(this, arguments);
-};
-function __rest(s, e) {
-  var t = {};
-  for (var p2 in s) if (Object.prototype.hasOwnProperty.call(s, p2) && e.indexOf(p2) < 0)
-    t[p2] = s[p2];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (var i = 0, p2 = Object.getOwnPropertySymbols(s); i < p2.length; i++) {
-      if (e.indexOf(p2[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p2[i]))
-        t[p2[i]] = s[p2[i]];
-    }
-  return t;
-}
-function __spreadArray(to, from, pack) {
-  if (pack || arguments.length === 2) for (var i = 0, l2 = from.length, ar; i < l2; i++) {
-    if (ar || !(i in from)) {
-      if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-      ar[i] = from[i];
-    }
-  }
-  return to.concat(ar || Array.prototype.slice.call(from));
-}
-typeof SuppressedError === "function" ? SuppressedError : function(error, suppressed, message) {
-  var e = new Error(message);
-  return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-};
-var zeroRightClassName = "right-scroll-bar-position";
-var fullWidthClassName = "width-before-scroll-bar";
-var noScrollbarsClassName = "with-scroll-bars-hidden";
-var removedBarSizeVariable = "--removed-body-scroll-bar-size";
-function assignRef(ref, value) {
-  if (typeof ref === "function") {
-    ref(value);
-  } else if (ref) {
-    ref.current = value;
-  }
-  return ref;
-}
-function useCallbackRef(initialValue, callback) {
-  var ref = reactExports.useState(function() {
-    return {
-      // value
-      value: initialValue,
-      // last callback
-      callback,
-      // "memoized" public interface
-      facade: {
-        get current() {
-          return ref.value;
-        },
-        set current(value) {
-          var last2 = ref.value;
-          if (last2 !== value) {
-            ref.value = value;
-            ref.callback(value, last2);
-          }
-        }
-      }
-    };
-  })[0];
-  ref.callback = callback;
-  return ref.facade;
-}
-var useIsomorphicLayoutEffect = typeof window !== "undefined" ? reactExports.useLayoutEffect : reactExports.useEffect;
-var currentValues = /* @__PURE__ */ new WeakMap();
-function useMergeRefs(refs, defaultValue) {
-  var callbackRef = useCallbackRef(null, function(newValue) {
-    return refs.forEach(function(ref) {
-      return assignRef(ref, newValue);
-    });
-  });
-  useIsomorphicLayoutEffect(function() {
-    var oldValue = currentValues.get(callbackRef);
-    if (oldValue) {
-      var prevRefs_1 = new Set(oldValue);
-      var nextRefs_1 = new Set(refs);
-      var current_1 = callbackRef.current;
-      prevRefs_1.forEach(function(ref) {
-        if (!nextRefs_1.has(ref)) {
-          assignRef(ref, null);
-        }
-      });
-      nextRefs_1.forEach(function(ref) {
-        if (!prevRefs_1.has(ref)) {
-          assignRef(ref, current_1);
-        }
-      });
-    }
-    currentValues.set(callbackRef, refs);
-  }, [refs]);
-  return callbackRef;
-}
-function ItoI(a2) {
-  return a2;
-}
-function innerCreateMedium(defaults, middleware) {
-  if (middleware === void 0) {
-    middleware = ItoI;
-  }
-  var buffer = [];
-  var assigned = false;
-  var medium = {
-    read: function() {
-      if (assigned) {
-        throw new Error("Sidecar: could not `read` from an `assigned` medium. `read` could be used only with `useMedium`.");
-      }
-      if (buffer.length) {
-        return buffer[buffer.length - 1];
-      }
-      return defaults;
-    },
-    useMedium: function(data) {
-      var item = middleware(data, assigned);
-      buffer.push(item);
-      return function() {
-        buffer = buffer.filter(function(x3) {
-          return x3 !== item;
-        });
-      };
-    },
-    assignSyncMedium: function(cb) {
-      assigned = true;
-      while (buffer.length) {
-        var cbs = buffer;
-        buffer = [];
-        cbs.forEach(cb);
-      }
-      buffer = {
-        push: function(x3) {
-          return cb(x3);
-        },
-        filter: function() {
-          return buffer;
-        }
-      };
-    },
-    assignMedium: function(cb) {
-      assigned = true;
-      var pendingQueue = [];
-      if (buffer.length) {
-        var cbs = buffer;
-        buffer = [];
-        cbs.forEach(cb);
-        pendingQueue = buffer;
-      }
-      var executeQueue = function() {
-        var cbs2 = pendingQueue;
-        pendingQueue = [];
-        cbs2.forEach(cb);
-      };
-      var cycle = function() {
-        return Promise.resolve().then(executeQueue);
-      };
-      cycle();
-      buffer = {
-        push: function(x3) {
-          pendingQueue.push(x3);
-          cycle();
-        },
-        filter: function(filter) {
-          pendingQueue = pendingQueue.filter(filter);
-          return buffer;
-        }
-      };
-    }
-  };
-  return medium;
-}
-function createSidecarMedium(options) {
-  if (options === void 0) {
-    options = {};
-  }
-  var medium = innerCreateMedium(null);
-  medium.options = __assign({ async: true, ssr: false }, options);
-  return medium;
-}
-var SideCar$1 = function(_a2) {
-  var sideCar = _a2.sideCar, rest = __rest(_a2, ["sideCar"]);
-  if (!sideCar) {
-    throw new Error("Sidecar: please provide `sideCar` property to import the right car");
-  }
-  var Target = sideCar.read();
-  if (!Target) {
-    throw new Error("Sidecar medium not found");
-  }
-  return reactExports.createElement(Target, __assign({}, rest));
-};
-SideCar$1.isSideCarExport = true;
-function exportSidecar(medium, exported) {
-  medium.useMedium(exported);
-  return SideCar$1;
-}
-var effectCar = createSidecarMedium();
-var nothing = function() {
-  return;
-};
-var RemoveScroll = reactExports.forwardRef(function(props, parentRef) {
-  var ref = reactExports.useRef(null);
-  var _a2 = reactExports.useState({
-    onScrollCapture: nothing,
-    onWheelCapture: nothing,
-    onTouchMoveCapture: nothing
-  }), callbacks = _a2[0], setCallbacks = _a2[1];
-  var forwardProps = props.forwardProps, children = props.children, className = props.className, removeScrollBar = props.removeScrollBar, enabled = props.enabled, shards = props.shards, sideCar = props.sideCar, noRelative = props.noRelative, noIsolation = props.noIsolation, inert = props.inert, allowPinchZoom = props.allowPinchZoom, _b2 = props.as, Container = _b2 === void 0 ? "div" : _b2, gapMode = props.gapMode, rest = __rest(props, ["forwardProps", "children", "className", "removeScrollBar", "enabled", "shards", "sideCar", "noRelative", "noIsolation", "inert", "allowPinchZoom", "as", "gapMode"]);
-  var SideCar2 = sideCar;
-  var containerRef = useMergeRefs([ref, parentRef]);
-  var containerProps = __assign(__assign({}, rest), callbacks);
-  return reactExports.createElement(
-    reactExports.Fragment,
-    null,
-    enabled && reactExports.createElement(SideCar2, { sideCar: effectCar, removeScrollBar, shards, noRelative, noIsolation, inert, setCallbacks, allowPinchZoom: !!allowPinchZoom, lockRef: ref, gapMode }),
-    forwardProps ? reactExports.cloneElement(reactExports.Children.only(children), __assign(__assign({}, containerProps), { ref: containerRef })) : reactExports.createElement(Container, __assign({}, containerProps, { className, ref: containerRef }), children)
-  );
-});
-RemoveScroll.defaultProps = {
-  enabled: true,
-  removeScrollBar: true,
-  inert: false
-};
-RemoveScroll.classNames = {
-  fullWidth: fullWidthClassName,
-  zeroRight: zeroRightClassName
-};
-var getNonce = function() {
-  if (typeof __webpack_nonce__ !== "undefined") {
-    return __webpack_nonce__;
-  }
-  return void 0;
-};
-function makeStyleTag() {
-  if (!document)
-    return null;
-  var tag = document.createElement("style");
-  tag.type = "text/css";
-  var nonce = getNonce();
-  if (nonce) {
-    tag.setAttribute("nonce", nonce);
-  }
-  return tag;
-}
-function injectStyles(tag, css) {
-  if (tag.styleSheet) {
-    tag.styleSheet.cssText = css;
-  } else {
-    tag.appendChild(document.createTextNode(css));
-  }
-}
-function insertStyleTag(tag) {
-  var head = document.head || document.getElementsByTagName("head")[0];
-  head.appendChild(tag);
-}
-var stylesheetSingleton = function() {
-  var counter = 0;
-  var stylesheet = null;
-  return {
-    add: function(style2) {
-      if (counter == 0) {
-        if (stylesheet = makeStyleTag()) {
-          injectStyles(stylesheet, style2);
-          insertStyleTag(stylesheet);
-        }
-      }
-      counter++;
-    },
-    remove: function() {
-      counter--;
-      if (!counter && stylesheet) {
-        stylesheet.parentNode && stylesheet.parentNode.removeChild(stylesheet);
-        stylesheet = null;
-      }
-    }
-  };
-};
-var styleHookSingleton = function() {
-  var sheet = stylesheetSingleton();
-  return function(styles, isDynamic) {
-    reactExports.useEffect(function() {
-      sheet.add(styles);
-      return function() {
-        sheet.remove();
-      };
-    }, [styles && isDynamic]);
-  };
-};
-var styleSingleton = function() {
-  var useStyle = styleHookSingleton();
-  var Sheet2 = function(_a2) {
-    var styles = _a2.styles, dynamic = _a2.dynamic;
-    useStyle(styles, dynamic);
-    return null;
-  };
-  return Sheet2;
-};
-var zeroGap = {
-  left: 0,
-  top: 0,
-  right: 0,
-  gap: 0
-};
-var parse = function(x3) {
-  return parseInt(x3 || "", 10) || 0;
-};
-var getOffset = function(gapMode) {
-  var cs = window.getComputedStyle(document.body);
-  var left = cs[gapMode === "padding" ? "paddingLeft" : "marginLeft"];
-  var top = cs[gapMode === "padding" ? "paddingTop" : "marginTop"];
-  var right = cs[gapMode === "padding" ? "paddingRight" : "marginRight"];
-  return [parse(left), parse(top), parse(right)];
-};
-var getGapWidth = function(gapMode) {
-  if (gapMode === void 0) {
-    gapMode = "margin";
-  }
-  if (typeof window === "undefined") {
-    return zeroGap;
-  }
-  var offsets = getOffset(gapMode);
-  var documentWidth = document.documentElement.clientWidth;
-  var windowWidth = window.innerWidth;
-  return {
-    left: offsets[0],
-    top: offsets[1],
-    right: offsets[2],
-    gap: Math.max(0, windowWidth - documentWidth + offsets[2] - offsets[0])
-  };
-};
-var Style = styleSingleton();
-var lockAttribute = "data-scroll-locked";
-var getStyles = function(_a2, allowRelative, gapMode, important) {
-  var left = _a2.left, top = _a2.top, right = _a2.right, gap = _a2.gap;
-  if (gapMode === void 0) {
-    gapMode = "margin";
-  }
-  return "\n  .".concat(noScrollbarsClassName, " {\n   overflow: hidden ").concat(important, ";\n   padding-right: ").concat(gap, "px ").concat(important, ";\n  }\n  body[").concat(lockAttribute, "] {\n    overflow: hidden ").concat(important, ";\n    overscroll-behavior: contain;\n    ").concat([
-    allowRelative && "position: relative ".concat(important, ";"),
-    gapMode === "margin" && "\n    padding-left: ".concat(left, "px;\n    padding-top: ").concat(top, "px;\n    padding-right: ").concat(right, "px;\n    margin-left:0;\n    margin-top:0;\n    margin-right: ").concat(gap, "px ").concat(important, ";\n    "),
-    gapMode === "padding" && "padding-right: ".concat(gap, "px ").concat(important, ";")
-  ].filter(Boolean).join(""), "\n  }\n  \n  .").concat(zeroRightClassName, " {\n    right: ").concat(gap, "px ").concat(important, ";\n  }\n  \n  .").concat(fullWidthClassName, " {\n    margin-right: ").concat(gap, "px ").concat(important, ";\n  }\n  \n  .").concat(zeroRightClassName, " .").concat(zeroRightClassName, " {\n    right: 0 ").concat(important, ";\n  }\n  \n  .").concat(fullWidthClassName, " .").concat(fullWidthClassName, " {\n    margin-right: 0 ").concat(important, ";\n  }\n  \n  body[").concat(lockAttribute, "] {\n    ").concat(removedBarSizeVariable, ": ").concat(gap, "px;\n  }\n");
-};
-var getCurrentUseCounter = function() {
-  var counter = parseInt(document.body.getAttribute(lockAttribute) || "0", 10);
-  return isFinite(counter) ? counter : 0;
-};
-var useLockAttribute = function() {
-  reactExports.useEffect(function() {
-    document.body.setAttribute(lockAttribute, (getCurrentUseCounter() + 1).toString());
-    return function() {
-      var newCounter = getCurrentUseCounter() - 1;
-      if (newCounter <= 0) {
-        document.body.removeAttribute(lockAttribute);
-      } else {
-        document.body.setAttribute(lockAttribute, newCounter.toString());
-      }
-    };
-  }, []);
-};
-var RemoveScrollBar = function(_a2) {
-  var noRelative = _a2.noRelative, noImportant = _a2.noImportant, _b2 = _a2.gapMode, gapMode = _b2 === void 0 ? "margin" : _b2;
-  useLockAttribute();
-  var gap = reactExports.useMemo(function() {
-    return getGapWidth(gapMode);
-  }, [gapMode]);
-  return reactExports.createElement(Style, { styles: getStyles(gap, !noRelative, gapMode, !noImportant ? "!important" : "") });
-};
-var passiveSupported = false;
-if (typeof window !== "undefined") {
-  try {
-    var options = Object.defineProperty({}, "passive", {
-      get: function() {
-        passiveSupported = true;
-        return true;
-      }
-    });
-    window.addEventListener("test", options, options);
-    window.removeEventListener("test", options, options);
-  } catch (err) {
-    passiveSupported = false;
-  }
-}
-var nonPassive = passiveSupported ? { passive: false } : false;
-var alwaysContainsScroll = function(node) {
-  return node.tagName === "TEXTAREA";
-};
-var elementCanBeScrolled = function(node, overflow) {
-  if (!(node instanceof Element)) {
-    return false;
-  }
-  var styles = window.getComputedStyle(node);
-  return (
-    // not-not-scrollable
-    styles[overflow] !== "hidden" && // contains scroll inside self
-    !(styles.overflowY === styles.overflowX && !alwaysContainsScroll(node) && styles[overflow] === "visible")
-  );
-};
-var elementCouldBeVScrolled = function(node) {
-  return elementCanBeScrolled(node, "overflowY");
-};
-var elementCouldBeHScrolled = function(node) {
-  return elementCanBeScrolled(node, "overflowX");
-};
-var locationCouldBeScrolled = function(axis, node) {
-  var ownerDocument = node.ownerDocument;
-  var current = node;
-  do {
-    if (typeof ShadowRoot !== "undefined" && current instanceof ShadowRoot) {
-      current = current.host;
-    }
-    var isScrollable = elementCouldBeScrolled(axis, current);
-    if (isScrollable) {
-      var _a2 = getScrollVariables(axis, current), scrollHeight = _a2[1], clientHeight = _a2[2];
-      if (scrollHeight > clientHeight) {
-        return true;
-      }
-    }
-    current = current.parentNode;
-  } while (current && current !== ownerDocument.body);
-  return false;
-};
-var getVScrollVariables = function(_a2) {
-  var scrollTop = _a2.scrollTop, scrollHeight = _a2.scrollHeight, clientHeight = _a2.clientHeight;
-  return [
-    scrollTop,
-    scrollHeight,
-    clientHeight
-  ];
-};
-var getHScrollVariables = function(_a2) {
-  var scrollLeft = _a2.scrollLeft, scrollWidth = _a2.scrollWidth, clientWidth = _a2.clientWidth;
-  return [
-    scrollLeft,
-    scrollWidth,
-    clientWidth
-  ];
-};
-var elementCouldBeScrolled = function(axis, node) {
-  return axis === "v" ? elementCouldBeVScrolled(node) : elementCouldBeHScrolled(node);
-};
-var getScrollVariables = function(axis, node) {
-  return axis === "v" ? getVScrollVariables(node) : getHScrollVariables(node);
-};
-var getDirectionFactor = function(axis, direction) {
-  return axis === "h" && direction === "rtl" ? -1 : 1;
-};
-var handleScroll = function(axis, endTarget, event, sourceDelta, noOverscroll) {
-  var directionFactor = getDirectionFactor(axis, window.getComputedStyle(endTarget).direction);
-  var delta = directionFactor * sourceDelta;
-  var target = event.target;
-  var targetInLock = endTarget.contains(target);
-  var shouldCancelScroll = false;
-  var isDeltaPositive = delta > 0;
-  var availableScroll = 0;
-  var availableScrollTop = 0;
-  do {
-    if (!target) {
-      break;
-    }
-    var _a2 = getScrollVariables(axis, target), position = _a2[0], scroll_1 = _a2[1], capacity = _a2[2];
-    var elementScroll = scroll_1 - capacity - directionFactor * position;
-    if (position || elementScroll) {
-      if (elementCouldBeScrolled(axis, target)) {
-        availableScroll += elementScroll;
-        availableScrollTop += position;
-      }
-    }
-    var parent_1 = target.parentNode;
-    target = parent_1 && parent_1.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? parent_1.host : parent_1;
-  } while (
-    // portaled content
-    !targetInLock && target !== document.body || // self content
-    targetInLock && (endTarget.contains(target) || endTarget === target)
-  );
-  if (isDeltaPositive && (Math.abs(availableScroll) < 1 || false)) {
-    shouldCancelScroll = true;
-  } else if (!isDeltaPositive && (Math.abs(availableScrollTop) < 1 || false)) {
-    shouldCancelScroll = true;
-  }
-  return shouldCancelScroll;
-};
-var getTouchXY = function(event) {
-  return "changedTouches" in event ? [event.changedTouches[0].clientX, event.changedTouches[0].clientY] : [0, 0];
-};
-var getDeltaXY = function(event) {
-  return [event.deltaX, event.deltaY];
-};
-var extractRef = function(ref) {
-  return ref && "current" in ref ? ref.current : ref;
-};
-var deltaCompare = function(x3, y2) {
-  return x3[0] === y2[0] && x3[1] === y2[1];
-};
-var generateStyle = function(id) {
-  return "\n  .block-interactivity-".concat(id, " {pointer-events: none;}\n  .allow-interactivity-").concat(id, " {pointer-events: all;}\n");
-};
-var idCounter$1 = 0;
-var lockStack = [];
-function RemoveScrollSideCar(props) {
-  var shouldPreventQueue = reactExports.useRef([]);
-  var touchStartRef = reactExports.useRef([0, 0]);
-  var activeAxis = reactExports.useRef();
-  var id = reactExports.useState(idCounter$1++)[0];
-  var Style2 = reactExports.useState(styleSingleton)[0];
-  var lastProps = reactExports.useRef(props);
-  reactExports.useEffect(function() {
-    lastProps.current = props;
-  }, [props]);
-  reactExports.useEffect(function() {
-    if (props.inert) {
-      document.body.classList.add("block-interactivity-".concat(id));
-      var allow_1 = __spreadArray([props.lockRef.current], (props.shards || []).map(extractRef), true).filter(Boolean);
-      allow_1.forEach(function(el) {
-        return el.classList.add("allow-interactivity-".concat(id));
-      });
-      return function() {
-        document.body.classList.remove("block-interactivity-".concat(id));
-        allow_1.forEach(function(el) {
-          return el.classList.remove("allow-interactivity-".concat(id));
-        });
-      };
-    }
-    return;
-  }, [props.inert, props.lockRef.current, props.shards]);
-  var shouldCancelEvent = reactExports.useCallback(function(event, parent) {
-    if ("touches" in event && event.touches.length === 2 || event.type === "wheel" && event.ctrlKey) {
-      return !lastProps.current.allowPinchZoom;
-    }
-    var touch = getTouchXY(event);
-    var touchStart = touchStartRef.current;
-    var deltaX = "deltaX" in event ? event.deltaX : touchStart[0] - touch[0];
-    var deltaY = "deltaY" in event ? event.deltaY : touchStart[1] - touch[1];
-    var currentAxis;
-    var target = event.target;
-    var moveDirection = Math.abs(deltaX) > Math.abs(deltaY) ? "h" : "v";
-    if ("touches" in event && moveDirection === "h" && target.type === "range") {
-      return false;
-    }
-    var selection = window.getSelection();
-    var anchorNode = selection && selection.anchorNode;
-    var isTouchingSelection = anchorNode ? anchorNode === target || anchorNode.contains(target) : false;
-    if (isTouchingSelection) {
-      return false;
-    }
-    var canBeScrolledInMainDirection = locationCouldBeScrolled(moveDirection, target);
-    if (!canBeScrolledInMainDirection) {
-      return true;
-    }
-    if (canBeScrolledInMainDirection) {
-      currentAxis = moveDirection;
-    } else {
-      currentAxis = moveDirection === "v" ? "h" : "v";
-      canBeScrolledInMainDirection = locationCouldBeScrolled(moveDirection, target);
-    }
-    if (!canBeScrolledInMainDirection) {
-      return false;
-    }
-    if (!activeAxis.current && "changedTouches" in event && (deltaX || deltaY)) {
-      activeAxis.current = currentAxis;
-    }
-    if (!currentAxis) {
-      return true;
-    }
-    var cancelingAxis = activeAxis.current || currentAxis;
-    return handleScroll(cancelingAxis, parent, event, cancelingAxis === "h" ? deltaX : deltaY);
-  }, []);
-  var shouldPrevent = reactExports.useCallback(function(_event) {
-    var event = _event;
-    if (!lockStack.length || lockStack[lockStack.length - 1] !== Style2) {
-      return;
-    }
-    var delta = "deltaY" in event ? getDeltaXY(event) : getTouchXY(event);
-    var sourceEvent = shouldPreventQueue.current.filter(function(e) {
-      return e.name === event.type && (e.target === event.target || event.target === e.shadowParent) && deltaCompare(e.delta, delta);
-    })[0];
-    if (sourceEvent && sourceEvent.should) {
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-      return;
-    }
-    if (!sourceEvent) {
-      var shardNodes = (lastProps.current.shards || []).map(extractRef).filter(Boolean).filter(function(node) {
-        return node.contains(event.target);
-      });
-      var shouldStop = shardNodes.length > 0 ? shouldCancelEvent(event, shardNodes[0]) : !lastProps.current.noIsolation;
-      if (shouldStop) {
-        if (event.cancelable) {
-          event.preventDefault();
-        }
-      }
-    }
-  }, []);
-  var shouldCancel = reactExports.useCallback(function(name, delta, target, should) {
-    var event = { name, delta, target, should, shadowParent: getOutermostShadowParent(target) };
-    shouldPreventQueue.current.push(event);
-    setTimeout(function() {
-      shouldPreventQueue.current = shouldPreventQueue.current.filter(function(e) {
-        return e !== event;
-      });
-    }, 1);
-  }, []);
-  var scrollTouchStart = reactExports.useCallback(function(event) {
-    touchStartRef.current = getTouchXY(event);
-    activeAxis.current = void 0;
-  }, []);
-  var scrollWheel = reactExports.useCallback(function(event) {
-    shouldCancel(event.type, getDeltaXY(event), event.target, shouldCancelEvent(event, props.lockRef.current));
-  }, []);
-  var scrollTouchMove = reactExports.useCallback(function(event) {
-    shouldCancel(event.type, getTouchXY(event), event.target, shouldCancelEvent(event, props.lockRef.current));
-  }, []);
-  reactExports.useEffect(function() {
-    lockStack.push(Style2);
-    props.setCallbacks({
-      onScrollCapture: scrollWheel,
-      onWheelCapture: scrollWheel,
-      onTouchMoveCapture: scrollTouchMove
-    });
-    document.addEventListener("wheel", shouldPrevent, nonPassive);
-    document.addEventListener("touchmove", shouldPrevent, nonPassive);
-    document.addEventListener("touchstart", scrollTouchStart, nonPassive);
-    return function() {
-      lockStack = lockStack.filter(function(inst) {
-        return inst !== Style2;
-      });
-      document.removeEventListener("wheel", shouldPrevent, nonPassive);
-      document.removeEventListener("touchmove", shouldPrevent, nonPassive);
-      document.removeEventListener("touchstart", scrollTouchStart, nonPassive);
-    };
-  }, []);
-  var removeScrollBar = props.removeScrollBar, inert = props.inert;
-  return reactExports.createElement(
-    reactExports.Fragment,
-    null,
-    inert ? reactExports.createElement(Style2, { styles: generateStyle(id) }) : null,
-    removeScrollBar ? reactExports.createElement(RemoveScrollBar, { noRelative: props.noRelative, gapMode: props.gapMode }) : null
-  );
-}
-function getOutermostShadowParent(node) {
-  var shadowParent = null;
-  while (node !== null) {
-    if (node instanceof ShadowRoot) {
-      shadowParent = node.host;
-      node = node.host;
-    }
-    node = node.parentNode;
-  }
-  return shadowParent;
-}
-const SideCar = exportSidecar(effectCar, RemoveScrollSideCar);
-var ReactRemoveScroll = reactExports.forwardRef(function(props, ref) {
-  return reactExports.createElement(RemoveScroll, __assign({}, props, { ref, sideCar: SideCar }));
-});
-ReactRemoveScroll.classNames = RemoveScroll.classNames;
-var getDefaultParent = function(originalTarget) {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  var sampleTarget = Array.isArray(originalTarget) ? originalTarget[0] : originalTarget;
-  return sampleTarget.ownerDocument.body;
-};
-var counterMap = /* @__PURE__ */ new WeakMap();
-var uncontrolledNodes = /* @__PURE__ */ new WeakMap();
-var markerMap = {};
-var lockCount = 0;
-var unwrapHost = function(node) {
-  return node && (node.host || unwrapHost(node.parentNode));
-};
-var correctTargets = function(parent, targets) {
-  return targets.map(function(target) {
-    if (parent.contains(target)) {
-      return target;
-    }
-    var correctedTarget = unwrapHost(target);
-    if (correctedTarget && parent.contains(correctedTarget)) {
-      return correctedTarget;
-    }
-    console.error("aria-hidden", target, "in not contained inside", parent, ". Doing nothing");
-    return null;
-  }).filter(function(x3) {
-    return Boolean(x3);
-  });
-};
-var applyAttributeToOthers = function(originalTarget, parentNode, markerName, controlAttribute) {
-  var targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
-  if (!markerMap[markerName]) {
-    markerMap[markerName] = /* @__PURE__ */ new WeakMap();
-  }
-  var markerCounter = markerMap[markerName];
-  var hiddenNodes = [];
-  var elementsToKeep = /* @__PURE__ */ new Set();
-  var elementsToStop = new Set(targets);
-  var keep = function(el) {
-    if (!el || elementsToKeep.has(el)) {
-      return;
-    }
-    elementsToKeep.add(el);
-    keep(el.parentNode);
-  };
-  targets.forEach(keep);
-  var deep = function(parent) {
-    if (!parent || elementsToStop.has(parent)) {
-      return;
-    }
-    Array.prototype.forEach.call(parent.children, function(node) {
-      if (elementsToKeep.has(node)) {
-        deep(node);
-      } else {
-        try {
-          var attr = node.getAttribute(controlAttribute);
-          var alreadyHidden = attr !== null && attr !== "false";
-          var counterValue = (counterMap.get(node) || 0) + 1;
-          var markerValue = (markerCounter.get(node) || 0) + 1;
-          counterMap.set(node, counterValue);
-          markerCounter.set(node, markerValue);
-          hiddenNodes.push(node);
-          if (counterValue === 1 && alreadyHidden) {
-            uncontrolledNodes.set(node, true);
-          }
-          if (markerValue === 1) {
-            node.setAttribute(markerName, "true");
-          }
-          if (!alreadyHidden) {
-            node.setAttribute(controlAttribute, "true");
-          }
-        } catch (e) {
-          console.error("aria-hidden: cannot operate on ", node, e);
-        }
-      }
-    });
-  };
-  deep(parentNode);
-  elementsToKeep.clear();
-  lockCount++;
-  return function() {
-    hiddenNodes.forEach(function(node) {
-      var counterValue = counterMap.get(node) - 1;
-      var markerValue = markerCounter.get(node) - 1;
-      counterMap.set(node, counterValue);
-      markerCounter.set(node, markerValue);
-      if (!counterValue) {
-        if (!uncontrolledNodes.has(node)) {
-          node.removeAttribute(controlAttribute);
-        }
-        uncontrolledNodes.delete(node);
-      }
-      if (!markerValue) {
-        node.removeAttribute(markerName);
-      }
-    });
-    lockCount--;
-    if (!lockCount) {
-      counterMap = /* @__PURE__ */ new WeakMap();
-      counterMap = /* @__PURE__ */ new WeakMap();
-      uncontrolledNodes = /* @__PURE__ */ new WeakMap();
-      markerMap = {};
-    }
-  };
-};
-var hideOthers = function(originalTarget, parentNode, markerName) {
-  if (markerName === void 0) {
-    markerName = "data-aria-hidden";
-  }
-  var targets = Array.from(Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
-  var activeParentNode = getDefaultParent(originalTarget);
-  if (!activeParentNode) {
-    return function() {
-      return null;
-    };
-  }
-  targets.push.apply(targets, Array.from(activeParentNode.querySelectorAll("[aria-live], script")));
-  return applyAttributeToOthers(targets, activeParentNode, markerName, "aria-hidden");
-};
-var DIALOG_NAME = "Dialog";
-var [createDialogContext] = createContextScope$1(DIALOG_NAME);
-var [DialogProvider, useDialogContext] = createDialogContext(DIALOG_NAME);
-var Dialog$1 = (props) => {
-  const {
-    __scopeDialog,
-    children,
-    open: openProp,
-    defaultOpen,
-    onOpenChange,
-    modal = true
-  } = props;
-  const triggerRef = reactExports.useRef(null);
-  const contentRef = reactExports.useRef(null);
-  const [open, setOpen] = useControllableState({
-    prop: openProp,
-    defaultProp: defaultOpen ?? false,
-    onChange: onOpenChange,
-    caller: DIALOG_NAME
-  });
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    DialogProvider,
-    {
-      scope: __scopeDialog,
-      triggerRef,
-      contentRef,
-      contentId: useId(),
-      titleId: useId(),
-      descriptionId: useId(),
-      open,
-      onOpenChange: setOpen,
-      onOpenToggle: reactExports.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
-      modal,
-      children
-    }
-  );
-};
-Dialog$1.displayName = DIALOG_NAME;
-var TRIGGER_NAME$3 = "DialogTrigger";
-var DialogTrigger = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...triggerProps } = props;
-    const context2 = useDialogContext(TRIGGER_NAME$3, __scopeDialog);
-    const composedTriggerRef = useComposedRefs(forwardedRef, context2.triggerRef);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$1.button,
-      {
-        type: "button",
-        "aria-haspopup": "dialog",
-        "aria-expanded": context2.open,
-        "aria-controls": context2.contentId,
-        "data-state": getState$1(context2.open),
-        ...triggerProps,
-        ref: composedTriggerRef,
-        onClick: composeEventHandlers(props.onClick, context2.onOpenToggle)
-      }
-    );
-  }
-);
-DialogTrigger.displayName = TRIGGER_NAME$3;
-var PORTAL_NAME$2 = "DialogPortal";
-var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, {
-  forceMount: void 0
-});
-var DialogPortal$1 = (props) => {
-  const { __scopeDialog, forceMount, children, container } = props;
-  const context2 = useDialogContext(PORTAL_NAME$2, __scopeDialog);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
-};
-DialogPortal$1.displayName = PORTAL_NAME$2;
-var OVERLAY_NAME = "DialogOverlay";
-var DialogOverlay$1 = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const portalContext = usePortalContext$1(OVERLAY_NAME, props.__scopeDialog);
-    const { forceMount = portalContext.forceMount, ...overlayProps } = props;
-    const context2 = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
-    return context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
-  }
-);
-DialogOverlay$1.displayName = OVERLAY_NAME;
-var Slot$1 = /* @__PURE__ */ createSlot("DialogOverlay.RemoveScroll");
-var DialogOverlayImpl = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...overlayProps } = props;
-    const context2 = useDialogContext(OVERLAY_NAME, __scopeDialog);
-    return (
-      // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
-      // ie. when `Overlay` and `Content` are siblings
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$1, allowPinchZoom: true, shards: [context2.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Primitive$1.div,
-        {
-          "data-state": getState$1(context2.open),
-          ...overlayProps,
-          ref: forwardedRef,
-          style: { pointerEvents: "auto", ...overlayProps.style }
-        }
-      ) })
-    );
-  }
-);
-var CONTENT_NAME$4 = "DialogContent";
-var DialogContent$1 = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const portalContext = usePortalContext$1(CONTENT_NAME$4, props.__scopeDialog);
-    const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
-  }
-);
-DialogContent$1.displayName = CONTENT_NAME$4;
-var DialogContentModal = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
-    const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, context2.contentRef, contentRef);
-    reactExports.useEffect(() => {
-      const content = contentRef.current;
-      if (content) return hideOthers(content);
-    }, []);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      DialogContentImpl,
-      {
-        ...props,
-        ref: composedRefs,
-        trapFocus: context2.open,
-        disableOutsidePointerEvents: true,
-        onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
-          var _a2;
-          event.preventDefault();
-          (_a2 = context2.triggerRef.current) == null ? void 0 : _a2.focus();
-        }),
-        onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
-          const originalEvent = event.detail.originalEvent;
-          const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
-          const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
-          if (isRightClick) event.preventDefault();
-        }),
-        onFocusOutside: composeEventHandlers(
-          props.onFocusOutside,
-          (event) => event.preventDefault()
-        )
-      }
-    );
-  }
-);
-var DialogContentNonModal = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
-    const hasInteractedOutsideRef = reactExports.useRef(false);
-    const hasPointerDownOutsideRef = reactExports.useRef(false);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      DialogContentImpl,
-      {
-        ...props,
-        ref: forwardedRef,
-        trapFocus: false,
-        disableOutsidePointerEvents: false,
-        onCloseAutoFocus: (event) => {
-          var _a2, _b2;
-          (_a2 = props.onCloseAutoFocus) == null ? void 0 : _a2.call(props, event);
-          if (!event.defaultPrevented) {
-            if (!hasInteractedOutsideRef.current) (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.focus();
-            event.preventDefault();
-          }
-          hasInteractedOutsideRef.current = false;
-          hasPointerDownOutsideRef.current = false;
-        },
-        onInteractOutside: (event) => {
-          var _a2, _b2;
-          (_a2 = props.onInteractOutside) == null ? void 0 : _a2.call(props, event);
-          if (!event.defaultPrevented) {
-            hasInteractedOutsideRef.current = true;
-            if (event.detail.originalEvent.type === "pointerdown") {
-              hasPointerDownOutsideRef.current = true;
-            }
-          }
-          const target = event.target;
-          const targetIsTrigger = (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.contains(target);
-          if (targetIsTrigger) event.preventDefault();
-          if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
-            event.preventDefault();
-          }
-        }
-      }
-    );
-  }
-);
-var DialogContentImpl = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-    const context2 = useDialogContext(CONTENT_NAME$4, __scopeDialog);
-    const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, contentRef);
-    useFocusGuards();
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        FocusScope,
-        {
-          asChild: true,
-          loop: true,
-          trapped: trapFocus,
-          onMountAutoFocus: onOpenAutoFocus,
-          onUnmountAutoFocus: onCloseAutoFocus,
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            DismissableLayer,
-            {
-              role: "dialog",
-              id: context2.contentId,
-              "aria-describedby": context2.descriptionId,
-              "aria-labelledby": context2.titleId,
-              "data-state": getState$1(context2.open),
-              ...contentProps,
-              ref: composedRefs,
-              onDismiss: () => context2.onOpenChange(false)
-            }
-          )
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context2.titleId }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning, { contentRef, descriptionId: context2.descriptionId })
-      ] })
-    ] });
-  }
-);
-var TITLE_NAME = "DialogTitle";
-var DialogTitle$1 = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...titleProps } = props;
-    const context2 = useDialogContext(TITLE_NAME, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context2.titleId, ...titleProps, ref: forwardedRef });
-  }
-);
-DialogTitle$1.displayName = TITLE_NAME;
-var DESCRIPTION_NAME = "DialogDescription";
-var DialogDescription$1 = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...descriptionProps } = props;
-    const context2 = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context2.descriptionId, ...descriptionProps, ref: forwardedRef });
-  }
-);
-DialogDescription$1.displayName = DESCRIPTION_NAME;
-var CLOSE_NAME = "DialogClose";
-var DialogClose = reactExports.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...closeProps } = props;
-    const context2 = useDialogContext(CLOSE_NAME, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Primitive$1.button,
-      {
-        type: "button",
-        ...closeProps,
-        ref: forwardedRef,
-        onClick: composeEventHandlers(props.onClick, () => context2.onOpenChange(false))
-      }
-    );
-  }
-);
-DialogClose.displayName = CLOSE_NAME;
-function getState$1(open) {
-  return open ? "open" : "closed";
-}
-var TITLE_WARNING_NAME = "DialogTitleWarning";
-var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
-  contentName: CONTENT_NAME$4,
-  titleName: TITLE_NAME,
-  docsSlug: "dialog"
-});
-var TitleWarning = ({ titleId }) => {
-  const titleWarningContext = useWarningContext(TITLE_WARNING_NAME);
-  const MESSAGE = `\`${titleWarningContext.contentName}\` requires a \`${titleWarningContext.titleName}\` for the component to be accessible for screen reader users.
-
-If you want to hide the \`${titleWarningContext.titleName}\`, you can wrap it with our VisuallyHidden component.
-
-For more information, see https://radix-ui.com/primitives/docs/components/${titleWarningContext.docsSlug}`;
-  reactExports.useEffect(() => {
-    if (titleId) {
-      const hasTitle = document.getElementById(titleId);
-      if (!hasTitle) console.error(MESSAGE);
-    }
-  }, [MESSAGE, titleId]);
-  return null;
-};
-var DESCRIPTION_WARNING_NAME = "DialogDescriptionWarning";
-var DescriptionWarning = ({ contentRef, descriptionId }) => {
-  const descriptionWarningContext = useWarningContext(DESCRIPTION_WARNING_NAME);
-  const MESSAGE = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${descriptionWarningContext.contentName}}.`;
-  reactExports.useEffect(() => {
-    var _a2;
-    const describedById = (_a2 = contentRef.current) == null ? void 0 : _a2.getAttribute("aria-describedby");
-    if (descriptionId && describedById) {
-      const hasDescription = document.getElementById(descriptionId);
-      if (!hasDescription) console.warn(MESSAGE);
-    }
-  }, [MESSAGE, contentRef, descriptionId]);
-  return null;
-};
-var Root$8 = Dialog$1;
-var Portal$2 = DialogPortal$1;
-var Overlay = DialogOverlay$1;
-var Content$2 = DialogContent$1;
-var Title = DialogTitle$1;
-var Description = DialogDescription$1;
-var Close = DialogClose;
-function Dialog({
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root$8, { "data-slot": "dialog", ...props });
-}
-function DialogPortal({
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$2, { "data-slot": "dialog-portal", ...props });
-}
-function DialogOverlay({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Overlay,
-    {
-      "data-slot": "dialog-overlay",
-      className: cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function DialogContent({
-  className,
-  children,
-  showCloseButton = true,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogPortal, { "data-slot": "dialog-portal", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlay, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      Content$2,
-      {
-        "data-slot": "dialog-content",
-        className: cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-          className
-        ),
-        ...props,
-        children: [
-          children,
-          showCloseButton && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            Close,
-            {
-              "data-slot": "dialog-close",
-              className: "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(X, {}),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "sr-only", children: "Close" })
-              ]
-            }
-          )
-        ]
-      }
-    )
-  ] });
-}
-function DialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "dialog-header",
-      className: cn("flex flex-col gap-2 text-center sm:text-left", className),
-      ...props
-    }
-  );
-}
-function DialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      "data-slot": "dialog-footer",
-      className: cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function DialogTitle({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Title,
-    {
-      "data-slot": "dialog-title",
-      className: cn("text-lg leading-none font-semibold", className),
-      ...props
-    }
-  );
-}
-function DialogDescription({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Description,
-    {
-      "data-slot": "dialog-description",
-      className: cn("text-muted-foreground text-sm", className),
-      ...props
-    }
-  );
-}
-const CREDIT_VALUE_CENTS = 1;
-const AI_COSTS = {
-  copy: 1,
-  squareImage: 7,
-  wideImage: 14,
-  hdImage: 20
-};
-const CREDIT_PACKS = [
-  {
-    id: CreditPack.Starter,
-    name: "Starter Pack",
-    priceCents: 500,
-    credits: 500,
-    bonus: 0
-  },
-  {
-    id: CreditPack.Growth,
-    name: "Growth Pack",
-    priceCents: 1500,
-    credits: 1600,
-    bonus: 100
-  },
-  {
-    id: CreditPack.Agency,
-    name: "Agency Pack",
-    priceCents: 3500,
-    credits: 4e3,
-    bonus: 500
-  }
-];
-const MONTHLY_ALLOWANCE = 50;
-function creditsToUsd(credits) {
-  return Number(credits) * CREDIT_VALUE_CENTS / 100;
 }
 const BOTH_SIDES = "Printing both sides";
 const PRODUCT_TYPES = {
@@ -39233,429 +39635,304 @@ function mailClassDelivery(mailClass) {
       return "";
   }
 }
-const usd = new Intl.NumberFormat("en-US", {
+const usd$1 = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 2
 });
 function formatPrice(dollars) {
-  return usd.format(dollars);
+  return usd$1.format(dollars);
 }
 function formatCents(cents) {
-  return usd.format(Number(cents) / 100);
+  return usd$1.format(Number(cents) / 100);
 }
-var jt = (n) => {
-  switch (n) {
-    case "success":
-      return ee;
-    case "info":
-      return ae;
-    case "warning":
-      return oe;
-    case "error":
-      return se;
-    default:
-      return null;
+const CATALOG = [
+  {
+    id: "postcards",
+    productType: ProductType.Postcard,
+    name: "Postcards",
+    blurb: "Six sizes from 3.5×5 to 6×11, full colour both sides on gloss UV stock.",
+    icon: "postcard",
+    variants: ["3.5x5", "4.25x6", "4x9", "5x8", "6x9", "6x11"]
+  },
+  {
+    id: "letters",
+    productType: ProductType.Letter,
+    name: "Letters",
+    blurb: "8.5×11 and 8.5×14 pages on 24# white, folded into a #10 double-window envelope.",
+    icon: "letter",
+    variants: ["letter", "letter_legal"]
+  },
+  {
+    id: "certified-mail",
+    productType: ProductType.CertifiedMail,
+    name: "Certified Mail™",
+    blurb: "USPS Certified delivery with proof of mailing; add a green card for a signed return receipt.",
+    icon: "certified",
+    variants: [
+      "certified_self_mailer",
+      "certified_green_card",
+      "certified_letter"
+    ],
+    note: "Certified postage and tracking are included in the per-piece price."
+  },
+  {
+    id: "eddm",
+    productType: ProductType.Eddm,
+    name: "Every Door Direct Mail (EDDM®)",
+    blurb: "Saturation flats delivered to every address on the carrier routes you pick.",
+    icon: "eddm",
+    variants: ["eddm_6.5x9", "eddm_8.5x11", "eddm_6.25x11", "eddm_8.5x12"],
+    note: "EDDM® drops are priced per household on the routes you choose in the audience step."
+  },
+  {
+    id: "priority-mail-plus",
+    productType: ProductType.PriorityMail,
+    name: "Priority Mail® Plus",
+    blurb: "Letters sent USPS Priority Mail with tracking, typically delivered in 1–3 days.",
+    icon: "priority",
+    variants: ["priority_letter"]
+  },
+  {
+    id: "priority-mail-express",
+    productType: ProductType.PriorityMailExpress,
+    name: "Priority Mail® Express",
+    blurb: "Overnight-to-most-locations letters with a money-back delivery guarantee.",
+    icon: "priority-express",
+    variants: ["priority_express_letter"]
+  },
+  {
+    id: "flyers",
+    productType: ProductType.Flyer,
+    name: "Flyers",
+    blurb: "8.5×11 flyers printed flat and tabbed shut — no envelope needed.",
+    icon: "flyer",
+    variants: ["8.5x11_flyer"]
+  },
+  {
+    id: "secure-mailers",
+    productType: ProductType.SnapPack,
+    name: "Secure Mailers",
+    blurb: "Pressure-sealed, perforated self mailers for statements, notices and checks.",
+    icon: "secure",
+    variants: ["8.5x11_secure"]
+  },
+  {
+    id: "notecards",
+    productType: ProductType.Notecard,
+    name: "Notecards",
+    blurb: "Flat or folded 4.25×5.5 cards mailed in matching envelopes.",
+    icon: "notecard",
+    variants: ["notecard_4.25x5.5", "folded_notecard_4.25x5.5"]
+  },
+  {
+    id: "rack-cards",
+    productType: ProductType.RackCard,
+    name: "Rack Cards",
+    blurb: "Tall 4×9 cards for menus, service lists and event line-ups.",
+    icon: "rack-card",
+    variants: ["rack_card_4x9"]
+  },
+  {
+    id: "brochures",
+    productType: ProductType.Brochure,
+    name: "Brochures",
+    blurb: "11×8.5 trifold brochures with six panels for catalogs and offers.",
+    icon: "brochure",
+    variants: ["11x8.5_brochure"]
+  },
+  {
+    id: "reply-mail",
+    productType: ProductType.ReplyMail,
+    name: "Reply Mail",
+    blurb: "Postcards and letters that carry prepaid business reply mail for the response.",
+    icon: "reply-mail",
+    variants: ["reply_postcard_4.25x6", "reply_letter"]
+  },
+  {
+    id: "booklets",
+    productType: ProductType.Booklet,
+    name: "Booklets",
+    blurb: "Saddle-stitched 8.5×11 booklets, self-mailed or addressed on a cover page.",
+    icon: "booklet",
+    variants: [
+      "8.5x11_booklet",
+      "booklet_address_back",
+      "booklet_address_front"
+    ]
+  },
+  {
+    id: "card-stock",
+    productType: ProductType.CardStock,
+    name: "Card Stock",
+    blurb: "12×4.5 heavy card stock pieces for oversized, high-impact mailers.",
+    icon: "card-stock",
+    variants: ["card_stock_12x4.5"]
   }
-}, te = Array(12).fill(0), Yt = ({ visible: n, className: e }) => React$4.createElement("div", { className: ["sonner-loading-wrapper", e].filter(Boolean).join(" "), "data-visible": n }, React$4.createElement("div", { className: "sonner-spinner" }, te.map((t, a2) => React$4.createElement("div", { className: "sonner-loading-bar", key: `spinner-bar-${a2}` })))), ee = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z", clipRule: "evenodd" })), oe = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z", clipRule: "evenodd" })), ae = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z", clipRule: "evenodd" })), se = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z", clipRule: "evenodd" })), Ot = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }, React$4.createElement("line", { x1: "18", y1: "6", x2: "6", y2: "18" }), React$4.createElement("line", { x1: "6", y1: "6", x2: "18", y2: "18" }));
-var Ft = () => {
-  let [n, e] = React$4.useState(document.hidden);
-  return React$4.useEffect(() => {
-    let t = () => {
-      e(document.hidden);
-    };
-    return document.addEventListener("visibilitychange", t), () => window.removeEventListener("visibilitychange", t);
-  }, []), n;
-};
-var bt = 1, yt = class {
-  constructor() {
-    this.subscribe = (e) => (this.subscribers.push(e), () => {
-      let t = this.subscribers.indexOf(e);
-      this.subscribers.splice(t, 1);
-    });
-    this.publish = (e) => {
-      this.subscribers.forEach((t) => t(e));
-    };
-    this.addToast = (e) => {
-      this.publish(e), this.toasts = [...this.toasts, e];
-    };
-    this.create = (e) => {
-      var S2;
-      let { message: t, ...a2 } = e, u2 = typeof (e == null ? void 0 : e.id) == "number" || ((S2 = e.id) == null ? void 0 : S2.length) > 0 ? e.id : bt++, f2 = this.toasts.find((g2) => g2.id === u2), w2 = e.dismissible === void 0 ? true : e.dismissible;
-      return this.dismissedToasts.has(u2) && this.dismissedToasts.delete(u2), f2 ? this.toasts = this.toasts.map((g2) => g2.id === u2 ? (this.publish({ ...g2, ...e, id: u2, title: t }), { ...g2, ...e, id: u2, dismissible: w2, title: t }) : g2) : this.addToast({ title: t, ...a2, dismissible: w2, id: u2 }), u2;
-    };
-    this.dismiss = (e) => (this.dismissedToasts.add(e), e || this.toasts.forEach((t) => {
-      this.subscribers.forEach((a2) => a2({ id: t.id, dismiss: true }));
-    }), this.subscribers.forEach((t) => t({ id: e, dismiss: true })), e);
-    this.message = (e, t) => this.create({ ...t, message: e });
-    this.error = (e, t) => this.create({ ...t, message: e, type: "error" });
-    this.success = (e, t) => this.create({ ...t, type: "success", message: e });
-    this.info = (e, t) => this.create({ ...t, type: "info", message: e });
-    this.warning = (e, t) => this.create({ ...t, type: "warning", message: e });
-    this.loading = (e, t) => this.create({ ...t, type: "loading", message: e });
-    this.promise = (e, t) => {
-      if (!t) return;
-      let a2;
-      t.loading !== void 0 && (a2 = this.create({ ...t, promise: e, type: "loading", message: t.loading, description: typeof t.description != "function" ? t.description : void 0 }));
-      let u2 = e instanceof Promise ? e : e(), f2 = a2 !== void 0, w2, S2 = u2.then(async (i) => {
-        if (w2 = ["resolve", i], React$4.isValidElement(i)) f2 = false, this.create({ id: a2, type: "default", message: i });
-        else if (ie(i) && !i.ok) {
-          f2 = false;
-          let T2 = typeof t.error == "function" ? await t.error(`HTTP error! status: ${i.status}`) : t.error, F2 = typeof t.description == "function" ? await t.description(`HTTP error! status: ${i.status}`) : t.description;
-          this.create({ id: a2, type: "error", message: T2, description: F2 });
-        } else if (t.success !== void 0) {
-          f2 = false;
-          let T2 = typeof t.success == "function" ? await t.success(i) : t.success, F2 = typeof t.description == "function" ? await t.description(i) : t.description;
-          this.create({ id: a2, type: "success", message: T2, description: F2 });
-        }
-      }).catch(async (i) => {
-        if (w2 = ["reject", i], t.error !== void 0) {
-          f2 = false;
-          let D = typeof t.error == "function" ? await t.error(i) : t.error, T2 = typeof t.description == "function" ? await t.description(i) : t.description;
-          this.create({ id: a2, type: "error", message: D, description: T2 });
-        }
-      }).finally(() => {
-        var i;
-        f2 && (this.dismiss(a2), a2 = void 0), (i = t.finally) == null || i.call(t);
-      }), g2 = () => new Promise((i, D) => S2.then(() => w2[0] === "reject" ? D(w2[1]) : i(w2[1])).catch(D));
-      return typeof a2 != "string" && typeof a2 != "number" ? { unwrap: g2 } : Object.assign(a2, { unwrap: g2 });
-    };
-    this.custom = (e, t) => {
-      let a2 = (t == null ? void 0 : t.id) || bt++;
-      return this.create({ jsx: e(a2), id: a2, ...t }), a2;
-    };
-    this.getActiveToasts = () => this.toasts.filter((e) => !this.dismissedToasts.has(e.id));
-    this.subscribers = [], this.toasts = [], this.dismissedToasts = /* @__PURE__ */ new Set();
-  }
-}, v = new yt(), ne = (n, e) => {
-  let t = (e == null ? void 0 : e.id) || bt++;
-  return v.addToast({ title: n, ...e, id: t }), t;
-}, ie = (n) => n && typeof n == "object" && "ok" in n && typeof n.ok == "boolean" && "status" in n && typeof n.status == "number", le = ne, ce = () => v.toasts, de = () => v.getActiveToasts(), ue = Object.assign(le, { success: v.success, info: v.info, warning: v.warning, error: v.error, custom: v.custom, message: v.message, promise: v.promise, dismiss: v.dismiss, loading: v.loading }, { getHistory: ce, getToasts: de });
-function wt(n, { insertAt: e } = {}) {
-  if (typeof document == "undefined") return;
-  let t = document.head || document.getElementsByTagName("head")[0], a2 = document.createElement("style");
-  a2.type = "text/css", e === "top" && t.firstChild ? t.insertBefore(a2, t.firstChild) : t.appendChild(a2), a2.styleSheet ? a2.styleSheet.cssText = n : a2.appendChild(document.createTextNode(n));
-}
-wt(`:where(html[dir="ltr"]),:where([data-sonner-toaster][dir="ltr"]){--toast-icon-margin-start: -3px;--toast-icon-margin-end: 4px;--toast-svg-margin-start: -1px;--toast-svg-margin-end: 0px;--toast-button-margin-start: auto;--toast-button-margin-end: 0;--toast-close-button-start: 0;--toast-close-button-end: unset;--toast-close-button-transform: translate(-35%, -35%)}:where(html[dir="rtl"]),:where([data-sonner-toaster][dir="rtl"]){--toast-icon-margin-start: 4px;--toast-icon-margin-end: -3px;--toast-svg-margin-start: 0px;--toast-svg-margin-end: -1px;--toast-button-margin-start: 0;--toast-button-margin-end: auto;--toast-close-button-start: unset;--toast-close-button-end: 0;--toast-close-button-transform: translate(35%, -35%)}:where([data-sonner-toaster]){position:fixed;width:var(--width);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;--gray1: hsl(0, 0%, 99%);--gray2: hsl(0, 0%, 97.3%);--gray3: hsl(0, 0%, 95.1%);--gray4: hsl(0, 0%, 93%);--gray5: hsl(0, 0%, 90.9%);--gray6: hsl(0, 0%, 88.7%);--gray7: hsl(0, 0%, 85.8%);--gray8: hsl(0, 0%, 78%);--gray9: hsl(0, 0%, 56.1%);--gray10: hsl(0, 0%, 52.3%);--gray11: hsl(0, 0%, 43.5%);--gray12: hsl(0, 0%, 9%);--border-radius: 8px;box-sizing:border-box;padding:0;margin:0;list-style:none;outline:none;z-index:999999999;transition:transform .4s ease}:where([data-sonner-toaster][data-lifted="true"]){transform:translateY(-10px)}@media (hover: none) and (pointer: coarse){:where([data-sonner-toaster][data-lifted="true"]){transform:none}}:where([data-sonner-toaster][data-x-position="right"]){right:var(--offset-right)}:where([data-sonner-toaster][data-x-position="left"]){left:var(--offset-left)}:where([data-sonner-toaster][data-x-position="center"]){left:50%;transform:translate(-50%)}:where([data-sonner-toaster][data-y-position="top"]){top:var(--offset-top)}:where([data-sonner-toaster][data-y-position="bottom"]){bottom:var(--offset-bottom)}:where([data-sonner-toast]){--y: translateY(100%);--lift-amount: calc(var(--lift) * var(--gap));z-index:var(--z-index);position:absolute;opacity:0;transform:var(--y);filter:blur(0);touch-action:none;transition:transform .4s,opacity .4s,height .4s,box-shadow .2s;box-sizing:border-box;outline:none;overflow-wrap:anywhere}:where([data-sonner-toast][data-styled="true"]){padding:16px;background:var(--normal-bg);border:1px solid var(--normal-border);color:var(--normal-text);border-radius:var(--border-radius);box-shadow:0 4px 12px #0000001a;width:var(--width);font-size:13px;display:flex;align-items:center;gap:6px}:where([data-sonner-toast]:focus-visible){box-shadow:0 4px 12px #0000001a,0 0 0 2px #0003}:where([data-sonner-toast][data-y-position="top"]){top:0;--y: translateY(-100%);--lift: 1;--lift-amount: calc(1 * var(--gap))}:where([data-sonner-toast][data-y-position="bottom"]){bottom:0;--y: translateY(100%);--lift: -1;--lift-amount: calc(var(--lift) * var(--gap))}:where([data-sonner-toast]) :where([data-description]){font-weight:400;line-height:1.4;color:inherit}:where([data-sonner-toast]) :where([data-title]){font-weight:500;line-height:1.5;color:inherit}:where([data-sonner-toast]) :where([data-icon]){display:flex;height:16px;width:16px;position:relative;justify-content:flex-start;align-items:center;flex-shrink:0;margin-left:var(--toast-icon-margin-start);margin-right:var(--toast-icon-margin-end)}:where([data-sonner-toast][data-promise="true"]) :where([data-icon])>svg{opacity:0;transform:scale(.8);transform-origin:center;animation:sonner-fade-in .3s ease forwards}:where([data-sonner-toast]) :where([data-icon])>*{flex-shrink:0}:where([data-sonner-toast]) :where([data-icon]) svg{margin-left:var(--toast-svg-margin-start);margin-right:var(--toast-svg-margin-end)}:where([data-sonner-toast]) :where([data-content]){display:flex;flex-direction:column;gap:2px}[data-sonner-toast][data-styled=true] [data-button]{border-radius:4px;padding-left:8px;padding-right:8px;height:24px;font-size:12px;color:var(--normal-bg);background:var(--normal-text);margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end);border:none;cursor:pointer;outline:none;display:flex;align-items:center;flex-shrink:0;transition:opacity .4s,box-shadow .2s}:where([data-sonner-toast]) :where([data-button]):focus-visible{box-shadow:0 0 0 2px #0006}:where([data-sonner-toast]) :where([data-button]):first-of-type{margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end)}:where([data-sonner-toast]) :where([data-cancel]){color:var(--normal-text);background:rgba(0,0,0,.08)}:where([data-sonner-toast][data-theme="dark"]) :where([data-cancel]){background:rgba(255,255,255,.3)}:where([data-sonner-toast]) :where([data-close-button]){position:absolute;left:var(--toast-close-button-start);right:var(--toast-close-button-end);top:0;height:20px;width:20px;display:flex;justify-content:center;align-items:center;padding:0;color:var(--gray12);border:1px solid var(--gray4);transform:var(--toast-close-button-transform);border-radius:50%;cursor:pointer;z-index:1;transition:opacity .1s,background .2s,border-color .2s}[data-sonner-toast] [data-close-button]{background:var(--gray1)}:where([data-sonner-toast]) :where([data-close-button]):focus-visible{box-shadow:0 4px 12px #0000001a,0 0 0 2px #0003}:where([data-sonner-toast]) :where([data-disabled="true"]){cursor:not-allowed}:where([data-sonner-toast]):hover :where([data-close-button]):hover{background:var(--gray2);border-color:var(--gray5)}:where([data-sonner-toast][data-swiping="true"]):before{content:"";position:absolute;left:-50%;right:-50%;height:100%;z-index:-1}:where([data-sonner-toast][data-y-position="top"][data-swiping="true"]):before{bottom:50%;transform:scaleY(3) translateY(50%)}:where([data-sonner-toast][data-y-position="bottom"][data-swiping="true"]):before{top:50%;transform:scaleY(3) translateY(-50%)}:where([data-sonner-toast][data-swiping="false"][data-removed="true"]):before{content:"";position:absolute;inset:0;transform:scaleY(2)}:where([data-sonner-toast]):after{content:"";position:absolute;left:0;height:calc(var(--gap) + 1px);bottom:100%;width:100%}:where([data-sonner-toast][data-mounted="true"]){--y: translateY(0);opacity:1}:where([data-sonner-toast][data-expanded="false"][data-front="false"]){--scale: var(--toasts-before) * .05 + 1;--y: translateY(calc(var(--lift-amount) * var(--toasts-before))) scale(calc(-1 * var(--scale)));height:var(--front-toast-height)}:where([data-sonner-toast])>*{transition:opacity .4s}:where([data-sonner-toast][data-expanded="false"][data-front="false"][data-styled="true"])>*{opacity:0}:where([data-sonner-toast][data-visible="false"]){opacity:0;pointer-events:none}:where([data-sonner-toast][data-mounted="true"][data-expanded="true"]){--y: translateY(calc(var(--lift) * var(--offset)));height:var(--initial-height)}:where([data-sonner-toast][data-removed="true"][data-front="true"][data-swipe-out="false"]){--y: translateY(calc(var(--lift) * -100%));opacity:0}:where([data-sonner-toast][data-removed="true"][data-front="false"][data-swipe-out="false"][data-expanded="true"]){--y: translateY(calc(var(--lift) * var(--offset) + var(--lift) * -100%));opacity:0}:where([data-sonner-toast][data-removed="true"][data-front="false"][data-swipe-out="false"][data-expanded="false"]){--y: translateY(40%);opacity:0;transition:transform .5s,opacity .2s}:where([data-sonner-toast][data-removed="true"][data-front="false"]):before{height:calc(var(--initial-height) + 20%)}[data-sonner-toast][data-swiping=true]{transform:var(--y) translateY(var(--swipe-amount-y, 0px)) translate(var(--swipe-amount-x, 0px));transition:none}[data-sonner-toast][data-swiped=true]{user-select:none}[data-sonner-toast][data-swipe-out=true][data-y-position=bottom],[data-sonner-toast][data-swipe-out=true][data-y-position=top]{animation-duration:.2s;animation-timing-function:ease-out;animation-fill-mode:forwards}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=left]{animation-name:swipe-out-left}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=right]{animation-name:swipe-out-right}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=up]{animation-name:swipe-out-up}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=down]{animation-name:swipe-out-down}@keyframes swipe-out-left{0%{transform:var(--y) translate(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translate(calc(var(--swipe-amount-x) - 100%));opacity:0}}@keyframes swipe-out-right{0%{transform:var(--y) translate(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translate(calc(var(--swipe-amount-x) + 100%));opacity:0}}@keyframes swipe-out-up{0%{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) - 100%));opacity:0}}@keyframes swipe-out-down{0%{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) + 100%));opacity:0}}@media (max-width: 600px){[data-sonner-toaster]{position:fixed;right:var(--mobile-offset-right);left:var(--mobile-offset-left);width:100%}[data-sonner-toaster][dir=rtl]{left:calc(var(--mobile-offset-left) * -1)}[data-sonner-toaster] [data-sonner-toast]{left:0;right:0;width:calc(100% - var(--mobile-offset-left) * 2)}[data-sonner-toaster][data-x-position=left]{left:var(--mobile-offset-left)}[data-sonner-toaster][data-y-position=bottom]{bottom:var(--mobile-offset-bottom)}[data-sonner-toaster][data-y-position=top]{top:var(--mobile-offset-top)}[data-sonner-toaster][data-x-position=center]{left:var(--mobile-offset-left);right:var(--mobile-offset-right);transform:none}}[data-sonner-toaster][data-theme=light]{--normal-bg: #fff;--normal-border: var(--gray4);--normal-text: var(--gray12);--success-bg: hsl(143, 85%, 96%);--success-border: hsl(145, 92%, 91%);--success-text: hsl(140, 100%, 27%);--info-bg: hsl(208, 100%, 97%);--info-border: hsl(221, 91%, 91%);--info-text: hsl(210, 92%, 45%);--warning-bg: hsl(49, 100%, 97%);--warning-border: hsl(49, 91%, 91%);--warning-text: hsl(31, 92%, 45%);--error-bg: hsl(359, 100%, 97%);--error-border: hsl(359, 100%, 94%);--error-text: hsl(360, 100%, 45%)}[data-sonner-toaster][data-theme=light] [data-sonner-toast][data-invert=true]{--normal-bg: #000;--normal-border: hsl(0, 0%, 20%);--normal-text: var(--gray1)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast][data-invert=true]{--normal-bg: #fff;--normal-border: var(--gray3);--normal-text: var(--gray12)}[data-sonner-toaster][data-theme=dark]{--normal-bg: #000;--normal-bg-hover: hsl(0, 0%, 12%);--normal-border: hsl(0, 0%, 20%);--normal-border-hover: hsl(0, 0%, 25%);--normal-text: var(--gray1);--success-bg: hsl(150, 100%, 6%);--success-border: hsl(147, 100%, 12%);--success-text: hsl(150, 86%, 65%);--info-bg: hsl(215, 100%, 6%);--info-border: hsl(223, 100%, 12%);--info-text: hsl(216, 87%, 65%);--warning-bg: hsl(64, 100%, 6%);--warning-border: hsl(60, 100%, 12%);--warning-text: hsl(46, 87%, 65%);--error-bg: hsl(358, 76%, 10%);--error-border: hsl(357, 89%, 16%);--error-text: hsl(358, 100%, 81%)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast] [data-close-button]{background:var(--normal-bg);border-color:var(--normal-border);color:var(--normal-text)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast] [data-close-button]:hover{background:var(--normal-bg-hover);border-color:var(--normal-border-hover)}[data-rich-colors=true][data-sonner-toast][data-type=success],[data-rich-colors=true][data-sonner-toast][data-type=success] [data-close-button]{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}[data-rich-colors=true][data-sonner-toast][data-type=info],[data-rich-colors=true][data-sonner-toast][data-type=info] [data-close-button]{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}[data-rich-colors=true][data-sonner-toast][data-type=warning],[data-rich-colors=true][data-sonner-toast][data-type=warning] [data-close-button]{background:var(--warning-bg);border-color:var(--warning-border);color:var(--warning-text)}[data-rich-colors=true][data-sonner-toast][data-type=error],[data-rich-colors=true][data-sonner-toast][data-type=error] [data-close-button]{background:var(--error-bg);border-color:var(--error-border);color:var(--error-text)}.sonner-loading-wrapper{--size: 16px;height:var(--size);width:var(--size);position:absolute;inset:0;z-index:10}.sonner-loading-wrapper[data-visible=false]{transform-origin:center;animation:sonner-fade-out .2s ease forwards}.sonner-spinner{position:relative;top:50%;left:50%;height:var(--size);width:var(--size)}.sonner-loading-bar{animation:sonner-spin 1.2s linear infinite;background:var(--gray11);border-radius:6px;height:8%;left:-10%;position:absolute;top:-3.9%;width:24%}.sonner-loading-bar:nth-child(1){animation-delay:-1.2s;transform:rotate(.0001deg) translate(146%)}.sonner-loading-bar:nth-child(2){animation-delay:-1.1s;transform:rotate(30deg) translate(146%)}.sonner-loading-bar:nth-child(3){animation-delay:-1s;transform:rotate(60deg) translate(146%)}.sonner-loading-bar:nth-child(4){animation-delay:-.9s;transform:rotate(90deg) translate(146%)}.sonner-loading-bar:nth-child(5){animation-delay:-.8s;transform:rotate(120deg) translate(146%)}.sonner-loading-bar:nth-child(6){animation-delay:-.7s;transform:rotate(150deg) translate(146%)}.sonner-loading-bar:nth-child(7){animation-delay:-.6s;transform:rotate(180deg) translate(146%)}.sonner-loading-bar:nth-child(8){animation-delay:-.5s;transform:rotate(210deg) translate(146%)}.sonner-loading-bar:nth-child(9){animation-delay:-.4s;transform:rotate(240deg) translate(146%)}.sonner-loading-bar:nth-child(10){animation-delay:-.3s;transform:rotate(270deg) translate(146%)}.sonner-loading-bar:nth-child(11){animation-delay:-.2s;transform:rotate(300deg) translate(146%)}.sonner-loading-bar:nth-child(12){animation-delay:-.1s;transform:rotate(330deg) translate(146%)}@keyframes sonner-fade-in{0%{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}@keyframes sonner-fade-out{0%{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}@keyframes sonner-spin{0%{opacity:1}to{opacity:.15}}@media (prefers-reduced-motion){[data-sonner-toast],[data-sonner-toast]>*,.sonner-loading-bar{transition:none!important;animation:none!important}}.sonner-loader{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transform-origin:center;transition:opacity .2s,transform .2s}.sonner-loader[data-visible=false]{opacity:0;transform:scale(.8) translate(-50%,-50%)}
-`);
-function tt(n) {
-  return n.label !== void 0;
-}
-var pe = 3, me = "32px", ge = "16px", Wt = 4e3, he = 356, be = 14, ye = 20, we = 200;
-function M$1(...n) {
-  return n.filter(Boolean).join(" ");
-}
-function xe(n) {
-  let [e, t] = n.split("-"), a2 = [];
-  return e && a2.push(e), t && a2.push(t), a2;
-}
-var ve = (n) => {
-  var Dt, Pt, Nt, Bt, Ct, kt, It, Mt, Ht, At, Lt;
-  let { invert: e, toast: t, unstyled: a2, interacting: u2, setHeights: f2, visibleToasts: w2, heights: S2, index: g2, toasts: i, expanded: D, removeToast: T2, defaultRichColors: F2, closeButton: et2, style: ut2, cancelButtonStyle: ft2, actionButtonStyle: l2, className: ot2 = "", descriptionClassName: at = "", duration: X2, position: st2, gap: pt, loadingIcon: rt2, expandByDefault: B2, classNames: s, icons: P2, closeButtonAriaLabel: nt2 = "Close toast", pauseWhenPageIsHidden: it2 } = n, [Y2, C2] = React$4.useState(null), [lt, J2] = React$4.useState(null), [W2, H2] = React$4.useState(false), [A, mt] = React$4.useState(false), [L2, z2] = React$4.useState(false), [ct2, d2] = React$4.useState(false), [h2, y2] = React$4.useState(false), [R2, j2] = React$4.useState(0), [p2, _2] = React$4.useState(0), O2 = React$4.useRef(t.duration || X2 || Wt), G2 = React$4.useRef(null), k2 = React$4.useRef(null), Vt = g2 === 0, Ut = g2 + 1 <= w2, N2 = t.type, V2 = t.dismissible !== false, Kt = t.className || "", Xt = t.descriptionClassName || "", dt = React$4.useMemo(() => S2.findIndex((r2) => r2.toastId === t.id) || 0, [S2, t.id]), Jt = React$4.useMemo(() => {
-    var r2;
-    return (r2 = t.closeButton) != null ? r2 : et2;
-  }, [t.closeButton, et2]), Tt = React$4.useMemo(() => t.duration || X2 || Wt, [t.duration, X2]), gt2 = React$4.useRef(0), U2 = React$4.useRef(0), St = React$4.useRef(0), K2 = React$4.useRef(null), [Gt, Qt] = st2.split("-"), Rt = React$4.useMemo(() => S2.reduce((r2, m2, c2) => c2 >= dt ? r2 : r2 + m2.height, 0), [S2, dt]), Et = Ft(), qt = t.invert || e, ht = N2 === "loading";
-  U2.current = React$4.useMemo(() => dt * pt + Rt, [dt, Rt]), React$4.useEffect(() => {
-    O2.current = Tt;
-  }, [Tt]), React$4.useEffect(() => {
-    H2(true);
-  }, []), React$4.useEffect(() => {
-    let r2 = k2.current;
-    if (r2) {
-      let m2 = r2.getBoundingClientRect().height;
-      return _2(m2), f2((c2) => [{ toastId: t.id, height: m2, position: t.position }, ...c2]), () => f2((c2) => c2.filter((b2) => b2.toastId !== t.id));
-    }
-  }, [f2, t.id]), React$4.useLayoutEffect(() => {
-    if (!W2) return;
-    let r2 = k2.current, m2 = r2.style.height;
-    r2.style.height = "auto";
-    let c2 = r2.getBoundingClientRect().height;
-    r2.style.height = m2, _2(c2), f2((b2) => b2.find((x3) => x3.toastId === t.id) ? b2.map((x3) => x3.toastId === t.id ? { ...x3, height: c2 } : x3) : [{ toastId: t.id, height: c2, position: t.position }, ...b2]);
-  }, [W2, t.title, t.description, f2, t.id]);
-  let $2 = React$4.useCallback(() => {
-    mt(true), j2(U2.current), f2((r2) => r2.filter((m2) => m2.toastId !== t.id)), setTimeout(() => {
-      T2(t);
-    }, we);
-  }, [t, T2, f2, U2]);
-  React$4.useEffect(() => {
-    if (t.promise && N2 === "loading" || t.duration === 1 / 0 || t.type === "loading") return;
-    let r2;
-    return D || u2 || it2 && Et ? (() => {
-      if (St.current < gt2.current) {
-        let b2 = (/* @__PURE__ */ new Date()).getTime() - gt2.current;
-        O2.current = O2.current - b2;
-      }
-      St.current = (/* @__PURE__ */ new Date()).getTime();
-    })() : (() => {
-      O2.current !== 1 / 0 && (gt2.current = (/* @__PURE__ */ new Date()).getTime(), r2 = setTimeout(() => {
-        var b2;
-        (b2 = t.onAutoClose) == null || b2.call(t, t), $2();
-      }, O2.current));
-    })(), () => clearTimeout(r2);
-  }, [D, u2, t, N2, it2, Et, $2]), React$4.useEffect(() => {
-    t.delete && $2();
-  }, [$2, t.delete]);
-  function Zt() {
-    var r2, m2, c2;
-    return P2 != null && P2.loading ? React$4.createElement("div", { className: M$1(s == null ? void 0 : s.loader, (r2 = t == null ? void 0 : t.classNames) == null ? void 0 : r2.loader, "sonner-loader"), "data-visible": N2 === "loading" }, P2.loading) : rt2 ? React$4.createElement("div", { className: M$1(s == null ? void 0 : s.loader, (m2 = t == null ? void 0 : t.classNames) == null ? void 0 : m2.loader, "sonner-loader"), "data-visible": N2 === "loading" }, rt2) : React$4.createElement(Yt, { className: M$1(s == null ? void 0 : s.loader, (c2 = t == null ? void 0 : t.classNames) == null ? void 0 : c2.loader), visible: N2 === "loading" });
-  }
-  return React$4.createElement("li", { tabIndex: 0, ref: k2, className: M$1(ot2, Kt, s == null ? void 0 : s.toast, (Dt = t == null ? void 0 : t.classNames) == null ? void 0 : Dt.toast, s == null ? void 0 : s.default, s == null ? void 0 : s[N2], (Pt = t == null ? void 0 : t.classNames) == null ? void 0 : Pt[N2]), "data-sonner-toast": "", "data-rich-colors": (Nt = t.richColors) != null ? Nt : F2, "data-styled": !(t.jsx || t.unstyled || a2), "data-mounted": W2, "data-promise": !!t.promise, "data-swiped": h2, "data-removed": A, "data-visible": Ut, "data-y-position": Gt, "data-x-position": Qt, "data-index": g2, "data-front": Vt, "data-swiping": L2, "data-dismissible": V2, "data-type": N2, "data-invert": qt, "data-swipe-out": ct2, "data-swipe-direction": lt, "data-expanded": !!(D || B2 && W2), style: { "--index": g2, "--toasts-before": g2, "--z-index": i.length - g2, "--offset": `${A ? R2 : U2.current}px`, "--initial-height": B2 ? "auto" : `${p2}px`, ...ut2, ...t.style }, onDragEnd: () => {
-    z2(false), C2(null), K2.current = null;
-  }, onPointerDown: (r2) => {
-    ht || !V2 || (G2.current = /* @__PURE__ */ new Date(), j2(U2.current), r2.target.setPointerCapture(r2.pointerId), r2.target.tagName !== "BUTTON" && (z2(true), K2.current = { x: r2.clientX, y: r2.clientY }));
-  }, onPointerUp: () => {
-    var x3, Q2, q2, Z2;
-    if (ct2 || !V2) return;
-    K2.current = null;
-    let r2 = Number(((x3 = k2.current) == null ? void 0 : x3.style.getPropertyValue("--swipe-amount-x").replace("px", "")) || 0), m2 = Number(((Q2 = k2.current) == null ? void 0 : Q2.style.getPropertyValue("--swipe-amount-y").replace("px", "")) || 0), c2 = (/* @__PURE__ */ new Date()).getTime() - ((q2 = G2.current) == null ? void 0 : q2.getTime()), b2 = Y2 === "x" ? r2 : m2, I = Math.abs(b2) / c2;
-    if (Math.abs(b2) >= ye || I > 0.11) {
-      j2(U2.current), (Z2 = t.onDismiss) == null || Z2.call(t, t), J2(Y2 === "x" ? r2 > 0 ? "right" : "left" : m2 > 0 ? "down" : "up"), $2(), d2(true), y2(false);
-      return;
-    }
-    z2(false), C2(null);
-  }, onPointerMove: (r2) => {
-    var Q2, q2, Z2, zt;
-    if (!K2.current || !V2 || ((Q2 = window.getSelection()) == null ? void 0 : Q2.toString().length) > 0) return;
-    let c2 = r2.clientY - K2.current.y, b2 = r2.clientX - K2.current.x, I = (q2 = n.swipeDirections) != null ? q2 : xe(st2);
-    !Y2 && (Math.abs(b2) > 1 || Math.abs(c2) > 1) && C2(Math.abs(b2) > Math.abs(c2) ? "x" : "y");
-    let x3 = { x: 0, y: 0 };
-    Y2 === "y" ? (I.includes("top") || I.includes("bottom")) && (I.includes("top") && c2 < 0 || I.includes("bottom") && c2 > 0) && (x3.y = c2) : Y2 === "x" && (I.includes("left") || I.includes("right")) && (I.includes("left") && b2 < 0 || I.includes("right") && b2 > 0) && (x3.x = b2), (Math.abs(x3.x) > 0 || Math.abs(x3.y) > 0) && y2(true), (Z2 = k2.current) == null || Z2.style.setProperty("--swipe-amount-x", `${x3.x}px`), (zt = k2.current) == null || zt.style.setProperty("--swipe-amount-y", `${x3.y}px`);
-  } }, Jt && !t.jsx ? React$4.createElement("button", { "aria-label": nt2, "data-disabled": ht, "data-close-button": true, onClick: ht || !V2 ? () => {
-  } : () => {
-    var r2;
-    $2(), (r2 = t.onDismiss) == null || r2.call(t, t);
-  }, className: M$1(s == null ? void 0 : s.closeButton, (Bt = t == null ? void 0 : t.classNames) == null ? void 0 : Bt.closeButton) }, (Ct = P2 == null ? void 0 : P2.close) != null ? Ct : Ot) : null, t.jsx || reactExports.isValidElement(t.title) ? t.jsx ? t.jsx : typeof t.title == "function" ? t.title() : t.title : React$4.createElement(React$4.Fragment, null, N2 || t.icon || t.promise ? React$4.createElement("div", { "data-icon": "", className: M$1(s == null ? void 0 : s.icon, (kt = t == null ? void 0 : t.classNames) == null ? void 0 : kt.icon) }, t.promise || t.type === "loading" && !t.icon ? t.icon || Zt() : null, t.type !== "loading" ? t.icon || (P2 == null ? void 0 : P2[N2]) || jt(N2) : null) : null, React$4.createElement("div", { "data-content": "", className: M$1(s == null ? void 0 : s.content, (It = t == null ? void 0 : t.classNames) == null ? void 0 : It.content) }, React$4.createElement("div", { "data-title": "", className: M$1(s == null ? void 0 : s.title, (Mt = t == null ? void 0 : t.classNames) == null ? void 0 : Mt.title) }, typeof t.title == "function" ? t.title() : t.title), t.description ? React$4.createElement("div", { "data-description": "", className: M$1(at, Xt, s == null ? void 0 : s.description, (Ht = t == null ? void 0 : t.classNames) == null ? void 0 : Ht.description) }, typeof t.description == "function" ? t.description() : t.description) : null), reactExports.isValidElement(t.cancel) ? t.cancel : t.cancel && tt(t.cancel) ? React$4.createElement("button", { "data-button": true, "data-cancel": true, style: t.cancelButtonStyle || ft2, onClick: (r2) => {
-    var m2, c2;
-    tt(t.cancel) && V2 && ((c2 = (m2 = t.cancel).onClick) == null || c2.call(m2, r2), $2());
-  }, className: M$1(s == null ? void 0 : s.cancelButton, (At = t == null ? void 0 : t.classNames) == null ? void 0 : At.cancelButton) }, t.cancel.label) : null, reactExports.isValidElement(t.action) ? t.action : t.action && tt(t.action) ? React$4.createElement("button", { "data-button": true, "data-action": true, style: t.actionButtonStyle || l2, onClick: (r2) => {
-    var m2, c2;
-    tt(t.action) && ((c2 = (m2 = t.action).onClick) == null || c2.call(m2, r2), !r2.defaultPrevented && $2());
-  }, className: M$1(s == null ? void 0 : s.actionButton, (Lt = t == null ? void 0 : t.classNames) == null ? void 0 : Lt.actionButton) }, t.action.label) : null));
-};
-function _t() {
-  if (typeof window == "undefined" || typeof document == "undefined") return "ltr";
-  let n = document.documentElement.getAttribute("dir");
-  return n === "auto" || !n ? window.getComputedStyle(document.documentElement).direction : n;
-}
-function Te(n, e) {
-  let t = {};
-  return [n, e].forEach((a2, u2) => {
-    let f2 = u2 === 1, w2 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me;
-    function g2(i) {
-      ["top", "right", "bottom", "left"].forEach((D) => {
-        t[`${w2}-${D}`] = typeof i == "number" ? `${i}px` : i;
-      });
-    }
-    typeof a2 == "number" || typeof a2 == "string" ? g2(a2) : typeof a2 == "object" ? ["top", "right", "bottom", "left"].forEach((i) => {
-      a2[i] === void 0 ? t[`${w2}-${i}`] = S2 : t[`${w2}-${i}`] = typeof a2[i] == "number" ? `${a2[i]}px` : a2[i];
-    }) : g2(S2);
-  }), t;
-}
-var $e = reactExports.forwardRef(function(e, t) {
-  let { invert: a2, position: u2 = "bottom-right", hotkey: f2 = ["altKey", "KeyT"], expand: w2, closeButton: S2, className: g2, offset: i, mobileOffset: D, theme: T2 = "light", richColors: F2, duration: et2, style: ut2, visibleToasts: ft2 = pe, toastOptions: l2, dir: ot2 = _t(), gap: at = be, loadingIcon: X2, icons: st2, containerAriaLabel: pt = "Notifications", pauseWhenPageIsHidden: rt2 } = e, [B2, s] = React$4.useState([]), P2 = React$4.useMemo(() => Array.from(new Set([u2].concat(B2.filter((d2) => d2.position).map((d2) => d2.position)))), [B2, u2]), [nt2, it2] = React$4.useState([]), [Y2, C2] = React$4.useState(false), [lt, J2] = React$4.useState(false), [W2, H2] = React$4.useState(T2 !== "system" ? T2 : typeof window != "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"), A = React$4.useRef(null), mt = f2.join("+").replace(/Key/g, "").replace(/Digit/g, ""), L2 = React$4.useRef(null), z2 = React$4.useRef(false), ct2 = React$4.useCallback((d2) => {
-    s((h2) => {
-      var y2;
-      return (y2 = h2.find((R2) => R2.id === d2.id)) != null && y2.delete || v.dismiss(d2.id), h2.filter(({ id: R2 }) => R2 !== d2.id);
-    });
-  }, []);
-  return React$4.useEffect(() => v.subscribe((d2) => {
-    if (d2.dismiss) {
-      s((h2) => h2.map((y2) => y2.id === d2.id ? { ...y2, delete: true } : y2));
-      return;
-    }
-    setTimeout(() => {
-      vt.flushSync(() => {
-        s((h2) => {
-          let y2 = h2.findIndex((R2) => R2.id === d2.id);
-          return y2 !== -1 ? [...h2.slice(0, y2), { ...h2[y2], ...d2 }, ...h2.slice(y2 + 1)] : [d2, ...h2];
-        });
-      });
-    });
-  }), []), React$4.useEffect(() => {
-    if (T2 !== "system") {
-      H2(T2);
-      return;
-    }
-    if (T2 === "system" && (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? H2("dark") : H2("light")), typeof window == "undefined") return;
-    let d2 = window.matchMedia("(prefers-color-scheme: dark)");
-    try {
-      d2.addEventListener("change", ({ matches: h2 }) => {
-        H2(h2 ? "dark" : "light");
-      });
-    } catch (h2) {
-      d2.addListener(({ matches: y2 }) => {
-        try {
-          H2(y2 ? "dark" : "light");
-        } catch (R2) {
-          console.error(R2);
-        }
-      });
-    }
-  }, [T2]), React$4.useEffect(() => {
-    B2.length <= 1 && C2(false);
-  }, [B2]), React$4.useEffect(() => {
-    let d2 = (h2) => {
-      var R2, j2;
-      f2.every((p2) => h2[p2] || h2.code === p2) && (C2(true), (R2 = A.current) == null || R2.focus()), h2.code === "Escape" && (document.activeElement === A.current || (j2 = A.current) != null && j2.contains(document.activeElement)) && C2(false);
-    };
-    return document.addEventListener("keydown", d2), () => document.removeEventListener("keydown", d2);
-  }, [f2]), React$4.useEffect(() => {
-    if (A.current) return () => {
-      L2.current && (L2.current.focus({ preventScroll: true }), L2.current = null, z2.current = false);
-    };
-  }, [A.current]), React$4.createElement("section", { ref: t, "aria-label": `${pt} ${mt}`, tabIndex: -1, "aria-live": "polite", "aria-relevant": "additions text", "aria-atomic": "false", suppressHydrationWarning: true }, P2.map((d2, h2) => {
-    var j2;
-    let [y2, R2] = d2.split("-");
-    return B2.length ? React$4.createElement("ol", { key: d2, dir: ot2 === "auto" ? _t() : ot2, tabIndex: -1, ref: A, className: g2, "data-sonner-toaster": true, "data-theme": W2, "data-y-position": y2, "data-lifted": Y2 && B2.length > 1 && !w2, "data-x-position": R2, style: { "--front-toast-height": `${((j2 = nt2[0]) == null ? void 0 : j2.height) || 0}px`, "--width": `${he}px`, "--gap": `${at}px`, ...ut2, ...Te(i, D) }, onBlur: (p2) => {
-      z2.current && !p2.currentTarget.contains(p2.relatedTarget) && (z2.current = false, L2.current && (L2.current.focus({ preventScroll: true }), L2.current = null));
-    }, onFocus: (p2) => {
-      p2.target instanceof HTMLElement && p2.target.dataset.dismissible === "false" || z2.current || (z2.current = true, L2.current = p2.relatedTarget);
-    }, onMouseEnter: () => C2(true), onMouseMove: () => C2(true), onMouseLeave: () => {
-      lt || C2(false);
-    }, onDragEnd: () => C2(false), onPointerDown: (p2) => {
-      p2.target instanceof HTMLElement && p2.target.dataset.dismissible === "false" || J2(true);
-    }, onPointerUp: () => J2(false) }, B2.filter((p2) => !p2.position && h2 === 0 || p2.position === d2).map((p2, _2) => {
-      var O2, G2;
-      return React$4.createElement(ve, { key: p2.id, icons: st2, index: _2, toast: p2, defaultRichColors: F2, duration: (O2 = l2 == null ? void 0 : l2.duration) != null ? O2 : et2, className: l2 == null ? void 0 : l2.className, descriptionClassName: l2 == null ? void 0 : l2.descriptionClassName, invert: a2, visibleToasts: ft2, closeButton: (G2 = l2 == null ? void 0 : l2.closeButton) != null ? G2 : S2, interacting: lt, position: d2, style: l2 == null ? void 0 : l2.style, unstyled: l2 == null ? void 0 : l2.unstyled, classNames: l2 == null ? void 0 : l2.classNames, cancelButtonStyle: l2 == null ? void 0 : l2.cancelButtonStyle, actionButtonStyle: l2 == null ? void 0 : l2.actionButtonStyle, removeToast: ct2, toasts: B2.filter((k2) => k2.position == p2.position), heights: nt2.filter((k2) => k2.position == p2.position), setHeights: it2, expandByDefault: w2, gap: at, loadingIcon: X2, expanded: Y2, pauseWhenPageIsHidden: rt2, swipeDirections: e.swipeDirections });
-    })) : null;
-  }));
-});
-function CreditTopUpModal() {
-  const open = useAccountStore((s) => s.topUpOpen);
-  const setOpen = useAccountStore((s) => s.setTopUpOpen);
-  const creditBalance = useAccountStore((s) => s.creditBalance);
-  const { refresh } = useAccountSync();
-  const [pack, setPack] = reactExports.useState(null);
-  const selected = CREDIT_PACKS.find((p2) => p2.id === pack) ?? null;
-  function close() {
-    setOpen(false);
-    setPack(null);
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open, onOpenChange: (o) => o ? setOpen(true) : close(), children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "max-w-lg", "data-ocid": "credits.topup.modal", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogHeader, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogTitle, { className: "flex items-center gap-2 font-display", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "size-5 text-primary" }),
-        " Top up AI credits"
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogDescription, { children: [
-        "1 credit = $0.01. Copy assistant 1 credit · square art 7 · widescreen 14 · HD 20. Members get ",
-        MONTHLY_ALLOWANCE,
-        " free credits every month. Current balance: ",
-        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: creditBalance }),
-        "."
-      ] })
-    ] }),
-    !selected ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid gap-3 sm:grid-cols-3", children: CREDIT_PACKS.map((p2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "button",
-      {
-        type: "button",
-        onClick: () => setPack(p2.id),
-        className: cn(
-          "flex flex-col items-start rounded-xl border bg-card p-4 text-left transition-smooth hover:border-primary hover:shadow-sm",
-          p2.bonus > 0 && "border-emerald-brand/40"
-        ),
-        "data-ocid": `credits.pack.${p2.id.toLowerCase()}.button`,
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-sm font-semibold", children: p2.name }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-1 font-display text-2xl font-bold text-primary", children: formatCents(p2.priceCents) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground", children: [
-            p2.credits.toLocaleString(),
-            " credits"
-          ] }),
-          p2.bonus > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "mt-2 rounded-full bg-emerald-brand/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-brand", children: [
-            "+",
-            p2.bonus,
-            " bonus"
-          ] })
-        ]
-      },
-      p2.id
-    )) }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-          selected.name,
-          " · ",
-          selected.credits.toLocaleString(),
-          " credits"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            onClick: () => setPack(null),
-            "data-ocid": "credits.change_pack.button",
-            children: "Change"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        StripeCheckout,
-        {
-          purpose: PaymentPurpose.CreditPack,
-          pack: selected.id,
-          amountLabel: formatCents(selected.priceCents),
-          title: "Buy credits",
-          submitLabel: "Pay",
-          onSuccess: (result) => {
-            ue.success(
-              `Credits added${result.creditBalance !== void 0 ? ` — balance ${Number(result.creditBalance)}` : ""}`
-            );
-            void refresh();
-            close();
-          },
-          onCancel: () => setPack(null)
-        }
-      )
-    ] })
-  ] }) });
-}
-var M = (e, i, s, u2, m2, a2, l2, h2) => {
-  let d2 = document.documentElement, w2 = ["light", "dark"];
-  function p2(n) {
-    (Array.isArray(e) ? e : [e]).forEach((y2) => {
-      let k2 = y2 === "class", S2 = k2 && a2 ? m2.map((f2) => a2[f2] || f2) : m2;
-      k2 ? (d2.classList.remove(...S2), d2.classList.add(a2 && a2[n] ? a2[n] : n)) : d2.setAttribute(y2, n);
-    }), R2(n);
-  }
-  function R2(n) {
-    h2 && w2.includes(n) && (d2.style.colorScheme = n);
-  }
-  function c2() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  if (u2) p2(u2);
-  else try {
-    let n = localStorage.getItem(i) || s, y2 = l2 && n === "system" ? c2() : n;
-    p2(y2);
-  } catch (n) {
-  }
-};
-var x2 = reactExports.createContext(void 0), U = { setTheme: (e) => {
-}, themes: [] }, z = () => {
-  var e;
-  return (e = reactExports.useContext(x2)) != null ? e : U;
-};
-reactExports.memo(({ forcedTheme: e, storageKey: i, attribute: s, enableSystem: u2, enableColorScheme: m2, defaultTheme: a2, value: l2, themes: h2, nonce: d2, scriptProps: w2 }) => {
-  let p2 = JSON.stringify([s, i, a2, e, h2, l2, u2, m2]).slice(1, -1);
-  return reactExports.createElement("script", { ...w2, suppressHydrationWarning: true, nonce: typeof window == "undefined" ? d2 : "", dangerouslySetInnerHTML: { __html: `(${M.toString()})(${p2})` } });
-});
-const Toaster = ({ ...props }) => {
-  const { theme = "system" } = z();
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    $e,
-    {
-      theme,
-      className: "toaster group",
-      style: {
-        "--normal-bg": "var(--popover)",
-        "--normal-text": "var(--popover-foreground)",
-        "--normal-border": "var(--border)"
-      },
-      ...props
-    }
+];
+function categoryForVariant(layoutVariant) {
+  const row = PRICING_LEDGER.find((r2) => r2.id === layoutVariant);
+  return CATALOG.find(
+    (c2) => c2.variants.includes(layoutVariant) || row !== void 0 && c2.productType === row.productType
   );
+}
+function categoryRows(category) {
+  return category.variants.map((v2) => PRICING_LEDGER.find((r2) => r2.id === v2)).filter((r2) => r2 !== void 0);
+}
+function categoryFromCents(category) {
+  const rows = categoryRows(category);
+  return rows.length ? Math.min(...rows.map((r2) => r2.retailPriceCents)) : 0;
+}
+const CATALOG_SIZE_COUNT = CATALOG.reduce(
+  (n, c2) => n + c2.variants.length,
+  0
+);
+const CREDIT_VALUE_CENTS = 1;
+const AI_COSTS = {
+  copy: 1,
+  squareImage: 7,
+  wideImage: 14,
+  hdImage: 20
 };
+const CREDIT_PACKS = [
+  {
+    id: CreditPack.Starter,
+    name: "Starter Pack",
+    priceCents: 500,
+    credits: 500,
+    bonus: 0
+  },
+  {
+    id: CreditPack.Growth,
+    name: "Growth Pack",
+    priceCents: 1500,
+    credits: 1600,
+    bonus: 100
+  },
+  {
+    id: CreditPack.Agency,
+    name: "Agency Pack",
+    priceCents: 3500,
+    credits: 4e3,
+    bonus: 500
+  }
+];
+const MONTHLY_ALLOWANCE = 50;
+function creditsToUsd(credits) {
+  return Number(credits) * CREDIT_VALUE_CENTS / 100;
+}
+const NAV_CHIPS = {
+  catalog: { key: "catalog", label: "Explore Catalog", to: "/wizard", step: 1 },
+  audience: {
+    key: "audience",
+    label: "Audience Manager",
+    to: "/wizard",
+    step: 2
+  },
+  studio: { key: "studio", label: "Design Studio", to: "/wizard", step: 3 },
+  tracking: { key: "tracking", label: "Campaign Tracking", to: "/campaigns" },
+  referrals: {
+    key: "referrals",
+    label: "Referral Rewards",
+    to: "/dashboard",
+    hash: "referrals"
+  },
+  admin: { key: "admin", label: "Admin Settings", to: "/admin" },
+  support: { key: "support", label: "Contact Support", to: null }
+};
+const MAX_CHIPS = 3;
+function isNavKey(k2) {
+  return Object.hasOwn(NAV_CHIPS, k2);
+}
+function parseReply(raw) {
+  const chips = [];
+  for (const m2 of raw.matchAll(/\[\[\s*([a-z]+)\s*\]\]/gi)) {
+    const key = m2[1].toLowerCase();
+    if (isNavKey(key) && !chips.includes(key) && chips.length < MAX_CHIPS) {
+      chips.push(key);
+    }
+  }
+  const text = raw.replace(/\[\[[^\]]*\]\]/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return { text, chips };
+}
+const usd = (cents) => formatCents(cents);
+const membership = usd(SUBSCRIPTION_PRICE_CENTS);
+function cheapest() {
+  const postcards = CATALOG.find((c2) => c2.id === "postcards");
+  return postcards ? usd(categoryFromCents(postcards)) : "";
+}
+const INTENTS = [
+  {
+    keywords: /\b(credit|credits|ai|generate|generator|image\w*|copywrit\w*|headline\w*)\b/i,
+    answer: () => `AI Studio lives in the design rail. 1 AI credit = ${usd(CREDIT_VALUE_CENTS)}: copy costs ${AI_COSTS.copy} credit, images ${AI_COSTS.squareImage}, ${AI_COSTS.wideImage} or ${AI_COSTS.hdImage}. Members get ${MONTHLY_ALLOWANCE} free credits every month, and packs are available any time.`,
+    chips: ["studio"]
+  },
+  {
+    keywords: /\b(refer\w*|invite\w*|friend\w*|free month|reward\w*)\b/i,
+    answer: () => `Share your referral link from the dashboard. When someone you referred makes their first payment while your membership is active, you earn one free month of membership — a ${membership} value.`,
+    chips: ["referrals"]
+  },
+  {
+    keywords: /\b(track\w*|deliver\w*|imb|scan\w*|status|where is|arriv\w*|timeline|usps|qr)\b/i,
+    answer: () => "Every campaign is tracked with USPS Intelligent Mail barcode scans on a five-stage timeline: created, in production, in transit, sorted at the local hub and delivered. Dynamic QR codes on your piece record scans too.",
+    chips: ["tracking"]
+  },
+  {
+    keywords: /\b(audience|csv|upload|list|address\w*|cass|verif\w*|preset\w*|radius|map|recipient\w*|mailing list)\b/i,
+    answer: () => "Upload a CSV or pick a saved preset in Step 2. Every address runs through USPS CASS certification on upload, so no postage is wasted on invalid routes. You can also size a drop with the radius map first.",
+    chips: ["audience"]
+  },
+  {
+    keywords: /\b(design|studio|canvas|template\w*|logo|bleed|safe|margin\w*|artwork|layout|font\w*)\b/i,
+    answer: () => "The design studio is Step 3. Keep essential copy and logos inside the green ¼″ safe line — the red ⅛″ bleed is trimmed off. Start from a template or a layout, and tap AI Studio in the rail for fresh copy or backgrounds.",
+    chips: ["studio"]
+  },
+  {
+    keywords: /\b(admin|api key\w*|keys|stripe|resend|openai|click2mail credential\w*|webhook\w*|settings)\b/i,
+    answer: () => "Admins set the Click2Mail, Stripe, Resend and OpenAI keys in Admin settings. Secrets are stored in the canister and only ever shown masked.",
+    chips: ["admin"]
+  },
+  {
+    keywords: /\b(size|sizes|product|products|catalog|format|postcard\w*|letter\w*|brochure\w*|flyer\w*|booklet\w*|eddm|certified|priority|notecard\w*|rack card\w*|jumbo|trifold)\b/i,
+    answer: () => `We print ${CATALOG.length} product families in ${CATALOG_SIZE_COUNT} sizes — postcards from 3.5×5 up to the Jumbo 6×11, letters, Certified Mail, EDDM®, Priority Mail, flyers, brochures, booklets and more. Step 1 of the wizard shows every size with its exact per-piece price.`,
+    chips: ["catalog"]
+  },
+  {
+    keywords: /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
+    answer: () => `A ${membership}/month membership unlocks Click2Mail wholesale print and USPS postage with no batch minimums — mail one piece or thousands. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
+    chips: ["catalog"]
+  },
+  {
+    keywords: /\b(support|human|person|agent|contact|help me|problem|issue|bug|broken|refund|complain\w*|error)\b/i,
+    answer: () => "I'll get you to a human. Open Contact Support and our postal team will reply by email.",
+    chips: ["support"]
+  }
+];
+const FALLBACK = {
+  keywords: /$^/,
+  answer: () => "Woof — I can help with pricing, sizes, audiences, design, tracking, credits and referrals. Ask away, or reach our postal team through Contact Support.",
+  chips: ["catalog", "support"]
+};
+function quickAnswer(question) {
+  let best = FALLBACK;
+  let bestHits = 0;
+  for (const intent of INTENTS) {
+    const flags = intent.keywords.flags.includes("g") ? intent.keywords.flags : `${intent.keywords.flags}g`;
+    const hits = [...question.matchAll(new RegExp(intent.keywords, flags))].length;
+    if (hits > bestHits) {
+      best = intent;
+      bestHits = hits;
+    }
+  }
+  return { text: best.answer(), chips: best.chips };
+}
+const STAMPY_GREETING = "Woof! I'm Stampy, your postal copilot. Ask me about pricing, sizes, audiences, design or tracking — I'll point you to the right place.";
+const STARTER_QUESTIONS = [
+  "How does pricing work?",
+  "What sizes can I mail?",
+  "How do I track a campaign?",
+  "How do referrals work?"
+];
 const BRAND = {
   name: "EZmailout",
   site: "EZmailout.com",
@@ -39687,6 +39964,533 @@ const STUDIO_FONTS = [
   "Times New Roman",
   "Arial"
 ];
+const DESIGN_PPI = 100;
+const RASTER_DPI = 300;
+const CUT_INSET_INCHES = 0;
+const BLEED_INSET_INCHES = 0.125;
+const SAFE_INSET_INCHES = 0.25;
+const ADDRESS_ZONE_TOP_PCT = 0.38;
+const FALLBACK_VARIANT = "6x9";
+function getLayoutDims(layoutVariant) {
+  const row = getPricingRow(layoutVariant) ?? getPricingRow(FALLBACK_VARIANT);
+  const widthInches = (row == null ? void 0 : row.widthInches) ?? 9;
+  const heightInches = (row == null ? void 0 : row.heightInches) ?? 6;
+  const designWidth = Math.round(widthInches * DESIGN_PPI);
+  const designHeight = Math.round(heightInches * DESIGN_PPI);
+  const dims = {
+    layoutVariant: (row == null ? void 0 : row.id) ?? layoutVariant,
+    widthInches,
+    heightInches,
+    designWidth,
+    designHeight,
+    cutInsetInches: CUT_INSET_INCHES,
+    bleedInsetInches: BLEED_INSET_INCHES,
+    safeInsetInches: SAFE_INSET_INCHES,
+    hasBackSide: true
+  };
+  if (row == null ? void 0 : row.hasAddressBlock) {
+    const x3 = Math.round(designWidth / 2);
+    const y2 = Math.round(designHeight * ADDRESS_ZONE_TOP_PCT);
+    dims.addressZone = {
+      x: x3,
+      y: y2,
+      w: designWidth - x3,
+      h: designHeight - y2
+    };
+  }
+  return dims;
+}
+function insetRect(dims, inches) {
+  const inset = inches * DESIGN_PPI;
+  return {
+    x: inset,
+    y: inset,
+    w: dims.designWidth - inset * 2,
+    h: dims.designHeight - inset * 2
+  };
+}
+function safeRect(dims) {
+  return insetRect(dims, dims.safeInsetInches);
+}
+let idCounter$1 = 0;
+function newId(prefix2) {
+  idCounter$1 += 1;
+  return `${prefix2}_${idCounter$1}_${Math.random().toString(36).slice(2, 7)}`;
+}
+const DEFAULT_FONT_FAMILY = "Geist";
+const DEFAULT_TEXT_COLOR = "#0f172a";
+const DEFAULT_FRONT_BG = "#ffffff";
+const DEFAULT_BACK_BG = "#ffffff";
+function emptyCanvasSide(backgroundColor = DEFAULT_FRONT_BG) {
+  return {
+    backgroundColor,
+    backgroundImageUrl: void 0,
+    textBlocks: [],
+    logos: [],
+    qrCodes: []
+  };
+}
+function emptyCanvasState(layoutVariant) {
+  const dims = getLayoutDims(layoutVariant);
+  return {
+    front: emptyCanvasSide(DEFAULT_FRONT_BG),
+    back: emptyCanvasSide(DEFAULT_BACK_BG),
+    designPpi: BigInt(DESIGN_PPI),
+    widthInches: dims.widthInches,
+    heightInches: dims.heightInches
+  };
+}
+function nextZIndex(side) {
+  let max2 = 0n;
+  for (const t of side.textBlocks) if (t.zIndex > max2) max2 = t.zIndex;
+  for (const l2 of side.logos) if (l2.zIndex > max2) max2 = l2.zIndex;
+  for (const q2 of side.qrCodes) if (q2.zIndex > max2) max2 = q2.zIndex;
+  return max2 + 1n;
+}
+function makeTextBlock(side, partial = {}) {
+  return {
+    id: newId("tb"),
+    text: "Your headline here",
+    x: 40,
+    y: 40,
+    width: 260,
+    height: 48,
+    fontSize: 24,
+    color: DEFAULT_TEXT_COLOR,
+    fontFamily: DEFAULT_FONT_FAMILY,
+    fontWeight: 700n,
+    align: "left",
+    zIndex: nextZIndex(side),
+    ...partial
+  };
+}
+function makeLogo(side, url, partial = {}) {
+  return {
+    id: newId("logo"),
+    url,
+    x: 40,
+    y: 40,
+    width: 120,
+    height: 120,
+    zIndex: nextZIndex(side),
+    ...partial
+  };
+}
+function makeQrCode(side, partial = {}) {
+  return {
+    id: newId("qr"),
+    x: 40,
+    y: 40,
+    size: 110,
+    url: DYNAMIC_QR_PLACEHOLDER,
+    mode: QrMode.DynamicTracking,
+    foreground: "#0f172a",
+    background: "#ffffff",
+    caption: void 0,
+    zIndex: nextZIndex(side),
+    ...partial
+  };
+}
+function clampToCanvas(x3, y2, w2, h2, canvasW, canvasH) {
+  return {
+    x: Math.min(Math.max(0, x3), Math.max(0, canvasW - w2)),
+    y: Math.min(Math.max(0, y2), Math.max(0, canvasH - h2))
+  };
+}
+function canvasFromTemplate(template, layoutVariant) {
+  const base = emptyCanvasState(layoutVariant);
+  const dims = getLayoutDims(layoutVariant);
+  const front = {
+    ...base.front,
+    backgroundColor: template.backgroundColor
+  };
+  const textBlocks = template.textBlocks.map(
+    (tb, i) => makeTextBlock(front, {
+      text: tb.text,
+      x: Math.max(24, tb.x / 100 * dims.designWidth),
+      y: Math.max(24, tb.y / 100 * dims.designHeight),
+      width: Math.round(dims.designWidth * 0.6),
+      height: Math.round(tb.fontSize * 2.2),
+      fontSize: tb.fontSize * 1.4,
+      color: tb.color,
+      fontWeight: i === 0 ? 800n : 600n,
+      zIndex: BigInt(i + 1)
+    })
+  );
+  const qrCodes = template.hasQrCode ? [
+    makeQrCode(front, {
+      x: dims.designWidth - 150,
+      y: dims.designHeight - 150,
+      size: 110,
+      zIndex: BigInt(textBlocks.length + 1)
+    })
+  ] : [];
+  return { ...base, front: { ...front, textBlocks, qrCodes } };
+}
+function getSide$1(canvas2, key) {
+  return key === "front" ? canvas2.front : canvas2.back;
+}
+function withSide(canvas2, key, side) {
+  return key === "front" ? { ...canvas2, front: side } : { ...canvas2, back: side };
+}
+const DEFAULT_LAYOUT = "6x9";
+function initialData() {
+  return {
+    currentStep: 1,
+    campaignName: "",
+    selectedProduct: null,
+    selectedLayout: null,
+    selectedSpec: null,
+    audienceType: null,
+    verifiedAddresses: [],
+    recipientCount: 0,
+    geoTarget: null,
+    sourcePresetId: null,
+    designTemplate: null,
+    canvas: emptyCanvasState(DEFAULT_LAYOUT),
+    activeSide: "front",
+    selectedElementId: null,
+    qrDestinationUrl: "",
+    returnAddress: null,
+    campaignId: null,
+    paymentIntentId: null
+  };
+}
+function maxZ(side) {
+  let max2 = 0n;
+  for (const t of side.textBlocks) if (t.zIndex > max2) max2 = t.zIndex;
+  for (const l2 of side.logos) if (l2.zIndex > max2) max2 = l2.zIndex;
+  for (const q2 of side.qrCodes) if (q2.zIndex > max2) max2 = q2.zIndex;
+  return max2;
+}
+function geometryOf(side, id) {
+  const t = side.textBlocks.find((b2) => b2.id === id);
+  if (t)
+    return { x: t.x, y: t.y, width: t.width, height: t.height, z: t.zIndex };
+  const l2 = side.logos.find((b2) => b2.id === id);
+  if (l2)
+    return { x: l2.x, y: l2.y, width: l2.width, height: l2.height, z: l2.zIndex };
+  const q2 = side.qrCodes.find((b2) => b2.id === id);
+  if (q2) return { x: q2.x, y: q2.y, width: q2.size, height: q2.size, z: q2.zIndex };
+  return null;
+}
+function moveTo(side, id, x3, y2) {
+  return {
+    ...side,
+    textBlocks: side.textBlocks.map((t) => t.id === id ? { ...t, x: x3, y: y2 } : t),
+    logos: side.logos.map((l2) => l2.id === id ? { ...l2, x: x3, y: y2 } : l2),
+    qrCodes: side.qrCodes.map((q2) => q2.id === id ? { ...q2, x: x3, y: y2 } : q2)
+  };
+}
+function zOrder(side) {
+  return [
+    ...side.textBlocks.map((t) => ({ id: t.id, z: t.zIndex })),
+    ...side.logos.map((l2) => ({ id: l2.id, z: l2.zIndex })),
+    ...side.qrCodes.map((q2) => ({ id: q2.id, z: q2.zIndex }))
+  ].sort((a2, b2) => a2.z < b2.z ? -1 : a2.z > b2.z ? 1 : 0);
+}
+function stepZ(side, id, direction) {
+  const order = zOrder(side);
+  const index2 = order.findIndex((e) => e.id === id);
+  const neighbour = order[index2 + direction];
+  if (index2 < 0 || !neighbour) return side;
+  const current = order[index2];
+  const lower = direction === 1 ? current : neighbour;
+  const upper = direction === 1 ? neighbour : current;
+  const base = lower.z;
+  const swapped = reindex(reindex(side, upper.id, base), lower.id, base + 1n);
+  return swapped;
+}
+function reindex(side, id, z2) {
+  return {
+    ...side,
+    textBlocks: side.textBlocks.map(
+      (t) => t.id === id ? { ...t, zIndex: z2 } : t
+    ),
+    logos: side.logos.map((l2) => l2.id === id ? { ...l2, zIndex: z2 } : l2),
+    qrCodes: side.qrCodes.map((q2) => q2.id === id ? { ...q2, zIndex: z2 } : q2)
+  };
+}
+const useWizardStore = create()((set, get) => ({
+  ...initialData(),
+  setStep: (step) => set({ currentStep: step }),
+  setCurrentStep: (step) => set({ currentStep: step }),
+  setCampaignName: (campaignName) => set({ campaignName }),
+  setProduct: (selectedProduct) => set({ selectedProduct }),
+  setLayout: (layoutVariant) => set((s) => {
+    const row = getPricingRow(layoutVariant);
+    return {
+      selectedLayout: layoutVariant,
+      selectedSpec: row ? {
+        layoutVariant: row.id,
+        documentClass: row.documentClass,
+        widthInches: row.widthInches,
+        heightInches: row.heightInches,
+        unitPriceCents: row.retailPriceCents,
+        mailClass: row.defaultMailClass,
+        supportedMailClasses: row.supportedMailClasses
+      } : null,
+      canvas: s.selectedLayout === layoutVariant ? s.canvas : emptyCanvasState(layoutVariant),
+      selectedElementId: null
+    };
+  }),
+  setMailClass: (mailClass) => set(
+    (s) => {
+      var _a2;
+      return ((_a2 = s.selectedSpec) == null ? void 0 : _a2.supportedMailClasses.includes(mailClass)) ? { selectedSpec: { ...s.selectedSpec, mailClass } } : {};
+    }
+  ),
+  setAudienceType: (audienceType) => set({ audienceType }),
+  setVerifiedAddresses: (verifiedAddresses) => set({ verifiedAddresses }),
+  setRecipientCount: (recipientCount) => set({ recipientCount }),
+  setGeoTarget: (geoTarget) => set({ geoTarget }),
+  setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
+  setDesignTemplate: (template) => set((s) => ({
+    designTemplate: template,
+    canvas: template ? canvasFromTemplate(
+      template,
+      s.selectedLayout ?? template.layoutVariant
+    ) : s.canvas,
+    selectedElementId: null
+  })),
+  setCanvas: (canvas2) => set({ canvas: canvas2 }),
+  setActiveSide: (activeSide) => set({ activeSide, selectedElementId: null }),
+  setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
+  updateSide: (sideKey, patch) => set((s) => ({
+    canvas: withSide(s.canvas, sideKey, {
+      ...getSide$1(s.canvas, sideKey),
+      ...patch
+    })
+  })),
+  addTextBlock: (sideKey, partial) => {
+    const side = getSide$1(get().canvas, sideKey);
+    const block = makeTextBlock(side, partial);
+    set((s) => ({
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        textBlocks: [...side.textBlocks, block]
+      }),
+      selectedElementId: block.id
+    }));
+    return block.id;
+  },
+  updateTextBlock: (sideKey, id, patch) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        textBlocks: side.textBlocks.map(
+          (t) => t.id === id ? { ...t, ...patch } : t
+        )
+      })
+    };
+  }),
+  removeTextBlock: (sideKey, id) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        textBlocks: side.textBlocks.filter((t) => t.id !== id)
+      }),
+      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
+    };
+  }),
+  addLogo: (sideKey, url, partial) => {
+    const side = getSide$1(get().canvas, sideKey);
+    const logo = makeLogo(side, url, partial);
+    set((s) => ({
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        logos: [...side.logos, logo]
+      }),
+      selectedElementId: logo.id
+    }));
+    return logo.id;
+  },
+  updateLogo: (sideKey, id, patch) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        logos: side.logos.map((l2) => l2.id === id ? { ...l2, ...patch } : l2)
+      })
+    };
+  }),
+  removeLogo: (sideKey, id) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        logos: side.logos.filter((l2) => l2.id !== id)
+      }),
+      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
+    };
+  }),
+  addQrCode: (sideKey, partial) => {
+    const side = getSide$1(get().canvas, sideKey);
+    const qr = makeQrCode(side, partial);
+    set((s) => ({
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        qrCodes: [...side.qrCodes, qr]
+      }),
+      selectedElementId: qr.id
+    }));
+    return qr.id;
+  },
+  updateQrCode: (sideKey, id, patch) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        qrCodes: side.qrCodes.map(
+          (q2) => q2.id === id ? { ...q2, ...patch } : q2
+        )
+      })
+    };
+  }),
+  removeQrCode: (sideKey, id) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, {
+        ...side,
+        qrCodes: side.qrCodes.filter((q2) => q2.id !== id)
+      }),
+      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
+    };
+  }),
+  setBackgroundImage: (sideKey, url) => set((s) => ({
+    canvas: withSide(s.canvas, sideKey, {
+      ...getSide$1(s.canvas, sideKey),
+      backgroundImageUrl: url ?? void 0
+    })
+  })),
+  setBackgroundColor: (sideKey, color) => set((s) => ({
+    canvas: withSide(s.canvas, sideKey, {
+      ...getSide$1(s.canvas, sideKey),
+      backgroundColor: color
+    })
+  })),
+  bringToFront: (sideKey, id) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    return {
+      canvas: withSide(s.canvas, sideKey, reindex(side, id, maxZ(side) + 1n))
+    };
+  }),
+  sendToBack: (sideKey, id) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    const shifted = {
+      ...side,
+      textBlocks: side.textBlocks.map((t) => ({
+        ...t,
+        zIndex: t.zIndex + 1n
+      })),
+      logos: side.logos.map((l2) => ({ ...l2, zIndex: l2.zIndex + 1n })),
+      qrCodes: side.qrCodes.map((q2) => ({ ...q2, zIndex: q2.zIndex + 1n }))
+    };
+    return { canvas: withSide(s.canvas, sideKey, reindex(shifted, id, 1n)) };
+  }),
+  bringForward: (sideKey, id) => set((s) => ({
+    canvas: withSide(
+      s.canvas,
+      sideKey,
+      stepZ(getSide$1(s.canvas, sideKey), id, 1)
+    )
+  })),
+  sendBackward: (sideKey, id) => set((s) => ({
+    canvas: withSide(
+      s.canvas,
+      sideKey,
+      stepZ(getSide$1(s.canvas, sideKey), id, -1)
+    )
+  })),
+  alignElement: (sideKey, id, alignment) => set((s) => {
+    const side = getSide$1(s.canvas, sideKey);
+    const geo = geometryOf(side, id);
+    if (!geo) return {};
+    const dims = getLayoutDims(s.selectedLayout ?? DEFAULT_LAYOUT);
+    let { x: x3, y: y2 } = geo;
+    switch (alignment) {
+      case "left":
+        x3 = 0;
+        break;
+      case "center":
+        x3 = (dims.designWidth - geo.width) / 2;
+        break;
+      case "right":
+        x3 = dims.designWidth - geo.width;
+        break;
+      case "top":
+        y2 = 0;
+        break;
+      case "middle":
+        y2 = (dims.designHeight - geo.height) / 2;
+        break;
+      case "bottom":
+        y2 = dims.designHeight - geo.height;
+        break;
+    }
+    return {
+      canvas: withSide(
+        s.canvas,
+        sideKey,
+        moveTo(
+          side,
+          id,
+          Math.round(Math.max(0, x3)),
+          Math.round(Math.max(0, y2))
+        )
+      )
+    };
+  }),
+  duplicateElement: (sideKey, id) => {
+    const side = getSide$1(get().canvas, sideKey);
+    const offset2 = 24;
+    const text = side.textBlocks.find((t) => t.id === id);
+    if (text) {
+      const { id: _id, zIndex: _z, ...rest } = text;
+      return get().addTextBlock(sideKey, {
+        ...rest,
+        x: text.x + offset2,
+        y: text.y + offset2
+      });
+    }
+    const logo = side.logos.find((l2) => l2.id === id);
+    if (logo) {
+      const { id: _id, zIndex: _z, url, ...rest } = logo;
+      return get().addLogo(sideKey, url, {
+        ...rest,
+        x: logo.x + offset2,
+        y: logo.y + offset2
+      });
+    }
+    const qr = side.qrCodes.find((q2) => q2.id === id);
+    if (qr) {
+      const { id: _id, zIndex: _z, ...rest } = qr;
+      return get().addQrCode(sideKey, {
+        ...rest,
+        x: qr.x + offset2,
+        y: qr.y + offset2
+      });
+    }
+    return null;
+  },
+  removeElement: (sideKey, id) => {
+    const { removeTextBlock, removeLogo, removeQrCode } = get();
+    removeTextBlock(sideKey, id);
+    removeLogo(sideKey, id);
+    removeQrCode(sideKey, id);
+  },
+  setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
+  setReturnAddress: (returnAddress) => set({ returnAddress }),
+  setCampaignId: (campaignId) => set({ campaignId }),
+  setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
+  reset: () => set(initialData())
+}));
+function reachableWizardStep(requested) {
+  const step = Math.min(4, Math.max(1, Math.round(requested)));
+  return step > 1 && !useWizardStore.getState().selectedLayout ? 1 : step;
+}
 var prefix = "Invariant failed";
 function invariant(condition, message) {
   if (condition) {
@@ -40486,7 +41290,7 @@ function createControlledPromise(onResolve) {
   };
   return controlledPromise;
 }
-function isPromise2(value) {
+function isPromise$1(value) {
   return Boolean(
     value && typeof value === "object" && typeof value.then === "function"
   );
@@ -41700,7 +42504,7 @@ const isBeforeLoadSsr = (inner, matchId, index2, route) => {
     }))
   };
   const tempSsr = route.options.ssr(ssrFnContext);
-  if (isPromise2(tempSsr)) {
+  if (isPromise$1(tempSsr)) {
     return tempSsr.then((ssr) => {
       existingMatch.ssr = parentOverride(ssr ?? defaultSsr);
     });
@@ -41827,7 +42631,7 @@ const executeBeforeLoad = (inner, matchId, index2, route) => {
   let beforeLoadContext;
   try {
     beforeLoadContext = route.options.beforeLoad(beforeLoadFnContext);
-    if (isPromise2(beforeLoadContext)) {
+    if (isPromise$1(beforeLoadContext)) {
       pending();
       return beforeLoadContext.catch((err) => {
         handleSerialError(inner, index2, err, "BEFORE_LOAD");
@@ -41846,14 +42650,14 @@ const handleBeforeLoad = (inner, index2) => {
   const serverSsr = () => {
     if (inner.router.isServer) {
       const maybePromise = isBeforeLoadSsr(inner, matchId, index2, route);
-      if (isPromise2(maybePromise)) return maybePromise.then(queueExecution);
+      if (isPromise$1(maybePromise)) return maybePromise.then(queueExecution);
     }
     return queueExecution();
   };
   const queueExecution = () => {
     if (shouldSkipLoader(inner, matchId)) return;
     const result = preBeforeLoadSetup(inner, matchId, route);
-    return isPromise2(result) ? result.then(execute) : execute();
+    return isPromise$1(result) ? result.then(execute) : execute();
   };
   const execute = () => executeBeforeLoad(inner, matchId, index2, route);
   return serverSsr();
@@ -41924,7 +42728,7 @@ const runLoader = async (inner, matchId, index2, route) => {
         _a2,
         getLoaderContext(inner, matchId, index2, route)
       );
-      const loaderResultIsPromise = route.options.loader && isPromise2(loaderResult);
+      const loaderResultIsPromise = route.options.loader && isPromise$1(loaderResult);
       const willLoadSomething = !!(loaderResultIsPromise || route._lazyPromise || route._componentsPromise || route.options.head || route.options.scripts || route.options.headers || match._nonReactive.minPendingPromise);
       if (willLoadSomething) {
         inner.updateMatch(matchId, (prev) => ({
@@ -42109,7 +42913,7 @@ async function loadMatches(arg) {
   try {
     for (let i = 0; i < inner.matches.length; i++) {
       const beforeLoad = handleBeforeLoad(inner, i);
-      if (isPromise2(beforeLoad)) await beforeLoad;
+      if (isPromise$1(beforeLoad)) await beforeLoad;
     }
     const max2 = inner.firstBadMatchIndex ?? inner.matches.length;
     for (let i = 0; i < max2; i++) {
@@ -42117,11 +42921,11 @@ async function loadMatches(arg) {
     }
     await Promise.all(inner.matchPromises);
     const readyPromise = triggerOnReady(inner);
-    if (isPromise2(readyPromise)) await readyPromise;
+    if (isPromise$1(readyPromise)) await readyPromise;
   } catch (err) {
     if (isNotFound(err) && !inner.preload) {
       const readyPromise = triggerOnReady(inner);
-      if (isPromise2(readyPromise)) await readyPromise;
+      if (isPromise$1(readyPromise)) await readyPromise;
       throw err;
     }
     if (isRedirect(err)) {
@@ -44900,6 +45704,4070 @@ function RouterContextProvider({
 function RouterProvider({ router: router2, ...rest }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RouterContextProvider, { router: router2, ...rest, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Matches, {}) });
 }
+var NODES = [
+  "a",
+  "button",
+  "div",
+  "form",
+  "h2",
+  "h3",
+  "img",
+  "input",
+  "label",
+  "li",
+  "nav",
+  "ol",
+  "p",
+  "select",
+  "span",
+  "svg",
+  "ul"
+];
+var Primitive = NODES.reduce((primitive, node) => {
+  const Slot2 = /* @__PURE__ */ createSlot(`Primitive.${node}`);
+  const Node2 = reactExports.forwardRef((props, forwardedRef) => {
+    const { asChild, ...primitiveProps } = props;
+    const Comp = asChild ? Slot2 : node;
+    if (typeof window !== "undefined") {
+      window[Symbol.for("radix-ui")] = true;
+    }
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
+  });
+  Node2.displayName = `Primitive.${node}`;
+  return { ...primitive, [node]: Node2 };
+}, {});
+var NAME$3 = "Label";
+var Label$2 = reactExports.forwardRef((props, forwardedRef) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Primitive.label,
+    {
+      ...props,
+      ref: forwardedRef,
+      onMouseDown: (event) => {
+        var _a2;
+        const target = event.target;
+        if (target.closest("button, input, select, textarea")) return;
+        (_a2 = props.onMouseDown) == null ? void 0 : _a2.call(props, event);
+        if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
+      }
+    }
+  );
+});
+Label$2.displayName = NAME$3;
+var Root$8 = Label$2;
+function Label$1({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Root$8,
+    {
+      "data-slot": "label",
+      className: cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function Textarea({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "textarea",
+    {
+      "data-slot": "textarea",
+      className: cn(
+        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      ),
+      ...props
+    }
+  );
+}
+const REF_KEY = "ez_ref";
+function readStoredReferral() {
+  try {
+    return window.localStorage.getItem(REF_KEY);
+  } catch {
+    return null;
+  }
+}
+const useAccountStore = create()((set) => ({
+  account: null,
+  creditBalance: 0,
+  subscriptionActive: false,
+  topUpOpen: false,
+  pendingReferralCode: readStoredReferral(),
+  setAccount: (account) => set({
+    account,
+    creditBalance: account ? Number(account.creditBalance) : 0,
+    subscriptionActive: account ? account.subscriptionActive : false
+  }),
+  setCreditBalance: (balance) => set({ creditBalance: Number(balance) }),
+  setTopUpOpen: (topUpOpen) => set({ topUpOpen }),
+  setPendingReferralCode: (code) => {
+    try {
+      if (code) window.localStorage.setItem(REF_KEY, code);
+      else window.localStorage.removeItem(REF_KEY);
+    } catch {
+    }
+    set({ pendingReferralCode: code });
+  }
+}));
+const OUTBOX_KEY = "ezmailout_support_outbox";
+const MAX_QUEUED = 5;
+function readOutbox() {
+  try {
+    const raw = window.localStorage.getItem(OUTBOX_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+function writeOutbox(items) {
+  try {
+    if (items.length === 0) window.localStorage.removeItem(OUTBOX_KEY);
+    else
+      window.localStorage.setItem(
+        OUTBOX_KEY,
+        JSON.stringify(items.slice(-MAX_QUEUED))
+      );
+  } catch {
+  }
+}
+function queueTicket(ticket) {
+  writeOutbox([...readOutbox(), ticket]);
+}
+const LIMITS = { name: 120, email: 254, subject: 160, message: 4e3 };
+const EMAIL = /^[^\s@]+@[^\s@.][^\s@]*\.[^\s@]+$/;
+const TICKET_CONFIRMATION = "Your ticket has been logged! Our postal team will follow up via your email shortly.";
+function SupportTicketForm({ onBack }) {
+  const account = useAccountStore((s) => s.account);
+  const submit = useSubmitSupportTicket();
+  const [name, setName] = reactExports.useState("");
+  const [email, setEmail] = reactExports.useState((account == null ? void 0 : account.email) ?? "");
+  const [subject, setSubject] = reactExports.useState("");
+  const [message, setMessage] = reactExports.useState("");
+  const [error, setError] = reactExports.useState(null);
+  const [done, setDone] = reactExports.useState(null);
+  const uid = reactExports.useId();
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError(null);
+    const ticket = {
+      name: name.trim(),
+      email: email.trim(),
+      subject: subject.trim(),
+      message: message.trim(),
+      pagePath: window.location.pathname
+    };
+    if (!ticket.name || !ticket.subject || !ticket.message) {
+      setError("Please fill in every field.");
+      return;
+    }
+    if (!EMAIL.test(ticket.email)) {
+      setError("Enter a valid email address so we can reply.");
+      return;
+    }
+    try {
+      const result = await submit.mutateAsync(ticket);
+      if (result.ok && result.ticketId) {
+        setDone({ kind: "sent", ticketId: result.ticketId });
+      } else {
+        setError(result.error ?? "The ticket could not be logged.");
+      }
+    } catch {
+      queueTicket(ticket);
+      setDone({ kind: "queued" });
+    }
+  }
+  if (done) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "flex h-full flex-col items-center justify-center gap-3 px-6 text-center",
+        "data-ocid": "stampy.support.confirmation",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "size-10 text-emerald-500" }),
+          done.kind === "sent" ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display text-base font-semibold", children: TICKET_CONFIRMATION }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "font-mono text-xs text-muted-foreground", children: [
+              "Ticket ",
+              done.ticketId
+            ] })
+          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display text-base font-semibold", children: "Saved on this device." }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "We couldn't reach our servers just now, so your ticket will be sent to our postal team automatically the next time you're online." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Button,
+            {
+              variant: "outline",
+              size: "sm",
+              onClick: onBack,
+              "data-ocid": "stampy.support.done",
+              children: "Back to chat"
+            }
+          )
+        ]
+      }
+    );
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "form",
+    {
+      onSubmit: handleSubmit,
+      className: "flex h-full flex-col gap-3 overflow-y-auto px-4 py-3",
+      "data-ocid": "stampy.support.form",
+      noValidate: true,
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: onBack,
+            className: "inline-flex w-fit items-center gap-1 text-xs font-medium text-[#575859] hover:text-foreground",
+            "data-ocid": "stampy.support.back",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowLeft, { className: "size-3.5" }),
+              " Back to chat"
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display text-sm font-semibold", children: "Contact Support" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "A person from our postal team will reply by email." })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Label$1, { htmlFor: `${uid}-name`, children: "Name" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              id: `${uid}-name`,
+              value: name,
+              maxLength: LIMITS.name,
+              onChange: (e) => setName(e.target.value),
+              autoComplete: "name",
+              "data-ocid": "stampy.support.name"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Label$1, { htmlFor: `${uid}-email`, children: "Email" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              id: `${uid}-email`,
+              type: "email",
+              value: email,
+              maxLength: LIMITS.email,
+              onChange: (e) => setEmail(e.target.value),
+              autoComplete: "email",
+              "data-ocid": "stampy.support.email"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Label$1, { htmlFor: `${uid}-subject`, children: "Subject" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              id: `${uid}-subject`,
+              value: subject,
+              maxLength: LIMITS.subject,
+              onChange: (e) => setSubject(e.target.value),
+              "data-ocid": "stampy.support.subject"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Label$1, { htmlFor: `${uid}-message`, children: "Message" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Textarea,
+            {
+              id: `${uid}-message`,
+              value: message,
+              maxLength: LIMITS.message,
+              onChange: (e) => setMessage(e.target.value),
+              rows: 4,
+              className: "resize-none",
+              "data-ocid": "stampy.support.message"
+            }
+          )
+        ] }),
+        error ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "p",
+          {
+            role: "alert",
+            className: "text-xs text-destructive",
+            "data-ocid": "stampy.support.error",
+            children: error
+          }
+        ) : null,
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          Button,
+          {
+            type: "submit",
+            disabled: submit.isPending,
+            className: "mt-auto",
+            "data-ocid": "stampy.support.submit",
+            children: [
+              submit.isPending ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : null,
+              "Send to support"
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+const GREETING = {
+  id: 0,
+  role: "assistant",
+  text: STAMPY_GREETING,
+  chips: []
+};
+function StampyChatbot() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname.startsWith("/t/") || pathname.startsWith("/track/")) {
+    return null;
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(StampyChatbotPanel, {});
+}
+function StampyChatbotPanel() {
+  var _a2;
+  const navigate = useNavigate();
+  const { isAuthenticated, login } = useInternetIdentity();
+  const config = usePublicConfig();
+  const ask = useAskStampy();
+  const tipsHidden = useStampyTips((s) => s.hidden);
+  const showTips = useStampyTips((s) => s.setHidden);
+  const [open, setOpen] = reactExports.useState(false);
+  const [view, setView] = reactExports.useState("chat");
+  const [messages, setMessages] = reactExports.useState([GREETING]);
+  const [input, setInput] = reactExports.useState("");
+  const nextId = reactExports.useRef(1);
+  const listRef = reactExports.useRef(null);
+  const inputRef = reactExports.useRef(null);
+  useSupportOutboxFlush();
+  const aiConfigured = ((_a2 = config.data) == null ? void 0 : _a2.openAiConfigured) === true;
+  const live = isAuthenticated && aiConfigured;
+  const thinking = ask.isPending;
+  const push2 = (m2) => setMessages((prev) => [...prev, { ...m2, id: nextId.current++ }]);
+  reactExports.useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, thinking, open, view]);
+  reactExports.useEffect(() => {
+    var _a3;
+    if (open && view === "chat") (_a3 = inputRef.current) == null ? void 0 : _a3.focus();
+  }, [open, view]);
+  reactExports.useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  async function send(question) {
+    const q2 = question.trim();
+    if (!q2 || thinking) return;
+    const userMessage = {
+      id: nextId.current++,
+      role: "user",
+      text: q2,
+      chips: []
+    };
+    const history = [...messages, userMessage];
+    setMessages(history);
+    setInput("");
+    if (!live) {
+      push2({ ...quickAnswer(q2), role: "assistant" });
+      return;
+    }
+    const turns = history.filter((m2) => m2.id !== GREETING.id).slice(-8).map((m2) => ({
+      role: m2.role === "user" ? StampyRole.User : StampyRole.Assistant,
+      content: m2.text
+    }));
+    try {
+      const result = await ask.mutateAsync(turns);
+      if (result.ok && result.reply) {
+        const parsed = parseReply(result.reply);
+        push2({
+          text: parsed.text || quickAnswer(q2).text,
+          chips: parsed.chips,
+          role: "assistant"
+        });
+        return;
+      }
+      push2({
+        ...quickAnswer(q2),
+        role: "assistant",
+        note: result.error ?? "AI answers are unavailable right now."
+      });
+    } catch {
+      push2({
+        ...quickAnswer(q2),
+        role: "assistant",
+        note: "AI answers are unavailable right now."
+      });
+    }
+  }
+  function openChip(key) {
+    const chip = NAV_CHIPS[key];
+    if (chip.to === null) {
+      setView("support");
+      return;
+    }
+    if (chip.step !== void 0) {
+      const reachable = reachableWizardStep(chip.step);
+      useWizardStore.getState().setCurrentStep(reachable);
+      if (reachable !== chip.step) {
+        push2({
+          role: "assistant",
+          text: "Pick your mail piece first — Step 1 unlocks the rest of the wizard, then I'll take you on from there.",
+          chips: []
+        });
+      }
+      navigate({ to: "/wizard", search: { step: chip.step } });
+    } else {
+      navigate({ to: chip.to, hash: chip.hash });
+    }
+    if (window.matchMedia("(max-width: 639px)").matches) setOpen(false);
+  }
+  function handleSubmit(event) {
+    event.preventDefault();
+    void send(input);
+  }
+  const status = live ? { label: "Caffeine AI Active", dot: "bg-emerald-500" } : !isAuthenticated ? { label: "Quick answers · sign in for AI", dot: "bg-amber-400" } : { label: "Quick answers · AI not configured", dot: "bg-amber-400" };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    open ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "section",
+      {
+        id: "stampy-chat-panel",
+        "aria-label": "Stampy — Postal Copilot",
+        className: "fixed bottom-24 right-4 z-40 flex h-[min(560px,calc(100dvh-7.5rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-card shadow-2xl sm:right-5",
+        "data-ocid": "stampy.chat.panel",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("header", { className: "flex items-center gap-3 border-b border-[#e5e7eb] px-4 py-3", children: [
+            thinking ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+              StampyChatAvatarThinking,
+              {
+                className: "size-11 shrink-0",
+                "data-ocid": "stampy.chat.avatar.thinking"
+              }
+            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+              StampyChatAvatarIdle,
+              {
+                className: "stampy-launcher size-11 shrink-0",
+                "data-ocid": "stampy.chat.avatar.idle"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display text-sm font-semibold leading-tight", children: "Stampy — Postal Copilot" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "p",
+                {
+                  className: "mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground",
+                  "data-ocid": "stampy.chat.status",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: cn("size-2 rounded-full", status.dot) }),
+                    status.label
+                  ]
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: () => setOpen(false),
+                className: "flex size-8 items-center justify-center rounded-full text-[#575859] transition-smooth hover:bg-muted hover:text-foreground",
+                "aria-label": "Minimize Stampy",
+                title: "Minimize",
+                "data-ocid": "stampy.chat.minimize",
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Minus, { className: "size-4" })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "nav",
+            {
+              "aria-label": "Stampy menu",
+              className: "flex flex-wrap items-center gap-1.5 border-b border-[#e5e7eb] bg-[#f6f7f9] px-3 py-2",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  MenuButton,
+                  {
+                    onClick: () => setView("support"),
+                    active: view === "support",
+                    ocid: "stampy.chat.menu.support",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(LifeBuoy, { className: "size-3.5" }),
+                      " Contact Support"
+                    ]
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  MenuButton,
+                  {
+                    onClick: () => {
+                      setMessages([GREETING]);
+                      setView("chat");
+                    },
+                    ocid: "stampy.chat.menu.clear",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "size-3.5" }),
+                      " New chat"
+                    ]
+                  }
+                ),
+                tipsHidden ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  MenuButton,
+                  {
+                    onClick: () => showTips(false),
+                    ocid: "stampy.chat.menu.show_tips",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(Lightbulb, { className: "size-3.5" }),
+                      " Show wizard tips"
+                    ]
+                  }
+                ) : null
+              ]
+            }
+          ),
+          view === "support" ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "min-h-0 flex-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SupportTicketForm, { onBack: () => setView("chat") }) }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "div",
+              {
+                ref: listRef,
+                className: "min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3",
+                "aria-live": "polite",
+                "data-ocid": "stampy.chat.messages",
+                children: [
+                  messages.map((m2) => /* @__PURE__ */ jsxRuntimeExports.jsx(Message, { message: m2, onChip: openChip }, m2.id)),
+                  messages.length === 1 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "div",
+                    {
+                      className: "flex flex-wrap gap-1.5 pl-9",
+                      "data-ocid": "stampy.chat.starters",
+                      children: STARTER_QUESTIONS.map((q2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => void send(q2),
+                          className: "rounded-full border border-primary/25 bg-card px-3 py-1 text-xs text-primary transition-smooth hover:bg-primary/5",
+                          children: q2
+                        },
+                        q2
+                      ))
+                    }
+                  ) : null,
+                  thinking ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "div",
+                    {
+                      className: "flex items-center gap-2 pl-1 text-xs text-muted-foreground",
+                      "data-ocid": "stampy.chat.thinking",
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(StampyChatAvatarThinking, { className: "size-7" }),
+                        "Stampy is thinking…"
+                      ]
+                    }
+                  ) : null
+                ]
+              }
+            ),
+            !isAuthenticated ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "border-t border-[#e5e7eb] px-4 py-1.5 text-[11px] text-muted-foreground", children: [
+              "Quick answers work signed out.",
+              " ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => void login(),
+                  className: "font-medium text-primary hover:underline",
+                  children: "Sign in"
+                }
+              ),
+              " ",
+              "for full AI answers."
+            ] }) : null,
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "form",
+              {
+                onSubmit: handleSubmit,
+                className: "flex items-center gap-2 border-t border-[#e5e7eb] p-3",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    Input,
+                    {
+                      ref: inputRef,
+                      value: input,
+                      onChange: (e) => setInput(e.target.value),
+                      placeholder: "Ask Stampy anything about your mailing…",
+                      maxLength: 1e3,
+                      className: "rounded-full",
+                      "aria-label": "Message Stampy",
+                      "data-ocid": "stampy.chat.input"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    Button,
+                    {
+                      type: "submit",
+                      size: "icon",
+                      disabled: !input.trim() || thinking,
+                      "aria-label": "Send",
+                      className: "shrink-0 rounded-full",
+                      "data-ocid": "stampy.chat.send",
+                      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Send, { className: "size-4" })
+                    }
+                  )
+                ]
+              }
+            )
+          ] })
+        ]
+      }
+    ) : null,
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        type: "button",
+        onClick: () => setOpen((o) => !o),
+        className: "group fixed bottom-5 right-4 z-40 flex size-14 items-center justify-center rounded-full border-2 border-[#6366f1] bg-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5",
+        "aria-label": open ? "Minimize Stampy" : "Need help? Ask Stampy!",
+        "aria-expanded": open,
+        "aria-controls": "stampy-chat-panel",
+        "data-ocid": "stampy.chat.launcher",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(StampyChatAvatarIdle, { className: "stampy-launcher size-12" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "span",
+            {
+              className: "absolute right-0 top-0 flex size-3.5",
+              "aria-hidden": "true",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "relative inline-flex size-3.5 rounded-full border-2 border-white bg-emerald-500" })
+              ]
+            }
+          ),
+          open ? null : /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "span",
+            {
+              role: "tooltip",
+              className: "pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full bg-[#0e2b4f] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+              "data-ocid": "stampy.chat.tooltip",
+              children: "Need help? Ask Stampy!"
+            }
+          )
+        ]
+      }
+    )
+  ] });
+}
+function MenuButton({
+  children,
+  onClick,
+  active = false,
+  ocid
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "button",
+    {
+      type: "button",
+      onClick,
+      className: cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-smooth",
+        active ? "bg-primary text-primary-foreground" : "text-[#575859] hover:bg-card hover:text-foreground"
+      ),
+      "data-ocid": ocid,
+      children
+    }
+  );
+}
+function Message({
+  message,
+  onChip
+}) {
+  if (message.role === "user") {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground", children: message.text }) });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2", "data-ocid": "stampy.chat.reply", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(StampyChatAvatarIdle, { className: "stampy-launcher mt-0.5 size-7 shrink-0" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 max-w-[85%] space-y-2", children: [
+      message.note ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-[11px] text-muted-foreground", children: [
+        message.note,
+        " Here's a quick answer:"
+      ] }) : null,
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "whitespace-pre-wrap rounded-2xl rounded-tl-md bg-muted px-3 py-2 text-sm text-foreground", children: message.text }),
+      message.chips.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-1.5", children: message.chips.map((key) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          type: "button",
+          onClick: () => onChip(key),
+          className: "inline-flex items-center gap-1 rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs font-medium text-primary transition-smooth hover:bg-primary hover:text-primary-foreground",
+          "data-ocid": `stampy.chat.chip.${key}`,
+          children: [
+            NAV_CHIPS[key].label,
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowUpRight, { className: "size-3" })
+          ]
+        },
+        key
+      )) }) : null
+    ] })
+  ] });
+}
+function useSupportOutboxFlush() {
+  const { ready } = useBackendActor();
+  const submit = useSubmitSupportTicket();
+  const flushing = reactExports.useRef(false);
+  reactExports.useEffect(() => {
+    if (!ready || flushing.current) return;
+    const queued = readOutbox();
+    if (queued.length === 0) return;
+    flushing.current = true;
+    (async () => {
+      var _a2;
+      const remaining = [...queued];
+      while (remaining.length > 0) {
+        try {
+          const result = await submit.mutateAsync(remaining[0]);
+          if (!result.ok && ((_a2 = result.error) == null ? void 0 : _a2.includes("try again later"))) break;
+          remaining.shift();
+        } catch {
+          break;
+        }
+      }
+      writeOutbox(remaining);
+      flushing.current = false;
+    })();
+  }, [ready]);
+}
+const alertVariants = cva(
+  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  {
+    variants: {
+      variant: {
+        default: "bg-card text-card-foreground",
+        destructive: "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
+      }
+    },
+    defaultVariants: {
+      variant: "default"
+    }
+  }
+);
+function Alert({
+  className,
+  variant,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "alert",
+      role: "alert",
+      className: cn(alertVariants({ variant }), className),
+      ...props
+    }
+  );
+}
+function AlertTitle({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "alert-title",
+      className: cn(
+        "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function AlertDescription({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "alert-description",
+      className: cn(
+        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function Card({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "card",
+      className: cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function CardHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "card-header",
+      className: cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function CardTitle({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "card-title",
+      className: cn("leading-none font-semibold", className),
+      ...props
+    }
+  );
+}
+function CardDescription({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "card-description",
+      className: cn("text-muted-foreground text-sm", className),
+      ...props
+    }
+  );
+}
+function CardContent({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "card-content",
+      className: cn("px-6", className),
+      ...props
+    }
+  );
+}
+function useAccountSync() {
+  const {
+    identity: identity2,
+    isAuthenticated,
+    login,
+    clear,
+    isInitializing,
+    isLoggingIn
+  } = useInternetIdentity();
+  const principal = (identity2 == null ? void 0 : identity2.getPrincipal().toString()) ?? null;
+  const accountQuery = useMyAccount(isAuthenticated);
+  const ensureAccount = useEnsureAccount();
+  const setAccount = useAccountStore((s) => s.setAccount);
+  const pendingReferralCode = useAccountStore((s) => s.pendingReferralCode);
+  const setPendingReferralCode = useAccountStore(
+    (s) => s.setPendingReferralCode
+  );
+  const account = useAccountStore((s) => s.account);
+  const creditBalance = useAccountStore((s) => s.creditBalance);
+  const subscriptionActive = useAccountStore((s) => s.subscriptionActive);
+  const ensuredFor = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    if (!isAuthenticated) {
+      ensuredFor.current = null;
+      setAccount(null);
+    }
+  }, [isAuthenticated, setAccount]);
+  reactExports.useEffect(() => {
+    if (accountQuery.data !== void 0 && isAuthenticated) {
+      setAccount(accountQuery.data);
+    }
+  }, [accountQuery.data, isAuthenticated, setAccount]);
+  reactExports.useEffect(() => {
+    if (!isAuthenticated || !principal) return;
+    if (accountQuery.isLoading) return;
+    if (ensuredFor.current === principal) return;
+    if (accountQuery.data) {
+      ensuredFor.current = principal;
+      return;
+    }
+    ensuredFor.current = principal;
+    ensureAccount.mutateAsync({ referralCode: pendingReferralCode, email: null }).then((result) => {
+      if (result.ok && result.account) {
+        setAccount(result.account);
+        if (pendingReferralCode) setPendingReferralCode(null);
+      }
+    }).catch(() => {
+      ensuredFor.current = null;
+    });
+  }, [
+    isAuthenticated,
+    principal,
+    accountQuery.isLoading,
+    accountQuery.data,
+    ensureAccount,
+    pendingReferralCode,
+    setAccount,
+    setPendingReferralCode
+  ]);
+  return {
+    account,
+    creditBalance,
+    subscriptionActive,
+    isAuthenticated,
+    isInitializing,
+    isLoggingIn,
+    principal,
+    login,
+    logout: clear,
+    refresh: accountQuery.refetch
+  };
+}
+var propTypes = { exports: {} };
+var ReactPropTypesSecret$1 = "SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED";
+var ReactPropTypesSecret_1 = ReactPropTypesSecret$1;
+var ReactPropTypesSecret = ReactPropTypesSecret_1;
+function emptyFunction() {
+}
+function emptyFunctionWithReset() {
+}
+emptyFunctionWithReset.resetWarningCache = emptyFunction;
+var factoryWithThrowingShims = function() {
+  function shim2(props, propName, componentName, location2, propFullName, secret) {
+    if (secret === ReactPropTypesSecret) {
+      return;
+    }
+    var err = new Error(
+      "Calling PropTypes validators directly is not supported by the `prop-types` package. Use PropTypes.checkPropTypes() to call them. Read more at http://fb.me/use-check-prop-types"
+    );
+    err.name = "Invariant Violation";
+    throw err;
+  }
+  shim2.isRequired = shim2;
+  function getShim() {
+    return shim2;
+  }
+  var ReactPropTypes = {
+    array: shim2,
+    bigint: shim2,
+    bool: shim2,
+    func: shim2,
+    number: shim2,
+    object: shim2,
+    string: shim2,
+    symbol: shim2,
+    any: shim2,
+    arrayOf: getShim,
+    element: shim2,
+    elementType: shim2,
+    instanceOf: getShim,
+    node: shim2,
+    objectOf: getShim,
+    oneOf: getShim,
+    oneOfType: getShim,
+    shape: getShim,
+    exact: getShim,
+    checkPropTypes: emptyFunctionWithReset,
+    resetWarningCache: emptyFunction
+  };
+  ReactPropTypes.PropTypes = ReactPropTypes;
+  return ReactPropTypes;
+};
+{
+  propTypes.exports = factoryWithThrowingShims();
+}
+var propTypesExports = propTypes.exports;
+const PropTypes = /* @__PURE__ */ getDefaultExportFromCjs(propTypesExports);
+function _arrayLikeToArray(r2, a2) {
+  (null == a2 || a2 > r2.length) && (a2 = r2.length);
+  for (var e = 0, n = Array(a2); e < a2; e++) n[e] = r2[e];
+  return n;
+}
+function _arrayWithHoles(r2) {
+  if (Array.isArray(r2)) return r2;
+}
+function _defineProperty(e, r2, t) {
+  return (r2 = _toPropertyKey(r2)) in e ? Object.defineProperty(e, r2, {
+    value: t,
+    enumerable: true,
+    configurable: true,
+    writable: true
+  }) : e[r2] = t, e;
+}
+function _iterableToArrayLimit(r2, l2) {
+  var t = null == r2 ? null : "undefined" != typeof Symbol && r2[Symbol.iterator] || r2["@@iterator"];
+  if (null != t) {
+    var e, n, i, u2, a2 = [], f2 = true, o = false;
+    try {
+      if (i = (t = t.call(r2)).next, 0 === l2) ;
+      else for (; !(f2 = (e = i.call(t)).done) && (a2.push(e.value), a2.length !== l2); f2 = true) ;
+    } catch (r3) {
+      o = true, n = r3;
+    } finally {
+      try {
+        if (!f2 && null != t.return && (u2 = t.return(), Object(u2) !== u2)) return;
+      } finally {
+        if (o) throw n;
+      }
+    }
+    return a2;
+  }
+}
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+function ownKeys(e, r2) {
+  var t = Object.keys(e);
+  if (Object.getOwnPropertySymbols) {
+    var o = Object.getOwnPropertySymbols(e);
+    r2 && (o = o.filter(function(r3) {
+      return Object.getOwnPropertyDescriptor(e, r3).enumerable;
+    })), t.push.apply(t, o);
+  }
+  return t;
+}
+function _objectSpread2(e) {
+  for (var r2 = 1; r2 < arguments.length; r2++) {
+    var t = null != arguments[r2] ? arguments[r2] : {};
+    r2 % 2 ? ownKeys(Object(t), true).forEach(function(r3) {
+      _defineProperty(e, r3, t[r3]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r3) {
+      Object.defineProperty(e, r3, Object.getOwnPropertyDescriptor(t, r3));
+    });
+  }
+  return e;
+}
+function _objectWithoutProperties(e, t) {
+  if (null == e) return {};
+  var o, r2, i = _objectWithoutPropertiesLoose(e, t);
+  if (Object.getOwnPropertySymbols) {
+    var n = Object.getOwnPropertySymbols(e);
+    for (r2 = 0; r2 < n.length; r2++) o = n[r2], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+  }
+  return i;
+}
+function _objectWithoutPropertiesLoose(r2, e) {
+  if (null == r2) return {};
+  var t = {};
+  for (var n in r2) if ({}.hasOwnProperty.call(r2, n)) {
+    if (-1 !== e.indexOf(n)) continue;
+    t[n] = r2[n];
+  }
+  return t;
+}
+function _slicedToArray(r2, e) {
+  return _arrayWithHoles(r2) || _iterableToArrayLimit(r2, e) || _unsupportedIterableToArray(r2, e) || _nonIterableRest();
+}
+function _toPrimitive(t, r2) {
+  if ("object" != typeof t || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r2);
+    if ("object" != typeof i) return i;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return ("string" === r2 ? String : Number)(t);
+}
+function _toPropertyKey(t) {
+  var i = _toPrimitive(t, "string");
+  return "symbol" == typeof i ? i : i + "";
+}
+function _typeof$1(o) {
+  "@babel/helpers - typeof";
+  return _typeof$1 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+    return typeof o2;
+  } : function(o2) {
+    return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+  }, _typeof$1(o);
+}
+function _unsupportedIterableToArray(r2, a2) {
+  if (r2) {
+    if ("string" == typeof r2) return _arrayLikeToArray(r2, a2);
+    var t = {}.toString.call(r2).slice(8, -1);
+    return "Object" === t && r2.constructor && (t = r2.constructor.name), "Map" === t || "Set" === t ? Array.from(r2) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r2, a2) : void 0;
+  }
+}
+var useAttachEvent = function useAttachEvent2(element, event, cb) {
+  var cbDefined = !!cb;
+  var cbRef = React$4.useRef(cb);
+  React$4.useEffect(function() {
+    cbRef.current = cb;
+  }, [cb]);
+  React$4.useEffect(function() {
+    if (!cbDefined || !element) {
+      return function() {
+      };
+    }
+    var decoratedCb = function decoratedCb2() {
+      if (cbRef.current) {
+        return cbRef.current.apply(cbRef, arguments);
+      }
+      return void 0;
+    };
+    element.on(event, decoratedCb);
+    return function() {
+      element.off(event, decoratedCb);
+    };
+  }, [cbDefined, event, element, cbRef]);
+};
+var usePrevious = function usePrevious2(value) {
+  var ref = React$4.useRef(value);
+  React$4.useEffect(function() {
+    ref.current = value;
+  }, [value]);
+  return ref.current;
+};
+var isUnknownObject = function isUnknownObject2(raw) {
+  return raw !== null && _typeof$1(raw) === "object";
+};
+var isPromise = function isPromise2(raw) {
+  return isUnknownObject(raw) && typeof raw.then === "function";
+};
+var isStripe = function isStripe2(raw) {
+  return isUnknownObject(raw) && typeof raw.elements === "function" && typeof raw.createToken === "function" && typeof raw.createPaymentMethod === "function" && typeof raw.confirmCardPayment === "function";
+};
+var PLAIN_OBJECT_STR = "[object Object]";
+var isEqual = function isEqual2(left, right) {
+  if (!isUnknownObject(left) || !isUnknownObject(right)) {
+    return left === right;
+  }
+  var leftArray = Array.isArray(left);
+  var rightArray = Array.isArray(right);
+  if (leftArray !== rightArray) return false;
+  var leftPlainObject = Object.prototype.toString.call(left) === PLAIN_OBJECT_STR;
+  var rightPlainObject = Object.prototype.toString.call(right) === PLAIN_OBJECT_STR;
+  if (leftPlainObject !== rightPlainObject) return false;
+  if (!leftPlainObject && !leftArray) return left === right;
+  var leftKeys = Object.keys(left);
+  var rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  var keySet = {};
+  for (var i = 0; i < leftKeys.length; i += 1) {
+    keySet[leftKeys[i]] = true;
+  }
+  for (var _i2 = 0; _i2 < rightKeys.length; _i2 += 1) {
+    keySet[rightKeys[_i2]] = true;
+  }
+  var allKeys = Object.keys(keySet);
+  if (allKeys.length !== leftKeys.length) {
+    return false;
+  }
+  var l2 = left;
+  var r2 = right;
+  var pred = function pred2(key) {
+    return isEqual2(l2[key], r2[key]);
+  };
+  return allKeys.every(pred);
+};
+var extractAllowedOptionsUpdates = function extractAllowedOptionsUpdates2(options, prevOptions, immutableKeys) {
+  if (!isUnknownObject(options)) {
+    return null;
+  }
+  return Object.keys(options).reduce(function(newOptions, key) {
+    var isUpdated = !isUnknownObject(prevOptions) || !isEqual(options[key], prevOptions[key]);
+    if (immutableKeys.includes(key)) {
+      if (isUpdated) {
+        console.warn("Unsupported prop change: options.".concat(key, " is not a mutable property."));
+      }
+      return newOptions;
+    }
+    if (!isUpdated) {
+      return newOptions;
+    }
+    return _objectSpread2(_objectSpread2({}, newOptions || {}), {}, _defineProperty({}, key, options[key]));
+  }, null);
+};
+var INVALID_STRIPE_ERROR$1 = "Invalid prop `stripe` supplied to `Elements`. We recommend using the `loadStripe` utility from `@stripe/stripe-js`. See https://stripe.com/docs/stripe-js/react#elements-props-stripe for details.";
+var validateStripe = function validateStripe2(maybeStripe) {
+  var errorMsg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : INVALID_STRIPE_ERROR$1;
+  if (maybeStripe === null || isStripe(maybeStripe)) {
+    return maybeStripe;
+  }
+  throw new Error(errorMsg);
+};
+var parseStripeProp = function parseStripeProp2(raw) {
+  var errorMsg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : INVALID_STRIPE_ERROR$1;
+  if (isPromise(raw)) {
+    return {
+      tag: "async",
+      stripePromise: Promise.resolve(raw).then(function(result) {
+        return validateStripe(result, errorMsg);
+      })
+    };
+  }
+  var stripe = validateStripe(raw, errorMsg);
+  if (stripe === null) {
+    return {
+      tag: "empty"
+    };
+  }
+  return {
+    tag: "sync",
+    stripe
+  };
+};
+var registerWithStripeJs = function registerWithStripeJs2(stripe) {
+  if (!stripe || !stripe._registerWrapper || !stripe.registerAppInfo) {
+    return;
+  }
+  stripe._registerWrapper({
+    name: "react-stripe-js",
+    version: "6.10.0"
+  });
+  stripe.registerAppInfo({
+    name: "react-stripe-js",
+    version: "6.10.0",
+    url: "https://stripe.com/docs/stripe-js/react"
+  });
+};
+var ElementsContext = /* @__PURE__ */ React$4.createContext(null);
+ElementsContext.displayName = "ElementsContext";
+var parseElementsContext = function parseElementsContext2(ctx, useCase) {
+  if (!ctx) {
+    throw new Error("Could not find Elements context; You need to wrap the part of your app that ".concat(useCase, " in an <Elements> provider."));
+  }
+  return ctx;
+};
+var Elements = function Elements2(_ref) {
+  var rawStripeProp = _ref.stripe, options = _ref.options, children = _ref.children;
+  var parsed = React$4.useMemo(function() {
+    return parseStripeProp(rawStripeProp);
+  }, [rawStripeProp]);
+  var _React$useState = React$4.useState(function() {
+    return {
+      stripe: parsed.tag === "sync" ? parsed.stripe : null,
+      elements: parsed.tag === "sync" ? parsed.stripe.elements(options) : null
+    };
+  }), _React$useState2 = _slicedToArray(_React$useState, 2), ctx = _React$useState2[0], setContext = _React$useState2[1];
+  React$4.useEffect(function() {
+    var isMounted = true;
+    var safeSetContext = function safeSetContext2(stripe) {
+      setContext(function(ctx2) {
+        if (ctx2.stripe) return ctx2;
+        return {
+          stripe,
+          elements: stripe.elements(options)
+        };
+      });
+    };
+    if (parsed.tag === "async" && !ctx.stripe) {
+      parsed.stripePromise.then(function(stripe) {
+        if (stripe && isMounted) {
+          safeSetContext(stripe);
+        }
+      });
+    } else if (parsed.tag === "sync" && !ctx.stripe) {
+      safeSetContext(parsed.stripe);
+    }
+    return function() {
+      isMounted = false;
+    };
+  }, [parsed, ctx, options]);
+  var prevStripe = usePrevious(rawStripeProp);
+  React$4.useEffect(function() {
+    if (prevStripe !== null && prevStripe !== rawStripeProp) {
+      console.warn("Unsupported prop change on Elements: You cannot change the `stripe` prop after setting it.");
+    }
+  }, [prevStripe, rawStripeProp]);
+  var prevOptions = usePrevious(options);
+  React$4.useEffect(function() {
+    if (!ctx.elements) {
+      return;
+    }
+    var updates = extractAllowedOptionsUpdates(options, prevOptions, ["clientSecret", "fonts"]);
+    if (updates) {
+      ctx.elements.update(updates);
+    }
+  }, [options, prevOptions, ctx.elements]);
+  React$4.useEffect(function() {
+    registerWithStripeJs(ctx.stripe);
+  }, [ctx.stripe]);
+  return /* @__PURE__ */ React$4.createElement(ElementsContext.Provider, {
+    value: ctx
+  }, children);
+};
+Elements.propTypes = {
+  stripe: PropTypes.any,
+  options: PropTypes.object
+};
+var useElementsContextWithUseCase = function useElementsContextWithUseCase2(useCaseMessage) {
+  var ctx = React$4.useContext(ElementsContext);
+  return parseElementsContext(ctx, useCaseMessage);
+};
+var useElements = function useElements2() {
+  var _useElementsContextWi = useElementsContextWithUseCase("calls useElements()"), elements = _useElementsContextWi.elements;
+  return elements;
+};
+({
+  children: PropTypes.func.isRequired
+});
+var CheckoutContext = /* @__PURE__ */ React$4.createContext(null);
+CheckoutContext.displayName = "CheckoutContext";
+var useElementsOrCheckoutContextWithUseCase = function useElementsOrCheckoutContextWithUseCase2(useCaseString) {
+  var checkout = React$4.useContext(CheckoutContext);
+  var elements = React$4.useContext(ElementsContext);
+  if (checkout) {
+    if (elements) {
+      throw new Error("You cannot wrap the part of your app that ".concat(useCaseString, " in both a checkout provider and <Elements> provider."));
+    } else {
+      return checkout;
+    }
+  } else {
+    return parseElementsContext(elements, useCaseString);
+  }
+};
+var _excluded = ["mode"];
+var capitalized = function capitalized2(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+var createElementComponent = function createElementComponent2(type, isServer2, customDisplayName) {
+  var displayName = "".concat(capitalized(type), "Element");
+  var ClientElement = function ClientElement2(_ref) {
+    var id = _ref.id, className = _ref.className, _ref$options = _ref.options, options = _ref$options === void 0 ? {} : _ref$options, onBlur = _ref.onBlur, onFocus = _ref.onFocus, onReady = _ref.onReady, onChange = _ref.onChange, onEscape = _ref.onEscape, onClick = _ref.onClick, onLoadError = _ref.onLoadError, onLoaderStart = _ref.onLoaderStart, onNetworksChange = _ref.onNetworksChange, onConfirm = _ref.onConfirm, onCancel = _ref.onCancel, onShippingAddressChange = _ref.onShippingAddressChange, onShippingRateChange = _ref.onShippingRateChange, onSavedPaymentMethodRemove = _ref.onSavedPaymentMethodRemove, onSavedPaymentMethodUpdate = _ref.onSavedPaymentMethodUpdate, onAvailablePaymentMethodsChange = _ref.onAvailablePaymentMethodsChange;
+    var ctx = useElementsOrCheckoutContextWithUseCase("mounts <".concat(displayName, ">"));
+    var elements = "elements" in ctx ? ctx.elements : null;
+    var checkoutState = "checkoutState" in ctx ? ctx.checkoutState : null;
+    var checkoutSdk = (checkoutState === null || checkoutState === void 0 ? void 0 : checkoutState.type) === "success" || (checkoutState === null || checkoutState === void 0 ? void 0 : checkoutState.type) === "loading" ? checkoutState.sdk : null;
+    var _React$useState = React$4.useState(null), _React$useState2 = _slicedToArray(_React$useState, 2), element = _React$useState2[0], setElement = _React$useState2[1];
+    var elementRef = React$4.useRef(null);
+    var domNode = React$4.useRef(null);
+    useAttachEvent(element, "blur", onBlur);
+    useAttachEvent(element, "focus", onFocus);
+    useAttachEvent(element, "escape", onEscape);
+    useAttachEvent(element, "click", onClick);
+    useAttachEvent(element, "loaderror", onLoadError);
+    useAttachEvent(element, "loaderstart", onLoaderStart);
+    useAttachEvent(element, "networkschange", onNetworksChange);
+    useAttachEvent(element, "confirm", onConfirm);
+    useAttachEvent(element, "cancel", onCancel);
+    useAttachEvent(element, "shippingaddresschange", onShippingAddressChange);
+    useAttachEvent(element, "shippingratechange", onShippingRateChange);
+    useAttachEvent(element, "savedpaymentmethodremove", onSavedPaymentMethodRemove);
+    useAttachEvent(element, "savedpaymentmethodupdate", onSavedPaymentMethodUpdate);
+    useAttachEvent(element, "availablepaymentmethodschange", onAvailablePaymentMethodsChange);
+    useAttachEvent(element, "change", onChange);
+    var readyCallback;
+    if (onReady) {
+      if (type === "expressCheckout") {
+        readyCallback = onReady;
+      } else {
+        readyCallback = function readyCallback2() {
+          onReady(element);
+        };
+      }
+    }
+    useAttachEvent(element, "ready", readyCallback);
+    React$4.useLayoutEffect(function() {
+      if (elementRef.current === null && domNode.current !== null && (elements || checkoutSdk)) {
+        var newElement = null;
+        if (checkoutSdk) {
+          var elementsSdk = checkoutSdk;
+          var formSdk = checkoutSdk;
+          switch (type) {
+            case "paymentForm":
+              newElement = formSdk.createForm(options);
+              break;
+            case "payment":
+              newElement = elementsSdk.createPaymentElement(options);
+              break;
+            case "address":
+              if ("mode" in options) {
+                var mode2 = options.mode, restOptions = _objectWithoutProperties(options, _excluded);
+                if (mode2 === "shipping") {
+                  newElement = elementsSdk.createShippingAddressElement(restOptions);
+                } else if (mode2 === "billing") {
+                  newElement = elementsSdk.createBillingAddressElement(restOptions);
+                } else {
+                  throw new Error("Invalid options.mode. mode must be 'billing' or 'shipping'.");
+                }
+              } else {
+                throw new Error("You must supply options.mode. mode must be 'billing' or 'shipping'.");
+              }
+              break;
+            case "expressCheckout":
+              newElement = elementsSdk.createExpressCheckoutElement(options);
+              break;
+            case "currencySelector":
+              newElement = checkoutSdk.createCurrencySelectorElement();
+              break;
+            case "taxId":
+              newElement = elementsSdk.createTaxIdElement(options);
+              break;
+            case "contactDetails":
+              newElement = elementsSdk.createContactDetailsElement();
+              break;
+            case "linkSignup":
+              if ("createLinkSignupElement" in checkoutSdk) {
+                newElement = checkoutSdk.createLinkSignupElement(options);
+              } else {
+                throw new Error("<LinkSignupElement> requires <CheckoutElementsProvider> and is not supported inside <CheckoutFormProvider>.");
+              }
+              break;
+            case "terms":
+              newElement = elementsSdk.createTermsElement(options);
+              break;
+            default:
+              throw new Error("<".concat(displayName, "> is not supported inside a checkout provider. Use an <Elements> provider instead."));
+          }
+        } else if (elements) {
+          newElement = elements.create(type, options);
+        }
+        elementRef.current = newElement;
+        setElement(newElement);
+        if (newElement) {
+          newElement.mount(domNode.current);
+        }
+      }
+    }, [elements, checkoutSdk, options]);
+    var prevOptions = usePrevious(options);
+    React$4.useEffect(function() {
+      if (!elementRef.current) {
+        return;
+      }
+      var updates = extractAllowedOptionsUpdates(options, prevOptions, ["paymentRequest"]);
+      if (updates && "update" in elementRef.current) {
+        elementRef.current.update(updates);
+      }
+    }, [options, prevOptions]);
+    React$4.useLayoutEffect(function() {
+      return function() {
+        if (elementRef.current && typeof elementRef.current.destroy === "function") {
+          try {
+            elementRef.current.destroy();
+            elementRef.current = null;
+          } catch (error) {
+          }
+        }
+      };
+    }, []);
+    return /* @__PURE__ */ React$4.createElement("div", {
+      id,
+      className,
+      ref: domNode
+    });
+  };
+  var ServerElement = function ServerElement2(props) {
+    useElementsOrCheckoutContextWithUseCase("mounts <".concat(displayName, ">"));
+    var id = props.id, className = props.className;
+    return /* @__PURE__ */ React$4.createElement("div", {
+      id,
+      className
+    });
+  };
+  var Element2 = isServer2 ? ServerElement : ClientElement;
+  Element2.propTypes = {
+    id: PropTypes.string,
+    className: PropTypes.string,
+    onChange: PropTypes.func,
+    onBlur: PropTypes.func,
+    onFocus: PropTypes.func,
+    onReady: PropTypes.func,
+    onEscape: PropTypes.func,
+    onClick: PropTypes.func,
+    onLoadError: PropTypes.func,
+    onLoaderStart: PropTypes.func,
+    onNetworksChange: PropTypes.func,
+    onConfirm: PropTypes.func,
+    onCancel: PropTypes.func,
+    onShippingAddressChange: PropTypes.func,
+    onShippingRateChange: PropTypes.func,
+    onSavedPaymentMethodRemove: PropTypes.func,
+    onSavedPaymentMethodUpdate: PropTypes.func,
+    onAvailablePaymentMethodsChange: PropTypes.func,
+    options: PropTypes.object
+  };
+  Element2.displayName = displayName;
+  Element2.__elementType = type;
+  return Element2;
+};
+var isServer = typeof window === "undefined";
+var EmbeddedCheckoutContext = /* @__PURE__ */ React$4.createContext(null);
+EmbeddedCheckoutContext.displayName = "EmbeddedCheckoutProviderContext";
+var useStripe = function useStripe2() {
+  var _useElementsOrCheckou = useElementsOrCheckoutContextWithUseCase("calls useStripe()"), stripe = _useElementsOrCheckou.stripe;
+  return stripe;
+};
+createElementComponent("auBankAccount", isServer);
+createElementComponent("card", isServer);
+createElementComponent("cardNumber", isServer);
+createElementComponent("cardExpiry", isServer);
+createElementComponent("cardCvc", isServer);
+createElementComponent("currencySelector", isServer);
+createElementComponent("iban", isServer);
+var PaymentElement = createElementComponent("payment", isServer);
+createElementComponent("expressCheckout", isServer);
+createElementComponent("paymentRequestButton", isServer);
+createElementComponent("linkAuthentication", isServer);
+createElementComponent("linkSignup", isServer);
+createElementComponent("contactDetails", isServer);
+createElementComponent("address", isServer);
+createElementComponent("shippingAddress", isServer);
+createElementComponent("paymentMethodMessaging", isServer);
+createElementComponent("taxId", isServer);
+createElementComponent("issuingCardNumberDisplay", isServer);
+createElementComponent("issuingCardCvcDisplay", isServer);
+createElementComponent("issuingCardExpiryDisplay", isServer);
+createElementComponent("issuingCardPinDisplay", isServer);
+createElementComponent("issuingCardCopyButton", isServer);
+createElementComponent("terms", isServer);
+function _typeof(obj) {
+  "@babel/helpers - typeof";
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function(obj2) {
+      return typeof obj2;
+    };
+  } else {
+    _typeof = function(obj2) {
+      return obj2 && typeof Symbol === "function" && obj2.constructor === Symbol && obj2 !== Symbol.prototype ? "symbol" : typeof obj2;
+    };
+  }
+  return _typeof(obj);
+}
+var RELEASE_TRAIN = "dahlia";
+var runtimeVersionToUrlVersion = function runtimeVersionToUrlVersion2(version2) {
+  return version2 === 3 ? "v3" : version2;
+};
+var ORIGIN = "https://js.stripe.com";
+var STRIPE_JS_URL = "".concat(ORIGIN, "/").concat(RELEASE_TRAIN, "/stripe.js");
+var V3_URL_REGEX = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;
+var STRIPE_JS_URL_REGEX = /^https:\/\/js\.stripe\.com\/(v3|[a-z]+)\/stripe\.js(\?.*)?$/;
+var EXISTING_SCRIPT_MESSAGE = "loadStripe.setLoadParameters was called but an existing Stripe.js script already exists in the document; existing script parameters will be used";
+var isStripeJSURL = function isStripeJSURL2(url) {
+  return V3_URL_REGEX.test(url) || STRIPE_JS_URL_REGEX.test(url);
+};
+var findScript = function findScript2() {
+  var scripts = document.querySelectorAll('script[src^="'.concat(ORIGIN, '"]'));
+  for (var i = 0; i < scripts.length; i++) {
+    var script = scripts[i];
+    if (!isStripeJSURL(script.src)) {
+      continue;
+    }
+    return script;
+  }
+  return null;
+};
+var injectScript = function injectScript2(params) {
+  var queryString = "";
+  var script = document.createElement("script");
+  script.src = "".concat(STRIPE_JS_URL).concat(queryString);
+  var headOrBody = document.head || document.body;
+  if (!headOrBody) {
+    throw new Error("Expected document.body not to be null. Stripe.js requires a <body> element.");
+  }
+  headOrBody.appendChild(script);
+  return script;
+};
+var registerWrapper = function registerWrapper2(stripe, startTime) {
+  if (!stripe || !stripe._registerWrapper) {
+    return;
+  }
+  stripe._registerWrapper({
+    name: "stripe-js",
+    version: "9.16.0",
+    startTime
+  });
+};
+var stripePromise$1 = null;
+var onErrorListener = null;
+var onLoadListener = null;
+var onError = function onError2(reject) {
+  return function(cause) {
+    reject(new Error("Failed to load Stripe.js", {
+      cause
+    }));
+  };
+};
+var onLoad = function onLoad2(resolve2, reject) {
+  return function() {
+    if (window.Stripe) {
+      resolve2(window.Stripe);
+    } else {
+      reject(new Error("Stripe.js not available"));
+    }
+  };
+};
+var loadScript = function loadScript2(params) {
+  if (stripePromise$1 !== null) {
+    return stripePromise$1;
+  }
+  stripePromise$1 = new Promise(function(resolve2, reject) {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      resolve2(null);
+      return;
+    }
+    if (window.Stripe) {
+      resolve2(window.Stripe);
+      return;
+    }
+    try {
+      var script = findScript();
+      if (script && params) ;
+      else if (!script) {
+        script = injectScript(params);
+      } else if (script && onLoadListener !== null && onErrorListener !== null) {
+        var _script$parentNode;
+        script.removeEventListener("load", onLoadListener);
+        script.removeEventListener("error", onErrorListener);
+        (_script$parentNode = script.parentNode) === null || _script$parentNode === void 0 ? void 0 : _script$parentNode.removeChild(script);
+        script = injectScript(params);
+      }
+      onLoadListener = onLoad(resolve2, reject);
+      onErrorListener = onError(reject);
+      script.addEventListener("load", onLoadListener);
+      script.addEventListener("error", onErrorListener);
+    } catch (error) {
+      reject(error);
+      return;
+    }
+  });
+  return stripePromise$1["catch"](function(error) {
+    stripePromise$1 = null;
+    return Promise.reject(error);
+  });
+};
+var initStripe = function initStripe2(maybeStripe, args, startTime) {
+  if (maybeStripe === null) {
+    return null;
+  }
+  var pk = args[0];
+  if (typeof pk !== "string") {
+    throw new Error("Expected publishable key to be of type string, got type ".concat(_typeof(pk), " instead."));
+  }
+  var isTestKey = pk.match(/^pk_test/);
+  var version2 = runtimeVersionToUrlVersion(maybeStripe.version);
+  var expectedVersion = RELEASE_TRAIN;
+  if (isTestKey && version2 !== expectedVersion) {
+    console.warn("Stripe.js@".concat(version2, " was loaded on the page, but @stripe/stripe-js@").concat("9.16.0", " expected Stripe.js@").concat(expectedVersion, ". This may result in unexpected behavior. For more information, see https://docs.stripe.com/sdks/stripejs-versioning"));
+  }
+  var stripe = maybeStripe.apply(void 0, args);
+  registerWrapper(stripe, startTime);
+  return stripe;
+};
+var stripePromise;
+var loadCalled = false;
+var getStripePromise = function getStripePromise2() {
+  if (stripePromise) {
+    return stripePromise;
+  }
+  stripePromise = loadScript(null)["catch"](function(error) {
+    stripePromise = null;
+    return Promise.reject(error);
+  });
+  return stripePromise;
+};
+Promise.resolve().then(function() {
+  return getStripePromise();
+})["catch"](function(error) {
+  if (!loadCalled) {
+    console.warn(error);
+  }
+});
+var loadStripe = function loadStripe2() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+  loadCalled = true;
+  var startTime = Date.now();
+  return getStripePromise().then(function(maybeStripe) {
+    return initStripe(maybeStripe, args, startTime);
+  });
+};
+function SignInPrompt({
+  message = "Sign in with Internet Identity to continue."
+}) {
+  const { login, isLoggingIn, isInitializing } = useAccountSync();
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Card,
+    {
+      className: "border-dashed bg-muted/30",
+      "data-ocid": "auth.sign_in_prompt.card",
+      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(CardContent, { className: "flex flex-col items-center gap-3 py-8 text-center", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Fingerprint, { className: "size-6" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "max-w-sm text-sm text-muted-foreground", children: message }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          Button,
+          {
+            onClick: login,
+            disabled: isLoggingIn || isInitializing,
+            className: "gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
+            "data-ocid": "auth.sign_in_prompt.button",
+            children: [
+              isLoggingIn ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Fingerprint, { className: "size-4" }),
+              "Sign in with Internet Identity"
+            ]
+          }
+        )
+      ] })
+    }
+  );
+}
+const stripeCache = /* @__PURE__ */ new Map();
+function getStripe(publishableKey) {
+  let promise = stripeCache.get(publishableKey);
+  if (!promise) {
+    promise = loadStripe(publishableKey);
+    stripeCache.set(publishableKey, promise);
+  }
+  return promise;
+}
+function PaymentForm({
+  amountLabel,
+  submitLabel,
+  onConfirmed,
+  onCancel
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = reactExports.useState(false);
+  const [error, setError] = reactExports.useState(null);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    setError(null);
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+      confirmParams: { return_url: `${window.location.origin}/dashboard` }
+    });
+    if (stripeError) {
+      setError(stripeError.message ?? "Payment was not completed.");
+      setSubmitting(false);
+      return;
+    }
+    if (paymentIntent && paymentIntent.status !== "succeeded" && paymentIntent.status !== "processing") {
+      setError(`Payment status: ${paymentIntent.status}`);
+      setSubmitting(false);
+      return;
+    }
+    await onConfirmed();
+    setSubmitting(false);
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "form",
+    {
+      onSubmit: handleSubmit,
+      className: "space-y-4",
+      "data-ocid": "checkout.payment.form",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(PaymentElement, { options: { layout: "tabs" } }),
+        error && /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { variant: "destructive", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "size-4" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: error })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "inline-flex items-center gap-1.5 text-xs text-muted-foreground", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Lock, { className: "size-3.5" }),
+            " Secured by Stripe"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+            onCancel && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Button,
+              {
+                type: "button",
+                variant: "ghost",
+                onClick: onCancel,
+                "data-ocid": "checkout.cancel.button",
+                children: "Cancel"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              Button,
+              {
+                type: "submit",
+                disabled: !stripe || !elements || submitting,
+                className: "gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
+                "data-ocid": "checkout.pay.button",
+                children: [
+                  submitting ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CreditCard, { className: "size-4" }),
+                  submitLabel,
+                  " ",
+                  amountLabel
+                ]
+              }
+            )
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+function StripeCheckout({
+  purpose,
+  reference = null,
+  pack = null,
+  amountLabel,
+  title = "Checkout",
+  description,
+  submitLabel = "Pay",
+  onSuccess,
+  onCancel
+}) {
+  const { isAuthenticated } = useAccountSync();
+  const createIntent = useCreatePaymentIntent();
+  const confirmPayment = useConfirmPayment();
+  const setCreditBalance = useAccountStore((s) => s.setCreditBalance);
+  const [phase, setPhase] = reactExports.useState({ kind: "idle" });
+  const started = reactExports.useRef(false);
+  const finish = reactExports.useCallback(
+    async (paymentIntentId) => {
+      setPhase({ kind: "confirming", paymentIntentId });
+      try {
+        const result = await confirmPayment.mutateAsync(paymentIntentId);
+        if (!result.ok) {
+          setPhase({
+            kind: "error",
+            message: result.error ?? "Payment could not be confirmed.",
+            paymentIntentId
+          });
+          return;
+        }
+        if (result.creditBalance !== void 0)
+          setCreditBalance(result.creditBalance);
+        setPhase({ kind: "done", result });
+        onSuccess(result);
+      } catch (e) {
+        setPhase({
+          kind: "error",
+          message: e instanceof Error ? e.message : "Confirmation failed.",
+          paymentIntentId
+        });
+      }
+    },
+    [confirmPayment, onSuccess, setCreditBalance]
+  );
+  const start = reactExports.useCallback(async () => {
+    setPhase({ kind: "creating" });
+    try {
+      const intent = await createIntent.mutateAsync({
+        purpose,
+        reference,
+        pack
+      });
+      if (!intent.ok) {
+        setPhase({
+          kind: "error",
+          message: intent.error ?? "Could not start checkout."
+        });
+        return;
+      }
+      if (intent.waived) {
+        const result = {
+          ok: true,
+          state: void 0,
+          creditBalance: void 0,
+          campaignId: void 0,
+          subscriptionActive: true,
+          referralRewardApplied: false
+        };
+        setPhase({ kind: "done", result });
+        onSuccess(result);
+        return;
+      }
+      if (!intent.paymentIntentId) {
+        setPhase({
+          kind: "error",
+          message: "Checkout did not return a payment id."
+        });
+        return;
+      }
+      if (intent.sandbox || !intent.clientSecret) {
+        await finish(intent.paymentIntentId);
+        return;
+      }
+      if (!intent.publishableKey) {
+        setPhase({
+          kind: "error",
+          message: "Stripe publishable key is not configured (Admin → Stripe Publishable Key)."
+        });
+        return;
+      }
+      setPhase({
+        kind: "elements",
+        clientSecret: intent.clientSecret,
+        paymentIntentId: intent.paymentIntentId,
+        publishableKey: intent.publishableKey
+      });
+    } catch (e) {
+      setPhase({
+        kind: "error",
+        message: e instanceof Error ? e.message : "Could not start checkout."
+      });
+    }
+  }, [createIntent, purpose, reference, pack, finish, onSuccess]);
+  reactExports.useEffect(() => {
+    if (!isAuthenticated || started.current) return;
+    started.current = true;
+    void start();
+  }, [isAuthenticated, start]);
+  const stripePromise2 = reactExports.useMemo(
+    () => phase.kind === "elements" ? getStripe(phase.publishableKey) : null,
+    [phase]
+  );
+  if (!isAuthenticated) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(SignInPrompt, { message: "Sign in with Internet Identity to check out securely." });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { "data-ocid": "checkout.card", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(CardHeader, { className: "pb-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "flex items-center gap-2 text-base", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(ShieldCheck, { className: "size-4 text-emerald-brand" }),
+        title
+      ] }),
+      description && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: description })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(CardContent, { children: [
+      (phase.kind === "idle" || phase.kind === "creating") && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 py-6 text-sm text-muted-foreground", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }),
+        " Preparing secure checkout…"
+      ] }),
+      phase.kind === "confirming" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 py-6 text-sm text-muted-foreground", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }),
+        " Confirming payment with the ledger…"
+      ] }),
+      phase.kind === "elements" && stripePromise2 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Elements,
+        {
+          stripe: stripePromise2,
+          options: {
+            clientSecret: phase.clientSecret,
+            appearance: {
+              theme: "stripe",
+              variables: {
+                colorPrimary: "#f97316",
+                borderRadius: "10px",
+                fontFamily: "Geist, sans-serif"
+              }
+            }
+          },
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            PaymentForm,
+            {
+              amountLabel,
+              submitLabel,
+              onConfirmed: () => finish(phase.paymentIntentId),
+              onCancel
+            }
+          )
+        }
+      ),
+      phase.kind === "done" && /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { className: "border-emerald-brand/40 bg-emerald-brand/10", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(ShieldCheck, { className: "size-4 text-emerald-brand" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(AlertTitle, { children: "Payment confirmed" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: phase.result.referralRewardApplied ? "Your referrer just earned a free month. Thanks for joining through their link!" : "Your payment has been recorded on the ledger." })
+      ] }),
+      phase.kind === "error" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(Alert, { variant: "destructive", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "size-4" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertTitle, { children: "Checkout problem" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(AlertDescription, { children: phase.message })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+          phase.paymentIntentId ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Button,
+            {
+              variant: "outline",
+              onClick: () => finish(phase.paymentIntentId),
+              "data-ocid": "checkout.retry_confirm.button",
+              children: "Re-check payment"
+            }
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Button,
+            {
+              variant: "outline",
+              onClick: () => void start(),
+              "data-ocid": "checkout.retry.button",
+              children: "Try again"
+            }
+          ),
+          onCancel && /* @__PURE__ */ jsxRuntimeExports.jsx(Button, { variant: "ghost", onClick: onCancel, children: "Cancel" })
+        ] })
+      ] })
+    ] })
+  ] });
+}
+var useReactId = React$5[" useId ".trim().toString()] || (() => void 0);
+var count$1 = 0;
+function useId(deterministicId) {
+  const [id, setId] = reactExports.useState(useReactId());
+  useLayoutEffect2(() => {
+    setId((reactId) => reactId ?? String(count$1++));
+  }, [deterministicId]);
+  return deterministicId || (id ? `radix-${id}` : "");
+}
+function useCallbackRef$1(callback) {
+  const callbackRef = reactExports.useRef(callback);
+  reactExports.useEffect(() => {
+    callbackRef.current = callback;
+  });
+  return reactExports.useMemo(() => (...args) => {
+    var _a2;
+    return (_a2 = callbackRef.current) == null ? void 0 : _a2.call(callbackRef, ...args);
+  }, []);
+}
+function useEscapeKeydown(onEscapeKeyDownProp, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
+  const onEscapeKeyDown = useCallbackRef$1(onEscapeKeyDownProp);
+  reactExports.useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onEscapeKeyDown(event);
+      }
+    };
+    ownerDocument.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => ownerDocument.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [onEscapeKeyDown, ownerDocument]);
+}
+var DISMISSABLE_LAYER_NAME = "DismissableLayer";
+var CONTEXT_UPDATE = "dismissableLayer.update";
+var POINTER_DOWN_OUTSIDE = "dismissableLayer.pointerDownOutside";
+var FOCUS_OUTSIDE = "dismissableLayer.focusOutside";
+var originalBodyPointerEvents;
+var DismissableLayerContext = reactExports.createContext({
+  layers: /* @__PURE__ */ new Set(),
+  layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
+  branches: /* @__PURE__ */ new Set()
+});
+var DismissableLayer = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const {
+      disableOutsidePointerEvents = false,
+      onEscapeKeyDown,
+      onPointerDownOutside,
+      onFocusOutside,
+      onInteractOutside,
+      onDismiss,
+      ...layerProps
+    } = props;
+    const context2 = reactExports.useContext(DismissableLayerContext);
+    const [node, setNode] = reactExports.useState(null);
+    const ownerDocument = (node == null ? void 0 : node.ownerDocument) ?? (globalThis == null ? void 0 : globalThis.document);
+    const [, force] = reactExports.useState({});
+    const composedRefs = useComposedRefs(forwardedRef, (node2) => setNode(node2));
+    const layers = Array.from(context2.layers);
+    const [highestLayerWithOutsidePointerEventsDisabled] = [...context2.layersWithOutsidePointerEventsDisabled].slice(-1);
+    const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
+    const index2 = node ? layers.indexOf(node) : -1;
+    const isBodyPointerEventsDisabled = context2.layersWithOutsidePointerEventsDisabled.size > 0;
+    const isPointerEventsEnabled = index2 >= highestLayerWithOutsidePointerEventsDisabledIndex;
+    const pointerDownOutside = usePointerDownOutside((event) => {
+      const target = event.target;
+      const isPointerDownOnBranch = [...context2.branches].some((branch) => branch.contains(target));
+      if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
+      onPointerDownOutside == null ? void 0 : onPointerDownOutside(event);
+      onInteractOutside == null ? void 0 : onInteractOutside(event);
+      if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
+    }, ownerDocument);
+    const focusOutside = useFocusOutside((event) => {
+      const target = event.target;
+      const isFocusInBranch = [...context2.branches].some((branch) => branch.contains(target));
+      if (isFocusInBranch) return;
+      onFocusOutside == null ? void 0 : onFocusOutside(event);
+      onInteractOutside == null ? void 0 : onInteractOutside(event);
+      if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
+    }, ownerDocument);
+    useEscapeKeydown((event) => {
+      const isHighestLayer = index2 === context2.layers.size - 1;
+      if (!isHighestLayer) return;
+      onEscapeKeyDown == null ? void 0 : onEscapeKeyDown(event);
+      if (!event.defaultPrevented && onDismiss) {
+        event.preventDefault();
+        onDismiss();
+      }
+    }, ownerDocument);
+    reactExports.useEffect(() => {
+      if (!node) return;
+      if (disableOutsidePointerEvents) {
+        if (context2.layersWithOutsidePointerEventsDisabled.size === 0) {
+          originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
+          ownerDocument.body.style.pointerEvents = "none";
+        }
+        context2.layersWithOutsidePointerEventsDisabled.add(node);
+      }
+      context2.layers.add(node);
+      dispatchUpdate();
+      return () => {
+        if (disableOutsidePointerEvents && context2.layersWithOutsidePointerEventsDisabled.size === 1) {
+          ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
+        }
+      };
+    }, [node, ownerDocument, disableOutsidePointerEvents, context2]);
+    reactExports.useEffect(() => {
+      return () => {
+        if (!node) return;
+        context2.layers.delete(node);
+        context2.layersWithOutsidePointerEventsDisabled.delete(node);
+        dispatchUpdate();
+      };
+    }, [node, context2]);
+    reactExports.useEffect(() => {
+      const handleUpdate = () => force({});
+      document.addEventListener(CONTEXT_UPDATE, handleUpdate);
+      return () => document.removeEventListener(CONTEXT_UPDATE, handleUpdate);
+    }, []);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$1.div,
+      {
+        ...layerProps,
+        ref: composedRefs,
+        style: {
+          pointerEvents: isBodyPointerEventsDisabled ? isPointerEventsEnabled ? "auto" : "none" : void 0,
+          ...props.style
+        },
+        onFocusCapture: composeEventHandlers(props.onFocusCapture, focusOutside.onFocusCapture),
+        onBlurCapture: composeEventHandlers(props.onBlurCapture, focusOutside.onBlurCapture),
+        onPointerDownCapture: composeEventHandlers(
+          props.onPointerDownCapture,
+          pointerDownOutside.onPointerDownCapture
+        )
+      }
+    );
+  }
+);
+DismissableLayer.displayName = DISMISSABLE_LAYER_NAME;
+var BRANCH_NAME = "DismissableLayerBranch";
+var DismissableLayerBranch = reactExports.forwardRef((props, forwardedRef) => {
+  const context2 = reactExports.useContext(DismissableLayerContext);
+  const ref = reactExports.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, ref);
+  reactExports.useEffect(() => {
+    const node = ref.current;
+    if (node) {
+      context2.branches.add(node);
+      return () => {
+        context2.branches.delete(node);
+      };
+    }
+  }, [context2.branches]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...props, ref: composedRefs });
+});
+DismissableLayerBranch.displayName = BRANCH_NAME;
+function usePointerDownOutside(onPointerDownOutside, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
+  const handlePointerDownOutside = useCallbackRef$1(onPointerDownOutside);
+  const isPointerInsideReactTreeRef = reactExports.useRef(false);
+  const handleClickRef = reactExports.useRef(() => {
+  });
+  reactExports.useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (event.target && !isPointerInsideReactTreeRef.current) {
+        let handleAndDispatchPointerDownOutsideEvent2 = function() {
+          handleAndDispatchCustomEvent(
+            POINTER_DOWN_OUTSIDE,
+            handlePointerDownOutside,
+            eventDetail,
+            { discrete: true }
+          );
+        };
+        const eventDetail = { originalEvent: event };
+        if (event.pointerType === "touch") {
+          ownerDocument.removeEventListener("click", handleClickRef.current);
+          handleClickRef.current = handleAndDispatchPointerDownOutsideEvent2;
+          ownerDocument.addEventListener("click", handleClickRef.current, { once: true });
+        } else {
+          handleAndDispatchPointerDownOutsideEvent2();
+        }
+      } else {
+        ownerDocument.removeEventListener("click", handleClickRef.current);
+      }
+      isPointerInsideReactTreeRef.current = false;
+    };
+    const timerId = window.setTimeout(() => {
+      ownerDocument.addEventListener("pointerdown", handlePointerDown);
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+      ownerDocument.removeEventListener("pointerdown", handlePointerDown);
+      ownerDocument.removeEventListener("click", handleClickRef.current);
+    };
+  }, [ownerDocument, handlePointerDownOutside]);
+  return {
+    // ensures we check React component tree (not just DOM tree)
+    onPointerDownCapture: () => isPointerInsideReactTreeRef.current = true
+  };
+}
+function useFocusOutside(onFocusOutside, ownerDocument = globalThis == null ? void 0 : globalThis.document) {
+  const handleFocusOutside = useCallbackRef$1(onFocusOutside);
+  const isFocusInsideReactTreeRef = reactExports.useRef(false);
+  reactExports.useEffect(() => {
+    const handleFocus = (event) => {
+      if (event.target && !isFocusInsideReactTreeRef.current) {
+        const eventDetail = { originalEvent: event };
+        handleAndDispatchCustomEvent(FOCUS_OUTSIDE, handleFocusOutside, eventDetail, {
+          discrete: false
+        });
+      }
+    };
+    ownerDocument.addEventListener("focusin", handleFocus);
+    return () => ownerDocument.removeEventListener("focusin", handleFocus);
+  }, [ownerDocument, handleFocusOutside]);
+  return {
+    onFocusCapture: () => isFocusInsideReactTreeRef.current = true,
+    onBlurCapture: () => isFocusInsideReactTreeRef.current = false
+  };
+}
+function dispatchUpdate() {
+  const event = new CustomEvent(CONTEXT_UPDATE);
+  document.dispatchEvent(event);
+}
+function handleAndDispatchCustomEvent(name, handler, detail, { discrete }) {
+  const target = detail.originalEvent.target;
+  const event = new CustomEvent(name, { bubbles: false, cancelable: true, detail });
+  if (handler) target.addEventListener(name, handler, { once: true });
+  if (discrete) {
+    dispatchDiscreteCustomEvent(target, event);
+  } else {
+    target.dispatchEvent(event);
+  }
+}
+var AUTOFOCUS_ON_MOUNT = "focusScope.autoFocusOnMount";
+var AUTOFOCUS_ON_UNMOUNT = "focusScope.autoFocusOnUnmount";
+var EVENT_OPTIONS$1 = { bubbles: false, cancelable: true };
+var FOCUS_SCOPE_NAME = "FocusScope";
+var FocusScope = reactExports.forwardRef((props, forwardedRef) => {
+  const {
+    loop = false,
+    trapped = false,
+    onMountAutoFocus: onMountAutoFocusProp,
+    onUnmountAutoFocus: onUnmountAutoFocusProp,
+    ...scopeProps
+  } = props;
+  const [container, setContainer] = reactExports.useState(null);
+  const onMountAutoFocus = useCallbackRef$1(onMountAutoFocusProp);
+  const onUnmountAutoFocus = useCallbackRef$1(onUnmountAutoFocusProp);
+  const lastFocusedElementRef = reactExports.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, (node) => setContainer(node));
+  const focusScope = reactExports.useRef({
+    paused: false,
+    pause() {
+      this.paused = true;
+    },
+    resume() {
+      this.paused = false;
+    }
+  }).current;
+  reactExports.useEffect(() => {
+    if (trapped) {
+      let handleFocusIn2 = function(event) {
+        if (focusScope.paused || !container) return;
+        const target = event.target;
+        if (container.contains(target)) {
+          lastFocusedElementRef.current = target;
+        } else {
+          focus(lastFocusedElementRef.current, { select: true });
+        }
+      }, handleFocusOut2 = function(event) {
+        if (focusScope.paused || !container) return;
+        const relatedTarget = event.relatedTarget;
+        if (relatedTarget === null) return;
+        if (!container.contains(relatedTarget)) {
+          focus(lastFocusedElementRef.current, { select: true });
+        }
+      }, handleMutations2 = function(mutations) {
+        const focusedElement = document.activeElement;
+        if (focusedElement !== document.body) return;
+        for (const mutation of mutations) {
+          if (mutation.removedNodes.length > 0) focus(container);
+        }
+      };
+      document.addEventListener("focusin", handleFocusIn2);
+      document.addEventListener("focusout", handleFocusOut2);
+      const mutationObserver = new MutationObserver(handleMutations2);
+      if (container) mutationObserver.observe(container, { childList: true, subtree: true });
+      return () => {
+        document.removeEventListener("focusin", handleFocusIn2);
+        document.removeEventListener("focusout", handleFocusOut2);
+        mutationObserver.disconnect();
+      };
+    }
+  }, [trapped, container, focusScope.paused]);
+  reactExports.useEffect(() => {
+    if (container) {
+      focusScopesStack.add(focusScope);
+      const previouslyFocusedElement = document.activeElement;
+      const hasFocusedCandidate = container.contains(previouslyFocusedElement);
+      if (!hasFocusedCandidate) {
+        const mountEvent = new CustomEvent(AUTOFOCUS_ON_MOUNT, EVENT_OPTIONS$1);
+        container.addEventListener(AUTOFOCUS_ON_MOUNT, onMountAutoFocus);
+        container.dispatchEvent(mountEvent);
+        if (!mountEvent.defaultPrevented) {
+          focusFirst$1(removeLinks(getTabbableCandidates(container)), { select: true });
+          if (document.activeElement === previouslyFocusedElement) {
+            focus(container);
+          }
+        }
+      }
+      return () => {
+        container.removeEventListener(AUTOFOCUS_ON_MOUNT, onMountAutoFocus);
+        setTimeout(() => {
+          const unmountEvent = new CustomEvent(AUTOFOCUS_ON_UNMOUNT, EVENT_OPTIONS$1);
+          container.addEventListener(AUTOFOCUS_ON_UNMOUNT, onUnmountAutoFocus);
+          container.dispatchEvent(unmountEvent);
+          if (!unmountEvent.defaultPrevented) {
+            focus(previouslyFocusedElement ?? document.body, { select: true });
+          }
+          container.removeEventListener(AUTOFOCUS_ON_UNMOUNT, onUnmountAutoFocus);
+          focusScopesStack.remove(focusScope);
+        }, 0);
+      };
+    }
+  }, [container, onMountAutoFocus, onUnmountAutoFocus, focusScope]);
+  const handleKeyDown = reactExports.useCallback(
+    (event) => {
+      if (!loop && !trapped) return;
+      if (focusScope.paused) return;
+      const isTabKey = event.key === "Tab" && !event.altKey && !event.ctrlKey && !event.metaKey;
+      const focusedElement = document.activeElement;
+      if (isTabKey && focusedElement) {
+        const container2 = event.currentTarget;
+        const [first, last2] = getTabbableEdges(container2);
+        const hasTabbableElementsInside = first && last2;
+        if (!hasTabbableElementsInside) {
+          if (focusedElement === container2) event.preventDefault();
+        } else {
+          if (!event.shiftKey && focusedElement === last2) {
+            event.preventDefault();
+            if (loop) focus(first, { select: true });
+          } else if (event.shiftKey && focusedElement === first) {
+            event.preventDefault();
+            if (loop) focus(last2, { select: true });
+          }
+        }
+      }
+    },
+    [loop, trapped, focusScope.paused]
+  );
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { tabIndex: -1, ...scopeProps, ref: composedRefs, onKeyDown: handleKeyDown });
+});
+FocusScope.displayName = FOCUS_SCOPE_NAME;
+function focusFirst$1(candidates, { select = false } = {}) {
+  const previouslyFocusedElement = document.activeElement;
+  for (const candidate of candidates) {
+    focus(candidate, { select });
+    if (document.activeElement !== previouslyFocusedElement) return;
+  }
+}
+function getTabbableEdges(container) {
+  const candidates = getTabbableCandidates(container);
+  const first = findVisible(candidates, container);
+  const last2 = findVisible(candidates.reverse(), container);
+  return [first, last2];
+}
+function getTabbableCandidates(container) {
+  const nodes = [];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, {
+    acceptNode: (node) => {
+      const isHiddenInput = node.tagName === "INPUT" && node.type === "hidden";
+      if (node.disabled || node.hidden || isHiddenInput) return NodeFilter.FILTER_SKIP;
+      return node.tabIndex >= 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    }
+  });
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  return nodes;
+}
+function findVisible(elements, container) {
+  for (const element of elements) {
+    if (!isHidden(element, { upTo: container })) return element;
+  }
+}
+function isHidden(node, { upTo }) {
+  if (getComputedStyle(node).visibility === "hidden") return true;
+  while (node) {
+    if (upTo !== void 0 && node === upTo) return false;
+    if (getComputedStyle(node).display === "none") return true;
+    node = node.parentElement;
+  }
+  return false;
+}
+function isSelectableInput(element) {
+  return element instanceof HTMLInputElement && "select" in element;
+}
+function focus(element, { select = false } = {}) {
+  if (element && element.focus) {
+    const previouslyFocusedElement = document.activeElement;
+    element.focus({ preventScroll: true });
+    if (element !== previouslyFocusedElement && isSelectableInput(element) && select)
+      element.select();
+  }
+}
+var focusScopesStack = createFocusScopesStack();
+function createFocusScopesStack() {
+  let stack = [];
+  return {
+    add(focusScope) {
+      const activeFocusScope = stack[0];
+      if (focusScope !== activeFocusScope) {
+        activeFocusScope == null ? void 0 : activeFocusScope.pause();
+      }
+      stack = arrayRemove(stack, focusScope);
+      stack.unshift(focusScope);
+    },
+    remove(focusScope) {
+      var _a2;
+      stack = arrayRemove(stack, focusScope);
+      (_a2 = stack[0]) == null ? void 0 : _a2.resume();
+    }
+  };
+}
+function arrayRemove(array, item) {
+  const updatedArray = [...array];
+  const index2 = updatedArray.indexOf(item);
+  if (index2 !== -1) {
+    updatedArray.splice(index2, 1);
+  }
+  return updatedArray;
+}
+function removeLinks(items) {
+  return items.filter((item) => item.tagName !== "A");
+}
+var PORTAL_NAME$3 = "Portal";
+var Portal$3 = reactExports.forwardRef((props, forwardedRef) => {
+  var _a2;
+  const { container: containerProp, ...portalProps } = props;
+  const [mounted, setMounted] = reactExports.useState(false);
+  useLayoutEffect2(() => setMounted(true), []);
+  const container = containerProp || mounted && ((_a2 = globalThis == null ? void 0 : globalThis.document) == null ? void 0 : _a2.body);
+  return container ? vt.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...portalProps, ref: forwardedRef }), container) : null;
+});
+Portal$3.displayName = PORTAL_NAME$3;
+var count = 0;
+function useFocusGuards() {
+  reactExports.useEffect(() => {
+    const edgeGuards = document.querySelectorAll("[data-radix-focus-guard]");
+    document.body.insertAdjacentElement("afterbegin", edgeGuards[0] ?? createFocusGuard());
+    document.body.insertAdjacentElement("beforeend", edgeGuards[1] ?? createFocusGuard());
+    count++;
+    return () => {
+      if (count === 1) {
+        document.querySelectorAll("[data-radix-focus-guard]").forEach((node) => node.remove());
+      }
+      count--;
+    };
+  }, []);
+}
+function createFocusGuard() {
+  const element = document.createElement("span");
+  element.setAttribute("data-radix-focus-guard", "");
+  element.tabIndex = 0;
+  element.style.outline = "none";
+  element.style.opacity = "0";
+  element.style.position = "fixed";
+  element.style.pointerEvents = "none";
+  return element;
+}
+var __assign = function() {
+  __assign = Object.assign || function __assign2(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+      s = arguments[i];
+      for (var p2 in s) if (Object.prototype.hasOwnProperty.call(s, p2)) t[p2] = s[p2];
+    }
+    return t;
+  };
+  return __assign.apply(this, arguments);
+};
+function __rest(s, e) {
+  var t = {};
+  for (var p2 in s) if (Object.prototype.hasOwnProperty.call(s, p2) && e.indexOf(p2) < 0)
+    t[p2] = s[p2];
+  if (s != null && typeof Object.getOwnPropertySymbols === "function")
+    for (var i = 0, p2 = Object.getOwnPropertySymbols(s); i < p2.length; i++) {
+      if (e.indexOf(p2[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p2[i]))
+        t[p2[i]] = s[p2[i]];
+    }
+  return t;
+}
+function __spreadArray(to, from, pack) {
+  if (pack || arguments.length === 2) for (var i = 0, l2 = from.length, ar; i < l2; i++) {
+    if (ar || !(i in from)) {
+      if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+      ar[i] = from[i];
+    }
+  }
+  return to.concat(ar || Array.prototype.slice.call(from));
+}
+typeof SuppressedError === "function" ? SuppressedError : function(error, suppressed, message) {
+  var e = new Error(message);
+  return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+var zeroRightClassName = "right-scroll-bar-position";
+var fullWidthClassName = "width-before-scroll-bar";
+var noScrollbarsClassName = "with-scroll-bars-hidden";
+var removedBarSizeVariable = "--removed-body-scroll-bar-size";
+function assignRef(ref, value) {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref) {
+    ref.current = value;
+  }
+  return ref;
+}
+function useCallbackRef(initialValue, callback) {
+  var ref = reactExports.useState(function() {
+    return {
+      // value
+      value: initialValue,
+      // last callback
+      callback,
+      // "memoized" public interface
+      facade: {
+        get current() {
+          return ref.value;
+        },
+        set current(value) {
+          var last2 = ref.value;
+          if (last2 !== value) {
+            ref.value = value;
+            ref.callback(value, last2);
+          }
+        }
+      }
+    };
+  })[0];
+  ref.callback = callback;
+  return ref.facade;
+}
+var useIsomorphicLayoutEffect = typeof window !== "undefined" ? reactExports.useLayoutEffect : reactExports.useEffect;
+var currentValues = /* @__PURE__ */ new WeakMap();
+function useMergeRefs(refs, defaultValue) {
+  var callbackRef = useCallbackRef(null, function(newValue) {
+    return refs.forEach(function(ref) {
+      return assignRef(ref, newValue);
+    });
+  });
+  useIsomorphicLayoutEffect(function() {
+    var oldValue = currentValues.get(callbackRef);
+    if (oldValue) {
+      var prevRefs_1 = new Set(oldValue);
+      var nextRefs_1 = new Set(refs);
+      var current_1 = callbackRef.current;
+      prevRefs_1.forEach(function(ref) {
+        if (!nextRefs_1.has(ref)) {
+          assignRef(ref, null);
+        }
+      });
+      nextRefs_1.forEach(function(ref) {
+        if (!prevRefs_1.has(ref)) {
+          assignRef(ref, current_1);
+        }
+      });
+    }
+    currentValues.set(callbackRef, refs);
+  }, [refs]);
+  return callbackRef;
+}
+function ItoI(a2) {
+  return a2;
+}
+function innerCreateMedium(defaults, middleware) {
+  if (middleware === void 0) {
+    middleware = ItoI;
+  }
+  var buffer = [];
+  var assigned = false;
+  var medium = {
+    read: function() {
+      if (assigned) {
+        throw new Error("Sidecar: could not `read` from an `assigned` medium. `read` could be used only with `useMedium`.");
+      }
+      if (buffer.length) {
+        return buffer[buffer.length - 1];
+      }
+      return defaults;
+    },
+    useMedium: function(data) {
+      var item = middleware(data, assigned);
+      buffer.push(item);
+      return function() {
+        buffer = buffer.filter(function(x3) {
+          return x3 !== item;
+        });
+      };
+    },
+    assignSyncMedium: function(cb) {
+      assigned = true;
+      while (buffer.length) {
+        var cbs = buffer;
+        buffer = [];
+        cbs.forEach(cb);
+      }
+      buffer = {
+        push: function(x3) {
+          return cb(x3);
+        },
+        filter: function() {
+          return buffer;
+        }
+      };
+    },
+    assignMedium: function(cb) {
+      assigned = true;
+      var pendingQueue = [];
+      if (buffer.length) {
+        var cbs = buffer;
+        buffer = [];
+        cbs.forEach(cb);
+        pendingQueue = buffer;
+      }
+      var executeQueue = function() {
+        var cbs2 = pendingQueue;
+        pendingQueue = [];
+        cbs2.forEach(cb);
+      };
+      var cycle = function() {
+        return Promise.resolve().then(executeQueue);
+      };
+      cycle();
+      buffer = {
+        push: function(x3) {
+          pendingQueue.push(x3);
+          cycle();
+        },
+        filter: function(filter) {
+          pendingQueue = pendingQueue.filter(filter);
+          return buffer;
+        }
+      };
+    }
+  };
+  return medium;
+}
+function createSidecarMedium(options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var medium = innerCreateMedium(null);
+  medium.options = __assign({ async: true, ssr: false }, options);
+  return medium;
+}
+var SideCar$1 = function(_a2) {
+  var sideCar = _a2.sideCar, rest = __rest(_a2, ["sideCar"]);
+  if (!sideCar) {
+    throw new Error("Sidecar: please provide `sideCar` property to import the right car");
+  }
+  var Target = sideCar.read();
+  if (!Target) {
+    throw new Error("Sidecar medium not found");
+  }
+  return reactExports.createElement(Target, __assign({}, rest));
+};
+SideCar$1.isSideCarExport = true;
+function exportSidecar(medium, exported) {
+  medium.useMedium(exported);
+  return SideCar$1;
+}
+var effectCar = createSidecarMedium();
+var nothing = function() {
+  return;
+};
+var RemoveScroll = reactExports.forwardRef(function(props, parentRef) {
+  var ref = reactExports.useRef(null);
+  var _a2 = reactExports.useState({
+    onScrollCapture: nothing,
+    onWheelCapture: nothing,
+    onTouchMoveCapture: nothing
+  }), callbacks = _a2[0], setCallbacks = _a2[1];
+  var forwardProps = props.forwardProps, children = props.children, className = props.className, removeScrollBar = props.removeScrollBar, enabled = props.enabled, shards = props.shards, sideCar = props.sideCar, noRelative = props.noRelative, noIsolation = props.noIsolation, inert = props.inert, allowPinchZoom = props.allowPinchZoom, _b2 = props.as, Container = _b2 === void 0 ? "div" : _b2, gapMode = props.gapMode, rest = __rest(props, ["forwardProps", "children", "className", "removeScrollBar", "enabled", "shards", "sideCar", "noRelative", "noIsolation", "inert", "allowPinchZoom", "as", "gapMode"]);
+  var SideCar2 = sideCar;
+  var containerRef = useMergeRefs([ref, parentRef]);
+  var containerProps = __assign(__assign({}, rest), callbacks);
+  return reactExports.createElement(
+    reactExports.Fragment,
+    null,
+    enabled && reactExports.createElement(SideCar2, { sideCar: effectCar, removeScrollBar, shards, noRelative, noIsolation, inert, setCallbacks, allowPinchZoom: !!allowPinchZoom, lockRef: ref, gapMode }),
+    forwardProps ? reactExports.cloneElement(reactExports.Children.only(children), __assign(__assign({}, containerProps), { ref: containerRef })) : reactExports.createElement(Container, __assign({}, containerProps, { className, ref: containerRef }), children)
+  );
+});
+RemoveScroll.defaultProps = {
+  enabled: true,
+  removeScrollBar: true,
+  inert: false
+};
+RemoveScroll.classNames = {
+  fullWidth: fullWidthClassName,
+  zeroRight: zeroRightClassName
+};
+var getNonce = function() {
+  if (typeof __webpack_nonce__ !== "undefined") {
+    return __webpack_nonce__;
+  }
+  return void 0;
+};
+function makeStyleTag() {
+  if (!document)
+    return null;
+  var tag = document.createElement("style");
+  tag.type = "text/css";
+  var nonce = getNonce();
+  if (nonce) {
+    tag.setAttribute("nonce", nonce);
+  }
+  return tag;
+}
+function injectStyles(tag, css) {
+  if (tag.styleSheet) {
+    tag.styleSheet.cssText = css;
+  } else {
+    tag.appendChild(document.createTextNode(css));
+  }
+}
+function insertStyleTag(tag) {
+  var head = document.head || document.getElementsByTagName("head")[0];
+  head.appendChild(tag);
+}
+var stylesheetSingleton = function() {
+  var counter = 0;
+  var stylesheet = null;
+  return {
+    add: function(style2) {
+      if (counter == 0) {
+        if (stylesheet = makeStyleTag()) {
+          injectStyles(stylesheet, style2);
+          insertStyleTag(stylesheet);
+        }
+      }
+      counter++;
+    },
+    remove: function() {
+      counter--;
+      if (!counter && stylesheet) {
+        stylesheet.parentNode && stylesheet.parentNode.removeChild(stylesheet);
+        stylesheet = null;
+      }
+    }
+  };
+};
+var styleHookSingleton = function() {
+  var sheet = stylesheetSingleton();
+  return function(styles, isDynamic) {
+    reactExports.useEffect(function() {
+      sheet.add(styles);
+      return function() {
+        sheet.remove();
+      };
+    }, [styles && isDynamic]);
+  };
+};
+var styleSingleton = function() {
+  var useStyle = styleHookSingleton();
+  var Sheet2 = function(_a2) {
+    var styles = _a2.styles, dynamic = _a2.dynamic;
+    useStyle(styles, dynamic);
+    return null;
+  };
+  return Sheet2;
+};
+var zeroGap = {
+  left: 0,
+  top: 0,
+  right: 0,
+  gap: 0
+};
+var parse = function(x3) {
+  return parseInt(x3 || "", 10) || 0;
+};
+var getOffset = function(gapMode) {
+  var cs = window.getComputedStyle(document.body);
+  var left = cs[gapMode === "padding" ? "paddingLeft" : "marginLeft"];
+  var top = cs[gapMode === "padding" ? "paddingTop" : "marginTop"];
+  var right = cs[gapMode === "padding" ? "paddingRight" : "marginRight"];
+  return [parse(left), parse(top), parse(right)];
+};
+var getGapWidth = function(gapMode) {
+  if (gapMode === void 0) {
+    gapMode = "margin";
+  }
+  if (typeof window === "undefined") {
+    return zeroGap;
+  }
+  var offsets = getOffset(gapMode);
+  var documentWidth = document.documentElement.clientWidth;
+  var windowWidth = window.innerWidth;
+  return {
+    left: offsets[0],
+    top: offsets[1],
+    right: offsets[2],
+    gap: Math.max(0, windowWidth - documentWidth + offsets[2] - offsets[0])
+  };
+};
+var Style = styleSingleton();
+var lockAttribute = "data-scroll-locked";
+var getStyles = function(_a2, allowRelative, gapMode, important) {
+  var left = _a2.left, top = _a2.top, right = _a2.right, gap = _a2.gap;
+  if (gapMode === void 0) {
+    gapMode = "margin";
+  }
+  return "\n  .".concat(noScrollbarsClassName, " {\n   overflow: hidden ").concat(important, ";\n   padding-right: ").concat(gap, "px ").concat(important, ";\n  }\n  body[").concat(lockAttribute, "] {\n    overflow: hidden ").concat(important, ";\n    overscroll-behavior: contain;\n    ").concat([
+    allowRelative && "position: relative ".concat(important, ";"),
+    gapMode === "margin" && "\n    padding-left: ".concat(left, "px;\n    padding-top: ").concat(top, "px;\n    padding-right: ").concat(right, "px;\n    margin-left:0;\n    margin-top:0;\n    margin-right: ").concat(gap, "px ").concat(important, ";\n    "),
+    gapMode === "padding" && "padding-right: ".concat(gap, "px ").concat(important, ";")
+  ].filter(Boolean).join(""), "\n  }\n  \n  .").concat(zeroRightClassName, " {\n    right: ").concat(gap, "px ").concat(important, ";\n  }\n  \n  .").concat(fullWidthClassName, " {\n    margin-right: ").concat(gap, "px ").concat(important, ";\n  }\n  \n  .").concat(zeroRightClassName, " .").concat(zeroRightClassName, " {\n    right: 0 ").concat(important, ";\n  }\n  \n  .").concat(fullWidthClassName, " .").concat(fullWidthClassName, " {\n    margin-right: 0 ").concat(important, ";\n  }\n  \n  body[").concat(lockAttribute, "] {\n    ").concat(removedBarSizeVariable, ": ").concat(gap, "px;\n  }\n");
+};
+var getCurrentUseCounter = function() {
+  var counter = parseInt(document.body.getAttribute(lockAttribute) || "0", 10);
+  return isFinite(counter) ? counter : 0;
+};
+var useLockAttribute = function() {
+  reactExports.useEffect(function() {
+    document.body.setAttribute(lockAttribute, (getCurrentUseCounter() + 1).toString());
+    return function() {
+      var newCounter = getCurrentUseCounter() - 1;
+      if (newCounter <= 0) {
+        document.body.removeAttribute(lockAttribute);
+      } else {
+        document.body.setAttribute(lockAttribute, newCounter.toString());
+      }
+    };
+  }, []);
+};
+var RemoveScrollBar = function(_a2) {
+  var noRelative = _a2.noRelative, noImportant = _a2.noImportant, _b2 = _a2.gapMode, gapMode = _b2 === void 0 ? "margin" : _b2;
+  useLockAttribute();
+  var gap = reactExports.useMemo(function() {
+    return getGapWidth(gapMode);
+  }, [gapMode]);
+  return reactExports.createElement(Style, { styles: getStyles(gap, !noRelative, gapMode, !noImportant ? "!important" : "") });
+};
+var passiveSupported = false;
+if (typeof window !== "undefined") {
+  try {
+    var options = Object.defineProperty({}, "passive", {
+      get: function() {
+        passiveSupported = true;
+        return true;
+      }
+    });
+    window.addEventListener("test", options, options);
+    window.removeEventListener("test", options, options);
+  } catch (err) {
+    passiveSupported = false;
+  }
+}
+var nonPassive = passiveSupported ? { passive: false } : false;
+var alwaysContainsScroll = function(node) {
+  return node.tagName === "TEXTAREA";
+};
+var elementCanBeScrolled = function(node, overflow) {
+  if (!(node instanceof Element)) {
+    return false;
+  }
+  var styles = window.getComputedStyle(node);
+  return (
+    // not-not-scrollable
+    styles[overflow] !== "hidden" && // contains scroll inside self
+    !(styles.overflowY === styles.overflowX && !alwaysContainsScroll(node) && styles[overflow] === "visible")
+  );
+};
+var elementCouldBeVScrolled = function(node) {
+  return elementCanBeScrolled(node, "overflowY");
+};
+var elementCouldBeHScrolled = function(node) {
+  return elementCanBeScrolled(node, "overflowX");
+};
+var locationCouldBeScrolled = function(axis, node) {
+  var ownerDocument = node.ownerDocument;
+  var current = node;
+  do {
+    if (typeof ShadowRoot !== "undefined" && current instanceof ShadowRoot) {
+      current = current.host;
+    }
+    var isScrollable = elementCouldBeScrolled(axis, current);
+    if (isScrollable) {
+      var _a2 = getScrollVariables(axis, current), scrollHeight = _a2[1], clientHeight = _a2[2];
+      if (scrollHeight > clientHeight) {
+        return true;
+      }
+    }
+    current = current.parentNode;
+  } while (current && current !== ownerDocument.body);
+  return false;
+};
+var getVScrollVariables = function(_a2) {
+  var scrollTop = _a2.scrollTop, scrollHeight = _a2.scrollHeight, clientHeight = _a2.clientHeight;
+  return [
+    scrollTop,
+    scrollHeight,
+    clientHeight
+  ];
+};
+var getHScrollVariables = function(_a2) {
+  var scrollLeft = _a2.scrollLeft, scrollWidth = _a2.scrollWidth, clientWidth = _a2.clientWidth;
+  return [
+    scrollLeft,
+    scrollWidth,
+    clientWidth
+  ];
+};
+var elementCouldBeScrolled = function(axis, node) {
+  return axis === "v" ? elementCouldBeVScrolled(node) : elementCouldBeHScrolled(node);
+};
+var getScrollVariables = function(axis, node) {
+  return axis === "v" ? getVScrollVariables(node) : getHScrollVariables(node);
+};
+var getDirectionFactor = function(axis, direction) {
+  return axis === "h" && direction === "rtl" ? -1 : 1;
+};
+var handleScroll = function(axis, endTarget, event, sourceDelta, noOverscroll) {
+  var directionFactor = getDirectionFactor(axis, window.getComputedStyle(endTarget).direction);
+  var delta = directionFactor * sourceDelta;
+  var target = event.target;
+  var targetInLock = endTarget.contains(target);
+  var shouldCancelScroll = false;
+  var isDeltaPositive = delta > 0;
+  var availableScroll = 0;
+  var availableScrollTop = 0;
+  do {
+    if (!target) {
+      break;
+    }
+    var _a2 = getScrollVariables(axis, target), position = _a2[0], scroll_1 = _a2[1], capacity = _a2[2];
+    var elementScroll = scroll_1 - capacity - directionFactor * position;
+    if (position || elementScroll) {
+      if (elementCouldBeScrolled(axis, target)) {
+        availableScroll += elementScroll;
+        availableScrollTop += position;
+      }
+    }
+    var parent_1 = target.parentNode;
+    target = parent_1 && parent_1.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? parent_1.host : parent_1;
+  } while (
+    // portaled content
+    !targetInLock && target !== document.body || // self content
+    targetInLock && (endTarget.contains(target) || endTarget === target)
+  );
+  if (isDeltaPositive && (Math.abs(availableScroll) < 1 || false)) {
+    shouldCancelScroll = true;
+  } else if (!isDeltaPositive && (Math.abs(availableScrollTop) < 1 || false)) {
+    shouldCancelScroll = true;
+  }
+  return shouldCancelScroll;
+};
+var getTouchXY = function(event) {
+  return "changedTouches" in event ? [event.changedTouches[0].clientX, event.changedTouches[0].clientY] : [0, 0];
+};
+var getDeltaXY = function(event) {
+  return [event.deltaX, event.deltaY];
+};
+var extractRef = function(ref) {
+  return ref && "current" in ref ? ref.current : ref;
+};
+var deltaCompare = function(x3, y2) {
+  return x3[0] === y2[0] && x3[1] === y2[1];
+};
+var generateStyle = function(id) {
+  return "\n  .block-interactivity-".concat(id, " {pointer-events: none;}\n  .allow-interactivity-").concat(id, " {pointer-events: all;}\n");
+};
+var idCounter = 0;
+var lockStack = [];
+function RemoveScrollSideCar(props) {
+  var shouldPreventQueue = reactExports.useRef([]);
+  var touchStartRef = reactExports.useRef([0, 0]);
+  var activeAxis = reactExports.useRef();
+  var id = reactExports.useState(idCounter++)[0];
+  var Style2 = reactExports.useState(styleSingleton)[0];
+  var lastProps = reactExports.useRef(props);
+  reactExports.useEffect(function() {
+    lastProps.current = props;
+  }, [props]);
+  reactExports.useEffect(function() {
+    if (props.inert) {
+      document.body.classList.add("block-interactivity-".concat(id));
+      var allow_1 = __spreadArray([props.lockRef.current], (props.shards || []).map(extractRef), true).filter(Boolean);
+      allow_1.forEach(function(el) {
+        return el.classList.add("allow-interactivity-".concat(id));
+      });
+      return function() {
+        document.body.classList.remove("block-interactivity-".concat(id));
+        allow_1.forEach(function(el) {
+          return el.classList.remove("allow-interactivity-".concat(id));
+        });
+      };
+    }
+    return;
+  }, [props.inert, props.lockRef.current, props.shards]);
+  var shouldCancelEvent = reactExports.useCallback(function(event, parent) {
+    if ("touches" in event && event.touches.length === 2 || event.type === "wheel" && event.ctrlKey) {
+      return !lastProps.current.allowPinchZoom;
+    }
+    var touch = getTouchXY(event);
+    var touchStart = touchStartRef.current;
+    var deltaX = "deltaX" in event ? event.deltaX : touchStart[0] - touch[0];
+    var deltaY = "deltaY" in event ? event.deltaY : touchStart[1] - touch[1];
+    var currentAxis;
+    var target = event.target;
+    var moveDirection = Math.abs(deltaX) > Math.abs(deltaY) ? "h" : "v";
+    if ("touches" in event && moveDirection === "h" && target.type === "range") {
+      return false;
+    }
+    var selection = window.getSelection();
+    var anchorNode = selection && selection.anchorNode;
+    var isTouchingSelection = anchorNode ? anchorNode === target || anchorNode.contains(target) : false;
+    if (isTouchingSelection) {
+      return false;
+    }
+    var canBeScrolledInMainDirection = locationCouldBeScrolled(moveDirection, target);
+    if (!canBeScrolledInMainDirection) {
+      return true;
+    }
+    if (canBeScrolledInMainDirection) {
+      currentAxis = moveDirection;
+    } else {
+      currentAxis = moveDirection === "v" ? "h" : "v";
+      canBeScrolledInMainDirection = locationCouldBeScrolled(moveDirection, target);
+    }
+    if (!canBeScrolledInMainDirection) {
+      return false;
+    }
+    if (!activeAxis.current && "changedTouches" in event && (deltaX || deltaY)) {
+      activeAxis.current = currentAxis;
+    }
+    if (!currentAxis) {
+      return true;
+    }
+    var cancelingAxis = activeAxis.current || currentAxis;
+    return handleScroll(cancelingAxis, parent, event, cancelingAxis === "h" ? deltaX : deltaY);
+  }, []);
+  var shouldPrevent = reactExports.useCallback(function(_event) {
+    var event = _event;
+    if (!lockStack.length || lockStack[lockStack.length - 1] !== Style2) {
+      return;
+    }
+    var delta = "deltaY" in event ? getDeltaXY(event) : getTouchXY(event);
+    var sourceEvent = shouldPreventQueue.current.filter(function(e) {
+      return e.name === event.type && (e.target === event.target || event.target === e.shadowParent) && deltaCompare(e.delta, delta);
+    })[0];
+    if (sourceEvent && sourceEvent.should) {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      return;
+    }
+    if (!sourceEvent) {
+      var shardNodes = (lastProps.current.shards || []).map(extractRef).filter(Boolean).filter(function(node) {
+        return node.contains(event.target);
+      });
+      var shouldStop = shardNodes.length > 0 ? shouldCancelEvent(event, shardNodes[0]) : !lastProps.current.noIsolation;
+      if (shouldStop) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+      }
+    }
+  }, []);
+  var shouldCancel = reactExports.useCallback(function(name, delta, target, should) {
+    var event = { name, delta, target, should, shadowParent: getOutermostShadowParent(target) };
+    shouldPreventQueue.current.push(event);
+    setTimeout(function() {
+      shouldPreventQueue.current = shouldPreventQueue.current.filter(function(e) {
+        return e !== event;
+      });
+    }, 1);
+  }, []);
+  var scrollTouchStart = reactExports.useCallback(function(event) {
+    touchStartRef.current = getTouchXY(event);
+    activeAxis.current = void 0;
+  }, []);
+  var scrollWheel = reactExports.useCallback(function(event) {
+    shouldCancel(event.type, getDeltaXY(event), event.target, shouldCancelEvent(event, props.lockRef.current));
+  }, []);
+  var scrollTouchMove = reactExports.useCallback(function(event) {
+    shouldCancel(event.type, getTouchXY(event), event.target, shouldCancelEvent(event, props.lockRef.current));
+  }, []);
+  reactExports.useEffect(function() {
+    lockStack.push(Style2);
+    props.setCallbacks({
+      onScrollCapture: scrollWheel,
+      onWheelCapture: scrollWheel,
+      onTouchMoveCapture: scrollTouchMove
+    });
+    document.addEventListener("wheel", shouldPrevent, nonPassive);
+    document.addEventListener("touchmove", shouldPrevent, nonPassive);
+    document.addEventListener("touchstart", scrollTouchStart, nonPassive);
+    return function() {
+      lockStack = lockStack.filter(function(inst) {
+        return inst !== Style2;
+      });
+      document.removeEventListener("wheel", shouldPrevent, nonPassive);
+      document.removeEventListener("touchmove", shouldPrevent, nonPassive);
+      document.removeEventListener("touchstart", scrollTouchStart, nonPassive);
+    };
+  }, []);
+  var removeScrollBar = props.removeScrollBar, inert = props.inert;
+  return reactExports.createElement(
+    reactExports.Fragment,
+    null,
+    inert ? reactExports.createElement(Style2, { styles: generateStyle(id) }) : null,
+    removeScrollBar ? reactExports.createElement(RemoveScrollBar, { noRelative: props.noRelative, gapMode: props.gapMode }) : null
+  );
+}
+function getOutermostShadowParent(node) {
+  var shadowParent = null;
+  while (node !== null) {
+    if (node instanceof ShadowRoot) {
+      shadowParent = node.host;
+      node = node.host;
+    }
+    node = node.parentNode;
+  }
+  return shadowParent;
+}
+const SideCar = exportSidecar(effectCar, RemoveScrollSideCar);
+var ReactRemoveScroll = reactExports.forwardRef(function(props, ref) {
+  return reactExports.createElement(RemoveScroll, __assign({}, props, { ref, sideCar: SideCar }));
+});
+ReactRemoveScroll.classNames = RemoveScroll.classNames;
+var getDefaultParent = function(originalTarget) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  var sampleTarget = Array.isArray(originalTarget) ? originalTarget[0] : originalTarget;
+  return sampleTarget.ownerDocument.body;
+};
+var counterMap = /* @__PURE__ */ new WeakMap();
+var uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+var markerMap = {};
+var lockCount = 0;
+var unwrapHost = function(node) {
+  return node && (node.host || unwrapHost(node.parentNode));
+};
+var correctTargets = function(parent, targets) {
+  return targets.map(function(target) {
+    if (parent.contains(target)) {
+      return target;
+    }
+    var correctedTarget = unwrapHost(target);
+    if (correctedTarget && parent.contains(correctedTarget)) {
+      return correctedTarget;
+    }
+    console.error("aria-hidden", target, "in not contained inside", parent, ". Doing nothing");
+    return null;
+  }).filter(function(x3) {
+    return Boolean(x3);
+  });
+};
+var applyAttributeToOthers = function(originalTarget, parentNode, markerName, controlAttribute) {
+  var targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
+  if (!markerMap[markerName]) {
+    markerMap[markerName] = /* @__PURE__ */ new WeakMap();
+  }
+  var markerCounter = markerMap[markerName];
+  var hiddenNodes = [];
+  var elementsToKeep = /* @__PURE__ */ new Set();
+  var elementsToStop = new Set(targets);
+  var keep = function(el) {
+    if (!el || elementsToKeep.has(el)) {
+      return;
+    }
+    elementsToKeep.add(el);
+    keep(el.parentNode);
+  };
+  targets.forEach(keep);
+  var deep = function(parent) {
+    if (!parent || elementsToStop.has(parent)) {
+      return;
+    }
+    Array.prototype.forEach.call(parent.children, function(node) {
+      if (elementsToKeep.has(node)) {
+        deep(node);
+      } else {
+        try {
+          var attr = node.getAttribute(controlAttribute);
+          var alreadyHidden = attr !== null && attr !== "false";
+          var counterValue = (counterMap.get(node) || 0) + 1;
+          var markerValue = (markerCounter.get(node) || 0) + 1;
+          counterMap.set(node, counterValue);
+          markerCounter.set(node, markerValue);
+          hiddenNodes.push(node);
+          if (counterValue === 1 && alreadyHidden) {
+            uncontrolledNodes.set(node, true);
+          }
+          if (markerValue === 1) {
+            node.setAttribute(markerName, "true");
+          }
+          if (!alreadyHidden) {
+            node.setAttribute(controlAttribute, "true");
+          }
+        } catch (e) {
+          console.error("aria-hidden: cannot operate on ", node, e);
+        }
+      }
+    });
+  };
+  deep(parentNode);
+  elementsToKeep.clear();
+  lockCount++;
+  return function() {
+    hiddenNodes.forEach(function(node) {
+      var counterValue = counterMap.get(node) - 1;
+      var markerValue = markerCounter.get(node) - 1;
+      counterMap.set(node, counterValue);
+      markerCounter.set(node, markerValue);
+      if (!counterValue) {
+        if (!uncontrolledNodes.has(node)) {
+          node.removeAttribute(controlAttribute);
+        }
+        uncontrolledNodes.delete(node);
+      }
+      if (!markerValue) {
+        node.removeAttribute(markerName);
+      }
+    });
+    lockCount--;
+    if (!lockCount) {
+      counterMap = /* @__PURE__ */ new WeakMap();
+      counterMap = /* @__PURE__ */ new WeakMap();
+      uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+      markerMap = {};
+    }
+  };
+};
+var hideOthers = function(originalTarget, parentNode, markerName) {
+  if (markerName === void 0) {
+    markerName = "data-aria-hidden";
+  }
+  var targets = Array.from(Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
+  var activeParentNode = getDefaultParent(originalTarget);
+  if (!activeParentNode) {
+    return function() {
+      return null;
+    };
+  }
+  targets.push.apply(targets, Array.from(activeParentNode.querySelectorAll("[aria-live], script")));
+  return applyAttributeToOthers(targets, activeParentNode, markerName, "aria-hidden");
+};
+var DIALOG_NAME = "Dialog";
+var [createDialogContext] = createContextScope$1(DIALOG_NAME);
+var [DialogProvider, useDialogContext] = createDialogContext(DIALOG_NAME);
+var Dialog$1 = (props) => {
+  const {
+    __scopeDialog,
+    children,
+    open: openProp,
+    defaultOpen,
+    onOpenChange,
+    modal = true
+  } = props;
+  const triggerRef = reactExports.useRef(null);
+  const contentRef = reactExports.useRef(null);
+  const [open, setOpen] = useControllableState({
+    prop: openProp,
+    defaultProp: defaultOpen ?? false,
+    onChange: onOpenChange,
+    caller: DIALOG_NAME
+  });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    DialogProvider,
+    {
+      scope: __scopeDialog,
+      triggerRef,
+      contentRef,
+      contentId: useId(),
+      titleId: useId(),
+      descriptionId: useId(),
+      open,
+      onOpenChange: setOpen,
+      onOpenToggle: reactExports.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
+      modal,
+      children
+    }
+  );
+};
+Dialog$1.displayName = DIALOG_NAME;
+var TRIGGER_NAME$3 = "DialogTrigger";
+var DialogTrigger = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, ...triggerProps } = props;
+    const context2 = useDialogContext(TRIGGER_NAME$3, __scopeDialog);
+    const composedTriggerRef = useComposedRefs(forwardedRef, context2.triggerRef);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$1.button,
+      {
+        type: "button",
+        "aria-haspopup": "dialog",
+        "aria-expanded": context2.open,
+        "aria-controls": context2.contentId,
+        "data-state": getState$1(context2.open),
+        ...triggerProps,
+        ref: composedTriggerRef,
+        onClick: composeEventHandlers(props.onClick, context2.onOpenToggle)
+      }
+    );
+  }
+);
+DialogTrigger.displayName = TRIGGER_NAME$3;
+var PORTAL_NAME$2 = "DialogPortal";
+var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, {
+  forceMount: void 0
+});
+var DialogPortal$1 = (props) => {
+  const { __scopeDialog, forceMount, children, container } = props;
+  const context2 = useDialogContext(PORTAL_NAME$2, __scopeDialog);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
+};
+DialogPortal$1.displayName = PORTAL_NAME$2;
+var OVERLAY_NAME = "DialogOverlay";
+var DialogOverlay$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const portalContext = usePortalContext$1(OVERLAY_NAME, props.__scopeDialog);
+    const { forceMount = portalContext.forceMount, ...overlayProps } = props;
+    const context2 = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
+    return context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
+  }
+);
+DialogOverlay$1.displayName = OVERLAY_NAME;
+var Slot$1 = /* @__PURE__ */ createSlot$1("DialogOverlay.RemoveScroll");
+var DialogOverlayImpl = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, ...overlayProps } = props;
+    const context2 = useDialogContext(OVERLAY_NAME, __scopeDialog);
+    return (
+      // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
+      // ie. when `Overlay` and `Content` are siblings
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$1, allowPinchZoom: true, shards: [context2.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Primitive$1.div,
+        {
+          "data-state": getState$1(context2.open),
+          ...overlayProps,
+          ref: forwardedRef,
+          style: { pointerEvents: "auto", ...overlayProps.style }
+        }
+      ) })
+    );
+  }
+);
+var CONTENT_NAME$4 = "DialogContent";
+var DialogContent$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const portalContext = usePortalContext$1(CONTENT_NAME$4, props.__scopeDialog);
+    const { forceMount = portalContext.forceMount, ...contentProps } = props;
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
+  }
+);
+DialogContent$1.displayName = CONTENT_NAME$4;
+var DialogContentModal = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const contentRef = reactExports.useRef(null);
+    const composedRefs = useComposedRefs(forwardedRef, context2.contentRef, contentRef);
+    reactExports.useEffect(() => {
+      const content = contentRef.current;
+      if (content) return hideOthers(content);
+    }, []);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      DialogContentImpl,
+      {
+        ...props,
+        ref: composedRefs,
+        trapFocus: context2.open,
+        disableOutsidePointerEvents: true,
+        onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
+          var _a2;
+          event.preventDefault();
+          (_a2 = context2.triggerRef.current) == null ? void 0 : _a2.focus();
+        }),
+        onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
+          const originalEvent = event.detail.originalEvent;
+          const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
+          const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
+          if (isRightClick) event.preventDefault();
+        }),
+        onFocusOutside: composeEventHandlers(
+          props.onFocusOutside,
+          (event) => event.preventDefault()
+        )
+      }
+    );
+  }
+);
+var DialogContentNonModal = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const hasInteractedOutsideRef = reactExports.useRef(false);
+    const hasPointerDownOutsideRef = reactExports.useRef(false);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      DialogContentImpl,
+      {
+        ...props,
+        ref: forwardedRef,
+        trapFocus: false,
+        disableOutsidePointerEvents: false,
+        onCloseAutoFocus: (event) => {
+          var _a2, _b2;
+          (_a2 = props.onCloseAutoFocus) == null ? void 0 : _a2.call(props, event);
+          if (!event.defaultPrevented) {
+            if (!hasInteractedOutsideRef.current) (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.focus();
+            event.preventDefault();
+          }
+          hasInteractedOutsideRef.current = false;
+          hasPointerDownOutsideRef.current = false;
+        },
+        onInteractOutside: (event) => {
+          var _a2, _b2;
+          (_a2 = props.onInteractOutside) == null ? void 0 : _a2.call(props, event);
+          if (!event.defaultPrevented) {
+            hasInteractedOutsideRef.current = true;
+            if (event.detail.originalEvent.type === "pointerdown") {
+              hasPointerDownOutsideRef.current = true;
+            }
+          }
+          const target = event.target;
+          const targetIsTrigger = (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.contains(target);
+          if (targetIsTrigger) event.preventDefault();
+          if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
+            event.preventDefault();
+          }
+        }
+      }
+    );
+  }
+);
+var DialogContentImpl = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
+    const context2 = useDialogContext(CONTENT_NAME$4, __scopeDialog);
+    const contentRef = reactExports.useRef(null);
+    const composedRefs = useComposedRefs(forwardedRef, contentRef);
+    useFocusGuards();
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        FocusScope,
+        {
+          asChild: true,
+          loop: true,
+          trapped: trapFocus,
+          onMountAutoFocus: onOpenAutoFocus,
+          onUnmountAutoFocus: onCloseAutoFocus,
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            DismissableLayer,
+            {
+              role: "dialog",
+              id: context2.contentId,
+              "aria-describedby": context2.descriptionId,
+              "aria-labelledby": context2.titleId,
+              "data-state": getState$1(context2.open),
+              ...contentProps,
+              ref: composedRefs,
+              onDismiss: () => context2.onOpenChange(false)
+            }
+          )
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context2.titleId }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning, { contentRef, descriptionId: context2.descriptionId })
+      ] })
+    ] });
+  }
+);
+var TITLE_NAME = "DialogTitle";
+var DialogTitle$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, ...titleProps } = props;
+    const context2 = useDialogContext(TITLE_NAME, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context2.titleId, ...titleProps, ref: forwardedRef });
+  }
+);
+DialogTitle$1.displayName = TITLE_NAME;
+var DESCRIPTION_NAME = "DialogDescription";
+var DialogDescription$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, ...descriptionProps } = props;
+    const context2 = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context2.descriptionId, ...descriptionProps, ref: forwardedRef });
+  }
+);
+DialogDescription$1.displayName = DESCRIPTION_NAME;
+var CLOSE_NAME = "DialogClose";
+var DialogClose = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeDialog, ...closeProps } = props;
+    const context2 = useDialogContext(CLOSE_NAME, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Primitive$1.button,
+      {
+        type: "button",
+        ...closeProps,
+        ref: forwardedRef,
+        onClick: composeEventHandlers(props.onClick, () => context2.onOpenChange(false))
+      }
+    );
+  }
+);
+DialogClose.displayName = CLOSE_NAME;
+function getState$1(open) {
+  return open ? "open" : "closed";
+}
+var TITLE_WARNING_NAME = "DialogTitleWarning";
+var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
+  contentName: CONTENT_NAME$4,
+  titleName: TITLE_NAME,
+  docsSlug: "dialog"
+});
+var TitleWarning = ({ titleId }) => {
+  const titleWarningContext = useWarningContext(TITLE_WARNING_NAME);
+  const MESSAGE = `\`${titleWarningContext.contentName}\` requires a \`${titleWarningContext.titleName}\` for the component to be accessible for screen reader users.
+
+If you want to hide the \`${titleWarningContext.titleName}\`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/${titleWarningContext.docsSlug}`;
+  reactExports.useEffect(() => {
+    if (titleId) {
+      const hasTitle = document.getElementById(titleId);
+      if (!hasTitle) console.error(MESSAGE);
+    }
+  }, [MESSAGE, titleId]);
+  return null;
+};
+var DESCRIPTION_WARNING_NAME = "DialogDescriptionWarning";
+var DescriptionWarning = ({ contentRef, descriptionId }) => {
+  const descriptionWarningContext = useWarningContext(DESCRIPTION_WARNING_NAME);
+  const MESSAGE = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${descriptionWarningContext.contentName}}.`;
+  reactExports.useEffect(() => {
+    var _a2;
+    const describedById = (_a2 = contentRef.current) == null ? void 0 : _a2.getAttribute("aria-describedby");
+    if (descriptionId && describedById) {
+      const hasDescription = document.getElementById(descriptionId);
+      if (!hasDescription) console.warn(MESSAGE);
+    }
+  }, [MESSAGE, contentRef, descriptionId]);
+  return null;
+};
+var Root$7 = Dialog$1;
+var Portal$2 = DialogPortal$1;
+var Overlay = DialogOverlay$1;
+var Content$2 = DialogContent$1;
+var Title = DialogTitle$1;
+var Description = DialogDescription$1;
+var Close = DialogClose;
+function Dialog({
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root$7, { "data-slot": "dialog", ...props });
+}
+function DialogPortal({
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$2, { "data-slot": "dialog-portal", ...props });
+}
+function DialogOverlay({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Overlay,
+    {
+      "data-slot": "dialog-overlay",
+      className: cn(
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogPortal, { "data-slot": "dialog-portal", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlay, {}),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      Content$2,
+      {
+        "data-slot": "dialog-content",
+        className: cn(
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          className
+        ),
+        ...props,
+        children: [
+          children,
+          showCloseButton && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            Close,
+            {
+              "data-slot": "dialog-close",
+              className: "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(X, {}),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "sr-only", children: "Close" })
+              ]
+            }
+          )
+        ]
+      }
+    )
+  ] });
+}
+function DialogHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "dialog-header",
+      className: cn("flex flex-col gap-2 text-center sm:text-left", className),
+      ...props
+    }
+  );
+}
+function DialogFooter({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "dialog-footer",
+      className: cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function DialogTitle({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Title,
+    {
+      "data-slot": "dialog-title",
+      className: cn("text-lg leading-none font-semibold", className),
+      ...props
+    }
+  );
+}
+function DialogDescription({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Description,
+    {
+      "data-slot": "dialog-description",
+      className: cn("text-muted-foreground text-sm", className),
+      ...props
+    }
+  );
+}
+var jt = (n) => {
+  switch (n) {
+    case "success":
+      return ee;
+    case "info":
+      return ae;
+    case "warning":
+      return oe;
+    case "error":
+      return se;
+    default:
+      return null;
+  }
+}, te = Array(12).fill(0), Yt = ({ visible: n, className: e }) => React$4.createElement("div", { className: ["sonner-loading-wrapper", e].filter(Boolean).join(" "), "data-visible": n }, React$4.createElement("div", { className: "sonner-spinner" }, te.map((t, a2) => React$4.createElement("div", { className: "sonner-loading-bar", key: `spinner-bar-${a2}` })))), ee = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z", clipRule: "evenodd" })), oe = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z", clipRule: "evenodd" })), ae = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z", clipRule: "evenodd" })), se = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", height: "20", width: "20" }, React$4.createElement("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z", clipRule: "evenodd" })), Ot = React$4.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }, React$4.createElement("line", { x1: "18", y1: "6", x2: "6", y2: "18" }), React$4.createElement("line", { x1: "6", y1: "6", x2: "18", y2: "18" }));
+var Ft = () => {
+  let [n, e] = React$4.useState(document.hidden);
+  return React$4.useEffect(() => {
+    let t = () => {
+      e(document.hidden);
+    };
+    return document.addEventListener("visibilitychange", t), () => window.removeEventListener("visibilitychange", t);
+  }, []), n;
+};
+var bt = 1, yt = class {
+  constructor() {
+    this.subscribe = (e) => (this.subscribers.push(e), () => {
+      let t = this.subscribers.indexOf(e);
+      this.subscribers.splice(t, 1);
+    });
+    this.publish = (e) => {
+      this.subscribers.forEach((t) => t(e));
+    };
+    this.addToast = (e) => {
+      this.publish(e), this.toasts = [...this.toasts, e];
+    };
+    this.create = (e) => {
+      var S2;
+      let { message: t, ...a2 } = e, u2 = typeof (e == null ? void 0 : e.id) == "number" || ((S2 = e.id) == null ? void 0 : S2.length) > 0 ? e.id : bt++, f2 = this.toasts.find((g2) => g2.id === u2), w2 = e.dismissible === void 0 ? true : e.dismissible;
+      return this.dismissedToasts.has(u2) && this.dismissedToasts.delete(u2), f2 ? this.toasts = this.toasts.map((g2) => g2.id === u2 ? (this.publish({ ...g2, ...e, id: u2, title: t }), { ...g2, ...e, id: u2, dismissible: w2, title: t }) : g2) : this.addToast({ title: t, ...a2, dismissible: w2, id: u2 }), u2;
+    };
+    this.dismiss = (e) => (this.dismissedToasts.add(e), e || this.toasts.forEach((t) => {
+      this.subscribers.forEach((a2) => a2({ id: t.id, dismiss: true }));
+    }), this.subscribers.forEach((t) => t({ id: e, dismiss: true })), e);
+    this.message = (e, t) => this.create({ ...t, message: e });
+    this.error = (e, t) => this.create({ ...t, message: e, type: "error" });
+    this.success = (e, t) => this.create({ ...t, type: "success", message: e });
+    this.info = (e, t) => this.create({ ...t, type: "info", message: e });
+    this.warning = (e, t) => this.create({ ...t, type: "warning", message: e });
+    this.loading = (e, t) => this.create({ ...t, type: "loading", message: e });
+    this.promise = (e, t) => {
+      if (!t) return;
+      let a2;
+      t.loading !== void 0 && (a2 = this.create({ ...t, promise: e, type: "loading", message: t.loading, description: typeof t.description != "function" ? t.description : void 0 }));
+      let u2 = e instanceof Promise ? e : e(), f2 = a2 !== void 0, w2, S2 = u2.then(async (i) => {
+        if (w2 = ["resolve", i], React$4.isValidElement(i)) f2 = false, this.create({ id: a2, type: "default", message: i });
+        else if (ie(i) && !i.ok) {
+          f2 = false;
+          let T2 = typeof t.error == "function" ? await t.error(`HTTP error! status: ${i.status}`) : t.error, F2 = typeof t.description == "function" ? await t.description(`HTTP error! status: ${i.status}`) : t.description;
+          this.create({ id: a2, type: "error", message: T2, description: F2 });
+        } else if (t.success !== void 0) {
+          f2 = false;
+          let T2 = typeof t.success == "function" ? await t.success(i) : t.success, F2 = typeof t.description == "function" ? await t.description(i) : t.description;
+          this.create({ id: a2, type: "success", message: T2, description: F2 });
+        }
+      }).catch(async (i) => {
+        if (w2 = ["reject", i], t.error !== void 0) {
+          f2 = false;
+          let D = typeof t.error == "function" ? await t.error(i) : t.error, T2 = typeof t.description == "function" ? await t.description(i) : t.description;
+          this.create({ id: a2, type: "error", message: D, description: T2 });
+        }
+      }).finally(() => {
+        var i;
+        f2 && (this.dismiss(a2), a2 = void 0), (i = t.finally) == null || i.call(t);
+      }), g2 = () => new Promise((i, D) => S2.then(() => w2[0] === "reject" ? D(w2[1]) : i(w2[1])).catch(D));
+      return typeof a2 != "string" && typeof a2 != "number" ? { unwrap: g2 } : Object.assign(a2, { unwrap: g2 });
+    };
+    this.custom = (e, t) => {
+      let a2 = (t == null ? void 0 : t.id) || bt++;
+      return this.create({ jsx: e(a2), id: a2, ...t }), a2;
+    };
+    this.getActiveToasts = () => this.toasts.filter((e) => !this.dismissedToasts.has(e.id));
+    this.subscribers = [], this.toasts = [], this.dismissedToasts = /* @__PURE__ */ new Set();
+  }
+}, v = new yt(), ne = (n, e) => {
+  let t = (e == null ? void 0 : e.id) || bt++;
+  return v.addToast({ title: n, ...e, id: t }), t;
+}, ie = (n) => n && typeof n == "object" && "ok" in n && typeof n.ok == "boolean" && "status" in n && typeof n.status == "number", le = ne, ce = () => v.toasts, de = () => v.getActiveToasts(), ue = Object.assign(le, { success: v.success, info: v.info, warning: v.warning, error: v.error, custom: v.custom, message: v.message, promise: v.promise, dismiss: v.dismiss, loading: v.loading }, { getHistory: ce, getToasts: de });
+function wt(n, { insertAt: e } = {}) {
+  if (typeof document == "undefined") return;
+  let t = document.head || document.getElementsByTagName("head")[0], a2 = document.createElement("style");
+  a2.type = "text/css", e === "top" && t.firstChild ? t.insertBefore(a2, t.firstChild) : t.appendChild(a2), a2.styleSheet ? a2.styleSheet.cssText = n : a2.appendChild(document.createTextNode(n));
+}
+wt(`:where(html[dir="ltr"]),:where([data-sonner-toaster][dir="ltr"]){--toast-icon-margin-start: -3px;--toast-icon-margin-end: 4px;--toast-svg-margin-start: -1px;--toast-svg-margin-end: 0px;--toast-button-margin-start: auto;--toast-button-margin-end: 0;--toast-close-button-start: 0;--toast-close-button-end: unset;--toast-close-button-transform: translate(-35%, -35%)}:where(html[dir="rtl"]),:where([data-sonner-toaster][dir="rtl"]){--toast-icon-margin-start: 4px;--toast-icon-margin-end: -3px;--toast-svg-margin-start: 0px;--toast-svg-margin-end: -1px;--toast-button-margin-start: 0;--toast-button-margin-end: auto;--toast-close-button-start: unset;--toast-close-button-end: 0;--toast-close-button-transform: translate(35%, -35%)}:where([data-sonner-toaster]){position:fixed;width:var(--width);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;--gray1: hsl(0, 0%, 99%);--gray2: hsl(0, 0%, 97.3%);--gray3: hsl(0, 0%, 95.1%);--gray4: hsl(0, 0%, 93%);--gray5: hsl(0, 0%, 90.9%);--gray6: hsl(0, 0%, 88.7%);--gray7: hsl(0, 0%, 85.8%);--gray8: hsl(0, 0%, 78%);--gray9: hsl(0, 0%, 56.1%);--gray10: hsl(0, 0%, 52.3%);--gray11: hsl(0, 0%, 43.5%);--gray12: hsl(0, 0%, 9%);--border-radius: 8px;box-sizing:border-box;padding:0;margin:0;list-style:none;outline:none;z-index:999999999;transition:transform .4s ease}:where([data-sonner-toaster][data-lifted="true"]){transform:translateY(-10px)}@media (hover: none) and (pointer: coarse){:where([data-sonner-toaster][data-lifted="true"]){transform:none}}:where([data-sonner-toaster][data-x-position="right"]){right:var(--offset-right)}:where([data-sonner-toaster][data-x-position="left"]){left:var(--offset-left)}:where([data-sonner-toaster][data-x-position="center"]){left:50%;transform:translate(-50%)}:where([data-sonner-toaster][data-y-position="top"]){top:var(--offset-top)}:where([data-sonner-toaster][data-y-position="bottom"]){bottom:var(--offset-bottom)}:where([data-sonner-toast]){--y: translateY(100%);--lift-amount: calc(var(--lift) * var(--gap));z-index:var(--z-index);position:absolute;opacity:0;transform:var(--y);filter:blur(0);touch-action:none;transition:transform .4s,opacity .4s,height .4s,box-shadow .2s;box-sizing:border-box;outline:none;overflow-wrap:anywhere}:where([data-sonner-toast][data-styled="true"]){padding:16px;background:var(--normal-bg);border:1px solid var(--normal-border);color:var(--normal-text);border-radius:var(--border-radius);box-shadow:0 4px 12px #0000001a;width:var(--width);font-size:13px;display:flex;align-items:center;gap:6px}:where([data-sonner-toast]:focus-visible){box-shadow:0 4px 12px #0000001a,0 0 0 2px #0003}:where([data-sonner-toast][data-y-position="top"]){top:0;--y: translateY(-100%);--lift: 1;--lift-amount: calc(1 * var(--gap))}:where([data-sonner-toast][data-y-position="bottom"]){bottom:0;--y: translateY(100%);--lift: -1;--lift-amount: calc(var(--lift) * var(--gap))}:where([data-sonner-toast]) :where([data-description]){font-weight:400;line-height:1.4;color:inherit}:where([data-sonner-toast]) :where([data-title]){font-weight:500;line-height:1.5;color:inherit}:where([data-sonner-toast]) :where([data-icon]){display:flex;height:16px;width:16px;position:relative;justify-content:flex-start;align-items:center;flex-shrink:0;margin-left:var(--toast-icon-margin-start);margin-right:var(--toast-icon-margin-end)}:where([data-sonner-toast][data-promise="true"]) :where([data-icon])>svg{opacity:0;transform:scale(.8);transform-origin:center;animation:sonner-fade-in .3s ease forwards}:where([data-sonner-toast]) :where([data-icon])>*{flex-shrink:0}:where([data-sonner-toast]) :where([data-icon]) svg{margin-left:var(--toast-svg-margin-start);margin-right:var(--toast-svg-margin-end)}:where([data-sonner-toast]) :where([data-content]){display:flex;flex-direction:column;gap:2px}[data-sonner-toast][data-styled=true] [data-button]{border-radius:4px;padding-left:8px;padding-right:8px;height:24px;font-size:12px;color:var(--normal-bg);background:var(--normal-text);margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end);border:none;cursor:pointer;outline:none;display:flex;align-items:center;flex-shrink:0;transition:opacity .4s,box-shadow .2s}:where([data-sonner-toast]) :where([data-button]):focus-visible{box-shadow:0 0 0 2px #0006}:where([data-sonner-toast]) :where([data-button]):first-of-type{margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end)}:where([data-sonner-toast]) :where([data-cancel]){color:var(--normal-text);background:rgba(0,0,0,.08)}:where([data-sonner-toast][data-theme="dark"]) :where([data-cancel]){background:rgba(255,255,255,.3)}:where([data-sonner-toast]) :where([data-close-button]){position:absolute;left:var(--toast-close-button-start);right:var(--toast-close-button-end);top:0;height:20px;width:20px;display:flex;justify-content:center;align-items:center;padding:0;color:var(--gray12);border:1px solid var(--gray4);transform:var(--toast-close-button-transform);border-radius:50%;cursor:pointer;z-index:1;transition:opacity .1s,background .2s,border-color .2s}[data-sonner-toast] [data-close-button]{background:var(--gray1)}:where([data-sonner-toast]) :where([data-close-button]):focus-visible{box-shadow:0 4px 12px #0000001a,0 0 0 2px #0003}:where([data-sonner-toast]) :where([data-disabled="true"]){cursor:not-allowed}:where([data-sonner-toast]):hover :where([data-close-button]):hover{background:var(--gray2);border-color:var(--gray5)}:where([data-sonner-toast][data-swiping="true"]):before{content:"";position:absolute;left:-50%;right:-50%;height:100%;z-index:-1}:where([data-sonner-toast][data-y-position="top"][data-swiping="true"]):before{bottom:50%;transform:scaleY(3) translateY(50%)}:where([data-sonner-toast][data-y-position="bottom"][data-swiping="true"]):before{top:50%;transform:scaleY(3) translateY(-50%)}:where([data-sonner-toast][data-swiping="false"][data-removed="true"]):before{content:"";position:absolute;inset:0;transform:scaleY(2)}:where([data-sonner-toast]):after{content:"";position:absolute;left:0;height:calc(var(--gap) + 1px);bottom:100%;width:100%}:where([data-sonner-toast][data-mounted="true"]){--y: translateY(0);opacity:1}:where([data-sonner-toast][data-expanded="false"][data-front="false"]){--scale: var(--toasts-before) * .05 + 1;--y: translateY(calc(var(--lift-amount) * var(--toasts-before))) scale(calc(-1 * var(--scale)));height:var(--front-toast-height)}:where([data-sonner-toast])>*{transition:opacity .4s}:where([data-sonner-toast][data-expanded="false"][data-front="false"][data-styled="true"])>*{opacity:0}:where([data-sonner-toast][data-visible="false"]){opacity:0;pointer-events:none}:where([data-sonner-toast][data-mounted="true"][data-expanded="true"]){--y: translateY(calc(var(--lift) * var(--offset)));height:var(--initial-height)}:where([data-sonner-toast][data-removed="true"][data-front="true"][data-swipe-out="false"]){--y: translateY(calc(var(--lift) * -100%));opacity:0}:where([data-sonner-toast][data-removed="true"][data-front="false"][data-swipe-out="false"][data-expanded="true"]){--y: translateY(calc(var(--lift) * var(--offset) + var(--lift) * -100%));opacity:0}:where([data-sonner-toast][data-removed="true"][data-front="false"][data-swipe-out="false"][data-expanded="false"]){--y: translateY(40%);opacity:0;transition:transform .5s,opacity .2s}:where([data-sonner-toast][data-removed="true"][data-front="false"]):before{height:calc(var(--initial-height) + 20%)}[data-sonner-toast][data-swiping=true]{transform:var(--y) translateY(var(--swipe-amount-y, 0px)) translate(var(--swipe-amount-x, 0px));transition:none}[data-sonner-toast][data-swiped=true]{user-select:none}[data-sonner-toast][data-swipe-out=true][data-y-position=bottom],[data-sonner-toast][data-swipe-out=true][data-y-position=top]{animation-duration:.2s;animation-timing-function:ease-out;animation-fill-mode:forwards}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=left]{animation-name:swipe-out-left}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=right]{animation-name:swipe-out-right}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=up]{animation-name:swipe-out-up}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=down]{animation-name:swipe-out-down}@keyframes swipe-out-left{0%{transform:var(--y) translate(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translate(calc(var(--swipe-amount-x) - 100%));opacity:0}}@keyframes swipe-out-right{0%{transform:var(--y) translate(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translate(calc(var(--swipe-amount-x) + 100%));opacity:0}}@keyframes swipe-out-up{0%{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) - 100%));opacity:0}}@keyframes swipe-out-down{0%{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) + 100%));opacity:0}}@media (max-width: 600px){[data-sonner-toaster]{position:fixed;right:var(--mobile-offset-right);left:var(--mobile-offset-left);width:100%}[data-sonner-toaster][dir=rtl]{left:calc(var(--mobile-offset-left) * -1)}[data-sonner-toaster] [data-sonner-toast]{left:0;right:0;width:calc(100% - var(--mobile-offset-left) * 2)}[data-sonner-toaster][data-x-position=left]{left:var(--mobile-offset-left)}[data-sonner-toaster][data-y-position=bottom]{bottom:var(--mobile-offset-bottom)}[data-sonner-toaster][data-y-position=top]{top:var(--mobile-offset-top)}[data-sonner-toaster][data-x-position=center]{left:var(--mobile-offset-left);right:var(--mobile-offset-right);transform:none}}[data-sonner-toaster][data-theme=light]{--normal-bg: #fff;--normal-border: var(--gray4);--normal-text: var(--gray12);--success-bg: hsl(143, 85%, 96%);--success-border: hsl(145, 92%, 91%);--success-text: hsl(140, 100%, 27%);--info-bg: hsl(208, 100%, 97%);--info-border: hsl(221, 91%, 91%);--info-text: hsl(210, 92%, 45%);--warning-bg: hsl(49, 100%, 97%);--warning-border: hsl(49, 91%, 91%);--warning-text: hsl(31, 92%, 45%);--error-bg: hsl(359, 100%, 97%);--error-border: hsl(359, 100%, 94%);--error-text: hsl(360, 100%, 45%)}[data-sonner-toaster][data-theme=light] [data-sonner-toast][data-invert=true]{--normal-bg: #000;--normal-border: hsl(0, 0%, 20%);--normal-text: var(--gray1)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast][data-invert=true]{--normal-bg: #fff;--normal-border: var(--gray3);--normal-text: var(--gray12)}[data-sonner-toaster][data-theme=dark]{--normal-bg: #000;--normal-bg-hover: hsl(0, 0%, 12%);--normal-border: hsl(0, 0%, 20%);--normal-border-hover: hsl(0, 0%, 25%);--normal-text: var(--gray1);--success-bg: hsl(150, 100%, 6%);--success-border: hsl(147, 100%, 12%);--success-text: hsl(150, 86%, 65%);--info-bg: hsl(215, 100%, 6%);--info-border: hsl(223, 100%, 12%);--info-text: hsl(216, 87%, 65%);--warning-bg: hsl(64, 100%, 6%);--warning-border: hsl(60, 100%, 12%);--warning-text: hsl(46, 87%, 65%);--error-bg: hsl(358, 76%, 10%);--error-border: hsl(357, 89%, 16%);--error-text: hsl(358, 100%, 81%)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast] [data-close-button]{background:var(--normal-bg);border-color:var(--normal-border);color:var(--normal-text)}[data-sonner-toaster][data-theme=dark] [data-sonner-toast] [data-close-button]:hover{background:var(--normal-bg-hover);border-color:var(--normal-border-hover)}[data-rich-colors=true][data-sonner-toast][data-type=success],[data-rich-colors=true][data-sonner-toast][data-type=success] [data-close-button]{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}[data-rich-colors=true][data-sonner-toast][data-type=info],[data-rich-colors=true][data-sonner-toast][data-type=info] [data-close-button]{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}[data-rich-colors=true][data-sonner-toast][data-type=warning],[data-rich-colors=true][data-sonner-toast][data-type=warning] [data-close-button]{background:var(--warning-bg);border-color:var(--warning-border);color:var(--warning-text)}[data-rich-colors=true][data-sonner-toast][data-type=error],[data-rich-colors=true][data-sonner-toast][data-type=error] [data-close-button]{background:var(--error-bg);border-color:var(--error-border);color:var(--error-text)}.sonner-loading-wrapper{--size: 16px;height:var(--size);width:var(--size);position:absolute;inset:0;z-index:10}.sonner-loading-wrapper[data-visible=false]{transform-origin:center;animation:sonner-fade-out .2s ease forwards}.sonner-spinner{position:relative;top:50%;left:50%;height:var(--size);width:var(--size)}.sonner-loading-bar{animation:sonner-spin 1.2s linear infinite;background:var(--gray11);border-radius:6px;height:8%;left:-10%;position:absolute;top:-3.9%;width:24%}.sonner-loading-bar:nth-child(1){animation-delay:-1.2s;transform:rotate(.0001deg) translate(146%)}.sonner-loading-bar:nth-child(2){animation-delay:-1.1s;transform:rotate(30deg) translate(146%)}.sonner-loading-bar:nth-child(3){animation-delay:-1s;transform:rotate(60deg) translate(146%)}.sonner-loading-bar:nth-child(4){animation-delay:-.9s;transform:rotate(90deg) translate(146%)}.sonner-loading-bar:nth-child(5){animation-delay:-.8s;transform:rotate(120deg) translate(146%)}.sonner-loading-bar:nth-child(6){animation-delay:-.7s;transform:rotate(150deg) translate(146%)}.sonner-loading-bar:nth-child(7){animation-delay:-.6s;transform:rotate(180deg) translate(146%)}.sonner-loading-bar:nth-child(8){animation-delay:-.5s;transform:rotate(210deg) translate(146%)}.sonner-loading-bar:nth-child(9){animation-delay:-.4s;transform:rotate(240deg) translate(146%)}.sonner-loading-bar:nth-child(10){animation-delay:-.3s;transform:rotate(270deg) translate(146%)}.sonner-loading-bar:nth-child(11){animation-delay:-.2s;transform:rotate(300deg) translate(146%)}.sonner-loading-bar:nth-child(12){animation-delay:-.1s;transform:rotate(330deg) translate(146%)}@keyframes sonner-fade-in{0%{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}@keyframes sonner-fade-out{0%{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}@keyframes sonner-spin{0%{opacity:1}to{opacity:.15}}@media (prefers-reduced-motion){[data-sonner-toast],[data-sonner-toast]>*,.sonner-loading-bar{transition:none!important;animation:none!important}}.sonner-loader{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transform-origin:center;transition:opacity .2s,transform .2s}.sonner-loader[data-visible=false]{opacity:0;transform:scale(.8) translate(-50%,-50%)}
+`);
+function tt(n) {
+  return n.label !== void 0;
+}
+var pe = 3, me = "32px", ge = "16px", Wt = 4e3, he = 356, be = 14, ye = 20, we = 200;
+function M$1(...n) {
+  return n.filter(Boolean).join(" ");
+}
+function xe(n) {
+  let [e, t] = n.split("-"), a2 = [];
+  return e && a2.push(e), t && a2.push(t), a2;
+}
+var ve = (n) => {
+  var Dt, Pt, Nt, Bt, Ct, kt, It, Mt, Ht, At, Lt;
+  let { invert: e, toast: t, unstyled: a2, interacting: u2, setHeights: f2, visibleToasts: w2, heights: S2, index: g2, toasts: i, expanded: D, removeToast: T2, defaultRichColors: F2, closeButton: et2, style: ut2, cancelButtonStyle: ft2, actionButtonStyle: l2, className: ot2 = "", descriptionClassName: at = "", duration: X2, position: st2, gap: pt, loadingIcon: rt2, expandByDefault: B2, classNames: s, icons: P2, closeButtonAriaLabel: nt2 = "Close toast", pauseWhenPageIsHidden: it2 } = n, [Y2, C2] = React$4.useState(null), [lt, J2] = React$4.useState(null), [W2, H2] = React$4.useState(false), [A, mt] = React$4.useState(false), [L2, z2] = React$4.useState(false), [ct2, d2] = React$4.useState(false), [h2, y2] = React$4.useState(false), [R2, j2] = React$4.useState(0), [p2, _2] = React$4.useState(0), O2 = React$4.useRef(t.duration || X2 || Wt), G2 = React$4.useRef(null), k2 = React$4.useRef(null), Vt = g2 === 0, Ut = g2 + 1 <= w2, N2 = t.type, V2 = t.dismissible !== false, Kt = t.className || "", Xt = t.descriptionClassName || "", dt = React$4.useMemo(() => S2.findIndex((r2) => r2.toastId === t.id) || 0, [S2, t.id]), Jt = React$4.useMemo(() => {
+    var r2;
+    return (r2 = t.closeButton) != null ? r2 : et2;
+  }, [t.closeButton, et2]), Tt = React$4.useMemo(() => t.duration || X2 || Wt, [t.duration, X2]), gt2 = React$4.useRef(0), U2 = React$4.useRef(0), St = React$4.useRef(0), K2 = React$4.useRef(null), [Gt, Qt] = st2.split("-"), Rt = React$4.useMemo(() => S2.reduce((r2, m2, c2) => c2 >= dt ? r2 : r2 + m2.height, 0), [S2, dt]), Et = Ft(), qt = t.invert || e, ht = N2 === "loading";
+  U2.current = React$4.useMemo(() => dt * pt + Rt, [dt, Rt]), React$4.useEffect(() => {
+    O2.current = Tt;
+  }, [Tt]), React$4.useEffect(() => {
+    H2(true);
+  }, []), React$4.useEffect(() => {
+    let r2 = k2.current;
+    if (r2) {
+      let m2 = r2.getBoundingClientRect().height;
+      return _2(m2), f2((c2) => [{ toastId: t.id, height: m2, position: t.position }, ...c2]), () => f2((c2) => c2.filter((b2) => b2.toastId !== t.id));
+    }
+  }, [f2, t.id]), React$4.useLayoutEffect(() => {
+    if (!W2) return;
+    let r2 = k2.current, m2 = r2.style.height;
+    r2.style.height = "auto";
+    let c2 = r2.getBoundingClientRect().height;
+    r2.style.height = m2, _2(c2), f2((b2) => b2.find((x3) => x3.toastId === t.id) ? b2.map((x3) => x3.toastId === t.id ? { ...x3, height: c2 } : x3) : [{ toastId: t.id, height: c2, position: t.position }, ...b2]);
+  }, [W2, t.title, t.description, f2, t.id]);
+  let $2 = React$4.useCallback(() => {
+    mt(true), j2(U2.current), f2((r2) => r2.filter((m2) => m2.toastId !== t.id)), setTimeout(() => {
+      T2(t);
+    }, we);
+  }, [t, T2, f2, U2]);
+  React$4.useEffect(() => {
+    if (t.promise && N2 === "loading" || t.duration === 1 / 0 || t.type === "loading") return;
+    let r2;
+    return D || u2 || it2 && Et ? (() => {
+      if (St.current < gt2.current) {
+        let b2 = (/* @__PURE__ */ new Date()).getTime() - gt2.current;
+        O2.current = O2.current - b2;
+      }
+      St.current = (/* @__PURE__ */ new Date()).getTime();
+    })() : (() => {
+      O2.current !== 1 / 0 && (gt2.current = (/* @__PURE__ */ new Date()).getTime(), r2 = setTimeout(() => {
+        var b2;
+        (b2 = t.onAutoClose) == null || b2.call(t, t), $2();
+      }, O2.current));
+    })(), () => clearTimeout(r2);
+  }, [D, u2, t, N2, it2, Et, $2]), React$4.useEffect(() => {
+    t.delete && $2();
+  }, [$2, t.delete]);
+  function Zt() {
+    var r2, m2, c2;
+    return P2 != null && P2.loading ? React$4.createElement("div", { className: M$1(s == null ? void 0 : s.loader, (r2 = t == null ? void 0 : t.classNames) == null ? void 0 : r2.loader, "sonner-loader"), "data-visible": N2 === "loading" }, P2.loading) : rt2 ? React$4.createElement("div", { className: M$1(s == null ? void 0 : s.loader, (m2 = t == null ? void 0 : t.classNames) == null ? void 0 : m2.loader, "sonner-loader"), "data-visible": N2 === "loading" }, rt2) : React$4.createElement(Yt, { className: M$1(s == null ? void 0 : s.loader, (c2 = t == null ? void 0 : t.classNames) == null ? void 0 : c2.loader), visible: N2 === "loading" });
+  }
+  return React$4.createElement("li", { tabIndex: 0, ref: k2, className: M$1(ot2, Kt, s == null ? void 0 : s.toast, (Dt = t == null ? void 0 : t.classNames) == null ? void 0 : Dt.toast, s == null ? void 0 : s.default, s == null ? void 0 : s[N2], (Pt = t == null ? void 0 : t.classNames) == null ? void 0 : Pt[N2]), "data-sonner-toast": "", "data-rich-colors": (Nt = t.richColors) != null ? Nt : F2, "data-styled": !(t.jsx || t.unstyled || a2), "data-mounted": W2, "data-promise": !!t.promise, "data-swiped": h2, "data-removed": A, "data-visible": Ut, "data-y-position": Gt, "data-x-position": Qt, "data-index": g2, "data-front": Vt, "data-swiping": L2, "data-dismissible": V2, "data-type": N2, "data-invert": qt, "data-swipe-out": ct2, "data-swipe-direction": lt, "data-expanded": !!(D || B2 && W2), style: { "--index": g2, "--toasts-before": g2, "--z-index": i.length - g2, "--offset": `${A ? R2 : U2.current}px`, "--initial-height": B2 ? "auto" : `${p2}px`, ...ut2, ...t.style }, onDragEnd: () => {
+    z2(false), C2(null), K2.current = null;
+  }, onPointerDown: (r2) => {
+    ht || !V2 || (G2.current = /* @__PURE__ */ new Date(), j2(U2.current), r2.target.setPointerCapture(r2.pointerId), r2.target.tagName !== "BUTTON" && (z2(true), K2.current = { x: r2.clientX, y: r2.clientY }));
+  }, onPointerUp: () => {
+    var x3, Q2, q2, Z2;
+    if (ct2 || !V2) return;
+    K2.current = null;
+    let r2 = Number(((x3 = k2.current) == null ? void 0 : x3.style.getPropertyValue("--swipe-amount-x").replace("px", "")) || 0), m2 = Number(((Q2 = k2.current) == null ? void 0 : Q2.style.getPropertyValue("--swipe-amount-y").replace("px", "")) || 0), c2 = (/* @__PURE__ */ new Date()).getTime() - ((q2 = G2.current) == null ? void 0 : q2.getTime()), b2 = Y2 === "x" ? r2 : m2, I = Math.abs(b2) / c2;
+    if (Math.abs(b2) >= ye || I > 0.11) {
+      j2(U2.current), (Z2 = t.onDismiss) == null || Z2.call(t, t), J2(Y2 === "x" ? r2 > 0 ? "right" : "left" : m2 > 0 ? "down" : "up"), $2(), d2(true), y2(false);
+      return;
+    }
+    z2(false), C2(null);
+  }, onPointerMove: (r2) => {
+    var Q2, q2, Z2, zt;
+    if (!K2.current || !V2 || ((Q2 = window.getSelection()) == null ? void 0 : Q2.toString().length) > 0) return;
+    let c2 = r2.clientY - K2.current.y, b2 = r2.clientX - K2.current.x, I = (q2 = n.swipeDirections) != null ? q2 : xe(st2);
+    !Y2 && (Math.abs(b2) > 1 || Math.abs(c2) > 1) && C2(Math.abs(b2) > Math.abs(c2) ? "x" : "y");
+    let x3 = { x: 0, y: 0 };
+    Y2 === "y" ? (I.includes("top") || I.includes("bottom")) && (I.includes("top") && c2 < 0 || I.includes("bottom") && c2 > 0) && (x3.y = c2) : Y2 === "x" && (I.includes("left") || I.includes("right")) && (I.includes("left") && b2 < 0 || I.includes("right") && b2 > 0) && (x3.x = b2), (Math.abs(x3.x) > 0 || Math.abs(x3.y) > 0) && y2(true), (Z2 = k2.current) == null || Z2.style.setProperty("--swipe-amount-x", `${x3.x}px`), (zt = k2.current) == null || zt.style.setProperty("--swipe-amount-y", `${x3.y}px`);
+  } }, Jt && !t.jsx ? React$4.createElement("button", { "aria-label": nt2, "data-disabled": ht, "data-close-button": true, onClick: ht || !V2 ? () => {
+  } : () => {
+    var r2;
+    $2(), (r2 = t.onDismiss) == null || r2.call(t, t);
+  }, className: M$1(s == null ? void 0 : s.closeButton, (Bt = t == null ? void 0 : t.classNames) == null ? void 0 : Bt.closeButton) }, (Ct = P2 == null ? void 0 : P2.close) != null ? Ct : Ot) : null, t.jsx || reactExports.isValidElement(t.title) ? t.jsx ? t.jsx : typeof t.title == "function" ? t.title() : t.title : React$4.createElement(React$4.Fragment, null, N2 || t.icon || t.promise ? React$4.createElement("div", { "data-icon": "", className: M$1(s == null ? void 0 : s.icon, (kt = t == null ? void 0 : t.classNames) == null ? void 0 : kt.icon) }, t.promise || t.type === "loading" && !t.icon ? t.icon || Zt() : null, t.type !== "loading" ? t.icon || (P2 == null ? void 0 : P2[N2]) || jt(N2) : null) : null, React$4.createElement("div", { "data-content": "", className: M$1(s == null ? void 0 : s.content, (It = t == null ? void 0 : t.classNames) == null ? void 0 : It.content) }, React$4.createElement("div", { "data-title": "", className: M$1(s == null ? void 0 : s.title, (Mt = t == null ? void 0 : t.classNames) == null ? void 0 : Mt.title) }, typeof t.title == "function" ? t.title() : t.title), t.description ? React$4.createElement("div", { "data-description": "", className: M$1(at, Xt, s == null ? void 0 : s.description, (Ht = t == null ? void 0 : t.classNames) == null ? void 0 : Ht.description) }, typeof t.description == "function" ? t.description() : t.description) : null), reactExports.isValidElement(t.cancel) ? t.cancel : t.cancel && tt(t.cancel) ? React$4.createElement("button", { "data-button": true, "data-cancel": true, style: t.cancelButtonStyle || ft2, onClick: (r2) => {
+    var m2, c2;
+    tt(t.cancel) && V2 && ((c2 = (m2 = t.cancel).onClick) == null || c2.call(m2, r2), $2());
+  }, className: M$1(s == null ? void 0 : s.cancelButton, (At = t == null ? void 0 : t.classNames) == null ? void 0 : At.cancelButton) }, t.cancel.label) : null, reactExports.isValidElement(t.action) ? t.action : t.action && tt(t.action) ? React$4.createElement("button", { "data-button": true, "data-action": true, style: t.actionButtonStyle || l2, onClick: (r2) => {
+    var m2, c2;
+    tt(t.action) && ((c2 = (m2 = t.action).onClick) == null || c2.call(m2, r2), !r2.defaultPrevented && $2());
+  }, className: M$1(s == null ? void 0 : s.actionButton, (Lt = t == null ? void 0 : t.classNames) == null ? void 0 : Lt.actionButton) }, t.action.label) : null));
+};
+function _t() {
+  if (typeof window == "undefined" || typeof document == "undefined") return "ltr";
+  let n = document.documentElement.getAttribute("dir");
+  return n === "auto" || !n ? window.getComputedStyle(document.documentElement).direction : n;
+}
+function Te(n, e) {
+  let t = {};
+  return [n, e].forEach((a2, u2) => {
+    let f2 = u2 === 1, w2 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me;
+    function g2(i) {
+      ["top", "right", "bottom", "left"].forEach((D) => {
+        t[`${w2}-${D}`] = typeof i == "number" ? `${i}px` : i;
+      });
+    }
+    typeof a2 == "number" || typeof a2 == "string" ? g2(a2) : typeof a2 == "object" ? ["top", "right", "bottom", "left"].forEach((i) => {
+      a2[i] === void 0 ? t[`${w2}-${i}`] = S2 : t[`${w2}-${i}`] = typeof a2[i] == "number" ? `${a2[i]}px` : a2[i];
+    }) : g2(S2);
+  }), t;
+}
+var $e = reactExports.forwardRef(function(e, t) {
+  let { invert: a2, position: u2 = "bottom-right", hotkey: f2 = ["altKey", "KeyT"], expand: w2, closeButton: S2, className: g2, offset: i, mobileOffset: D, theme: T2 = "light", richColors: F2, duration: et2, style: ut2, visibleToasts: ft2 = pe, toastOptions: l2, dir: ot2 = _t(), gap: at = be, loadingIcon: X2, icons: st2, containerAriaLabel: pt = "Notifications", pauseWhenPageIsHidden: rt2 } = e, [B2, s] = React$4.useState([]), P2 = React$4.useMemo(() => Array.from(new Set([u2].concat(B2.filter((d2) => d2.position).map((d2) => d2.position)))), [B2, u2]), [nt2, it2] = React$4.useState([]), [Y2, C2] = React$4.useState(false), [lt, J2] = React$4.useState(false), [W2, H2] = React$4.useState(T2 !== "system" ? T2 : typeof window != "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"), A = React$4.useRef(null), mt = f2.join("+").replace(/Key/g, "").replace(/Digit/g, ""), L2 = React$4.useRef(null), z2 = React$4.useRef(false), ct2 = React$4.useCallback((d2) => {
+    s((h2) => {
+      var y2;
+      return (y2 = h2.find((R2) => R2.id === d2.id)) != null && y2.delete || v.dismiss(d2.id), h2.filter(({ id: R2 }) => R2 !== d2.id);
+    });
+  }, []);
+  return React$4.useEffect(() => v.subscribe((d2) => {
+    if (d2.dismiss) {
+      s((h2) => h2.map((y2) => y2.id === d2.id ? { ...y2, delete: true } : y2));
+      return;
+    }
+    setTimeout(() => {
+      vt.flushSync(() => {
+        s((h2) => {
+          let y2 = h2.findIndex((R2) => R2.id === d2.id);
+          return y2 !== -1 ? [...h2.slice(0, y2), { ...h2[y2], ...d2 }, ...h2.slice(y2 + 1)] : [d2, ...h2];
+        });
+      });
+    });
+  }), []), React$4.useEffect(() => {
+    if (T2 !== "system") {
+      H2(T2);
+      return;
+    }
+    if (T2 === "system" && (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? H2("dark") : H2("light")), typeof window == "undefined") return;
+    let d2 = window.matchMedia("(prefers-color-scheme: dark)");
+    try {
+      d2.addEventListener("change", ({ matches: h2 }) => {
+        H2(h2 ? "dark" : "light");
+      });
+    } catch (h2) {
+      d2.addListener(({ matches: y2 }) => {
+        try {
+          H2(y2 ? "dark" : "light");
+        } catch (R2) {
+          console.error(R2);
+        }
+      });
+    }
+  }, [T2]), React$4.useEffect(() => {
+    B2.length <= 1 && C2(false);
+  }, [B2]), React$4.useEffect(() => {
+    let d2 = (h2) => {
+      var R2, j2;
+      f2.every((p2) => h2[p2] || h2.code === p2) && (C2(true), (R2 = A.current) == null || R2.focus()), h2.code === "Escape" && (document.activeElement === A.current || (j2 = A.current) != null && j2.contains(document.activeElement)) && C2(false);
+    };
+    return document.addEventListener("keydown", d2), () => document.removeEventListener("keydown", d2);
+  }, [f2]), React$4.useEffect(() => {
+    if (A.current) return () => {
+      L2.current && (L2.current.focus({ preventScroll: true }), L2.current = null, z2.current = false);
+    };
+  }, [A.current]), React$4.createElement("section", { ref: t, "aria-label": `${pt} ${mt}`, tabIndex: -1, "aria-live": "polite", "aria-relevant": "additions text", "aria-atomic": "false", suppressHydrationWarning: true }, P2.map((d2, h2) => {
+    var j2;
+    let [y2, R2] = d2.split("-");
+    return B2.length ? React$4.createElement("ol", { key: d2, dir: ot2 === "auto" ? _t() : ot2, tabIndex: -1, ref: A, className: g2, "data-sonner-toaster": true, "data-theme": W2, "data-y-position": y2, "data-lifted": Y2 && B2.length > 1 && !w2, "data-x-position": R2, style: { "--front-toast-height": `${((j2 = nt2[0]) == null ? void 0 : j2.height) || 0}px`, "--width": `${he}px`, "--gap": `${at}px`, ...ut2, ...Te(i, D) }, onBlur: (p2) => {
+      z2.current && !p2.currentTarget.contains(p2.relatedTarget) && (z2.current = false, L2.current && (L2.current.focus({ preventScroll: true }), L2.current = null));
+    }, onFocus: (p2) => {
+      p2.target instanceof HTMLElement && p2.target.dataset.dismissible === "false" || z2.current || (z2.current = true, L2.current = p2.relatedTarget);
+    }, onMouseEnter: () => C2(true), onMouseMove: () => C2(true), onMouseLeave: () => {
+      lt || C2(false);
+    }, onDragEnd: () => C2(false), onPointerDown: (p2) => {
+      p2.target instanceof HTMLElement && p2.target.dataset.dismissible === "false" || J2(true);
+    }, onPointerUp: () => J2(false) }, B2.filter((p2) => !p2.position && h2 === 0 || p2.position === d2).map((p2, _2) => {
+      var O2, G2;
+      return React$4.createElement(ve, { key: p2.id, icons: st2, index: _2, toast: p2, defaultRichColors: F2, duration: (O2 = l2 == null ? void 0 : l2.duration) != null ? O2 : et2, className: l2 == null ? void 0 : l2.className, descriptionClassName: l2 == null ? void 0 : l2.descriptionClassName, invert: a2, visibleToasts: ft2, closeButton: (G2 = l2 == null ? void 0 : l2.closeButton) != null ? G2 : S2, interacting: lt, position: d2, style: l2 == null ? void 0 : l2.style, unstyled: l2 == null ? void 0 : l2.unstyled, classNames: l2 == null ? void 0 : l2.classNames, cancelButtonStyle: l2 == null ? void 0 : l2.cancelButtonStyle, actionButtonStyle: l2 == null ? void 0 : l2.actionButtonStyle, removeToast: ct2, toasts: B2.filter((k2) => k2.position == p2.position), heights: nt2.filter((k2) => k2.position == p2.position), setHeights: it2, expandByDefault: w2, gap: at, loadingIcon: X2, expanded: Y2, pauseWhenPageIsHidden: rt2, swipeDirections: e.swipeDirections });
+    })) : null;
+  }));
+});
+function CreditTopUpModal() {
+  const open = useAccountStore((s) => s.topUpOpen);
+  const setOpen = useAccountStore((s) => s.setTopUpOpen);
+  const creditBalance = useAccountStore((s) => s.creditBalance);
+  const { refresh } = useAccountSync();
+  const [pack, setPack] = reactExports.useState(null);
+  const selected = CREDIT_PACKS.find((p2) => p2.id === pack) ?? null;
+  function close() {
+    setOpen(false);
+    setPack(null);
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open, onOpenChange: (o) => o ? setOpen(true) : close(), children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "max-w-lg", "data-ocid": "credits.topup.modal", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogHeader, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogTitle, { className: "flex items-center gap-2 font-display", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "size-5 text-primary" }),
+        " Top up AI credits"
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogDescription, { children: [
+        "1 credit = $0.01. Copy assistant 1 credit · square art 7 · widescreen 14 · HD 20. Members get ",
+        MONTHLY_ALLOWANCE,
+        " free credits every month. Current balance: ",
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: creditBalance }),
+        "."
+      ] })
+    ] }),
+    !selected ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid gap-3 sm:grid-cols-3", children: CREDIT_PACKS.map((p2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        type: "button",
+        onClick: () => setPack(p2.id),
+        className: cn(
+          "flex flex-col items-start rounded-xl border bg-card p-4 text-left transition-smooth hover:border-primary hover:shadow-sm",
+          p2.bonus > 0 && "border-emerald-brand/40"
+        ),
+        "data-ocid": `credits.pack.${p2.id.toLowerCase()}.button`,
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-sm font-semibold", children: p2.name }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-1 font-display text-2xl font-bold text-primary", children: formatCents(p2.priceCents) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground", children: [
+            p2.credits.toLocaleString(),
+            " credits"
+          ] }),
+          p2.bonus > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "mt-2 rounded-full bg-emerald-brand/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-brand", children: [
+            "+",
+            p2.bonus,
+            " bonus"
+          ] })
+        ]
+      },
+      p2.id
+    )) }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+          selected.name,
+          " · ",
+          selected.credits.toLocaleString(),
+          " credits"
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            onClick: () => setPack(null),
+            "data-ocid": "credits.change_pack.button",
+            children: "Change"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        StripeCheckout,
+        {
+          purpose: PaymentPurpose.CreditPack,
+          pack: selected.id,
+          amountLabel: formatCents(selected.priceCents),
+          title: "Buy credits",
+          submitLabel: "Pay",
+          onSuccess: (result) => {
+            ue.success(
+              `Credits added${result.creditBalance !== void 0 ? ` — balance ${Number(result.creditBalance)}` : ""}`
+            );
+            void refresh();
+            close();
+          },
+          onCancel: () => setPack(null)
+        }
+      )
+    ] })
+  ] }) });
+}
+var M = (e, i, s, u2, m2, a2, l2, h2) => {
+  let d2 = document.documentElement, w2 = ["light", "dark"];
+  function p2(n) {
+    (Array.isArray(e) ? e : [e]).forEach((y2) => {
+      let k2 = y2 === "class", S2 = k2 && a2 ? m2.map((f2) => a2[f2] || f2) : m2;
+      k2 ? (d2.classList.remove(...S2), d2.classList.add(a2 && a2[n] ? a2[n] : n)) : d2.setAttribute(y2, n);
+    }), R2(n);
+  }
+  function R2(n) {
+    h2 && w2.includes(n) && (d2.style.colorScheme = n);
+  }
+  function c2() {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  if (u2) p2(u2);
+  else try {
+    let n = localStorage.getItem(i) || s, y2 = l2 && n === "system" ? c2() : n;
+    p2(y2);
+  } catch (n) {
+  }
+};
+var x2 = reactExports.createContext(void 0), U = { setTheme: (e) => {
+}, themes: [] }, z = () => {
+  var e;
+  return (e = reactExports.useContext(x2)) != null ? e : U;
+};
+reactExports.memo(({ forcedTheme: e, storageKey: i, attribute: s, enableSystem: u2, enableColorScheme: m2, defaultTheme: a2, value: l2, themes: h2, nonce: d2, scriptProps: w2 }) => {
+  let p2 = JSON.stringify([s, i, a2, e, h2, l2, u2, m2]).slice(1, -1);
+  return reactExports.createElement("script", { ...w2, suppressHydrationWarning: true, nonce: typeof window == "undefined" ? d2 : "", dangerouslySetInnerHTML: { __html: `(${M.toString()})(${p2})` } });
+});
+const Toaster = ({ ...props }) => {
+  const { theme = "system" } = z();
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    $e,
+    {
+      theme,
+      className: "toaster group",
+      style: {
+        "--normal-bg": "var(--popover)",
+        "--normal-text": "var(--popover-foreground)",
+        "--normal-border": "var(--border)"
+      },
+      ...props
+    }
+  );
+};
 const NAV = [
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/campaigns", label: "Campaigns", icon: LayoutDashboard },
@@ -45075,7 +49943,7 @@ function Layout({ children }) {
       )
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("main", { className: "flex-1", children }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("footer", { className: "border-t bg-muted/40 py-8", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("footer", { className: "border-t bg-muted/40 pb-24 pt-8", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
         "© ",
         (/* @__PURE__ */ new Date()).getFullYear(),
@@ -45097,532 +49965,17 @@ function Layout({ children }) {
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "monospace-accent", children: "v2.0.0" })
     ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(CreditTopUpModal, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Toaster, { position: "bottom-right", richColors: true })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Toaster,
+      {
+        position: "bottom-right",
+        richColors: true,
+        offset: { bottom: 92 },
+        mobileOffset: { bottom: 88 }
+      }
+    )
   ] });
 }
-const DESIGN_PPI = 100;
-const RASTER_DPI = 300;
-const CUT_INSET_INCHES = 0;
-const BLEED_INSET_INCHES = 0.125;
-const SAFE_INSET_INCHES = 0.25;
-const ADDRESS_ZONE_TOP_PCT = 0.38;
-const FALLBACK_VARIANT = "6x9";
-function getLayoutDims(layoutVariant) {
-  const row = getPricingRow(layoutVariant) ?? getPricingRow(FALLBACK_VARIANT);
-  const widthInches = (row == null ? void 0 : row.widthInches) ?? 9;
-  const heightInches = (row == null ? void 0 : row.heightInches) ?? 6;
-  const designWidth = Math.round(widthInches * DESIGN_PPI);
-  const designHeight = Math.round(heightInches * DESIGN_PPI);
-  const dims = {
-    layoutVariant: (row == null ? void 0 : row.id) ?? layoutVariant,
-    widthInches,
-    heightInches,
-    designWidth,
-    designHeight,
-    cutInsetInches: CUT_INSET_INCHES,
-    bleedInsetInches: BLEED_INSET_INCHES,
-    safeInsetInches: SAFE_INSET_INCHES,
-    hasBackSide: true
-  };
-  if (row == null ? void 0 : row.hasAddressBlock) {
-    const x3 = Math.round(designWidth / 2);
-    const y2 = Math.round(designHeight * ADDRESS_ZONE_TOP_PCT);
-    dims.addressZone = {
-      x: x3,
-      y: y2,
-      w: designWidth - x3,
-      h: designHeight - y2
-    };
-  }
-  return dims;
-}
-function insetRect(dims, inches) {
-  const inset = inches * DESIGN_PPI;
-  return {
-    x: inset,
-    y: inset,
-    w: dims.designWidth - inset * 2,
-    h: dims.designHeight - inset * 2
-  };
-}
-function safeRect(dims) {
-  return insetRect(dims, dims.safeInsetInches);
-}
-let idCounter = 0;
-function newId(prefix2) {
-  idCounter += 1;
-  return `${prefix2}_${idCounter}_${Math.random().toString(36).slice(2, 7)}`;
-}
-const DEFAULT_FONT_FAMILY = "Geist";
-const DEFAULT_TEXT_COLOR = "#0f172a";
-const DEFAULT_FRONT_BG = "#ffffff";
-const DEFAULT_BACK_BG = "#ffffff";
-function emptyCanvasSide(backgroundColor = DEFAULT_FRONT_BG) {
-  return {
-    backgroundColor,
-    backgroundImageUrl: void 0,
-    textBlocks: [],
-    logos: [],
-    qrCodes: []
-  };
-}
-function emptyCanvasState(layoutVariant) {
-  const dims = getLayoutDims(layoutVariant);
-  return {
-    front: emptyCanvasSide(DEFAULT_FRONT_BG),
-    back: emptyCanvasSide(DEFAULT_BACK_BG),
-    designPpi: BigInt(DESIGN_PPI),
-    widthInches: dims.widthInches,
-    heightInches: dims.heightInches
-  };
-}
-function nextZIndex(side) {
-  let max2 = 0n;
-  for (const t of side.textBlocks) if (t.zIndex > max2) max2 = t.zIndex;
-  for (const l2 of side.logos) if (l2.zIndex > max2) max2 = l2.zIndex;
-  for (const q2 of side.qrCodes) if (q2.zIndex > max2) max2 = q2.zIndex;
-  return max2 + 1n;
-}
-function makeTextBlock(side, partial = {}) {
-  return {
-    id: newId("tb"),
-    text: "Your headline here",
-    x: 40,
-    y: 40,
-    width: 260,
-    height: 48,
-    fontSize: 24,
-    color: DEFAULT_TEXT_COLOR,
-    fontFamily: DEFAULT_FONT_FAMILY,
-    fontWeight: 700n,
-    align: "left",
-    zIndex: nextZIndex(side),
-    ...partial
-  };
-}
-function makeLogo(side, url, partial = {}) {
-  return {
-    id: newId("logo"),
-    url,
-    x: 40,
-    y: 40,
-    width: 120,
-    height: 120,
-    zIndex: nextZIndex(side),
-    ...partial
-  };
-}
-function makeQrCode(side, partial = {}) {
-  return {
-    id: newId("qr"),
-    x: 40,
-    y: 40,
-    size: 110,
-    url: DYNAMIC_QR_PLACEHOLDER,
-    mode: QrMode.DynamicTracking,
-    foreground: "#0f172a",
-    background: "#ffffff",
-    caption: void 0,
-    zIndex: nextZIndex(side),
-    ...partial
-  };
-}
-function clampToCanvas(x3, y2, w2, h2, canvasW, canvasH) {
-  return {
-    x: Math.min(Math.max(0, x3), Math.max(0, canvasW - w2)),
-    y: Math.min(Math.max(0, y2), Math.max(0, canvasH - h2))
-  };
-}
-function canvasFromTemplate(template, layoutVariant) {
-  const base = emptyCanvasState(layoutVariant);
-  const dims = getLayoutDims(layoutVariant);
-  const front = {
-    ...base.front,
-    backgroundColor: template.backgroundColor
-  };
-  const textBlocks = template.textBlocks.map(
-    (tb, i) => makeTextBlock(front, {
-      text: tb.text,
-      x: Math.max(24, tb.x / 100 * dims.designWidth),
-      y: Math.max(24, tb.y / 100 * dims.designHeight),
-      width: Math.round(dims.designWidth * 0.6),
-      height: Math.round(tb.fontSize * 2.2),
-      fontSize: tb.fontSize * 1.4,
-      color: tb.color,
-      fontWeight: i === 0 ? 800n : 600n,
-      zIndex: BigInt(i + 1)
-    })
-  );
-  const qrCodes = template.hasQrCode ? [
-    makeQrCode(front, {
-      x: dims.designWidth - 150,
-      y: dims.designHeight - 150,
-      size: 110,
-      zIndex: BigInt(textBlocks.length + 1)
-    })
-  ] : [];
-  return { ...base, front: { ...front, textBlocks, qrCodes } };
-}
-function getSide$1(canvas2, key) {
-  return key === "front" ? canvas2.front : canvas2.back;
-}
-function withSide(canvas2, key, side) {
-  return key === "front" ? { ...canvas2, front: side } : { ...canvas2, back: side };
-}
-const DEFAULT_LAYOUT = "6x9";
-function initialData() {
-  return {
-    currentStep: 1,
-    campaignName: "",
-    selectedProduct: null,
-    selectedLayout: null,
-    selectedSpec: null,
-    audienceType: null,
-    verifiedAddresses: [],
-    recipientCount: 0,
-    geoTarget: null,
-    sourcePresetId: null,
-    designTemplate: null,
-    canvas: emptyCanvasState(DEFAULT_LAYOUT),
-    activeSide: "front",
-    selectedElementId: null,
-    qrDestinationUrl: "",
-    returnAddress: null,
-    campaignId: null,
-    paymentIntentId: null
-  };
-}
-function maxZ(side) {
-  let max2 = 0n;
-  for (const t of side.textBlocks) if (t.zIndex > max2) max2 = t.zIndex;
-  for (const l2 of side.logos) if (l2.zIndex > max2) max2 = l2.zIndex;
-  for (const q2 of side.qrCodes) if (q2.zIndex > max2) max2 = q2.zIndex;
-  return max2;
-}
-function geometryOf(side, id) {
-  const t = side.textBlocks.find((b2) => b2.id === id);
-  if (t)
-    return { x: t.x, y: t.y, width: t.width, height: t.height, z: t.zIndex };
-  const l2 = side.logos.find((b2) => b2.id === id);
-  if (l2)
-    return { x: l2.x, y: l2.y, width: l2.width, height: l2.height, z: l2.zIndex };
-  const q2 = side.qrCodes.find((b2) => b2.id === id);
-  if (q2) return { x: q2.x, y: q2.y, width: q2.size, height: q2.size, z: q2.zIndex };
-  return null;
-}
-function moveTo(side, id, x3, y2) {
-  return {
-    ...side,
-    textBlocks: side.textBlocks.map((t) => t.id === id ? { ...t, x: x3, y: y2 } : t),
-    logos: side.logos.map((l2) => l2.id === id ? { ...l2, x: x3, y: y2 } : l2),
-    qrCodes: side.qrCodes.map((q2) => q2.id === id ? { ...q2, x: x3, y: y2 } : q2)
-  };
-}
-function zOrder(side) {
-  return [
-    ...side.textBlocks.map((t) => ({ id: t.id, z: t.zIndex })),
-    ...side.logos.map((l2) => ({ id: l2.id, z: l2.zIndex })),
-    ...side.qrCodes.map((q2) => ({ id: q2.id, z: q2.zIndex }))
-  ].sort((a2, b2) => a2.z < b2.z ? -1 : a2.z > b2.z ? 1 : 0);
-}
-function stepZ(side, id, direction) {
-  const order = zOrder(side);
-  const index2 = order.findIndex((e) => e.id === id);
-  const neighbour = order[index2 + direction];
-  if (index2 < 0 || !neighbour) return side;
-  const current = order[index2];
-  const lower = direction === 1 ? current : neighbour;
-  const upper = direction === 1 ? neighbour : current;
-  const base = lower.z;
-  const swapped = reindex(reindex(side, upper.id, base), lower.id, base + 1n);
-  return swapped;
-}
-function reindex(side, id, z2) {
-  return {
-    ...side,
-    textBlocks: side.textBlocks.map(
-      (t) => t.id === id ? { ...t, zIndex: z2 } : t
-    ),
-    logos: side.logos.map((l2) => l2.id === id ? { ...l2, zIndex: z2 } : l2),
-    qrCodes: side.qrCodes.map((q2) => q2.id === id ? { ...q2, zIndex: z2 } : q2)
-  };
-}
-const useWizardStore = create()((set, get) => ({
-  ...initialData(),
-  setStep: (step) => set({ currentStep: step }),
-  setCurrentStep: (step) => set({ currentStep: step }),
-  setCampaignName: (campaignName) => set({ campaignName }),
-  setProduct: (selectedProduct) => set({ selectedProduct }),
-  setLayout: (layoutVariant) => set((s) => {
-    const row = getPricingRow(layoutVariant);
-    return {
-      selectedLayout: layoutVariant,
-      selectedSpec: row ? {
-        layoutVariant: row.id,
-        documentClass: row.documentClass,
-        widthInches: row.widthInches,
-        heightInches: row.heightInches,
-        unitPriceCents: row.retailPriceCents,
-        mailClass: row.defaultMailClass,
-        supportedMailClasses: row.supportedMailClasses
-      } : null,
-      canvas: s.selectedLayout === layoutVariant ? s.canvas : emptyCanvasState(layoutVariant),
-      selectedElementId: null
-    };
-  }),
-  setMailClass: (mailClass) => set(
-    (s) => {
-      var _a2;
-      return ((_a2 = s.selectedSpec) == null ? void 0 : _a2.supportedMailClasses.includes(mailClass)) ? { selectedSpec: { ...s.selectedSpec, mailClass } } : {};
-    }
-  ),
-  setAudienceType: (audienceType) => set({ audienceType }),
-  setVerifiedAddresses: (verifiedAddresses) => set({ verifiedAddresses }),
-  setRecipientCount: (recipientCount) => set({ recipientCount }),
-  setGeoTarget: (geoTarget) => set({ geoTarget }),
-  setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
-  setDesignTemplate: (template) => set((s) => ({
-    designTemplate: template,
-    canvas: template ? canvasFromTemplate(
-      template,
-      s.selectedLayout ?? template.layoutVariant
-    ) : s.canvas,
-    selectedElementId: null
-  })),
-  setCanvas: (canvas2) => set({ canvas: canvas2 }),
-  setActiveSide: (activeSide) => set({ activeSide, selectedElementId: null }),
-  setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
-  updateSide: (sideKey, patch) => set((s) => ({
-    canvas: withSide(s.canvas, sideKey, {
-      ...getSide$1(s.canvas, sideKey),
-      ...patch
-    })
-  })),
-  addTextBlock: (sideKey, partial) => {
-    const side = getSide$1(get().canvas, sideKey);
-    const block = makeTextBlock(side, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        textBlocks: [...side.textBlocks, block]
-      }),
-      selectedElementId: block.id
-    }));
-    return block.id;
-  },
-  updateTextBlock: (sideKey, id, patch) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        textBlocks: side.textBlocks.map(
-          (t) => t.id === id ? { ...t, ...patch } : t
-        )
-      })
-    };
-  }),
-  removeTextBlock: (sideKey, id) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        textBlocks: side.textBlocks.filter((t) => t.id !== id)
-      }),
-      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
-    };
-  }),
-  addLogo: (sideKey, url, partial) => {
-    const side = getSide$1(get().canvas, sideKey);
-    const logo = makeLogo(side, url, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        logos: [...side.logos, logo]
-      }),
-      selectedElementId: logo.id
-    }));
-    return logo.id;
-  },
-  updateLogo: (sideKey, id, patch) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        logos: side.logos.map((l2) => l2.id === id ? { ...l2, ...patch } : l2)
-      })
-    };
-  }),
-  removeLogo: (sideKey, id) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        logos: side.logos.filter((l2) => l2.id !== id)
-      }),
-      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
-    };
-  }),
-  addQrCode: (sideKey, partial) => {
-    const side = getSide$1(get().canvas, sideKey);
-    const qr = makeQrCode(side, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        qrCodes: [...side.qrCodes, qr]
-      }),
-      selectedElementId: qr.id
-    }));
-    return qr.id;
-  },
-  updateQrCode: (sideKey, id, patch) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        qrCodes: side.qrCodes.map(
-          (q2) => q2.id === id ? { ...q2, ...patch } : q2
-        )
-      })
-    };
-  }),
-  removeQrCode: (sideKey, id) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        qrCodes: side.qrCodes.filter((q2) => q2.id !== id)
-      }),
-      selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
-    };
-  }),
-  setBackgroundImage: (sideKey, url) => set((s) => ({
-    canvas: withSide(s.canvas, sideKey, {
-      ...getSide$1(s.canvas, sideKey),
-      backgroundImageUrl: url ?? void 0
-    })
-  })),
-  setBackgroundColor: (sideKey, color) => set((s) => ({
-    canvas: withSide(s.canvas, sideKey, {
-      ...getSide$1(s.canvas, sideKey),
-      backgroundColor: color
-    })
-  })),
-  bringToFront: (sideKey, id) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    return {
-      canvas: withSide(s.canvas, sideKey, reindex(side, id, maxZ(side) + 1n))
-    };
-  }),
-  sendToBack: (sideKey, id) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    const shifted = {
-      ...side,
-      textBlocks: side.textBlocks.map((t) => ({
-        ...t,
-        zIndex: t.zIndex + 1n
-      })),
-      logos: side.logos.map((l2) => ({ ...l2, zIndex: l2.zIndex + 1n })),
-      qrCodes: side.qrCodes.map((q2) => ({ ...q2, zIndex: q2.zIndex + 1n }))
-    };
-    return { canvas: withSide(s.canvas, sideKey, reindex(shifted, id, 1n)) };
-  }),
-  bringForward: (sideKey, id) => set((s) => ({
-    canvas: withSide(
-      s.canvas,
-      sideKey,
-      stepZ(getSide$1(s.canvas, sideKey), id, 1)
-    )
-  })),
-  sendBackward: (sideKey, id) => set((s) => ({
-    canvas: withSide(
-      s.canvas,
-      sideKey,
-      stepZ(getSide$1(s.canvas, sideKey), id, -1)
-    )
-  })),
-  alignElement: (sideKey, id, alignment) => set((s) => {
-    const side = getSide$1(s.canvas, sideKey);
-    const geo = geometryOf(side, id);
-    if (!geo) return {};
-    const dims = getLayoutDims(s.selectedLayout ?? DEFAULT_LAYOUT);
-    let { x: x3, y: y2 } = geo;
-    switch (alignment) {
-      case "left":
-        x3 = 0;
-        break;
-      case "center":
-        x3 = (dims.designWidth - geo.width) / 2;
-        break;
-      case "right":
-        x3 = dims.designWidth - geo.width;
-        break;
-      case "top":
-        y2 = 0;
-        break;
-      case "middle":
-        y2 = (dims.designHeight - geo.height) / 2;
-        break;
-      case "bottom":
-        y2 = dims.designHeight - geo.height;
-        break;
-    }
-    return {
-      canvas: withSide(
-        s.canvas,
-        sideKey,
-        moveTo(
-          side,
-          id,
-          Math.round(Math.max(0, x3)),
-          Math.round(Math.max(0, y2))
-        )
-      )
-    };
-  }),
-  duplicateElement: (sideKey, id) => {
-    const side = getSide$1(get().canvas, sideKey);
-    const offset2 = 24;
-    const text = side.textBlocks.find((t) => t.id === id);
-    if (text) {
-      const { id: _id, zIndex: _z, ...rest } = text;
-      return get().addTextBlock(sideKey, {
-        ...rest,
-        x: text.x + offset2,
-        y: text.y + offset2
-      });
-    }
-    const logo = side.logos.find((l2) => l2.id === id);
-    if (logo) {
-      const { id: _id, zIndex: _z, url, ...rest } = logo;
-      return get().addLogo(sideKey, url, {
-        ...rest,
-        x: logo.x + offset2,
-        y: logo.y + offset2
-      });
-    }
-    const qr = side.qrCodes.find((q2) => q2.id === id);
-    if (qr) {
-      const { id: _id, zIndex: _z, ...rest } = qr;
-      return get().addQrCode(sideKey, {
-        ...rest,
-        x: qr.x + offset2,
-        y: qr.y + offset2
-      });
-    }
-    return null;
-  },
-  removeElement: (sideKey, id) => {
-    const { removeTextBlock, removeLogo, removeQrCode } = get();
-    removeTextBlock(sideKey, id);
-    removeLogo(sideKey, id);
-    removeQrCode(sideKey, id);
-  },
-  setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
-  setReturnAddress: (returnAddress) => set({ returnAddress }),
-  setCampaignId: (campaignId) => set({ campaignId }),
-  setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
-  reset: () => set(initialData())
-}));
 const STEPS$1 = [
   { id: 1, label: "Product" },
   { id: 2, label: "Audience" },
@@ -45850,230 +50203,6 @@ function Badge({
     }
   );
 }
-function Input({ className, type, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "input",
-    {
-      type,
-      "data-slot": "input",
-      className: cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-        className
-      ),
-      ...props
-    }
-  );
-}
-var NODES = [
-  "a",
-  "button",
-  "div",
-  "form",
-  "h2",
-  "h3",
-  "img",
-  "input",
-  "label",
-  "li",
-  "nav",
-  "ol",
-  "p",
-  "select",
-  "span",
-  "svg",
-  "ul"
-];
-var Primitive = NODES.reduce((primitive, node) => {
-  const Slot2 = /* @__PURE__ */ createSlot$1(`Primitive.${node}`);
-  const Node2 = reactExports.forwardRef((props, forwardedRef) => {
-    const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot2 : node;
-    if (typeof window !== "undefined") {
-      window[Symbol.for("radix-ui")] = true;
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
-  });
-  Node2.displayName = `Primitive.${node}`;
-  return { ...primitive, [node]: Node2 };
-}, {});
-var NAME$3 = "Label";
-var Label$2 = reactExports.forwardRef((props, forwardedRef) => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Primitive.label,
-    {
-      ...props,
-      ref: forwardedRef,
-      onMouseDown: (event) => {
-        var _a2;
-        const target = event.target;
-        if (target.closest("button, input, select, textarea")) return;
-        (_a2 = props.onMouseDown) == null ? void 0 : _a2.call(props, event);
-        if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
-      }
-    }
-  );
-});
-Label$2.displayName = NAME$3;
-var Root$7 = Label$2;
-function Label$1({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Root$7,
-    {
-      "data-slot": "label",
-      className: cn(
-        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-        className
-      ),
-      ...props
-    }
-  );
-}
-const CATALOG = [
-  {
-    id: "postcards",
-    productType: ProductType.Postcard,
-    name: "Postcards",
-    blurb: "Six sizes from 3.5×5 to 6×11, full colour both sides on gloss UV stock.",
-    icon: "postcard",
-    variants: ["3.5x5", "4.25x6", "4x9", "5x8", "6x9", "6x11"]
-  },
-  {
-    id: "letters",
-    productType: ProductType.Letter,
-    name: "Letters",
-    blurb: "8.5×11 and 8.5×14 pages on 24# white, folded into a #10 double-window envelope.",
-    icon: "letter",
-    variants: ["letter", "letter_legal"]
-  },
-  {
-    id: "certified-mail",
-    productType: ProductType.CertifiedMail,
-    name: "Certified Mail™",
-    blurb: "USPS Certified delivery with proof of mailing; add a green card for a signed return receipt.",
-    icon: "certified",
-    variants: [
-      "certified_self_mailer",
-      "certified_green_card",
-      "certified_letter"
-    ],
-    note: "Certified postage and tracking are included in the per-piece price."
-  },
-  {
-    id: "eddm",
-    productType: ProductType.Eddm,
-    name: "Every Door Direct Mail (EDDM®)",
-    blurb: "Saturation flats delivered to every address on the carrier routes you pick.",
-    icon: "eddm",
-    variants: ["eddm_6.5x9", "eddm_8.5x11", "eddm_6.25x11", "eddm_8.5x12"],
-    note: "EDDM® drops are priced per household on the routes you choose in the audience step."
-  },
-  {
-    id: "priority-mail-plus",
-    productType: ProductType.PriorityMail,
-    name: "Priority Mail® Plus",
-    blurb: "Letters sent USPS Priority Mail with tracking, typically delivered in 1–3 days.",
-    icon: "priority",
-    variants: ["priority_letter"]
-  },
-  {
-    id: "priority-mail-express",
-    productType: ProductType.PriorityMailExpress,
-    name: "Priority Mail® Express",
-    blurb: "Overnight-to-most-locations letters with a money-back delivery guarantee.",
-    icon: "priority-express",
-    variants: ["priority_express_letter"]
-  },
-  {
-    id: "flyers",
-    productType: ProductType.Flyer,
-    name: "Flyers",
-    blurb: "8.5×11 flyers printed flat and tabbed shut — no envelope needed.",
-    icon: "flyer",
-    variants: ["8.5x11_flyer"]
-  },
-  {
-    id: "secure-mailers",
-    productType: ProductType.SnapPack,
-    name: "Secure Mailers",
-    blurb: "Pressure-sealed, perforated self mailers for statements, notices and checks.",
-    icon: "secure",
-    variants: ["8.5x11_secure"]
-  },
-  {
-    id: "notecards",
-    productType: ProductType.Notecard,
-    name: "Notecards",
-    blurb: "Flat or folded 4.25×5.5 cards mailed in matching envelopes.",
-    icon: "notecard",
-    variants: ["notecard_4.25x5.5", "folded_notecard_4.25x5.5"]
-  },
-  {
-    id: "rack-cards",
-    productType: ProductType.RackCard,
-    name: "Rack Cards",
-    blurb: "Tall 4×9 cards for menus, service lists and event line-ups.",
-    icon: "rack-card",
-    variants: ["rack_card_4x9"]
-  },
-  {
-    id: "brochures",
-    productType: ProductType.Brochure,
-    name: "Brochures",
-    blurb: "11×8.5 trifold brochures with six panels for catalogs and offers.",
-    icon: "brochure",
-    variants: ["11x8.5_brochure"]
-  },
-  {
-    id: "reply-mail",
-    productType: ProductType.ReplyMail,
-    name: "Reply Mail",
-    blurb: "Postcards and letters that carry prepaid business reply mail for the response.",
-    icon: "reply-mail",
-    variants: ["reply_postcard_4.25x6", "reply_letter"]
-  },
-  {
-    id: "booklets",
-    productType: ProductType.Booklet,
-    name: "Booklets",
-    blurb: "Saddle-stitched 8.5×11 booklets, self-mailed or addressed on a cover page.",
-    icon: "booklet",
-    variants: [
-      "8.5x11_booklet",
-      "booklet_address_back",
-      "booklet_address_front"
-    ]
-  },
-  {
-    id: "card-stock",
-    productType: ProductType.CardStock,
-    name: "Card Stock",
-    blurb: "12×4.5 heavy card stock pieces for oversized, high-impact mailers.",
-    icon: "card-stock",
-    variants: ["card_stock_12x4.5"]
-  }
-];
-function categoryForVariant(layoutVariant) {
-  const row = PRICING_LEDGER.find((r2) => r2.id === layoutVariant);
-  return CATALOG.find(
-    (c2) => c2.variants.includes(layoutVariant) || row !== void 0 && c2.productType === row.productType
-  );
-}
-function categoryRows(category) {
-  return category.variants.map((v2) => PRICING_LEDGER.find((r2) => r2.id === v2)).filter((r2) => r2 !== void 0);
-}
-function categoryFromCents(category) {
-  const rows = categoryRows(category);
-  return rows.length ? Math.min(...rows.map((r2) => r2.retailPriceCents)) : 0;
-}
-const CATALOG_SIZE_COUNT = CATALOG.reduce(
-  (n, c2) => n + c2.variants.length,
-  0
-);
 function formatTimestamp(ns, withTime = true) {
   const ms = Number(BigInt(ns) / 1000000n);
   if (!ms) return "—";
@@ -46406,6 +50535,7 @@ function Step1ProductCatalog() {
         )
       ] })
     ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(StampyTip, { id: "step1", mascot: StampyStep1Catalog, children: "Pick your canvas! Need fast turnaround? Choose First-Class Postcards. Looking for high impact? Try our Jumbo 6×11 or Trifold Brochures." }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
@@ -47893,50 +52023,6 @@ function useDirection(localDir) {
   const globalDir = reactExports.useContext(DirectionContext);
   return localDir || globalDir || "ltr";
 }
-function usePrevious2(value) {
-  const ref = reactExports.useRef({ value, previous: value });
-  return reactExports.useMemo(() => {
-    if (ref.current.value !== value) {
-      ref.current.previous = ref.current.value;
-      ref.current.value = value;
-    }
-    return ref.current.previous;
-  }, [value]);
-}
-function useSize(element) {
-  const [size2, setSize] = reactExports.useState(void 0);
-  useLayoutEffect2(() => {
-    if (element) {
-      setSize({ width: element.offsetWidth, height: element.offsetHeight });
-      const resizeObserver = new ResizeObserver((entries) => {
-        if (!Array.isArray(entries)) {
-          return;
-        }
-        if (!entries.length) {
-          return;
-        }
-        const entry = entries[0];
-        let width;
-        let height;
-        if ("borderBoxSize" in entry) {
-          const borderSizeEntry = entry["borderBoxSize"];
-          const borderSize = Array.isArray(borderSizeEntry) ? borderSizeEntry[0] : borderSizeEntry;
-          width = borderSize["inlineSize"];
-          height = borderSize["blockSize"];
-        } else {
-          width = element.offsetWidth;
-          height = element.offsetHeight;
-        }
-        setSize({ width, height });
-      });
-      resizeObserver.observe(element, { box: "border-box" });
-      return () => resizeObserver.unobserve(element);
-    } else {
-      setSize(void 0);
-    }
-  }, [element]);
-  return size2;
-}
 function createCollection(name) {
   const PROVIDER_NAME2 = name + "CollectionProvider";
   const [createCollectionContext, createCollectionScope2] = createContextScope$1(PROVIDER_NAME2);
@@ -47952,7 +52038,7 @@ function createCollection(name) {
   };
   CollectionProvider.displayName = PROVIDER_NAME2;
   const COLLECTION_SLOT_NAME = name + "CollectionSlot";
-  const CollectionSlotImpl = /* @__PURE__ */ createSlot(COLLECTION_SLOT_NAME);
+  const CollectionSlotImpl = /* @__PURE__ */ createSlot$1(COLLECTION_SLOT_NAME);
   const CollectionSlot = React$4.forwardRef(
     (props, forwardedRef) => {
       const { scope, children } = props;
@@ -47964,7 +52050,7 @@ function createCollection(name) {
   CollectionSlot.displayName = COLLECTION_SLOT_NAME;
   const ITEM_SLOT_NAME = name + "CollectionItemSlot";
   const ITEM_DATA_ATTR = "data-radix-collection-item";
-  const CollectionItemSlotImpl = /* @__PURE__ */ createSlot(ITEM_SLOT_NAME);
+  const CollectionItemSlotImpl = /* @__PURE__ */ createSlot$1(ITEM_SLOT_NAME);
   const CollectionItemSlot = React$4.forwardRef(
     (props, forwardedRef) => {
       const { scope, children, ...itemData } = props;
@@ -48453,7 +52539,7 @@ var SliderBubbleInput = reactExports.forwardRef(
   ({ __scopeSlider, value, ...props }, forwardedRef) => {
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(ref, forwardedRef);
-    const prevValue = usePrevious2(value);
+    const prevValue = usePrevious$2(value);
     reactExports.useEffect(() => {
       const input = ref.current;
       if (!input) return;
@@ -59379,6 +63465,7 @@ function Step2AudienceIntake() {
         }
       )
     ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(StampyTip, { id: "step2", mascot: StampyStep2Audience, children: "Upload your CSV or select a saved preset. Click2Mail runs automated USPS CASS certification on upload so no postage is wasted on invalid routes." }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       Tabs,
       {
@@ -61940,7 +66027,7 @@ SelectContent$1.displayName = CONTENT_NAME$1;
 var CONTENT_MARGIN = 10;
 var [SelectContentProvider, useSelectContentContext] = createSelectContext(CONTENT_NAME$1);
 var CONTENT_IMPL_NAME = "SelectContentImpl";
-var Slot = /* @__PURE__ */ createSlot("SelectContent.RemoveScroll");
+var Slot = /* @__PURE__ */ createSlot$1("SelectContent.RemoveScroll");
 var SelectContentImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const {
@@ -62750,7 +66837,7 @@ var SelectBubbleInput = reactExports.forwardRef(
   ({ __scopeSelect, value, ...props }, forwardedRef) => {
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
-    const prevValue = usePrevious2(value);
+    const prevValue = usePrevious$2(value);
     reactExports.useEffect(() => {
       const select = ref.current;
       if (!select) return;
@@ -62976,7 +67063,7 @@ function SelectScrollDownButton({
   );
 }
 function Sheet({ ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root$8, { "data-slot": "sheet", ...props });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root$7, { "data-slot": "sheet", ...props });
 }
 function SheetPortal({
   ...props
@@ -63365,19 +67452,6 @@ function Section$1({
       t
     )) })
   ] });
-}
-function Textarea({ className, ...props }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "textarea",
-    {
-      "data-slot": "textarea",
-      className: cn(
-        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        className
-      ),
-      ...props
-    }
-  );
 }
 const QUICK_PROMPTS = [
   {
@@ -70092,6 +74166,7 @@ function Step3DesignCanvas() {
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1 space-y-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(StampyTip, { id: "step3", mascot: StampyStep3Studio, compact: true, children: "Keep all essential copy and logos inside the green safe line! Need fresh copy or visuals? Tap AI Studio in the rail to generate print-ready assets." }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(CanvasToolbar, {}),
         /* @__PURE__ */ jsxRuntimeExports.jsx(CanvasEditor, { maxHeight: 540 }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -71521,6 +75596,7 @@ function Step4ReviewLaunch() {
         /* @__PURE__ */ jsxRuntimeExports.jsx(ReturnAddressForm, {})
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(StampyTip, { id: "step4", mascot: StampyStep4Preflight, children: "Looking sharp! Inspect your front/back 3D proof, verify your recipient count, and click Launch when you're ready to print and induct into the mail stream." }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs(
           Card,
           {
@@ -71853,7 +75929,7 @@ var SwitchBubbleInput = reactExports.forwardRef(
   }, forwardedRef) => {
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(ref, forwardedRef);
-    const prevChecked = usePrevious2(checked);
+    const prevChecked = usePrevious$2(checked);
     const controlSize = useSize(control);
     reactExports.useEffect(() => {
       const input = ref.current;
@@ -73144,11 +77220,63 @@ function AdminPage() {
                 /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "font-mono text-xs", children: config.referralBaseUrl })
               ] })
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Public config unavailable." }) })
-          ] })
+          ] }),
+          (view == null ? void 0 : view.callerIsAdmin) ? /* @__PURE__ */ jsxRuntimeExports.jsx(SupportInboxCard, {}) : null
         ] })
       ]
     }
   );
+}
+function SupportInboxCard() {
+  const tickets = useSupportTickets(true);
+  const list = tickets.data ?? [];
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { className: "lg:col-span-2", "data-ocid": "admin.support.card", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(CardHeader, { className: "pb-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "flex items-center gap-2 text-base", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(LifeBuoy, { className: "size-4 text-primary" }),
+        " Support inbox",
+        list.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(Badge, { variant: "secondary", className: "ml-1", children: list.length }) : null
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(CardDescription, { children: "Tickets filed through Stampy's Contact Support drawer. Reply to each sender by email." })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { children: tickets.isLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-4 animate-spin" }),
+      " Loading…"
+    ] }) : list.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "No tickets yet." }) : /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "divide-y", children: list.map((t) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "li",
+      {
+        className: "space-y-1 py-3 first:pt-0",
+        "data-ocid": `admin.support.ticket.${t.id}`,
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-baseline justify-between gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-medium", children: t.subject }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-mono text-xs text-muted-foreground", children: [
+              t.id,
+              " · ",
+              formatTimestamp(t.createdAt)
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-sm text-muted-foreground", children: [
+            t.name,
+            " ·",
+            " ",
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "a",
+              {
+                href: `mailto:${t.email}?subject=${encodeURIComponent(`Re: ${t.subject}`)}`,
+                className: "text-primary hover:underline",
+                children: t.email
+              }
+            ),
+            t.pagePath ? ` · from ${t.pagePath}` : "",
+            t.userId ? " · signed in" : " · signed out"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "whitespace-pre-wrap text-sm", children: t.message })
+        ]
+      },
+      t.id
+    )) }) })
+  ] });
 }
 const CAMPAIGN_STAGES = [
   {
@@ -75579,6 +79707,13 @@ function QuickLinks() {
 }
 function DashboardPage() {
   const { isAuthenticated, isInitializing } = useAccountSync();
+  const hash = useRouterState({ select: (s) => s.location.hash });
+  reactExports.useEffect(() => {
+    var _a2;
+    const id = hash.replace(/^#/, "");
+    if (!id || !isAuthenticated) return;
+    (_a2 = document.getElementById(id)) == null ? void 0 : _a2.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash, isAuthenticated]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -75604,7 +79739,7 @@ function DashboardPage() {
             /* @__PURE__ */ jsxRuntimeExports.jsx(QuickLinks, {}),
             /* @__PURE__ */ jsxRuntimeExports.jsx(RecentCampaigns, {}),
             /* @__PURE__ */ jsxRuntimeExports.jsx(CreditsWidget, {}),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(ReferralWidget, {})
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "referrals", className: "scroll-mt-24", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ReferralWidget, {}) })
           ] })
         ] })
       ]
@@ -77720,8 +81855,17 @@ function TrackRedirectPage() {
     }
   );
 }
+function parseWizardSearch(search) {
+  const step = Number(search.step);
+  return Number.isInteger(step) && step >= 1 && step <= 4 ? { step } : {};
+}
 function WizardPage() {
   const currentStep = useWizardStore((s) => s.currentStep);
+  const setCurrentStep = useWizardStore((s) => s.setCurrentStep);
+  const { step } = useSearch({ strict: false });
+  reactExports.useEffect(() => {
+    if (step !== void 0) setCurrentStep(reachableWizardStep(step));
+  }, [step, setCurrentStep]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(WizardLayout, { currentStep, children: [
     currentStep === 1 && /* @__PURE__ */ jsxRuntimeExports.jsx(Step1ProductCatalog, {}),
     currentStep === 2 && /* @__PURE__ */ jsxRuntimeExports.jsx(Step2AudienceIntake, {}),
@@ -77730,7 +81874,10 @@ function WizardPage() {
   ] });
 }
 const rootRoute = createRootRoute({
-  component: () => /* @__PURE__ */ jsxRuntimeExports.jsx(Layout, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) })
+  component: () => /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Layout, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(StampyChatbot, {})
+  ] })
 });
 const routes = [
   createRoute({
@@ -77741,7 +81888,8 @@ const routes = [
   createRoute({
     getParentRoute: () => rootRoute,
     path: "/wizard",
-    component: WizardPage
+    component: WizardPage,
+    validateSearch: parseWizardSearch
   }),
   createRoute({
     getParentRoute: () => rootRoute,

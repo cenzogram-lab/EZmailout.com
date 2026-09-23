@@ -1573,8 +1573,20 @@ body {
 	bottom: 0.5rem;
 }
 
+.bottom-24 {
+	bottom: 6rem;
+}
+
+.bottom-5 {
+	bottom: 1.25rem;
+}
+
 .bottom-\[10\%\] {
 	bottom: 10%;
+}
+
+.bottom-full {
+	bottom: 100%;
 }
 
 .left-0 {
@@ -1699,6 +1711,10 @@ body {
 
 .z-30 {
 	z-index: 30;
+}
+
+.z-40 {
+	z-index: 40;
 }
 
 .z-50 {
@@ -1989,6 +2005,11 @@ body {
 	height: 0.625rem;
 }
 
+.size-20 {
+	width: 5rem;
+	height: 5rem;
+}
+
 .size-24 {
 	width: 6rem;
 	height: 6rem;
@@ -2149,6 +2170,10 @@ body {
 	height: calc(100% - 2.5rem);
 }
 
+.h-\[min\(560px\2c calc\(100dvh-7\.5rem\)\)\] {
+	height: min(560px, calc(100dvh - 7.5rem));
+}
+
 .h-\[var\(--radix-navigation-menu-viewport-height\)\] {
 	height: var(--radix-navigation-menu-viewport-height);
 }
@@ -2305,6 +2330,10 @@ body {
 	width: 62%;
 }
 
+.w-\[min\(380px\2c calc\(100vw-2rem\)\)\] {
+	width: min(380px, calc(100vw - 2rem));
+}
+
 .w-auto {
 	width: auto;
 }
@@ -2417,6 +2446,10 @@ body {
 
 .max-w-\[60\%\] {
 	max-width: 60%;
+}
+
+.max-w-\[85\%\] {
+	max-width: 85%;
 }
 
 .max-w-\[calc\(100\%-2rem\)\] {
@@ -3078,8 +3111,16 @@ body {
 	border-bottom-right-radius: 0.25rem;
 }
 
+.rounded-br-md {
+	border-bottom-right-radius: calc(var(--radius) - 2px);
+}
+
 .rounded-tl {
 	border-top-left-radius: 0.25rem;
+}
+
+.rounded-tl-md {
+	border-top-left-radius: calc(var(--radius) - 2px);
 }
 
 .rounded-tl-sm {
@@ -3125,6 +3166,11 @@ body {
 
 .border-dashed {
 	border-style: dashed;
+}
+
+.border-\[\#6366f1\] {
+	--tw-border-opacity: 1;
+	border-color: rgb(99 102 241 / var(--tw-border-opacity, 1));
 }
 
 .border-\[\#e5e7eb\] {
@@ -3199,6 +3245,10 @@ body {
 	border-color: oklch(var(--primary) / 0.2);
 }
 
+.border-primary\/25 {
+	border-color: oklch(var(--primary) / 0.25);
+}
+
 .border-primary\/30 {
 	border-color: oklch(var(--primary) / 0.3);
 }
@@ -3219,6 +3269,11 @@ body {
 	border-color: transparent;
 }
 
+.border-white {
+	--tw-border-opacity: 1;
+	border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
+}
+
 .border-white\/15 {
 	border-color: rgb(255 255 255 / 0.15);
 }
@@ -3233,6 +3288,11 @@ body {
 
 .border-t-transparent {
 	border-top-color: transparent;
+}
+
+.bg-\[\#0e2b4f\] {
+	--tw-bg-opacity: 1;
+	background-color: rgb(14 43 79 / var(--tw-bg-opacity, 1));
 }
 
 .bg-\[\#607bf7\] {
@@ -3253,6 +3313,15 @@ body {
 .bg-accent {
 	--tw-bg-opacity: 1;
 	background-color: oklch(var(--accent) / var(--tw-bg-opacity, 1));
+}
+
+.bg-accent\/60 {
+	background-color: oklch(var(--accent) / 0.6);
+}
+
+.bg-amber-400 {
+	--tw-bg-opacity: 1;
+	background-color: rgb(251 191 36 / var(--tw-bg-opacity, 1));
 }
 
 .bg-background {
@@ -3290,6 +3359,16 @@ body {
 
 .bg-destructive\/5 {
 	background-color: oklch(var(--destructive) / 0.05);
+}
+
+.bg-emerald-400 {
+	--tw-bg-opacity: 1;
+	background-color: rgb(52 211 153 / var(--tw-bg-opacity, 1));
+}
+
+.bg-emerald-500 {
+	--tw-bg-opacity: 1;
+	background-color: rgb(16 185 129 / var(--tw-bg-opacity, 1));
 }
 
 .bg-emerald-brand {
@@ -3672,6 +3751,10 @@ body {
 	padding-bottom: 0.625rem;
 }
 
+.pb-24 {
+	padding-bottom: 6rem;
+}
+
 .pb-3 {
 	padding-bottom: 0.75rem;
 }
@@ -3692,6 +3775,10 @@ body {
 	padding-left: 0px;
 }
 
+.pl-1 {
+	padding-left: 0.25rem;
+}
+
 .pl-2 {
 	padding-left: 0.5rem;
 }
@@ -3708,6 +3795,10 @@ body {
 	padding-left: 2rem;
 }
 
+.pl-9 {
+	padding-left: 2.25rem;
+}
+
 .pl-\[4\.25rem\] {
 	padding-left: 4.25rem;
 }
@@ -3722,6 +3813,10 @@ body {
 
 .pr-2\.5 {
 	padding-right: 0.625rem;
+}
+
+.pr-6 {
+	padding-right: 1.5rem;
 }
 
 .pr-8 {
@@ -3754,6 +3849,10 @@ body {
 
 .pt-6 {
 	padding-top: 1.5rem;
+}
+
+.pt-8 {
+	padding-top: 2rem;
 }
 
 .text-left {
@@ -3967,6 +4066,11 @@ body {
 
 .text-destructive-foreground {
 	color: oklch(var(--destructive-foreground));
+}
+
+.text-emerald-500 {
+	--tw-text-opacity: 1;
+	color: rgb(16 185 129 / var(--tw-text-opacity, 1));
 }
 
 .text-emerald-brand {
@@ -4570,6 +4674,21 @@ body {
   }
 }
 
+/* In the chat launcher and panel the idle avatar's red "unread" dot would
+ * contradict the green "active" dot, so it is hidden there. */
+
+.stampy-launcher .stampy-notify-dot {
+  display: none;
+}
+
+/* The Stampy launcher owns the bottom-right corner (56px + 20px margin).
+ * Focus moves and scrollIntoView stop this far above the viewport bottom, so
+ * a focused button is never parked underneath it. */
+
+html {
+  scroll-padding-bottom: 6rem;
+}
+
 .selection\:bg-primary *::-moz-selection {
 	--tw-bg-opacity: 1;
 	background-color: oklch(var(--primary) / var(--tw-bg-opacity, 1));
@@ -4691,6 +4810,10 @@ body {
 	border-left-width: 1px;
 }
 
+.first\:pt-0:first-child {
+	padding-top: 0px;
+}
+
 .last\:rounded-r-md:last-child {
 	border-top-right-radius: calc(var(--radius) - 2px);
 	border-bottom-right-radius: calc(var(--radius) - 2px);
@@ -4711,6 +4834,12 @@ body {
 
 .hover\:-translate-y-1:hover {
 	--tw-translate-y: -0.25rem;
+	transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.hover\:scale-105:hover {
+	--tw-scale-x: 1.05;
+	--tw-scale-y: 1.05;
 	transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -4738,6 +4867,10 @@ body {
 	background-color: oklch(var(--accent) / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-card:hover {
+	background-color: oklch(var(--card));
+}
+
 .hover\:bg-destructive\/90:hover {
 	background-color: oklch(var(--destructive) / 0.9);
 }
@@ -4761,6 +4894,11 @@ body {
 
 .hover\:bg-navy\/90:hover {
 	background-color: oklch(var(--navy) / 0.9);
+}
+
+.hover\:bg-primary:hover {
+	--tw-bg-opacity: 1;
+	background-color: oklch(var(--primary) / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-primary\/25:hover {
@@ -4816,6 +4954,10 @@ body {
 .hover\:text-primary:hover {
 	--tw-text-opacity: 1;
 	color: oklch(var(--primary) / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-primary-foreground:hover {
+	color: oklch(var(--primary-foreground));
 }
 
 .hover\:text-sidebar-accent-foreground:hover {
@@ -4907,6 +5049,11 @@ body {
 	border-color: oklch(var(--ring) / var(--tw-border-opacity, 1));
 }
 
+.focus-visible\:outline-none:focus-visible {
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+}
+
 .focus-visible\:outline-1:focus-visible {
 	outline-width: 1px;
 }
@@ -4941,6 +5088,10 @@ body {
 
 .focus-visible\:ring-destructive\/20:focus-visible {
 	--tw-ring-color: oklch(var(--destructive) / 0.2);
+}
+
+.focus-visible\:ring-primary\/30:focus-visible {
+	--tw-ring-color: oklch(var(--primary) / 0.3);
 }
 
 .focus-visible\:ring-ring:focus-visible {
@@ -5003,6 +5154,10 @@ body {
 }
 
 .group:hover .group-hover\:opacity-100 {
+	opacity: 1;
+}
+
+.group:focus-visible .group-focus-visible\:opacity-100 {
 	opacity: 1;
 }
 
@@ -6036,6 +6191,10 @@ body {
 
 @media (min-width: 640px) {
 
+	.sm\:right-5 {
+		right: 1.25rem;
+	}
+
 	.sm\:col-span-2 {
 		grid-column: span 2 / span 2;
 	}
@@ -6068,6 +6227,11 @@ body {
 	.sm\:size-14 {
 		width: 3.5rem;
 		height: 3.5rem;
+	}
+
+	.sm\:size-24 {
+		width: 6rem;
+		height: 6rem;
 	}
 
 	.sm\:w-56 {

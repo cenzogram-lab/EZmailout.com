@@ -1,6 +1,7 @@
 import type { DispatchResult } from "@/backend";
 import { AudienceType, PaymentPurpose } from "@/backend";
 import { StripeCheckout } from "@/components/billing/StripeCheckout";
+import { StampyStep4Preflight, StampyTip } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -537,6 +538,11 @@ export function Step4ReviewLaunch() {
         </div>
 
         <div className="space-y-6">
+          <StampyTip id="step4" mascot={StampyStep4Preflight}>
+            Looking sharp! Inspect your front/back 3D proof, verify your
+            recipient count, and click Launch when you're ready to print and
+            induct into the mail stream.
+          </StampyTip>
           <Card
             className="surface-glow border-primary/20 bg-card"
             data-ocid="review.invoice.card"

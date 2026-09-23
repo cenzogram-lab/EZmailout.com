@@ -35,8 +35,10 @@ import {
   useAdminKeys,
   usePublicConfig,
   useSaveAdminKeys,
+  useSupportTickets,
 } from "@/hooks/use-backend";
 import { copyText } from "@/lib/download";
+import { formatTimestamp } from "@/lib/format";
 import { loadConfig } from "@caffeineai/core-infrastructure";
 import {
   AlertCircle,
@@ -47,6 +49,7 @@ import {
   FlaskConical,
   Globe,
   KeyRound,
+  LifeBuoy,
   Loader2,
   RefreshCw,
   Save,
@@ -870,8 +873,72 @@ export function AdminPage() {
               )}
             </CardContent>
           </Card>
+
+          {view?.callerIsAdmin ? <SupportInboxCard /> : null}
         </div>
       )}
     </div>
+  );
+}
+
+/** Tickets filed from Stampy's Contact Support drawer, newest first. */
+function SupportInboxCard() {
+  const tickets = useSupportTickets(true);
+  const list = tickets.data ?? [];
+  return (
+    <Card className="lg:col-span-2" data-ocid="admin.support.card">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <LifeBuoy className="size-4 text-primary" /> Support inbox
+          {list.length > 0 ? (
+            <Badge variant="secondary" className="ml-1">
+              {list.length}
+            </Badge>
+          ) : null}
+        </CardTitle>
+        <CardDescription>
+          Tickets filed through Stampy's Contact Support drawer. Reply to each
+          sender by email.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {tickets.isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Loading…
+          </div>
+        ) : list.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No tickets yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {list.map((t) => (
+              <li
+                key={t.id}
+                className="space-y-1 py-3 first:pt-0"
+                data-ocid={`admin.support.ticket.${t.id}`}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-medium">{t.subject}</p>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {t.id} · {formatTimestamp(t.createdAt)}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t.name} ·{" "}
+                  <a
+                    href={`mailto:${t.email}?subject=${encodeURIComponent(`Re: ${t.subject}`)}`}
+                    className="text-primary hover:underline"
+                  >
+                    {t.email}
+                  </a>
+                  {t.pagePath ? ` · from ${t.pagePath}` : ""}
+                  {t.userId ? " · signed in" : " · signed out"}
+                </p>
+                <p className="whitespace-pre-wrap text-sm">{t.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }

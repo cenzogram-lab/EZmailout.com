@@ -29,6 +29,11 @@ import type {
   PublicConfig,
   QrScanStats,
   ReferralStats,
+  StampyReply,
+  StampyTurn,
+  SupportTicket,
+  SupportTicketInput,
+  SupportTicketResult,
   SyncResult,
   TrackingEvent,
   TrackingResolveResult,
@@ -573,5 +578,43 @@ export function useSaveAdminKeys() {
       queryClient.invalidateQueries({ queryKey: ["adminKeys"] });
       queryClient.invalidateQueries({ queryKey: ["publicConfig"] });
     },
+  });
+}
+
+// ─── Stampy copilot & support ───────────────────────────────────────────────
+
+/** One copilot turn through the canister's LLM relay (signed-in callers). */
+export function useAskStampy() {
+  const { actor } = useBackendActor();
+  return useMutation<StampyReply, Error, StampyTurn[]>({
+    mutationFn: async (turns) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.askStampy(turns);
+    },
+  });
+}
+
+export function useSubmitSupportTicket() {
+  const queryClient = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation<SupportTicketResult, Error, SupportTicketInput>({
+    mutationFn: async (input) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.submitSupportTicket(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supportTickets"] });
+    },
+  });
+}
+
+/** Admin inbox. Only enable for an admin: the canister traps for anyone else. */
+export function useSupportTickets(enabled: boolean) {
+  const { actor, ready } = useBackendActor();
+  return useQuery<SupportTicket[]>({
+    queryKey: ["supportTickets"],
+    queryFn: async () => (actor ? actor.listSupportTickets() : []),
+    enabled: ready && enabled,
+    refetchInterval: 60_000,
   });
 }

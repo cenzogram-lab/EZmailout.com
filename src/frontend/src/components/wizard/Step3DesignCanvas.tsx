@@ -12,6 +12,7 @@ import { StudioRail } from "@/components/canvas/StudioRail";
 import { TemplatesPanel } from "@/components/canvas/TemplatesPanel";
 import { TextPanel } from "@/components/canvas/TextPanel";
 import { UploadsPanel } from "@/components/canvas/UploadsPanel";
+import { StampyStep3Studio, StampyTip } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { layoutLabel } from "@/lib/format";
 import { getLayoutDims, safeRect } from "@/lib/printSpec";
@@ -200,6 +201,11 @@ export function Step3DesignCanvas() {
         </div>
 
         <div className="min-w-0 flex-1 space-y-3">
+          <StampyTip id="step3" mascot={StampyStep3Studio} compact>
+            Keep all essential copy and logos inside the green safe line! Need
+            fresh copy or visuals? Tap AI Studio in the rail to generate
+            print-ready assets.
+          </StampyTip>
           <CanvasToolbar />
           <CanvasEditor maxHeight={540} />
           <div

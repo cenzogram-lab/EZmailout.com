@@ -391,6 +391,36 @@ export interface ReturnAddress {
   'state' : string,
   'organization' : [] | [string],
 }
+export interface StampyReply {
+  'ok' : boolean,
+  'error' : [] | [string],
+  'reply' : [] | [string],
+}
+export type StampyRole = { 'User' : null } |
+  { 'Assistant' : null };
+export interface StampyTurn { 'content' : string, 'role' : StampyRole }
+export interface SupportTicket {
+  'id' : string,
+  'subject' : string,
+  'userId' : [] | [string],
+  'name' : string,
+  'createdAt' : bigint,
+  'pagePath' : string,
+  'email' : string,
+  'message' : string,
+}
+export interface SupportTicketInput {
+  'subject' : string,
+  'name' : string,
+  'pagePath' : [] | [string],
+  'email' : string,
+  'message' : string,
+}
+export interface SupportTicketResult {
+  'ok' : boolean,
+  'ticketId' : [] | [string],
+  'error' : [] | [string],
+}
 export interface SyncResult {
   'ok' : boolean,
   'status' : [] | [CampaignStatus],
@@ -489,6 +519,7 @@ export interface http_request_result {
 }
 export interface _SERVICE {
   'applyReferralReward' : ActorMethod<[string], ApiResult>,
+  'askStampy' : ActorMethod<[Array<StampyTurn>], StampyReply>,
   'confirmPayment' : ActorMethod<[string], ConfirmPaymentResult>,
   'createCampaign' : ActorMethod<[CreateCampaignInput], CreateCampaignResult>,
   'createPaymentIntent' : ActorMethod<
@@ -528,6 +559,7 @@ export interface _SERVICE {
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
   'listPresets' : ActorMethod<[], Array<AudiencePresetShared>>,
+  'listSupportTickets' : ActorMethod<[], Array<SupportTicket>>,
   'pollActiveTracking' : ActorMethod<[], bigint>,
   'resolveTrackingLink' : ActorMethod<
     [string, [] | [string]],
@@ -538,6 +570,10 @@ export interface _SERVICE {
   'savePreset' : ActorMethod<
     [string, Array<VerifiedAddress>, [] | [string]],
     PresetResult
+  >,
+  'submitSupportTicket' : ActorMethod<
+    [SupportTicketInput],
+    SupportTicketResult
   >,
   'syncClick2MailTracking' : ActorMethod<[string], SyncResult>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,

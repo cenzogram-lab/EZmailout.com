@@ -1,4 +1,5 @@
 import { CatalogIcon } from "@/components/catalog/CatalogIcon";
+import { StampyStep1Catalog, StampyTip } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -302,6 +303,11 @@ export function Step1ProductCatalog() {
           />
         </div>
       </div>
+
+      <StampyTip id="step1" mascot={StampyStep1Catalog}>
+        Pick your canvas! Need fast turnaround? Choose First-Class Postcards.
+        Looking for high impact? Try our Jumbo 6×11 or Trifold Brochures.
+      </StampyTip>
 
       <div
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"

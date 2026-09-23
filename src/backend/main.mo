@@ -3,6 +3,7 @@
 import Types "types/campaign";
 import Common "types/common";
 import Account "types/account";
+import Support "types/support";
 import Http "lib/http";
 import AdminApi "mixins/admin-api";
 import CampaignApi "mixins/campaign-api";
@@ -10,6 +11,7 @@ import AudienceApi "mixins/audience-api";
 import BillingApi "mixins/billing-api";
 import AiApi "mixins/ai-api";
 import ProductionApi "mixins/production-api";
+import SupportApi "mixins/support-api";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Timer "mo:core/Timer";
@@ -30,6 +32,7 @@ actor {
   let payments : Map.Map<Text, Account.PaymentRecord>;
   let referralRewards : List.List<Account.ReferralReward>;
   let documentUploads : Map.Map<Text, Types.DocumentUpload>;
+  let supportTickets : List.List<Support.SupportTicket>;
 
   /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   public query func transform(input : Http.TransformationInput) : async Http.TransformationOutput {
@@ -43,6 +46,7 @@ actor {
   include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, trackingEvents, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
   include ProductionApi(campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
+  include SupportApi(supportTickets, adminKeysState, transform);
 
   // Non-blocking tracking poll every 6 hours (Click2Mail IMb scans → timeline).
   // Calls the mixin's private poll directly, so the job has no public entry point.

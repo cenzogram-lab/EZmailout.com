@@ -112,6 +112,47 @@ type SyncResult =
    ok: bool;
    status: opt CampaignStatus;
  };
+type SupportTicketResult = 
+ record {
+   error: opt text;
+   ok: bool;
+   ticketId: opt text;
+ };
+type SupportTicketInput = 
+ record {
+   email: text;
+   message: text;
+   name: text;
+   pagePath: opt text;
+   subject: text;
+ };
+type SupportTicket = 
+ record {
+   createdAt: int;
+   email: text;
+   id: text;
+   message: text;
+   name: text;
+   pagePath: text;
+   subject: text;
+   userId: opt text;
+ };
+type StampyTurn = 
+ record {
+   content: text;
+   role: StampyRole;
+ };
+type StampyRole = 
+ variant {
+   Assistant;
+   User;
+ };
+type StampyReply = 
+ record {
+   error: opt text;
+   ok: bool;
+   reply: opt text;
+ };
 type ReturnAddress = 
  record {
    address_line1: text;
@@ -577,6 +618,7 @@ type AccountResult =
 /// Click2Mail REST API, AI credit ledger, Stripe billing and referral rewards.
 service : {
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
+  askStampy: (turns: vec StampyTurn) -> (StampyReply);
   confirmPayment: (paymentIntentId: text) -> (ConfirmPaymentResult);
   createCampaign: (input: CreateCampaignInput) -> (CreateCampaignResult);
   createPaymentIntent: (purpose: PaymentPurpose, reference: opt text, pack:
@@ -590,6 +632,7 @@ service : {
   exportCampaignRecipients: (campaignId: text) -> (opt text) query;
   generateAiCopy: (input: AiCopyInput) -> (AiCopyResult);
   generateAiImage: (prompt: text, size: AiImageSize) -> (AiImageResult);
+  /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   getAdminKeys: () -> (AdminKeysView) query;
   getAiPricing: () -> (AiPricing) query;
   getCampaign: (id: text) -> (opt CampaignRecordShared) query;
@@ -610,6 +653,7 @@ service : {
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   http_request_update: (req: HttpRequest) -> (HttpResponse);
   listPresets: () -> (vec AudiencePresetShared) query;
+  listSupportTickets: () -> (vec SupportTicket) query;
   pollActiveTracking: () -> (nat);
   resolveTrackingLink: (code: text, userAgent: opt text) ->
    (TrackingResolveResult);
@@ -617,6 +661,7 @@ service : {
   saveCanvasState: (campaignId: text, canvas: CanvasState) -> (bool);
   savePreset: (name: text, addresses: vec VerifiedAddress, sourceCampaignId:
    opt text) -> (PresetResult);
+  submitSupportTicket: (input: SupportTicketInput) -> (SupportTicketResult);
   syncClick2MailTracking: (campaignId: text) -> (SyncResult);
   /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   transform: (input: TransformationInput) -> (TransformationOutput) query;

@@ -6,3 +6,4 @@ export { StampyStep2Audience } from "./StampyStep2Audience";
 export { StampyStep3Studio } from "./StampyStep3Studio";
 export { StampyStep4Preflight } from "./StampyStep4Preflight";
 export type { StampyProps } from "./stampy";
+export { StampyTip } from "./StampyTip";

@@ -157,6 +157,41 @@ export interface SyncResult {
     ok: boolean;
     status?: CampaignStatus;
 }
+export interface SupportTicketResult {
+    error?: string;
+    ok: boolean;
+    ticketId?: string;
+}
+export interface SupportTicketInput {
+    email: string;
+    message: string;
+    name: string;
+    pagePath?: string;
+    subject: string;
+}
+export interface SupportTicket {
+    createdAt: bigint;
+    email: string;
+    id: string;
+    message: string;
+    name: string;
+    pagePath: string;
+    subject: string;
+    userId?: string;
+}
+export interface StampyTurn {
+    content: string;
+    role: StampyRole;
+}
+export enum StampyRole {
+    Assistant = "Assistant",
+    User = "User"
+}
+export interface StampyReply {
+    error?: string;
+    ok: boolean;
+    reply?: string;
+}
 export interface ReturnAddress {
     address_line1: string;
     address_line2?: string;
@@ -567,6 +602,7 @@ export interface AccountResult {
 }
 export interface backendInterface {
     applyReferralReward(arg0: string): Promise<ApiResult>;
+    askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     confirmPayment(arg0: string): Promise<ConfirmPaymentResult>;
     createCampaign(arg0: CreateCampaignInput): Promise<CreateCampaignResult>;
     createPaymentIntent(arg0: PaymentPurpose, arg1: string | null, arg2: CreditPack | null): Promise<PaymentIntentResult>;
@@ -597,11 +633,13 @@ export interface backendInterface {
     http_request(arg0: HttpRequest): Promise<HttpResponse>;
     http_request_update(arg0: HttpRequest): Promise<HttpResponse>;
     listPresets(): Promise<Array<AudiencePresetShared>>;
+    listSupportTickets(): Promise<Array<SupportTicket>>;
     pollActiveTracking(): Promise<bigint>;
     resolveTrackingLink(arg0: string, arg1: string | null): Promise<TrackingResolveResult>;
     saveAdminKeys(arg0: AdminKeysInput): Promise<ApiResult>;
     saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean>;
     savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult>;
+    submitSupportTicket(arg0: SupportTicketInput): Promise<SupportTicketResult>;
     syncClick2MailTracking(arg0: string): Promise<SyncResult>;
     transform(arg0: TransformationInput): Promise<TransformationOutput>;
     updateAccountEmail(arg0: string): Promise<ApiResult>;
@@ -716,6 +754,9 @@ export class Backend implements backendInterface {
     async applyReferralReward(arg0: string): Promise<ApiResult> {
         return this._call("applyReferralReward", [arg0]) as Promise<ApiResult>;
     }
+    async askStampy(arg0: Array<StampyTurn>): Promise<StampyReply> {
+        return this._call("askStampy", [arg0]) as Promise<StampyReply>;
+    }
     async confirmPayment(arg0: string): Promise<ConfirmPaymentResult> {
         return this._call("confirmPayment", [arg0]) as Promise<ConfirmPaymentResult>;
     }
@@ -806,6 +847,9 @@ export class Backend implements backendInterface {
     async listPresets(): Promise<Array<AudiencePresetShared>> {
         return this._call("listPresets", []) as Promise<Array<AudiencePresetShared>>;
     }
+    async listSupportTickets(): Promise<Array<SupportTicket>> {
+        return this._call("listSupportTickets", []) as Promise<Array<SupportTicket>>;
+    }
     async pollActiveTracking(): Promise<bigint> {
         return this._call("pollActiveTracking", []) as Promise<bigint>;
     }
@@ -820,6 +864,9 @@ export class Backend implements backendInterface {
     }
     async savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult> {
         return this._call("savePreset", [arg0, arg1, arg2]) as Promise<PresetResult>;
+    }
+    async submitSupportTicket(arg0: SupportTicketInput): Promise<SupportTicketResult> {
+        return this._call("submitSupportTicket", [arg0]) as Promise<SupportTicketResult>;
     }
     async syncClick2MailTracking(arg0: string): Promise<SyncResult> {
         return this._call("syncClick2MailTracking", [arg0]) as Promise<SyncResult>;

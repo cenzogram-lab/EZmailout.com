@@ -194,7 +194,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t bg-muted/40 py-8">
+      {/* Extra bottom padding lets the end of every page scroll clear of the
+          Stampy launcher in the bottom-right corner. */}
+      <footer className="border-t bg-muted/40 pb-24 pt-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <span>
             &copy; {new Date().getFullYear()} {BRAND.site} · Direct mail without
@@ -213,7 +215,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
       <CreditTopUpModal />
-      <Toaster position="bottom-right" richColors />
+      {/* Lifted above the Stampy launcher, which owns the bottom-right corner. */}
+      <Toaster
+        position="bottom-right"
+        richColors
+        offset={{ bottom: 92 }}
+        mobileOffset={{ bottom: 88 }}
+      />
     </div>
   );
 }

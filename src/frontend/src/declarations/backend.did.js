@@ -12,6 +12,13 @@ export const ApiResult = IDL.Record({
   'ok' : IDL.Bool,
   'error' : IDL.Opt(IDL.Text),
 });
+export const StampyRole = IDL.Variant({ 'User' : IDL.Null, 'Assistant' : IDL.Null });
+export const StampyTurn = IDL.Record({ 'content' : IDL.Text, 'role' : StampyRole });
+export const StampyReply = IDL.Record({
+  'ok' : IDL.Bool,
+  'error' : IDL.Opt(IDL.Text),
+  'reply' : IDL.Opt(IDL.Text),
+});
 export const PaymentState = IDL.Variant({
   'Failed' : IDL.Null,
   'Succeeded' : IDL.Null,
@@ -469,6 +476,16 @@ export const AudiencePresetShared = IDL.Record({
   'sourceCampaignId' : IDL.Opt(IDL.Text),
   'recipientCount' : IDL.Nat,
 });
+export const SupportTicket = IDL.Record({
+  'id' : IDL.Text,
+  'subject' : IDL.Text,
+  'userId' : IDL.Opt(IDL.Text),
+  'name' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'pagePath' : IDL.Text,
+  'email' : IDL.Text,
+  'message' : IDL.Text,
+});
 export const TrackingResolveResult = IDL.Record({
   'ok' : IDL.Bool,
   'campaignId' : IDL.Opt(IDL.Text),
@@ -490,6 +507,18 @@ export const AdminKeysInput = IDL.Record({
 export const PresetResult = IDL.Record({
   'ok' : IDL.Bool,
   'presetId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+});
+export const SupportTicketInput = IDL.Record({
+  'subject' : IDL.Text,
+  'name' : IDL.Text,
+  'pagePath' : IDL.Opt(IDL.Text),
+  'email' : IDL.Text,
+  'message' : IDL.Text,
+});
+export const SupportTicketResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'ticketId' : IDL.Opt(IDL.Text),
   'error' : IDL.Opt(IDL.Text),
 });
 export const SyncResult = IDL.Record({
@@ -517,6 +546,7 @@ export const TransformationOutput = IDL.Record({
 
 export const idlService = IDL.Service({
   'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
+  'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
   'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
   'createCampaign' : IDL.Func(
       [CreateCampaignInput],
@@ -591,6 +621,7 @@ export const idlService = IDL.Service({
   'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
   'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
+  'listSupportTickets' : IDL.Func([], [IDL.Vec(SupportTicket)], ['query']),
   'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
   'resolveTrackingLink' : IDL.Func(
       [IDL.Text, IDL.Opt(IDL.Text)],
@@ -602,6 +633,11 @@ export const idlService = IDL.Service({
   'savePreset' : IDL.Func(
       [IDL.Text, IDL.Vec(VerifiedAddress), IDL.Opt(IDL.Text)],
       [PresetResult],
+      [],
+    ),
+  'submitSupportTicket' : IDL.Func(
+      [SupportTicketInput],
+      [SupportTicketResult],
       [],
     ),
   'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),
@@ -634,6 +670,13 @@ export const idlFactory = ({ IDL }) => {
   const ApiResult = IDL.Record({
     'ok' : IDL.Bool,
     'error' : IDL.Opt(IDL.Text),
+  });
+  const StampyRole = IDL.Variant({ 'User' : IDL.Null, 'Assistant' : IDL.Null });
+  const StampyTurn = IDL.Record({ 'content' : IDL.Text, 'role' : StampyRole });
+  const StampyReply = IDL.Record({
+    'ok' : IDL.Bool,
+    'error' : IDL.Opt(IDL.Text),
+    'reply' : IDL.Opt(IDL.Text),
   });
   const PaymentState = IDL.Variant({
     'Failed' : IDL.Null,
@@ -1092,6 +1135,16 @@ export const idlFactory = ({ IDL }) => {
     'sourceCampaignId' : IDL.Opt(IDL.Text),
     'recipientCount' : IDL.Nat,
   });
+  const SupportTicket = IDL.Record({
+    'id' : IDL.Text,
+    'subject' : IDL.Text,
+    'userId' : IDL.Opt(IDL.Text),
+    'name' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'pagePath' : IDL.Text,
+    'email' : IDL.Text,
+    'message' : IDL.Text,
+  });
   const TrackingResolveResult = IDL.Record({
     'ok' : IDL.Bool,
     'campaignId' : IDL.Opt(IDL.Text),
@@ -1113,6 +1166,18 @@ export const idlFactory = ({ IDL }) => {
   const PresetResult = IDL.Record({
     'ok' : IDL.Bool,
     'presetId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+  });
+  const SupportTicketInput = IDL.Record({
+    'subject' : IDL.Text,
+    'name' : IDL.Text,
+    'pagePath' : IDL.Opt(IDL.Text),
+    'email' : IDL.Text,
+    'message' : IDL.Text,
+  });
+  const SupportTicketResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'ticketId' : IDL.Opt(IDL.Text),
     'error' : IDL.Opt(IDL.Text),
   });
   const SyncResult = IDL.Record({
@@ -1139,6 +1204,7 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
+    'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
     'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
     'createCampaign' : IDL.Func(
         [CreateCampaignInput],
@@ -1213,6 +1279,7 @@ export const idlFactory = ({ IDL }) => {
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
     'listPresets' : IDL.Func([], [IDL.Vec(AudiencePresetShared)], ['query']),
+    'listSupportTickets' : IDL.Func([], [IDL.Vec(SupportTicket)], ['query']),
     'pollActiveTracking' : IDL.Func([], [IDL.Nat], []),
     'resolveTrackingLink' : IDL.Func(
         [IDL.Text, IDL.Opt(IDL.Text)],
@@ -1224,6 +1291,11 @@ export const idlFactory = ({ IDL }) => {
     'savePreset' : IDL.Func(
         [IDL.Text, IDL.Vec(VerifiedAddress), IDL.Opt(IDL.Text)],
         [PresetResult],
+        [],
+      ),
+    'submitSupportTicket' : IDL.Func(
+        [SupportTicketInput],
+        [SupportTicketResult],
         [],
       ),
     'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),

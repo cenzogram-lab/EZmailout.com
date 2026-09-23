@@ -15,7 +15,7 @@ import {
 import { useAccountSync } from "@/hooks/use-account";
 import { useCampaigns } from "@/hooks/use-backend";
 import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowRight,
   LayoutDashboard,
@@ -25,6 +25,7 @@ import {
   Plus,
   Rocket,
 } from "lucide-react";
+import { useEffect } from "react";
 
 const RECENT_LIMIT = 5;
 
@@ -160,6 +161,17 @@ function QuickLinks() {
 
 export function DashboardPage() {
   const { isAuthenticated, isInitializing } = useAccountSync();
+  const hash = useRouterState({ select: (s) => s.location.hash });
+
+  // `/dashboard#referrals` (Stampy's Referral Rewards chip): the sections only
+  // exist once signed in, so scroll after they render.
+  useEffect(() => {
+    const id = hash.replace(/^#/, "");
+    if (!id || !isAuthenticated) return;
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash, isAuthenticated]);
 
   return (
     <div
@@ -196,7 +208,9 @@ export function DashboardPage() {
             <QuickLinks />
             <RecentCampaigns />
             <CreditsWidget />
-            <ReferralWidget />
+            <div id="referrals" className="scroll-mt-24">
+              <ReferralWidget />
+            </div>
           </div>
         </div>
       )}

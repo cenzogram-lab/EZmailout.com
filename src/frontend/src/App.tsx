@@ -1,3 +1,4 @@
+import { StampyChatbot } from "@/components/chat/StampyChatbot";
 import { Layout } from "@/components/layout/Layout";
 import { WizardLayout } from "@/components/layout/WizardLayout";
 import { Step1ProductCatalog } from "@/components/wizard/Step1ProductCatalog";
@@ -13,17 +14,34 @@ import { ReferralLandingPage } from "@/pages/ReferralLandingPage";
 import { StoreFront } from "@/pages/StoreFront";
 import { TemplatesPage } from "@/pages/Templates";
 import { TrackRedirectPage } from "@/pages/TrackRedirectPage";
-import { useWizardStore } from "@/store/wizard";
+import { reachableWizardStep, useWizardStore } from "@/store/wizard";
 import {
   Outlet,
   RouterProvider,
   createRootRoute,
   createRoute,
   createRouter,
+  useSearch,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+/** `?step=N` on `/wizard`, when N is a real step. */
+function parseWizardSearch(search: Record<string, unknown>): { step?: number } {
+  const step = Number(search.step);
+  return Number.isInteger(step) && step >= 1 && step <= 4 ? { step } : {};
+}
 
 function WizardPage() {
   const currentStep = useWizardStore((s) => s.currentStep);
+  const setCurrentStep = useWizardStore((s) => s.setCurrentStep);
+  const { step } = useSearch({ strict: false }) as { step?: number };
+
+  // Deep links (Stampy's chips, shared URLs) open the requested step when the
+  // steps before it allow; the wizard store stays the source of truth.
+  useEffect(() => {
+    if (step !== undefined) setCurrentStep(reachableWizardStep(step));
+  }, [step, setCurrentStep]);
+
   return (
     <WizardLayout currentStep={currentStep}>
       {currentStep === 1 && <Step1ProductCatalog />}
@@ -36,9 +54,12 @@ function WizardPage() {
 
 const rootRoute = createRootRoute({
   component: () => (
-    <Layout>
-      <Outlet />
-    </Layout>
+    <>
+      <Layout>
+        <Outlet />
+      </Layout>
+      <StampyChatbot />
+    </>
   ),
 });
 
@@ -52,6 +73,7 @@ const routes = [
     getParentRoute: () => rootRoute,
     path: "/wizard",
     component: WizardPage,
+    validateSearch: parseWizardSearch,
   }),
   createRoute({
     getParentRoute: () => rootRoute,

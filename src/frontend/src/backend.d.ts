@@ -108,6 +108,41 @@ export interface SyncResult {
     ok: boolean;
     status?: CampaignStatus;
 }
+export interface SupportTicketResult {
+    error?: string;
+    ok: boolean;
+    ticketId?: string;
+}
+export interface SupportTicketInput {
+    email: string;
+    message: string;
+    name: string;
+    pagePath?: string;
+    subject: string;
+}
+export interface SupportTicket {
+    createdAt: bigint;
+    email: string;
+    id: string;
+    message: string;
+    name: string;
+    pagePath: string;
+    subject: string;
+    userId?: string;
+}
+export interface StampyTurn {
+    content: string;
+    role: StampyRole;
+}
+export enum StampyRole {
+    Assistant = "Assistant",
+    User = "User"
+}
+export interface StampyReply {
+    error?: string;
+    ok: boolean;
+    reply?: string;
+}
 export interface ReturnAddress {
     address_line1: string;
     address_line2?: string;
@@ -518,6 +553,7 @@ export interface AccountResult {
 }
 export interface backendInterface {
     applyReferralReward(arg0: string): Promise<ApiResult>;
+    askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     confirmPayment(arg0: string): Promise<ConfirmPaymentResult>;
     createCampaign(arg0: CreateCampaignInput): Promise<CreateCampaignResult>;
     createPaymentIntent(arg0: PaymentPurpose, arg1: string | null, arg2: CreditPack | null): Promise<PaymentIntentResult>;
@@ -548,11 +584,13 @@ export interface backendInterface {
     http_request(arg0: HttpRequest): Promise<HttpResponse>;
     http_request_update(arg0: HttpRequest): Promise<HttpResponse>;
     listPresets(): Promise<Array<AudiencePresetShared>>;
+    listSupportTickets(): Promise<Array<SupportTicket>>;
     pollActiveTracking(): Promise<bigint>;
     resolveTrackingLink(arg0: string, arg1: string | null): Promise<TrackingResolveResult>;
     saveAdminKeys(arg0: AdminKeysInput): Promise<ApiResult>;
     saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean>;
     savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult>;
+    submitSupportTicket(arg0: SupportTicketInput): Promise<SupportTicketResult>;
     syncClick2MailTracking(arg0: string): Promise<SyncResult>;
     transform(arg0: TransformationInput): Promise<TransformationOutput>;
     updateAccountEmail(arg0: string): Promise<ApiResult>;

@@ -3,6 +3,7 @@ import { CsvUploader } from "@/components/audience/CsvUploader";
 import { PresetEditor } from "@/components/audience/PresetEditor";
 import { PresetPicker } from "@/components/audience/PresetPicker";
 import { RadiusMap } from "@/components/audience/RadiusMap";
+import { StampyStep2Audience, StampyTip } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,6 +109,11 @@ export function Step2AudienceIntake() {
           </Badge>
         )}
       </div>
+
+      <StampyTip id="step2" mascot={StampyStep2Audience}>
+        Upload your CSV or select a saved preset. Click2Mail runs automated USPS
+        CASS certification on upload so no postage is wasted on invalid routes.
+      </StampyTip>
 
       <Tabs
         value={tab}
