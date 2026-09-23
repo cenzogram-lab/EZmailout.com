@@ -56,6 +56,31 @@ export default {
           4: "oklch(var(--chart-4))",
           5: "oklch(var(--chart-5))",
         },
+        navy: {
+          DEFAULT: "oklch(var(--navy) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground))",
+        },
+        "indigo-deep": {
+          DEFAULT: "oklch(var(--indigo-deep) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground))",
+        },
+        ice: {
+          DEFAULT: "oklch(var(--ice) / <alpha-value>)",
+          foreground: "oklch(var(--foreground))",
+        },
+        sky: {
+          DEFAULT: "oklch(var(--sky) / <alpha-value>)",
+        },
+        lime: {
+          DEFAULT: "oklch(var(--lime) / <alpha-value>)",
+        },
+        "emerald-brand": {
+          DEFAULT: "oklch(var(--emerald) / <alpha-value>)",
+          foreground: "oklch(0.98 0 0)",
+        },
+        slate: {
+          DEFAULT: "oklch(var(--slate) / <alpha-value>)",
+        },
         sidebar: {
           DEFAULT: "oklch(var(--sidebar))",
           foreground: "oklch(var(--sidebar-foreground))",
@@ -68,11 +93,14 @@ export default {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "serif"],
-        body: ["var(--font-body)", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       borderRadius: {
+        "2xl": "calc(var(--radius) + 8px)",
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -95,7 +123,7 @@ export default {
         },
         "pipeline-pulse": {
           "0%, 100%": { transform: "scale(1)", filter: "drop-shadow(0 0 0 transparent)" },
-          "50%": { transform: "scale(1.1)", filter: "drop-shadow(0 0 12px oklch(0.7 0.15 60 / 0.6))" },
+          "50%": { transform: "scale(1.1)", filter: "drop-shadow(0 0 12px oklch(0.585 0.204 277 / 0.55))" },
         },
         "pipeline-flag": {
           from: { transform: "rotateZ(0deg)" },
@@ -117,6 +145,10 @@ export default {
           from: { transform: "rotateY(0deg)" },
           to: { transform: "rotateY(25deg)" },
         },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +160,7 @@ export default {
         "card-float": "card-float 3s ease-in-out infinite",
         "card-rotate-left": "card-rotate-left 0.4s ease-out forwards",
         "card-rotate-right": "card-rotate-right 0.4s ease-out forwards",
+        "fade-up": "fade-up 0.5s ease-out both",
       },
     },
   },

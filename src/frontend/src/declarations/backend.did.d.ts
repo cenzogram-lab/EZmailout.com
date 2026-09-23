@@ -10,6 +10,11 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AccountResult {
+  'ok' : boolean,
+  'error' : [] | [string],
+  'account' : [] | [UserAccountShared],
+}
 export interface AddressInput {
   'zip_code' : string,
   'address_line1' : string,
@@ -24,34 +29,213 @@ export interface AddressVerificationResult {
   'input' : AddressInput,
   'isValid' : boolean,
 }
-export interface AdminKeys {
+export interface AdminKeysInput {
+  'webhookSecret' : [] | [string],
   'resendKey' : [] | [string],
-  'lobKey' : [] | [string],
-  'stripeKey' : [] | [string],
+  'click2mailUsername' : [] | [string],
+  'click2mailEnvironment' : [] | [Click2MailEnvironment],
+  'sandboxCheckout' : [] | [boolean],
+  'click2mailPassword' : [] | [string],
+  'stripeSecretKey' : [] | [string],
+  'openAiKey' : [] | [string],
+  'stripePublishableKey' : [] | [string],
+  'outcallProxyUrl' : [] | [string],
 }
-export type AudienceType = { 'CSV' : null } |
-  { 'Map' : null };
+export interface AdminKeysView {
+  'openAiKeyMasked' : [] | [string],
+  'adminPrincipal' : [] | [string],
+  'click2mailUsername' : [] | [string],
+  'click2mailEnvironment' : Click2MailEnvironment,
+  'sandboxCheckout' : boolean,
+  'callerIsAdmin' : boolean,
+  'stripePublishableKey' : [] | [string],
+  'webhookSecretMasked' : [] | [string],
+  'stripeSecretKeyMasked' : [] | [string],
+  'outcallProxyUrl' : [] | [string],
+  'resendKeyMasked' : [] | [string],
+  'click2mailPasswordMasked' : [] | [string],
+  'webhookPath' : string,
+}
+export interface AiCopyInput {
+  'offer' : string,
+  'tone' : [] | [string],
+  'businessName' : string,
+  'callToAction' : string,
+  'industry' : string,
+}
+export interface AiCopyResult {
+  'ok' : boolean,
+  'bullets' : Array<string>,
+  'ctas' : Array<string>,
+  'creditsCharged' : bigint,
+  'error' : [] | [string],
+  'headlines' : Array<string>,
+  'creditBalance' : [] | [bigint],
+}
+export interface AiImageResult {
+  'ok' : boolean,
+  'creditsCharged' : bigint,
+  'error' : [] | [string],
+  'imageUrl' : [] | [string],
+  'creditBalance' : [] | [bigint],
+  'revisedPrompt' : [] | [string],
+}
+export type AiImageSize = { 'WideHd1792' : null } |
+  { 'Square1024' : null } |
+  { 'Wide1792' : null };
+export interface AiPricing {
+  'monthlyAllowance' : bigint,
+  'wideImageCredits' : bigint,
+  'hdImageCredits' : bigint,
+  'copyCredits' : bigint,
+  'squareImageCredits' : bigint,
+  'creditValueCents' : bigint,
+  'packs' : Array<CreditPackInfo>,
+}
+export interface ApiResult { 'ok' : boolean, 'error' : [] | [string] }
+export interface AudiencePresetShared {
+  'id' : string,
+  'ownerId' : string,
+  'name' : string,
+  'createdAt' : bigint,
+  'updatedAt' : bigint,
+  'sourceCampaignId' : [] | [string],
+  'recipientCount' : bigint,
+}
+export type AudienceType = { 'SavedPreset' : null } |
+  { 'CsvUpload' : null } |
+  { 'GeoRadius' : null };
 export interface CampaignRecordShared {
   'id' : string,
   'status' : CampaignStatus,
+  'paymentStatus' : PaymentStatus,
+  'unitPriceCents' : bigint,
+  'c2mAddressListId' : [] | [string],
+  'returnAddress' : [] | [ReturnAddress],
+  'ownerId' : string,
+  'baseCostCents' : bigint,
+  'name' : string,
   'createdAt' : bigint,
-  'trackingId' : [] | [string],
+  'c2mDocumentId' : [] | [string],
+  'updatedAt' : bigint,
   'canvasState' : [] | [CanvasState],
+  'productionStatus' : ProductionStatus,
+  'qrScanCount' : bigint,
+  'qrDestinationUrl' : [] | [string],
   'designTemplateId' : [] | [string],
+  'c2mJobId' : [] | [string],
+  'lastError' : [] | [string],
+  'printSpec' : PrintSpec,
   'recipientCount' : bigint,
   'audienceType' : AudienceType,
+  'totalAmountChargedCents' : bigint,
   'product' : ProductSelection,
+  'paymentIntentId' : [] | [string],
+  'sourcePresetId' : [] | [string],
 }
 export type CampaignStatus = { 'InTransit' : null } |
   { 'InProduction' : null } |
   { 'Delivered' : null } |
   { 'Created' : null } |
   { 'SortedAtLocalHub' : null };
-export interface CanvasState {
+export interface CanvasSide {
+  'backgroundColor' : string,
   'backgroundImageUrl' : [] | [string],
   'logos' : Array<LogoState>,
+  'qrCodes' : Array<QrCodeState>,
   'textBlocks' : Array<TextBlockState>,
-  'qrCode' : [] | [QrCodeState],
+}
+export interface CanvasState {
+  'front' : CanvasSide,
+  'heightInches' : number,
+  'designPpi' : bigint,
+  'back' : CanvasSide,
+  'widthInches' : number,
+}
+export type Click2MailEnvironment = { 'Production' : null } |
+  { 'Staging' : null };
+export interface ConfirmPaymentResult {
+  'ok' : boolean,
+  'campaignId' : [] | [string],
+  'error' : [] | [string],
+  'state' : [] | [PaymentState],
+  'creditBalance' : [] | [bigint],
+  'subscriptionActive' : [] | [boolean],
+  'referralRewardApplied' : boolean,
+}
+export interface CreateCampaignInput {
+  'returnAddress' : [] | [ReturnAddress],
+  'name' : string,
+  'canvasState' : [] | [CanvasState],
+  'recipients' : Array<VerifiedAddress>,
+  'mailClass' : [] | [MailClass],
+  'qrDestinationUrl' : [] | [string],
+  'designTemplateId' : [] | [string],
+  'recipientCount' : bigint,
+  'audienceType' : AudienceType,
+  'product' : ProductSelection,
+  'sourcePresetId' : [] | [string],
+}
+export interface CreateCampaignResult {
+  'ok' : boolean,
+  'unitPriceCents' : [] | [bigint],
+  'totalCents' : [] | [bigint],
+  'campaignId' : [] | [string],
+  'error' : [] | [string],
+}
+export interface CreditLedgerEntry {
+  'id' : bigint,
+  'userId' : string,
+  'reference' : [] | [string],
+  'timestamp' : bigint,
+  'balanceAfter' : bigint,
+  'delta' : bigint,
+  'reason' : string,
+}
+export type CreditPack = { 'Starter' : null } |
+  { 'Growth' : null } |
+  { 'Agency' : null };
+export interface CreditPackInfo {
+  'credits' : bigint,
+  'name' : string,
+  'pack' : CreditPack,
+  'bonusCredits' : bigint,
+  'priceCents' : bigint,
+}
+export interface CreditResult {
+  'ok' : boolean,
+  'balance' : [] | [bigint],
+  'error' : [] | [string],
+}
+export interface DispatchResult {
+  'ok' : boolean,
+  'jobId' : [] | [string],
+  'error' : [] | [string],
+  'productionStatus' : [] | [ProductionStatus],
+  'documentId' : [] | [string],
+  'addressListId' : [] | [string],
+}
+export interface DocumentUploadStatus {
+  'campaignId' : string,
+  'mimeType' : string,
+  'receivedChunks' : bigint,
+  'fileName' : string,
+  'complete' : boolean,
+  'totalChunks' : bigint,
+  'totalBytes' : bigint,
+}
+export type HeaderField = [string, string];
+export interface HttpRequest {
+  'url' : string,
+  'method' : string,
+  'body' : Uint8Array,
+  'headers' : Array<HeaderField>,
+}
+export interface HttpResponse {
+  'body' : Uint8Array,
+  'headers' : Array<HeaderField>,
+  'upgrade' : [] | [boolean],
+  'status_code' : number,
 }
 export interface LogoState {
   'x' : number,
@@ -59,41 +243,193 @@ export interface LogoState {
   'id' : string,
   'url' : string,
   'height' : number,
+  'zIndex' : bigint,
   'width' : number,
+}
+export type MailClass = { 'PriorityExpress' : null } |
+  { 'MarketingMail' : null } |
+  { 'FirstClass' : null } |
+  { 'Priority' : null };
+export interface PaymentIntentResult {
+  'ok' : boolean,
+  'sandbox' : boolean,
+  'amountCents' : [] | [bigint],
+  'error' : [] | [string],
+  'waived' : boolean,
+  'publishableKey' : [] | [string],
+  'clientSecret' : [] | [string],
+  'paymentIntentId' : [] | [string],
+}
+export type PaymentPurpose = { 'CampaignOrder' : null } |
+  { 'CreditPack' : null } |
+  { 'Subscription' : null };
+export type PaymentState = { 'Failed' : null } |
+  { 'Succeeded' : null } |
+  { 'Created' : null } |
+  { 'Waived' : null };
+export type PaymentStatus = { 'Refunded' : null } |
+  { 'Paid' : null } |
+  { 'Unpaid' : null } |
+  { 'Waived' : null } |
+  { 'Pending' : null };
+export interface PresetResult {
+  'ok' : boolean,
+  'presetId' : [] | [string],
+  'error' : [] | [string],
+}
+export interface PricingRow {
+  'heightInches' : number,
+  'displayName' : string,
+  'retailPriceCents' : bigint,
+  'baseCostCents' : bigint,
+  'productType' : ProductType,
+  'marginCents' : bigint,
+  'layoutVariant' : string,
+  'marginPercent' : bigint,
+  'widthInches' : number,
+  'printSpec' : PrintSpec,
+}
+export interface PrintSpec {
+  'envelope' : [] | [string],
+  'color' : string,
+  'printOption' : string,
+  'layout' : string,
+  'paperType' : string,
+  'productionTime' : string,
+  'mailClass' : MailClass,
+  'documentClass' : string,
 }
 export interface ProductSelection {
   'productType' : ProductType,
   'layoutVariant' : string,
   'colorOption' : [] | [string],
 }
-export type ProductType = { 'SelfMailer' : null } |
+export type ProductType = { 'PriorityMail' : null } |
+  { 'SelfMailer' : null } |
+  { 'Eddm' : null } |
+  { 'CertifiedMail' : null } |
+  { 'Notecard' : null } |
   { 'Booklet' : null } |
+  { 'ReplyMail' : null } |
+  { 'RackCard' : null } |
+  { 'CardStock' : null } |
+  { 'Flyer' : null } |
   { 'Letter' : null } |
   { 'SnapPack' : null } |
-  { 'Postcard' : null };
+  { 'Brochure' : null } |
+  { 'Postcard' : null } |
+  { 'PriorityMailExpress' : null };
+export type ProductionStatus = { 'ReadyToDispatch' : null } |
+  { 'Failed' : null } |
+  { 'DocumentUploaded' : null } |
+  { 'AwaitingPayment' : null } |
+  { 'Draft' : null } |
+  { 'AddressListReady' : null } |
+  { 'Submitted' : null } |
+  { 'JobCreated' : null };
+export interface PublicConfig {
+  'click2mailEnvironment' : Click2MailEnvironment,
+  'openAiConfigured' : boolean,
+  'trackingBaseUrl' : string,
+  'stripeConfigured' : boolean,
+  'click2mailConfigured' : boolean,
+  'sandboxCheckout' : boolean,
+  'resendConfigured' : boolean,
+  'stripePublishableKey' : [] | [string],
+  'referralBaseUrl' : string,
+}
 export interface QrCodeState {
   'x' : number,
   'y' : number,
   'id' : string,
   'url' : string,
+  'foreground' : string,
+  'zIndex' : bigint,
+  'background' : string,
+  'mode' : QrMode,
   'size' : number,
+  'caption' : [] | [string],
+}
+export type QrMode = { 'DynamicTracking' : null } |
+  { 'StaticUrl' : null };
+export interface QrScanEvent {
+  'campaignId' : string,
+  'timestamp' : bigint,
+  'userAgent' : [] | [string],
+  'recipientId' : string,
+}
+export interface QrScanStats {
+  'uniqueRecipients' : bigint,
+  'totalScans' : bigint,
+  'recentScans' : Array<QrScanEvent>,
+}
+export interface ReferralReward {
+  'id' : bigint,
+  'refereeId' : string,
+  'amountCents' : bigint,
+  'referrerId' : string,
+  'timestamp' : bigint,
+  'paymentIntentId' : string,
+}
+export interface ReferralStats {
+  'referralCreditsRedeemed' : bigint,
+  'referralCode' : string,
+  'referralLink' : string,
+  'freeMonthsAvailable' : bigint,
+  'referralCount' : bigint,
+  'subscriptionActive' : boolean,
+  'rewards' : Array<ReferralReward>,
+  'referralCreditsEarned' : bigint,
+}
+export interface ReturnAddress {
+  'zip_code' : string,
+  'address_line1' : string,
+  'address_line2' : [] | [string],
+  'city' : string,
+  'name' : string,
+  'state' : string,
+  'organization' : [] | [string],
+}
+export interface SyncResult {
+  'ok' : boolean,
+  'status' : [] | [CampaignStatus],
+  'newEvents' : bigint,
+  'error' : [] | [string],
 }
 export interface TextBlockState {
   'x' : number,
   'y' : number,
   'id' : string,
   'height' : number,
+  'zIndex' : bigint,
+  'align' : string,
   'color' : string,
   'text' : string,
+  'fontFamily' : string,
+  'fontWeight' : bigint,
   'width' : number,
   'fontSize' : number,
 }
 export interface TrackingEvent {
-  'lobEventId' : string,
+  'id' : bigint,
+  'status' : CampaignStatus,
+  'source' : TrackingSource,
   'campaignId' : string,
+  'detail' : [] | [string],
   'timestamp' : bigint,
+  'providerEventId' : string,
   'eventType' : string,
 }
+export interface TrackingResolveResult {
+  'ok' : boolean,
+  'campaignId' : [] | [string],
+  'destinationUrl' : [] | [string],
+  'recipientId' : [] | [string],
+}
+export type TrackingSource = { 'System' : null } |
+  { 'Poll' : null } |
+  { 'Webhook' : null } |
+  { 'Manual' : null };
 export interface TransformationInput {
   'context' : Uint8Array,
   'response' : http_request_result,
@@ -102,6 +438,31 @@ export interface TransformationOutput {
   'status' : bigint,
   'body' : Uint8Array,
   'headers' : Array<http_header>,
+}
+export interface UserAccountShared {
+  'id' : string,
+  'referralCreditsRedeemed' : bigint,
+  'referralCode' : string,
+  'referralLink' : string,
+  'freeMonthsAvailable' : bigint,
+  'createdAt' : bigint,
+  'referralCount' : bigint,
+  'email' : string,
+  'updatedAt' : bigint,
+  'referredBy' : [] | [string],
+  'creditBalance' : bigint,
+  'subscriptionActive' : boolean,
+  'referralCreditsEarned' : bigint,
+  'firstPaymentAt' : [] | [bigint],
+  'subscriptionRenewsAt' : bigint,
+}
+export interface VerificationBatchResult {
+  'ok' : boolean,
+  'results' : Array<AddressVerificationResult>,
+  'error' : [] | [string],
+  'validCount' : bigint,
+  'addressListId' : [] | [string],
+  'invalidCount' : bigint,
 }
 export interface VerifiedAddress {
   'zip_code' : string,
@@ -112,6 +473,12 @@ export interface VerifiedAddress {
   'state' : string,
   'zip_plus4' : [] | [string],
 }
+export interface WebhookResult {
+  'ok' : boolean,
+  'status' : [] | [CampaignStatus],
+  'campaignId' : [] | [string],
+  'error' : [] | [string],
+}
 export interface http_header { 'value' : string, 'name' : string }
 export interface http_request_result {
   'status' : bigint,
@@ -119,28 +486,71 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'createCampaign' : ActorMethod<
-    [ProductSelection, bigint, AudienceType],
-    string
+  'applyReferralReward' : ActorMethod<[string], ApiResult>,
+  'confirmPayment' : ActorMethod<[string], ConfirmPaymentResult>,
+  'createCampaign' : ActorMethod<[CreateCampaignInput], CreateCampaignResult>,
+  'createPaymentIntent' : ActorMethod<
+    [PaymentPurpose, [] | [string], [] | [CreditPack]],
+    PaymentIntentResult
+  >,
+  'deductAiCredits' : ActorMethod<[bigint, string], CreditResult>,
+  'deletePreset' : ActorMethod<[string], ApiResult>,
+  'dispatchClick2MailJob' : ActorMethod<[string], DispatchResult>,
+  'ensureAccount' : ActorMethod<[[] | [string], [] | [string]], AccountResult>,
+  'executeClick2MailVerification' : ActorMethod<
+    [Array<AddressInput>],
+    VerificationBatchResult
   >,
   'exportCampaignRecipients' : ActorMethod<[string], [] | [string]>,
-  'fireLobOutcall' : ActorMethod<[string, string, string], string>,
-  'getAdminKeys' : ActorMethod<[], AdminKeys>,
+  'generateAiCopy' : ActorMethod<[AiCopyInput], AiCopyResult>,
+  'generateAiImage' : ActorMethod<[string, AiImageSize], AiImageResult>,
+  'getAdminKeys' : ActorMethod<[], AdminKeysView>,
+  'getAiPricing' : ActorMethod<[], AiPricing>,
   'getCampaign' : ActorMethod<[string], [] | [CampaignRecordShared]>,
+  'getCampaignRecipients' : ActorMethod<[string], Array<VerifiedAddress>>,
   'getCampaigns' : ActorMethod<[], Array<CampaignRecordShared>>,
   'getCanvasState' : ActorMethod<[string], [] | [CanvasState]>,
+  'getCreditLedger' : ActorMethod<[], Array<CreditLedgerEntry>>,
+  'getDocumentUploadStatus' : ActorMethod<
+    [string],
+    [] | [DocumentUploadStatus]
+  >,
+  'getMyAccount' : ActorMethod<[], [] | [UserAccountShared]>,
+  'getPresetAddresses' : ActorMethod<[string], Array<VerifiedAddress>>,
+  'getPricingLedger' : ActorMethod<[], Array<PricingRow>>,
+  'getPublicConfig' : ActorMethod<[], PublicConfig>,
+  'getQrScanStats' : ActorMethod<[string], QrScanStats>,
+  'getReferralStats' : ActorMethod<[], [] | [ReferralStats]>,
   'getTrackingEvents' : ActorMethod<[string], Array<TrackingEvent>>,
-  'handleLobWebhook' : ActorMethod<[string], boolean>,
-  'saveAdminKeys' : ActorMethod<[AdminKeys], boolean>,
+  'handleDeliveryWebhook' : ActorMethod<[string, string], WebhookResult>,
+  'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
+  'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
+  'listPresets' : ActorMethod<[], Array<AudiencePresetShared>>,
+  'pollActiveTracking' : ActorMethod<[], bigint>,
+  'resolveTrackingLink' : ActorMethod<
+    [string, [] | [string]],
+    TrackingResolveResult
+  >,
+  'saveAdminKeys' : ActorMethod<[AdminKeysInput], ApiResult>,
   'saveCanvasState' : ActorMethod<[string, CanvasState], boolean>,
+  'savePreset' : ActorMethod<
+    [string, Array<VerifiedAddress>, [] | [string]],
+    PresetResult
+  >,
+  'syncClick2MailTracking' : ActorMethod<[string], SyncResult>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
+  'updateAccountEmail' : ActorMethod<[string], ApiResult>,
   'updateCampaignStatus' : ActorMethod<
     [string, CampaignStatus, string, bigint],
     boolean
   >,
-  'verifyAddresses' : ActorMethod<
-    [Array<AddressInput>],
-    Array<AddressVerificationResult>
+  'updatePreset' : ActorMethod<
+    [string, string, Array<VerifiedAddress>],
+    ApiResult
+  >,
+  'uploadDocumentChunk' : ActorMethod<
+    [string, bigint, bigint, string, string, Uint8Array],
+    ApiResult
   >,
 }
 export declare const idlService: IDL.ServiceClass;

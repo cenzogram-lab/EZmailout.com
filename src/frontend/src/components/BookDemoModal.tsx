@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { CalendarCheck, CheckCircle2, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -161,25 +162,26 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Top accent line */}
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary" />
+        {/* Top primary line */}
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary to-primary" />
 
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4">
           <div>
             <div className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
               <CalendarCheck className="size-3.5" />
-              Enterprise Sales
+              Talk to EZmailout
             </div>
             <h2
               id="demo-modal-title"
               className="font-display text-xl font-bold text-foreground sm:text-2xl"
             >
-              Schedule a Strategy Call
+              Book a walkthrough
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Talk to our direct mail experts.{" "}
-              <span className="font-medium text-accent">Spots fill fast.</span>
+              A 20-minute call with the EZmailout team — we'll build your first
+              campaign with you.{" "}
+              <span className="font-medium text-primary">Spots fill fast.</span>
             </p>
           </div>
           <button
@@ -269,7 +271,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                     <Clock className="mr-1 inline size-3" />
                     Available Times
                     {selectedDate.isWeekend && (
-                      <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
                         Weekend hours
                       </span>
                     )}
@@ -363,7 +365,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                   <Input
                     id="demo-email"
                     type="email"
-                    placeholder="jane@company.com"
+                    placeholder="jane@yourbusiness.com"
                     value={form.email}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, email: e.target.value }))
@@ -391,7 +393,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 </Label>
                 <Input
                   id="demo-company"
-                  placeholder="Acme Corporation"
+                  placeholder="Your business"
                   value={form.company}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, company: e.target.value }))
@@ -467,7 +469,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 data-ocid="demo_modal.submit_button"
               >
                 <CalendarCheck className="size-4" />
-                Confirm My Strategy Call
+                Confirm my walkthrough
               </Button>
             </form>
           )}
@@ -478,15 +480,15 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               className="flex flex-col items-center py-6 text-center"
               data-ocid="demo_modal.confirmation_panel"
             >
-              <div className="flex size-16 items-center justify-center rounded-full bg-green-500/15 ring-4 ring-green-500/20">
-                <CheckCircle2 className="size-9 text-green-400" />
+              <div className="flex size-16 items-center justify-center rounded-full bg-emerald-brand/10 ring-4 ring-emerald-brand/20">
+                <CheckCircle2 className="size-9 text-emerald-brand" />
               </div>
               <h3 className="mt-4 font-display text-xl font-bold text-foreground">
-                You're on the Calendar!
+                You're on the calendar!
               </h3>
               <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-                We'll send a calendar invite to your email shortly. Our team
-                looks forward to speaking with you.
+                We'll send a calendar invite from {BRAND.supportEmail} shortly.
+                The EZmailout team looks forward to speaking with you.
               </p>
 
               {/* Booking summary */}
@@ -535,7 +537,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 variant="outline"
                 className="mt-5"
                 onClick={onClose}
-                data-ocid="demo_modal.close_button"
+                data-ocid="demo_modal.done_button"
               >
                 Close
               </Button>

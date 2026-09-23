@@ -1,188 +1,461 @@
 import { BookDemoModal } from "@/components/BookDemoModal";
+import { CatalogIcon } from "@/components/catalog/CatalogIcon";
+import { MembershipCard } from "@/components/marketing/MembershipCard";
+import { PricingCalculator } from "@/components/marketing/PricingCalculator";
+import { ProductShowcase } from "@/components/marketing/ProductShowcase";
 import { Button } from "@/components/ui/button";
+import { CATALOG, CATALOG_SIZE_COUNT } from "@/lib/catalog";
+import { AI_COSTS, CREDIT_PACKS, MONTHLY_ALLOWANCE } from "@/lib/credits";
+import { SUBSCRIPTION_PRICE_CENTS, formatCents } from "@/lib/pricing";
 import { Link } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import {
+  AlignCenterVertical,
+  AlignStartVertical,
   ArrowRight,
-  BookOpen,
+  Barcode,
   Check,
-  ChevronRight,
-  FileText,
-  Mail,
+  Copy,
+  Image as ImageIcon,
+  Layers,
+  LayoutTemplate,
   MapPin,
-  Package,
+  Minus,
+  Palette,
   Printer,
-  Shield,
-  Truck,
+  QrCode,
+  Rocket,
+  ScanEye,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Type,
   Upload,
+  Users,
   X,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
-/* ─── Animated Mail Pipeline Widget ─── */
-function PipelineWidget() {
+/* ─── Shared section shell ─── */
+function Section({
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  className = "",
+}: {
+  id?: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-sm sm:p-10">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+    <section
+      id={id}
+      className={`mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20 lg:px-8 ${className}`}
+    >
+      <div className="mb-10 text-center">
+        {eyebrow && (
+          <div className="mb-3 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            {eyebrow}
+          </div>
+        )}
+        <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mx-auto mt-3 max-w-2xl text-base text-muted-foreground">
+            {subtitle}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
 
-      <div className="relative flex items-center justify-between gap-2 sm:gap-4">
-        {/* Stage 1: Digital Trigger */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16">
-            <svg
-              role="img"
-              aria-label="Digital trigger icon"
-              className="size-7 text-primary sm:size-8"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
+/* ─── Studio mock (hero illustration built from the real design tokens) ─── */
+const RAIL_ITEMS: { icon: LucideIcon; label: string }[] = [
+  { icon: LayoutTemplate, label: "Templates" },
+  { icon: Layers, label: "Elements" },
+  { icon: Type, label: "Text" },
+  { icon: Upload, label: "Uploads" },
+  { icon: Palette, label: "Brand" },
+  { icon: QrCode, label: "QR" },
+  { icon: Sparkles, label: "AI" },
+];
+
+function StudioMock() {
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-[#e5e7eb] bg-card shadow-xl shadow-navy/10"
+      data-ocid="hero.studio_mock"
+      aria-hidden="true"
+    >
+      <div className="flex items-center gap-2 border-b border-[#e5e7eb] px-3 py-2">
+        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
+        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
+        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
+        <span className="ml-2 rounded-full bg-[#f0f1f5] px-2 py-0.5 text-[10px] font-medium text-[#575859]">
+          Spring open-house · 6″ × 4.25″ Postcard
+        </span>
+        <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+          Continue to review
+        </span>
+      </div>
+      <div className="flex">
+        <div className="flex w-14 flex-col items-center gap-2 border-r border-[#e5e7eb] bg-[#f6f7f9] py-3">
+          {RAIL_ITEMS.map((item, i) => (
+            <span
+              key={item.label}
+              className={`flex size-9 items-center justify-center rounded-lg ${i === 2 ? "bg-card text-primary shadow-sm" : "text-[#575859]"}`}
             >
-              <rect x="2" y="3" width="20" height="8" rx="2" />
-              <rect x="2" y="13" width="20" height="8" rx="2" />
-              <circle
-                cx="6"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse"
-              />
-              <circle
-                cx="10"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-75"
-              />
-              <circle
-                cx="14"
-                cy="7"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-150"
-              />
-              <circle
-                cx="6"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-100"
-              />
-              <circle
-                cx="10"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-200"
-              />
-              <circle
-                cx="14"
-                cy="17"
-                r="1"
-                fill="currentColor"
-                className="animate-pulse delay-300"
-              />
-            </svg>
+              <item.icon className="size-4" strokeWidth={1.75} />
+            </span>
+          ))}
+        </div>
+        <div className="studio-dotgrid relative flex-1 p-6 sm:p-8">
+          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-[#e5e7eb] bg-card px-1.5 py-1 shadow-md">
+            <span className="px-1 text-[9px] font-semibold uppercase text-[#575859]">
+              text
+            </span>
+            <AlignStartVertical className="size-3.5 text-[#575859]" />
+            <AlignCenterVertical className="size-3.5 text-primary" />
+            <Copy className="size-3.5 text-[#575859]" />
+            <Trash2 className="size-3.5 text-destructive" />
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Digital Trigger
-          </span>
-        </div>
-
-        {/* Connector 1 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping" />
-        </div>
-
-        {/* Stage 2: Print Network */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16 animate-pipeline-pulse">
-            <Printer className="size-7 text-accent sm:size-8" />
-          </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Print Network
-          </span>
-        </div>
-
-        {/* Connector 2 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping delay-500" />
-        </div>
-
-        {/* Stage 3: In Transit */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16 overflow-hidden">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-dashed border-muted/50" />
+          <div className="relative mx-auto mt-6 aspect-[6/4.25] w-full max-w-[360px]">
+            <div className="absolute -inset-1.5 rounded-sm border-2 border-[#ef4444]/80" />
+            <div className="relative h-full w-full overflow-hidden rounded-sm bg-white shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#cff3fd] via-white to-[#b5d8fc]/60" />
+              <div className="absolute inset-[6%] rounded-sm border border-dashed border-emerald-brand/70" />
+              <div className="absolute left-[10%] top-[16%] w-[62%]">
+                <div className="relative rounded-sm outline outline-2 outline-primary">
+                  <div className="px-1 font-display text-[clamp(14px,3.6vw,22px)] font-extrabold leading-tight text-[#01080a]">
+                    Open house Saturday 10–4
+                  </div>
+                  {[
+                    "-left-1.5 -top-1.5",
+                    "-right-1.5 -top-1.5",
+                    "-left-1.5 -bottom-1.5",
+                    "-right-1.5 -bottom-1.5",
+                  ].map((pos) => (
+                    <span
+                      key={pos}
+                      className={`absolute ${pos} size-3 rounded-full border-2 border-primary bg-white shadow`}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2 px-1 text-[10px] font-medium text-[#575859] sm:text-xs">
+                  120 Harbor View Dr · Free valuation for every visitor
+                </p>
+                <span className="mt-2 inline-block rounded-full bg-navy px-3 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
+                  Book today
+                </span>
+              </div>
+              <div className="absolute bottom-[10%] right-[8%] flex size-12 items-center justify-center rounded-sm bg-white shadow sm:size-14">
+                <QrCode className="size-9 text-[#01080a]" strokeWidth={1.5} />
+              </div>
             </div>
-            <Truck className="size-7 text-primary sm:size-8 animate-pipeline-truck" />
+            <span className="absolute -right-2 -top-3 rounded-full bg-[#607bf7] px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+              You
+            </span>
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            In Transit
-          </span>
-        </div>
-
-        {/* Connector 3 */}
-        <div className="relative flex-1">
-          <div className="border-t-2 border-dashed border-muted" />
-          <div className="absolute -top-1.5 left-0 size-3 rounded-full bg-primary/60 animate-ping delay-1000" />
-        </div>
-
-        {/* Stage 4: Delivered */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative flex size-14 items-center justify-center rounded-xl border border-border bg-background sm:size-16">
-            <svg
-              role="img"
-              aria-label="Delivered mailbox icon"
-              className="size-7 text-green-400 sm:size-8"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <rect x="3" y="6" width="14" height="14" rx="2" />
-              <path d="M17 10h4v10h-4z" />
-              <path
-                d="M17 8v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"
-                className="origin-bottom-left animate-pipeline-flag"
-                style={{
-                  transformOrigin: "3px 20px",
-                  transformBox: "fill-box",
-                }}
-              />
-            </svg>
+          <div className="mt-5 flex items-center justify-center gap-2">
+            {["#f0f1f5", "#0e2b4f", "#b5d8fc", "#6366f1", "#dbefad"].map(
+              (hex) => (
+                <span
+                  key={hex}
+                  className="size-5 rounded-full border border-black/10"
+                  style={{ backgroundColor: hex }}
+                />
+              ),
+            )}
           </div>
-          <span className="text-center text-xs font-medium text-muted-foreground sm:text-sm">
-            Delivered
-          </span>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── Hero ─── */
+interface TrustBadge {
+  icon: LucideIcon;
+  label: string;
+}
+
+const TRUST_BADGES: TrustBadge[] = [
+  { icon: ShieldCheck, label: "CASS-certified addresses" },
+  { icon: Barcode, label: "USPS IMb tracking" },
+  { icon: Printer, label: "Click2Mail fulfilment" },
+  { icon: Layers, label: "No minimums" },
+];
+
+function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
+  return (
+    <section className="relative overflow-hidden bg-background pb-14 pt-14 sm:pb-20 sm:pt-20">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_0%,oklch(var(--primary)/0.12),transparent_70%)]" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:px-8">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-brand opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-brand" />
+            </span>
+            Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month · cancel
+            anytime
+          </div>
+          <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground animate-fade-up sm:text-6xl sm:leading-[1.02]">
+            Design it. Target it.
+            <span className="block text-primary">Mail it tomorrow.</span>
+          </h1>
+          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
+            A Canva-style studio, {CATALOG_SIZE_COUNT} Click2Mail formats and
+            wholesale per-piece pricing for{" "}
+            {formatCents(SUBSCRIPTION_PRICE_CENTS)} a month. Upload a list or
+            draw a radius, design in the browser, and USPS delivers with live
+            IMb tracking.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button
+              asChild
+              size="lg"
+              className="gap-2 px-8 shadow-md shadow-primary/25"
+            >
+              <Link to="/wizard" data-ocid="hero.launch_campaign.button">
+                Start a campaign
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="px-8">
+              <a href="#products" data-ocid="hero.see_pricing.link">
+                Browse the catalog
+              </a>
+            </Button>
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Prefer a walkthrough?{" "}
+            <button
+              type="button"
+              onClick={onOpenDemo}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+              data-ocid="hero.book_demo.button"
+            >
+              Book a demo
+            </button>
+          </p>
+          <ul className="mt-8 flex flex-wrap items-center gap-2">
+            {TRUST_BADGES.map((badge) => (
+              <li
+                key={badge.label}
+                className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+              >
+                <badge.icon className="size-3.5 text-primary" />
+                {badge.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="animate-fade-up">
+          <StudioMock />
+        </div>
+      </div>
+    </section>
   );
 }
 
 /* ─── Marquee ─── */
 function Marquee() {
   const text =
-    "✨ 90% Open Rates Locked • USPS Address Verification Active • 8x Average Retail ROI Delivered • Intelligent Mail Barcodes Armed • 4-Day Delivery Window • 1,000+ Commercial Printers • Personalized Per Recipient • Real-Time USPS Tracking • ";
+    "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • Click2Mail fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
   return (
-    <div className="relative overflow-hidden bg-accent/10 py-3">
+    <div className="relative overflow-hidden border-y border-[#e5e7eb] bg-ice py-3">
       <div className="flex whitespace-nowrap animate-marquee-scroll">
-        <span className="text-sm font-medium text-accent/90 px-4">{text}</span>
-        <span className="text-sm font-medium text-accent/90 px-4">{text}</span>
+        <span className="px-4 text-sm font-medium text-navy">{text}</span>
+        <span className="px-4 text-sm font-medium text-navy">{text}</span>
       </div>
+    </div>
+  );
+}
+
+/* ─── How it works ─── */
+const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
+  {
+    icon: LayoutTemplate,
+    title: "1 · Pick a format",
+    body: `${CATALOG.length} Click2Mail families, every size on the sheet, one transparent per-piece price.`,
+  },
+  {
+    icon: Users,
+    title: "2 · Choose the audience",
+    body: "Upload a CSV for CASS verification, reuse a saved preset, or size a drop from the radius map.",
+  },
+  {
+    icon: Palette,
+    title: "3 · Design in the studio",
+    body: "Templates, shapes, Geist type, brand swatches, AI backgrounds and QR codes on a true-to-scale artboard.",
+  },
+  {
+    icon: Rocket,
+    title: "4 · Launch & track",
+    body: "Preflight, pay per piece, and follow every scan from production to the mailbox.",
+  },
+];
+
+function HowItWorks() {
+  return (
+    <ol className="grid gap-4 md:grid-cols-4" data-ocid="home.how_it_works">
+      {STEPS.map((step, i) => (
+        <li
+          key={step.title}
+          className="relative rounded-2xl border border-[#e5e7eb] bg-card p-6 shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
+        >
+          <span className="inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <step.icon className="size-5" />
+          </span>
+          <h3 className="mt-4 font-display text-base font-bold text-foreground">
+            {step.title}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {step.body}
+          </p>
+          {i < STEPS.length - 1 && (
+            <ArrowRight className="absolute -right-3 top-1/2 hidden size-5 -translate-y-1/2 text-primary/50 md:block" />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/* ─── Studio feature trio ─── */
+const STUDIO_FEATURES: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  bullets: string[];
+}[] = [
+  {
+    icon: Palette,
+    title: "Canva-style studio",
+    body: "A tool rail, drawers and a dotted stage — with print guides Click2Mail actually uses.",
+    bullets: [
+      "Round grab handles, align & depth toolbar",
+      "Cut, ⅛″ bleed and ¼″ safe-zone overlays",
+      "USPS address & IMb zone kept clear",
+    ],
+  },
+  {
+    icon: ScanEye,
+    title: "Live 3D proof",
+    body: "Both faces re-render on every edit; flip, rotate and export at 300 DPI.",
+    bullets: [
+      "Front / back in sync with the editor",
+      "Geist typefaces embedded in the PDF",
+      "Preflight before you pay",
+    ],
+  },
+  {
+    icon: Sparkles,
+    title: "AI Studio",
+    body: `DALL·E 3 backgrounds and GPT-4o mini copy, paid in credits (${MONTHLY_ALLOWANCE} included monthly).`,
+    bullets: [
+      `Backgrounds from ${AI_COSTS.squareImage} credits`,
+      `Copywriter at ${AI_COSTS.copy} credit per round`,
+      "Industry quick-prompts built in",
+    ],
+  },
+];
+
+function StudioFeatures() {
+  return (
+    <div className="grid gap-5 md:grid-cols-3" data-ocid="home.studio_features">
+      {STUDIO_FEATURES.map((f) => (
+        <div
+          key={f.title}
+          className="rounded-2xl border border-[#e5e7eb] bg-card p-6 shadow-sm"
+        >
+          <span className="inline-flex size-11 items-center justify-center rounded-xl bg-ice text-navy">
+            <f.icon className="size-5" />
+          </span>
+          <h3 className="mt-4 font-display text-lg font-bold text-foreground">
+            {f.title}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+          <ul className="mt-4 space-y-2">
+            {f.bullets.map((b) => (
+              <li
+                key={b}
+                className="flex items-start gap-2 text-sm text-muted-foreground"
+              >
+                <Check className="mt-0.5 size-4 shrink-0 text-emerald-brand" />
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── FAQ ─── */
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: "Is there really no minimum order?",
+    a: "No. Members pay the same per-piece price for one postcard or ten thousand. Membership is billed monthly and can be cancelled any time.",
+  },
+  {
+    q: "Which formats can I send?",
+    a: `Every family on the Click2Mail product sheet — postcards, letters, Certified Mail™, EDDM®, Priority Mail®, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock — ${CATALOG_SIZE_COUNT} sizes in total.`,
+  },
+  {
+    q: "How do addresses get verified?",
+    a: "Uploaded lists run through Click2Mail's CASS verification, appending ZIP+4 and flagging undeliverable rows before anything is printed. Clean lists can be saved as presets.",
+  },
+  {
+    q: "What does the AI Studio cost?",
+    a: `One credit is one cent. Copy costs ${AI_COSTS.copy} credit, backgrounds ${AI_COSTS.squareImage}–${AI_COSTS.hdImage} credits, and members receive ${MONTHLY_ALLOWANCE} credits every month.`,
+  },
+  {
+    q: "Can I track delivery?",
+    a: "Yes. Every piece carries a USPS Intelligent Mail barcode; scans appear on a five-stage timeline from production to delivery, and dynamic QR codes report responses.",
+  },
+];
+
+function Faq() {
+  return (
+    <div
+      className="mx-auto max-w-3xl divide-y divide-[#e5e7eb] rounded-2xl border border-[#e5e7eb] bg-card"
+      data-ocid="home.faq"
+    >
+      {FAQ.map((item, i) => (
+        <details key={item.q} className="group px-6 py-4" open={i === 0}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base font-semibold text-foreground">
+            {item.q}
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-transform group-open:rotate-45">
+              +
+            </span>
+          </summary>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {item.a}
+          </p>
+        </details>
+      ))}
     </div>
   );
 }
 
 /* ─── Stats Row ─── */
 const STATS = [
-  { value: "90%", label: "Open Rate", sub: "vs 20% email avg" },
+  { value: "90%", label: "Open rate", sub: "vs ~20% email average" },
   { value: "8x", label: "Avg ROI", sub: "retail campaigns" },
-  { value: "4-Day", label: "Delivery", sub: "nationwide avg" },
-  { value: "USPS", label: "Verified", sub: "CASS-certified" },
+  { value: "4-day", label: "Delivery", sub: "nationwide average" },
+  { value: "USPS", label: "Verified", sub: "CASS-certified addresses" },
 ];
 
 function StatsRow() {
@@ -191,7 +464,7 @@ function StatsRow() {
       {STATS.map((s) => (
         <div
           key={s.value}
-          className="rounded-xl border border-border bg-card/50 p-5 text-center backdrop-blur-sm transition-smooth hover:bg-card hover:-translate-y-1"
+          className="rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
         >
           <div className="font-display text-3xl font-bold text-primary sm:text-4xl">
             {s.value}
@@ -210,32 +483,33 @@ function StatsRow() {
 function ValuePillars() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card/60 p-8 backdrop-blur-sm transition-smooth hover:bg-card">
+      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
         <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
         <div className="relative">
           <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Upload className="size-6" />
           </div>
           <h3 className="font-display text-xl font-bold text-foreground">
-            Win Back Lapsed Customers
+            Win back the customers you already have
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Upload your CSV of past buyers. Our Lob-powered address verification
-            engine scrubs every row to USPS standards, appends missing ZIP+4
-            codes, and strips undeliverable addresses. Then we automatically
-            trigger a personalized re-engagement mailer drop.
+            Upload a CSV of past buyers. Every row is scrubbed to USPS standards
+            through Click2Mail's CASS verification — ZIP+4 appended,
+            undeliverable addresses flagged — before a single piece is printed.
+            Save the clean list as a preset and reuse it next quarter.
           </p>
           <ul className="mt-4 space-y-2">
             {[
-              "CASS-certified address scrubbing",
-              "Auto-append ZIP+4 & delivery point",
-              "Invalid row highlighting & removal",
+              "CASS-certified scrub via Click2Mail",
+              "ZIP+4 and delivery-point correction",
+              "Invalid rows highlighted before you pay",
+              "Saved audience presets for repeat drops",
             ].map((item) => (
               <li
                 key={item}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-green-400" />
+                <Check className="size-4 shrink-0 text-emerald-brand" />
                 {item}
               </li>
             ))}
@@ -243,32 +517,32 @@ function ValuePillars() {
         </div>
       </div>
 
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card/60 p-8 backdrop-blur-sm transition-smooth hover:bg-card">
-        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-accent/5 blur-2xl transition-smooth group-hover:bg-accent/10" />
+      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
+        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
         <div className="relative">
-          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-accent/10 text-accent">
+          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <MapPin className="size-6" />
           </div>
           <h3 className="font-display text-xl font-bold text-foreground">
-            Acquire New Local Customers
+            Reach every mailbox around your location
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Drop a pin on our interactive map canvas, set your radius with a
-            smooth slider, and instantly see how many verified mailboxes sit in
-            that zone. No existing list required — we surface local household
-            counts matched to USPS EDDM boundaries.
+            No list? Drop a pin, drag the radius, and see an instant household
+            estimate built from USPS EDDM carrier routes. Target the ZIP codes
+            and routes that matter and launch without buying a single record.
           </p>
           <ul className="mt-4 space-y-2">
             {[
-              "Interactive radius builder",
-              "ZIP code & area code targeting",
-              "Real-time household count estimator",
+              "Interactive radius builder on a live map",
+              "EDDM carrier-route household estimates",
+              "ZIP code and route-level targeting",
+              "Works alongside your CSV audiences",
             ].map((item) => (
               <li
                 key={item}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-green-400" />
+                <Check className="size-4 shrink-0 text-emerald-brand" />
                 {item}
               </li>
             ))}
@@ -279,131 +553,207 @@ function ValuePillars() {
   );
 }
 
-/* ─── Product Price Grid ─── */
-const PRODUCTS = [
-  {
-    name: "Postcards",
-    desc: "4×6, 6×9, 6×11 formats. Full-color front & back.",
-    price: "From $0.95 / address",
-    icon: Mail,
-  },
-  {
-    name: "Standard Letters",
-    desc: "8.5×11 pages stuffed into #10 double-window envelopes.",
-    price: "$1.50 / address",
-    icon: FileText,
-  },
-  {
-    name: "Self-Mailer Brochures",
-    desc: "Bifold & trifold layouts tabbed shut. No envelope needed.",
-    price: "$2.10 / address",
-    icon: Package,
-  },
-  {
-    name: "Security Snap Packs",
-    desc: "Perforated pressure-sealed mailers for urgent notices.",
-    price: "Custom pricing",
-    icon: Shield,
-  },
-  {
-    name: "Booklets",
-    desc: "Multi-page edge-bound catalogs & annual showcases.",
-    price: "Custom pricing",
-    icon: BookOpen,
-  },
-];
-
-function ProductGrid() {
+/* ─── AI Studio teaser ─── */
+function AiStudioTeaser() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {PRODUCTS.map((p) => (
-        <div
-          key={p.name}
-          className="group relative flex flex-col rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-sm transition-smooth hover:bg-card hover:-translate-y-1"
-        >
-          <div className="mb-4 inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-smooth group-hover:bg-primary group-hover:text-primary-foreground">
-            <p.icon className="size-5" />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-8 text-primary-foreground sm:p-10">
+        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/25 blur-3xl" />
+        <div className="absolute -bottom-24 -left-16 size-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <Sparkles className="size-3.5 text-primary" />
+            AI Studio
           </div>
-          <h4 className="font-display text-lg font-bold text-foreground">
-            {p.name}
-          </h4>
-          <p className="mt-1 flex-1 text-sm text-muted-foreground">{p.desc}</p>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-              Starting from {p.price}
-            </span>
-            <ChevronRight className="size-4 text-muted-foreground transition-smooth group-hover:translate-x-1" />
+          <h3 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
+            Backgrounds and copy, generated inside the canvas
+          </h3>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
+            Describe the vibe and drop a DALL·E 3 background straight onto your
+            postcard. Ask GPT-4o mini for headlines, bullets and calls to action
+            tuned to your offer. Every member gets {MONTHLY_ALLOWANCE} credits a
+            month — one credit is one cent.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <ImageIcon className="size-4 text-primary" />
+                DALL·E 3 backgrounds
+              </div>
+              <div className="mt-1 text-xs text-primary-foreground/70">
+                From {AI_COSTS.squareImage} credits (square) ·{" "}
+                {AI_COSTS.wideImage} wide · {AI_COSTS.hdImage} HD
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Type className="size-4 text-primary" />
+                GPT-4o mini copy
+              </div>
+              <div className="mt-1 text-xs text-primary-foreground/70">
+                {AI_COSTS.copy} credit per generation — headlines, bullets and
+                CTAs
+              </div>
+            </div>
           </div>
+          <Button
+            asChild
+            size="lg"
+            className="mt-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Link to="/wizard" data-ocid="ai_studio.try.link">
+              Try it in the wizard
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
-      ))}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <h4 className="font-display text-lg font-bold text-foreground">
+          Need more credits?
+        </h4>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Top up any time. Bigger packs include bonus credits.
+        </p>
+        <ul className="mt-5 space-y-3">
+          {CREDIT_PACKS.map((pack) => (
+            <li
+              key={pack.id}
+              className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3"
+              data-ocid={`ai_studio.pack.${pack.id.toLowerCase()}.item`}
+            >
+              <div>
+                <div className="text-sm font-semibold text-foreground">
+                  {pack.name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {pack.credits.toLocaleString("en-US")} credits
+                  {pack.bonus > 0 ? ` · includes ${pack.bonus} bonus` : ""}
+                </div>
+              </div>
+              <div className="font-display text-lg font-bold text-primary">
+                {formatCents(pack.priceCents)}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Credits never expire while your membership is active.
+        </p>
+      </div>
     </div>
   );
 }
 
 /* ─── Feature Comparison Table ─── */
-const FEATURES = [
+type Support = "yes" | "no" | "partial";
+
+interface FeatureRow {
+  label: string;
+  us: Support;
+  generic: Support;
+  traditional: Support;
+  note?: string;
+}
+
+const FEATURES: FeatureRow[] = [
   {
-    label: "Built-in Address Verification",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/mo no-minimum membership`,
+    us: "yes",
+    generic: "no",
+    traditional: "no",
+    note: "Usage tiers or minimum print runs elsewhere",
   },
   {
-    label: "Live Map Radius Builder",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "CASS address verification",
+    us: "yes",
+    generic: "partial",
+    traditional: "partial",
+    note: "Paid add-on or manual list hygiene",
   },
   {
-    label: "Real-Time USPS Tracking",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "Live radius builder with EDDM estimates",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "API-Triggered Campaigns",
-    us: true,
-    generic: true,
-    traditional: false,
+    label: "Real-time USPS IMb tracking",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
   },
   {
-    label: "4-Day Delivery Window",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "AI design studio",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "Per-Recipient Personalization",
-    us: true,
-    generic: false,
-    traditional: true,
+    label: "Dynamic QR tracking links",
+    us: "yes",
+    generic: "no",
+    traditional: "no",
   },
   {
-    label: "Transparent Pricing",
-    us: true,
-    generic: false,
-    traditional: false,
+    label: "Transparent per-piece pricing",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
+    note: "Quote-based pricing at most print shops",
+  },
+  {
+    label: "Saved audience presets",
+    us: "yes",
+    generic: "partial",
+    traditional: "no",
   },
 ];
 
+function SupportCell({ value }: { value: Support }) {
+  if (value === "yes") {
+    return (
+      <span className="inline-flex size-7 items-center justify-center rounded-full bg-emerald-brand/10">
+        <Check className="size-4 text-emerald-brand" aria-label="Included" />
+      </span>
+    );
+  }
+  if (value === "partial") {
+    return (
+      <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted">
+        <Minus
+          className="size-4 text-muted-foreground"
+          aria-label="Partial or add-on"
+        />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex size-7 items-center justify-center rounded-full bg-destructive/10">
+      <X className="size-4 text-destructive" aria-label="Not included" />
+    </span>
+  );
+}
+
 function ComparisonTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr className="border-b border-border bg-muted/40">
               <th className="px-6 py-4 text-left font-display font-bold text-foreground">
                 Feature
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-primary">
-                MailCommand
+                EZmailout
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Generic Provider
+                Generic API provider
               </th>
               <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Traditional Print Shop
+                Traditional print shop
               </th>
             </tr>
           </thead>
@@ -411,131 +761,84 @@ function ComparisonTable() {
             {FEATURES.map((f) => (
               <tr
                 key={f.label}
-                className="border-b border-border last:border-0 hover:bg-muted/20"
+                className="border-b border-border last:border-0 hover:bg-muted/30"
               >
-                <td className="px-6 py-4 font-medium text-foreground">
-                  {f.label}
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <Check className="mx-auto size-5 text-green-400" />
-                </td>
-                <td className="px-6 py-4 text-center">
-                  {f.generic ? (
-                    <Check className="mx-auto size-5 text-green-400" />
-                  ) : (
-                    <X className="mx-auto size-5 text-red-400" />
+                <td className="px-6 py-4">
+                  <div className="font-medium text-foreground">{f.label}</div>
+                  {f.note && (
+                    <div className="text-xs text-muted-foreground">
+                      {f.note}
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  {f.traditional ? (
-                    <Check className="mx-auto size-5 text-green-400" />
-                  ) : (
-                    <X className="mx-auto size-5 text-red-400" />
-                  )}
+                  <SupportCell value={f.us} />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <SupportCell value={f.generic} />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <SupportCell value={f.traditional} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-/* ─── Hero Section ─── */
-function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
-  return (
-    <section className="relative overflow-hidden bg-background pt-16 pb-12 sm:pt-24 sm:pb-16">
-      {/* Subtle grid background */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(oklch(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, oklch(var(--primary)) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-
-      <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-green-400" />
-          </span>
-          Now shipping 1,000+ campaigns daily
-        </div>
-
-        <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl sm:leading-tight">
-          Turn Mail Into{" "}
-          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Money
-          </span>
-        </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Connect your list, drop a pin on a map, and launch automated direct
-          mail that actually gets opened.
-        </p>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/wizard">
-            <Button
-              size="lg"
-              className="gap-2 px-8 text-base"
-              data-ocid="hero.start_campaign_button"
-            >
-              Start Free Campaign
-              <ArrowRight className="size-4" />
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="lg"
-            className="px-8 text-base"
-            data-ocid="hero.book_demo_button"
-            onClick={onOpenDemo}
-          >
-            Book a Demo
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border bg-muted/30 px-6 py-3 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="size-3.5 text-emerald-brand" /> Included
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Minus className="size-3.5" /> Partial or paid add-on
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <X className="size-3.5 text-destructive" /> Not offered
+        </span>
       </div>
-    </section>
+    </div>
   );
 }
 
 /* ─── Final CTA Banner ─── */
 function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-accent/5 p-8 text-center sm:p-12">
-      <div className="absolute -left-20 -top-20 size-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-accent/10 blur-3xl" />
+    <section className="relative overflow-hidden rounded-2xl bg-navy p-8 text-center text-white sm:p-12">
+      <div className="absolute -left-20 -top-20 size-64 rounded-full bg-primary/40 blur-3xl" />
+      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-ice/30 blur-3xl" />
       <div className="relative">
-        <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-          Ready to Launch Your First Campaign?
+        <h2 className="font-display text-2xl font-bold sm:text-3xl">
+          Your first campaign can be in the mail tomorrow
         </h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
-          No credit card required. Upload your list or drop a pin and send your
-          first piece in under 10 minutes.
+        <p className="mx-auto mt-3 max-w-lg text-sm text-white/75 sm:text-base">
+          Pick a format, upload a list or drop a pin, design it in the studio
+          and launch. Membership is {formatCents(SUBSCRIPTION_PRICE_CENTS)} a
+          month, and you only pay per piece for what you send.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/wizard">
-            <Button
-              size="lg"
-              className="gap-2 px-8 text-base"
-              data-ocid="final_cta.start_now_button"
-            >
-              Start Now
+          <Button asChild size="lg" className="gap-2 px-8">
+            <Link to="/wizard" data-ocid="final_cta.launch_campaign.button">
+              Launch a campaign
               <ArrowRight className="size-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <Button
-            variant="outline"
+            asChild
             size="lg"
-            className="px-8 text-base"
-            data-ocid="final_cta.book_demo_button"
+            className="bg-white px-8 text-navy hover:bg-white/90"
+          >
+            <Link to="/templates" data-ocid="final_cta.templates.link">
+              Browse templates
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="px-6 text-white hover:bg-white/10 hover:text-white"
+            data-ocid="final_cta.book_demo.button"
             onClick={onOpenDemo}
           >
-            Book a Demo
+            Book a demo
           </Button>
         </div>
       </div>
@@ -548,67 +851,95 @@ export function StoreFront() {
   const [demoOpen, setDemoOpen] = useState(false);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-background text-foreground">
       <HeroSection onOpenDemo={() => setDemoOpen(true)} />
 
-      {/* Pipeline Widget */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <PipelineWidget />
-      </section>
-
-      {/* Marquee */}
       <Marquee />
 
-      {/* Stats */}
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <StatsRow />
       </section>
 
-      {/* Value Pillars */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Two Ways to Win
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Retention or acquisition — we have you covered.
-          </p>
-        </div>
+      <Section
+        id="products"
+        eyebrow="Catalog"
+        title="Every Click2Mail format, one price list"
+        subtitle="Pick a family to open its sizes in the wizard. Prices include print, postage and address verification."
+      >
+        <ProductShowcase />
+      </Section>
+
+      <Section
+        id="how-it-works"
+        eyebrow="How it works"
+        title="Four steps from idea to mailbox"
+        subtitle="The wizard walks you through product, audience, design and launch — nothing to install, nothing to quote."
+      >
+        <HowItWorks />
+      </Section>
+
+      <Section
+        id="studio"
+        eyebrow="Design studio"
+        title="A studio that knows how mail is printed"
+        subtitle="Everything you expect from a design tool, plus the guides, zones and proofs a print job needs."
+      >
+        <StudioFeatures />
+      </Section>
+
+      <Section
+        id="pricing"
+        eyebrow="Live pricing"
+        title="See what you'd save"
+        subtitle="Pick a format and a quantity. Every number below is computed from the same price list the wizard charges."
+      >
+        <PricingCalculator />
+      </Section>
+
+      <Section
+        id="membership"
+        eyebrow="Membership"
+        title="One membership. Every wholesale rate."
+        subtitle="Skip the volume tiers and quote requests. Members pay the same low per-piece price on every format from day one."
+      >
+        <MembershipCard />
+      </Section>
+
+      <Section
+        id="audiences"
+        eyebrow="Audiences"
+        title="Two ways to win"
+        subtitle="Retention or acquisition — bring a list or build one from the map."
+      >
         <ValuePillars />
-      </section>
+      </Section>
 
-      {/* Product Grid */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Transparent Pricing
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Wholesale-to-retail card matrix for every format.
-          </p>
-        </div>
-        <ProductGrid />
-      </section>
+      <Section
+        id="ai-studio"
+        eyebrow="AI Studio"
+        title="Design help that lives in the editor"
+        subtitle={`${MONTHLY_ALLOWANCE} AI credits are included every month. Top up with packs from ${formatCents(CREDIT_PACKS[0].priceCents)}.`}
+      >
+        <AiStudioTeaser />
+      </Section>
 
-      {/* Comparison Table */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-            Why MailCommand?
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            The features that separate us from the pack.
-          </p>
-        </div>
+      <Section
+        id="compare"
+        eyebrow="Compare"
+        title="Why EZmailout?"
+        subtitle="Everything a print shop does, everything an API does, without the minimums or the engineering."
+      >
         <ComparisonTable />
-      </section>
+      </Section>
 
-      {/* Final CTA */}
+      <Section id="faq" eyebrow="FAQ" title="Questions, answered">
+        <Faq />
+      </Section>
+
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <FinalCTA onOpenDemo={() => setDemoOpen(true)} />
       </section>
 
-      {/* Book a Demo Modal */}
       <BookDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
   );
