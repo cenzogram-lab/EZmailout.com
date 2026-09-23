@@ -9135,9 +9135,9 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
   function getPublicKey(secretKey) {
     return getExtendedPublicKey(secretKey).pointBytes;
   }
-  function hashDomainToScalar(context = Uint8Array.of(), ...msgs) {
+  function hashDomainToScalar(context2 = Uint8Array.of(), ...msgs) {
     const msg = concatBytes(...msgs);
-    return modN_LE(cHash(domain(msg, ensureBytes("context", context), !!prehash)));
+    return modN_LE(cHash(domain(msg, ensureBytes("context", context2), !!prehash)));
   }
   function sign(msg, secretKey, options = {}) {
     msg = ensureBytes("message", msg);
@@ -9155,7 +9155,7 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
   }
   const verifyOpts = { zip215: true };
   function verify(sig, msg, publicKey, options = verifyOpts) {
-    const { context, zip215 } = options;
+    const { context: context2, zip215 } = options;
     const len = lengths.signature;
     sig = ensureBytes("signature", sig, len);
     msg = ensureBytes("message", msg);
@@ -9177,7 +9177,7 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
     }
     if (!zip215 && A.isSmallOrder())
       return false;
-    const k2 = hashDomainToScalar(context, R2.toBytes(), A.toBytes(), msg);
+    const k2 = hashDomainToScalar(context2, R2.toBytes(), A.toBytes(), msg);
     const RkA = R2.add(A.multiplyUnsafe(k2));
     return RkA.subtract(SB).clearCofactor().is0();
   }
@@ -11349,19 +11349,19 @@ function isRetriableError(error) {
   }
   return true;
 }
-function validateHashFormat(hash, context) {
+function validateHashFormat(hash, context2) {
   if (!hash) {
-    throw new Error(`${context}: Hash cannot be empty`);
+    throw new Error(`${context2}: Hash cannot be empty`);
   }
   if (!hash.startsWith(SHA256_PREFIX)) {
-    throw new Error(`${context}: Invalid hash format. Expected format: ${SHA256_PREFIX}<64-char-hex>, got: ${hash}`);
+    throw new Error(`${context2}: Invalid hash format. Expected format: ${SHA256_PREFIX}<64-char-hex>, got: ${hash}`);
   }
   const hexPart = hash.substring(SHA256_PREFIX.length);
   if (hexPart.length !== 64) {
-    throw new Error(`${context}: Invalid hash format. Expected 64 hex characters after ${SHA256_PREFIX}, got ${hexPart.length} characters: ${hash}`);
+    throw new Error(`${context2}: Invalid hash format. Expected 64 hex characters after ${SHA256_PREFIX}, got ${hexPart.length} characters: ${hash}`);
   }
   if (!/^[0-9a-f]{64}$/i.test(hexPart)) {
-    throw new Error(`${context}: Invalid hash format. Hash must contain only hex characters (0-9, a-f), got: ${hash}`);
+    throw new Error(`${context2}: Invalid hash format. Hash must contain only hex characters (0-9, a-f), got: ${hash}`);
   }
 }
 class YHash {
@@ -12686,7 +12686,7 @@ var Query = (_f = class extends Removable {
       return queryFn(queryFnContext);
     };
     const createFetchContext = () => {
-      const context2 = {
+      const context22 = {
         fetchOptions,
         options: this.options,
         queryKey: this.queryKey,
@@ -12694,18 +12694,18 @@ var Query = (_f = class extends Removable {
         state: this.state,
         fetchFn
       };
-      addSignalProperty(context2);
-      return context2;
+      addSignalProperty(context22);
+      return context22;
     };
-    const context = createFetchContext();
-    (_b2 = this.options.behavior) == null ? void 0 : _b2.onFetch(context, this);
+    const context2 = createFetchContext();
+    (_b2 = this.options.behavior) == null ? void 0 : _b2.onFetch(context2, this);
     __privateSet(this, _revertState, this.state);
-    if (this.state.fetchStatus === "idle" || this.state.fetchMeta !== ((_c2 = context.fetchOptions) == null ? void 0 : _c2.meta)) {
-      __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "fetch", meta: (_d2 = context.fetchOptions) == null ? void 0 : _d2.meta });
+    if (this.state.fetchStatus === "idle" || this.state.fetchMeta !== ((_c2 = context2.fetchOptions) == null ? void 0 : _c2.meta)) {
+      __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "fetch", meta: (_d2 = context2.fetchOptions) == null ? void 0 : _d2.meta });
     }
     __privateSet(this, _retryer, createRetryer({
       initialPromise: fetchOptions == null ? void 0 : fetchOptions.initialPromise,
-      fn: context.fetchFn,
+      fn: context2.fetchFn,
       onCancel: (error) => {
         if (error instanceof CancelledError && error.revert) {
           this.setState({
@@ -12724,9 +12724,9 @@ var Query = (_f = class extends Removable {
       onContinue: () => {
         __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "continue" });
       },
-      retry: context.options.retry,
-      retryDelay: context.options.retryDelay,
-      networkMode: context.options.networkMode,
+      retry: context2.options.retry,
+      retryDelay: context2.options.retryDelay,
+      networkMode: context2.options.networkMode,
       canRun: () => true
     }));
     try {
@@ -13335,12 +13335,12 @@ function shouldAssignObserverCurrentProperties(observer, optimisticResult) {
 }
 function infiniteQueryBehavior(pages) {
   return {
-    onFetch: (context, query) => {
+    onFetch: (context2, query) => {
       var _a2, _b2, _c2, _d2, _e2;
-      const options = context.options;
-      const direction = (_c2 = (_b2 = (_a2 = context.fetchOptions) == null ? void 0 : _a2.meta) == null ? void 0 : _b2.fetchMore) == null ? void 0 : _c2.direction;
-      const oldPages = ((_d2 = context.state.data) == null ? void 0 : _d2.pages) || [];
-      const oldPageParams = ((_e2 = context.state.data) == null ? void 0 : _e2.pageParams) || [];
+      const options = context2.options;
+      const direction = (_c2 = (_b2 = (_a2 = context2.fetchOptions) == null ? void 0 : _a2.meta) == null ? void 0 : _b2.fetchMore) == null ? void 0 : _c2.direction;
+      const oldPages = ((_d2 = context2.state.data) == null ? void 0 : _d2.pages) || [];
+      const oldPageParams = ((_e2 = context2.state.data) == null ? void 0 : _e2.pageParams) || [];
       let result = { pages: [], pageParams: [] };
       let currentPage = 0;
       const fetchFn = async () => {
@@ -13348,11 +13348,11 @@ function infiniteQueryBehavior(pages) {
         const addSignalProperty = (object) => {
           addConsumeAwareSignal(
             object,
-            () => context.signal,
+            () => context2.signal,
             () => cancelled = true
           );
         };
-        const queryFn = ensureQueryFn(context.options, context.fetchOptions);
+        const queryFn = ensureQueryFn(context2.options, context2.fetchOptions);
         const fetchPage = async (data, param, previous) => {
           if (cancelled) {
             return Promise.reject();
@@ -13362,18 +13362,18 @@ function infiniteQueryBehavior(pages) {
           }
           const createQueryFnContext = () => {
             const queryFnContext2 = {
-              client: context.client,
-              queryKey: context.queryKey,
+              client: context2.client,
+              queryKey: context2.queryKey,
               pageParam: param,
               direction: previous ? "backward" : "forward",
-              meta: context.options.meta
+              meta: context2.options.meta
             };
             addSignalProperty(queryFnContext2);
             return queryFnContext2;
           };
           const queryFnContext = createQueryFnContext();
           const page = await queryFn(queryFnContext);
-          const { maxPages } = context.options;
+          const { maxPages } = context2.options;
           const addTo = previous ? addToStart : addToEnd;
           return {
             pages: addTo(data.pages, page, maxPages),
@@ -13402,23 +13402,23 @@ function infiniteQueryBehavior(pages) {
         }
         return result;
       };
-      if (context.options.persister) {
-        context.fetchFn = () => {
+      if (context2.options.persister) {
+        context2.fetchFn = () => {
           var _a3, _b3;
-          return (_b3 = (_a3 = context.options).persister) == null ? void 0 : _b3.call(
+          return (_b3 = (_a3 = context2.options).persister) == null ? void 0 : _b3.call(
             _a3,
             fetchFn,
             {
-              client: context.client,
-              queryKey: context.queryKey,
-              meta: context.options.meta,
-              signal: context.signal
+              client: context2.client,
+              queryKey: context2.queryKey,
+              meta: context2.options.meta,
+              signal: context2.signal
             },
             query
           );
         };
       } else {
-        context.fetchFn = fetchFn;
+        context2.fetchFn = fetchFn;
       }
     }
   };
@@ -13536,15 +13536,15 @@ var Mutation = (_h = class extends Removable {
             mutationFnContext
           );
         }
-        const context = await ((_b2 = (_a2 = this.options).onMutate) == null ? void 0 : _b2.call(
+        const context2 = await ((_b2 = (_a2 = this.options).onMutate) == null ? void 0 : _b2.call(
           _a2,
           variables,
           mutationFnContext
         ));
-        if (context !== this.state.context) {
+        if (context2 !== this.state.context) {
           __privateMethod(this, _Mutation_instances, dispatch_fn2).call(this, {
             type: "pending",
-            context,
+            context: context2,
             variables,
             isPaused
           });
@@ -13916,7 +13916,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
     if (__privateGet(this, _mutateOptions) && this.hasListeners()) {
       const variables = __privateGet(this, _currentResult2).variables;
       const onMutateResult = __privateGet(this, _currentResult2).context;
-      const context = {
+      const context2 = {
         client: __privateGet(this, _client4),
         meta: this.options.meta,
         mutationKey: this.options.mutationKey
@@ -13928,7 +13928,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.data,
             variables,
             onMutateResult,
-            context
+            context2
           );
         } catch (e) {
           void Promise.reject(e);
@@ -13940,7 +13940,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             null,
             variables,
             onMutateResult,
-            context
+            context2
           );
         } catch (e) {
           void Promise.reject(e);
@@ -13952,7 +13952,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.error,
             variables,
             onMutateResult,
-            context
+            context2
           );
         } catch (e) {
           void Promise.reject(e);
@@ -13964,7 +13964,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.error,
             variables,
             onMutateResult,
-            context
+            context2
           );
         } catch (e) {
           void Promise.reject(e);
@@ -14380,9 +14380,9 @@ var ReactNoopUpdateQueue = {
   enqueueSetState: function() {
   }
 }, assign$1 = Object.assign, emptyObject = {};
-function Component(props, context, updater) {
+function Component(props, context2, updater) {
   this.props = props;
-  this.context = context;
+  this.context = context2;
   this.refs = emptyObject;
   this.updater = updater || ReactNoopUpdateQueue;
 }
@@ -14400,9 +14400,9 @@ Component.prototype.forceUpdate = function(callback) {
 function ComponentDummy() {
 }
 ComponentDummy.prototype = Component.prototype;
-function PureComponent(props, context, updater) {
+function PureComponent(props, context2, updater) {
   this.props = props;
-  this.context = context;
+  this.context = context2;
   this.refs = emptyObject;
   this.updater = updater || ReactNoopUpdateQueue;
 }
@@ -14543,11 +14543,11 @@ function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
   }
   return invokeCallback;
 }
-function mapChildren(children, func, context) {
+function mapChildren(children, func, context2) {
   if (null == children) return children;
   var result = [], count2 = 0;
   mapIntoArray(children, result, "", "", function(child) {
-    return func.call(context, child, count2++);
+    return func.call(context2, child, count2++);
   });
   return result;
 }
@@ -16342,10 +16342,10 @@ const _IdleManager = class _IdleManager {
     const debounce = (func, wait) => {
       let timeout2;
       return (...args) => {
-        const context = this;
+        const context2 = this;
         const later = () => {
           timeout2 = void 0;
-          func.apply(context, args);
+          func.apply(context2, args);
         };
         clearTimeout(timeout2);
         timeout2 = window.setTimeout(later, wait);
@@ -17139,15 +17139,15 @@ async function createIIAttributesActor(identity2) {
     canisterId: config.backend_canister_id
   });
 }
-function assertProviderPresent(context) {
-  if (!context) {
+function assertProviderPresent(context2) {
+  if (!context2) {
     throw new Error("InternetIdentityProvider is not present. Wrap your component tree with it.");
   }
 }
 const useInternetIdentity = () => {
-  const context = reactExports.useContext(InternetIdentityReactContext);
-  assertProviderPresent(context);
-  return context;
+  const context2 = reactExports.useContext(InternetIdentityReactContext);
+  assertProviderPresent(context2);
+  return context2;
 };
 function InternetIdentityProvider({ children, createOptions, withAttributes = {} }) {
   const [authClient, setAuthClient] = reactExports.useState(void 0);
@@ -17998,9 +17998,9 @@ function popHostContainer() {
 }
 function pushHostContext(fiber) {
   null !== fiber.memoizedState && push(hostTransitionProviderCursor, fiber);
-  var context = contextStackCursor.current;
-  var JSCompiler_inline_result = getChildHostContextProd(context, fiber.type);
-  context !== JSCompiler_inline_result && (push(contextFiberStackCursor, fiber), push(contextStackCursor, JSCompiler_inline_result));
+  var context2 = contextStackCursor.current;
+  var JSCompiler_inline_result = getChildHostContextProd(context2, fiber.type);
+  context2 !== JSCompiler_inline_result && (push(contextFiberStackCursor, fiber), push(contextStackCursor, JSCompiler_inline_result));
 }
 function popHostContext(fiber) {
   contextFiberStackCursor.current === fiber && (pop(contextStackCursor), pop(contextFiberStackCursor));
@@ -19764,12 +19764,12 @@ function queueHydrationError(error) {
   null === hydrationErrors ? hydrationErrors = [error] : hydrationErrors.push(error);
 }
 var valueCursor = createCursor(null), currentlyRenderingFiber$1 = null, lastContextDependency = null;
-function pushProvider(providerFiber, context, nextValue) {
-  push(valueCursor, context._currentValue);
-  context._currentValue = nextValue;
+function pushProvider(providerFiber, context2, nextValue) {
+  push(valueCursor, context2._currentValue);
+  context2._currentValue = nextValue;
 }
-function popProvider(context) {
-  context._currentValue = valueCursor.current;
+function popProvider(context2) {
+  context2._currentValue = valueCursor.current;
   pop(valueCursor);
 }
 function scheduleContextWorkOnParentPath(parent, renderLanes2, propagationRoot) {
@@ -19845,8 +19845,8 @@ function propagateParentContextChanges(current, workInProgress2, renderLanes2, f
       if (null === currentParent) throw Error(formatProdErrorMessage(387));
       currentParent = currentParent.memoizedProps;
       if (null !== currentParent) {
-        var context = parent.type;
-        objectIs$2(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context) : current = [context]);
+        var context2 = parent.type;
+        objectIs$2(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context2) : current = [context2]);
       }
     } else if (parent === hostTransitionProviderCursor.current) {
       currentParent = parent.alternate;
@@ -19880,22 +19880,22 @@ function prepareToReadContext(workInProgress2) {
   workInProgress2 = workInProgress2.dependencies;
   null !== workInProgress2 && (workInProgress2.firstContext = null);
 }
-function readContext(context) {
-  return readContextForConsumer(currentlyRenderingFiber$1, context);
+function readContext(context2) {
+  return readContextForConsumer(currentlyRenderingFiber$1, context2);
 }
-function readContextDuringReconciliation(consumer, context) {
+function readContextDuringReconciliation(consumer, context2) {
   null === currentlyRenderingFiber$1 && prepareToReadContext(consumer);
-  return readContextForConsumer(consumer, context);
+  return readContextForConsumer(consumer, context2);
 }
-function readContextForConsumer(consumer, context) {
-  var value = context._currentValue;
-  context = { context, memoizedValue: value, next: null };
+function readContextForConsumer(consumer, context2) {
+  var value = context2._currentValue;
+  context2 = { context: context2, memoizedValue: value, next: null };
   if (null === lastContextDependency) {
     if (null === consumer) throw Error(formatProdErrorMessage(308));
-    lastContextDependency = context;
-    consumer.dependencies = { lanes: 0, firstContext: context };
+    lastContextDependency = context2;
+    consumer.dependencies = { lanes: 0, firstContext: context2 };
     consumer.flags |= 524288;
-  } else lastContextDependency = lastContextDependency.next = context;
+  } else lastContextDependency = lastContextDependency.next = context2;
   return value;
 }
 var AbortControllerLocal = "undefined" !== typeof AbortController ? AbortController : function() {
@@ -20233,23 +20233,23 @@ function processUpdateQueue(workInProgress$jscomp$0, props, instance$jscomp$0, r
     workInProgress$jscomp$0.memoizedState = newState;
   }
 }
-function callCallback(callback, context) {
+function callCallback(callback, context2) {
   if ("function" !== typeof callback)
     throw Error(formatProdErrorMessage(191, callback));
-  callback.call(context);
+  callback.call(context2);
 }
-function commitCallbacks(updateQueue, context) {
+function commitCallbacks(updateQueue, context2) {
   var callbacks = updateQueue.callbacks;
   if (null !== callbacks)
     for (updateQueue.callbacks = null, updateQueue = 0; updateQueue < callbacks.length; updateQueue++)
-      callCallback(callbacks[updateQueue], context);
+      callCallback(callbacks[updateQueue], context2);
 }
 var currentTreeHiddenStackCursor = createCursor(null), prevEntangledRenderLanesCursor = createCursor(0);
-function pushHiddenContext(fiber, context) {
+function pushHiddenContext(fiber, context2) {
   fiber = entangledRenderLanes;
   push(prevEntangledRenderLanesCursor, fiber);
-  push(currentTreeHiddenStackCursor, context);
-  entangledRenderLanes = fiber | context.baseLanes;
+  push(currentTreeHiddenStackCursor, context2);
+  entangledRenderLanes = fiber | context2.baseLanes;
 }
 function reuseHiddenContextOnStack() {
   push(prevEntangledRenderLanesCursor, entangledRenderLanes);
@@ -22335,51 +22335,51 @@ function replayFunctionComponent(current, workInProgress2, nextProps, Component2
 function updateClassComponent(current, workInProgress2, Component2, nextProps, renderLanes2) {
   prepareToReadContext(workInProgress2);
   if (null === workInProgress2.stateNode) {
-    var context = emptyContextObject, contextType = Component2.contextType;
-    "object" === typeof contextType && null !== contextType && (context = readContext(contextType));
-    context = new Component2(nextProps, context);
-    workInProgress2.memoizedState = null !== context.state && void 0 !== context.state ? context.state : null;
-    context.updater = classComponentUpdater;
-    workInProgress2.stateNode = context;
-    context._reactInternals = workInProgress2;
-    context = workInProgress2.stateNode;
-    context.props = nextProps;
-    context.state = workInProgress2.memoizedState;
-    context.refs = {};
+    var context2 = emptyContextObject, contextType = Component2.contextType;
+    "object" === typeof contextType && null !== contextType && (context2 = readContext(contextType));
+    context2 = new Component2(nextProps, context2);
+    workInProgress2.memoizedState = null !== context2.state && void 0 !== context2.state ? context2.state : null;
+    context2.updater = classComponentUpdater;
+    workInProgress2.stateNode = context2;
+    context2._reactInternals = workInProgress2;
+    context2 = workInProgress2.stateNode;
+    context2.props = nextProps;
+    context2.state = workInProgress2.memoizedState;
+    context2.refs = {};
     initializeUpdateQueue(workInProgress2);
     contextType = Component2.contextType;
-    context.context = "object" === typeof contextType && null !== contextType ? readContext(contextType) : emptyContextObject;
-    context.state = workInProgress2.memoizedState;
+    context2.context = "object" === typeof contextType && null !== contextType ? readContext(contextType) : emptyContextObject;
+    context2.state = workInProgress2.memoizedState;
     contextType = Component2.getDerivedStateFromProps;
     "function" === typeof contextType && (applyDerivedStateFromProps(
       workInProgress2,
       Component2,
       contextType,
       nextProps
-    ), context.state = workInProgress2.memoizedState);
-    "function" === typeof Component2.getDerivedStateFromProps || "function" === typeof context.getSnapshotBeforeUpdate || "function" !== typeof context.UNSAFE_componentWillMount && "function" !== typeof context.componentWillMount || (contextType = context.state, "function" === typeof context.componentWillMount && context.componentWillMount(), "function" === typeof context.UNSAFE_componentWillMount && context.UNSAFE_componentWillMount(), contextType !== context.state && classComponentUpdater.enqueueReplaceState(context, context.state, null), processUpdateQueue(workInProgress2, nextProps, context, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction(), context.state = workInProgress2.memoizedState);
-    "function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308);
+    ), context2.state = workInProgress2.memoizedState);
+    "function" === typeof Component2.getDerivedStateFromProps || "function" === typeof context2.getSnapshotBeforeUpdate || "function" !== typeof context2.UNSAFE_componentWillMount && "function" !== typeof context2.componentWillMount || (contextType = context2.state, "function" === typeof context2.componentWillMount && context2.componentWillMount(), "function" === typeof context2.UNSAFE_componentWillMount && context2.UNSAFE_componentWillMount(), contextType !== context2.state && classComponentUpdater.enqueueReplaceState(context2, context2.state, null), processUpdateQueue(workInProgress2, nextProps, context2, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction(), context2.state = workInProgress2.memoizedState);
+    "function" === typeof context2.componentDidMount && (workInProgress2.flags |= 4194308);
     nextProps = true;
   } else if (null === current) {
-    context = workInProgress2.stateNode;
+    context2 = workInProgress2.stateNode;
     var unresolvedOldProps = workInProgress2.memoizedProps, oldProps = resolveClassComponentProps(Component2, unresolvedOldProps);
-    context.props = oldProps;
-    var oldContext = context.context, contextType$jscomp$0 = Component2.contextType;
+    context2.props = oldProps;
+    var oldContext = context2.context, contextType$jscomp$0 = Component2.contextType;
     contextType = emptyContextObject;
     "object" === typeof contextType$jscomp$0 && null !== contextType$jscomp$0 && (contextType = readContext(contextType$jscomp$0));
     var getDerivedStateFromProps = Component2.getDerivedStateFromProps;
-    contextType$jscomp$0 = "function" === typeof getDerivedStateFromProps || "function" === typeof context.getSnapshotBeforeUpdate;
+    contextType$jscomp$0 = "function" === typeof getDerivedStateFromProps || "function" === typeof context2.getSnapshotBeforeUpdate;
     unresolvedOldProps = workInProgress2.pendingProps !== unresolvedOldProps;
-    contextType$jscomp$0 || "function" !== typeof context.UNSAFE_componentWillReceiveProps && "function" !== typeof context.componentWillReceiveProps || (unresolvedOldProps || oldContext !== contextType) && callComponentWillReceiveProps(
+    contextType$jscomp$0 || "function" !== typeof context2.UNSAFE_componentWillReceiveProps && "function" !== typeof context2.componentWillReceiveProps || (unresolvedOldProps || oldContext !== contextType) && callComponentWillReceiveProps(
       workInProgress2,
-      context,
+      context2,
       nextProps,
       contextType
     );
     hasForceUpdate = false;
     var oldState = workInProgress2.memoizedState;
-    context.state = oldState;
-    processUpdateQueue(workInProgress2, nextProps, context, renderLanes2);
+    context2.state = oldState;
+    processUpdateQueue(workInProgress2, nextProps, context2, renderLanes2);
     suspendIfUpdateReadFromEntangledAsyncAction();
     oldContext = workInProgress2.memoizedState;
     unresolvedOldProps || oldState !== oldContext || hasForceUpdate ? ("function" === typeof getDerivedStateFromProps && (applyDerivedStateFromProps(
@@ -22395,29 +22395,29 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
       oldState,
       oldContext,
       contextType
-    )) ? (contextType$jscomp$0 || "function" !== typeof context.UNSAFE_componentWillMount && "function" !== typeof context.componentWillMount || ("function" === typeof context.componentWillMount && context.componentWillMount(), "function" === typeof context.UNSAFE_componentWillMount && context.UNSAFE_componentWillMount()), "function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308)) : ("function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = oldContext), context.props = nextProps, context.state = oldContext, context.context = contextType, nextProps = oldProps) : ("function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308), nextProps = false);
+    )) ? (contextType$jscomp$0 || "function" !== typeof context2.UNSAFE_componentWillMount && "function" !== typeof context2.componentWillMount || ("function" === typeof context2.componentWillMount && context2.componentWillMount(), "function" === typeof context2.UNSAFE_componentWillMount && context2.UNSAFE_componentWillMount()), "function" === typeof context2.componentDidMount && (workInProgress2.flags |= 4194308)) : ("function" === typeof context2.componentDidMount && (workInProgress2.flags |= 4194308), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = oldContext), context2.props = nextProps, context2.state = oldContext, context2.context = contextType, nextProps = oldProps) : ("function" === typeof context2.componentDidMount && (workInProgress2.flags |= 4194308), nextProps = false);
   } else {
-    context = workInProgress2.stateNode;
+    context2 = workInProgress2.stateNode;
     cloneUpdateQueue(current, workInProgress2);
     contextType = workInProgress2.memoizedProps;
     contextType$jscomp$0 = resolveClassComponentProps(Component2, contextType);
-    context.props = contextType$jscomp$0;
+    context2.props = contextType$jscomp$0;
     getDerivedStateFromProps = workInProgress2.pendingProps;
-    oldState = context.context;
+    oldState = context2.context;
     oldContext = Component2.contextType;
     oldProps = emptyContextObject;
     "object" === typeof oldContext && null !== oldContext && (oldProps = readContext(oldContext));
     unresolvedOldProps = Component2.getDerivedStateFromProps;
-    (oldContext = "function" === typeof unresolvedOldProps || "function" === typeof context.getSnapshotBeforeUpdate) || "function" !== typeof context.UNSAFE_componentWillReceiveProps && "function" !== typeof context.componentWillReceiveProps || (contextType !== getDerivedStateFromProps || oldState !== oldProps) && callComponentWillReceiveProps(
+    (oldContext = "function" === typeof unresolvedOldProps || "function" === typeof context2.getSnapshotBeforeUpdate) || "function" !== typeof context2.UNSAFE_componentWillReceiveProps && "function" !== typeof context2.componentWillReceiveProps || (contextType !== getDerivedStateFromProps || oldState !== oldProps) && callComponentWillReceiveProps(
       workInProgress2,
-      context,
+      context2,
       nextProps,
       oldProps
     );
     hasForceUpdate = false;
     oldState = workInProgress2.memoizedState;
-    context.state = oldState;
-    processUpdateQueue(workInProgress2, nextProps, context, renderLanes2);
+    context2.state = oldState;
+    processUpdateQueue(workInProgress2, nextProps, context2, renderLanes2);
     suspendIfUpdateReadFromEntangledAsyncAction();
     var newState = workInProgress2.memoizedState;
     contextType !== getDerivedStateFromProps || oldState !== newState || hasForceUpdate || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies) ? ("function" === typeof unresolvedOldProps && (applyDerivedStateFromProps(
@@ -22433,16 +22433,16 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
       oldState,
       newState,
       oldProps
-    ) || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies)) ? (oldContext || "function" !== typeof context.UNSAFE_componentWillUpdate && "function" !== typeof context.componentWillUpdate || ("function" === typeof context.componentWillUpdate && context.componentWillUpdate(nextProps, newState, oldProps), "function" === typeof context.UNSAFE_componentWillUpdate && context.UNSAFE_componentWillUpdate(
+    ) || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies)) ? (oldContext || "function" !== typeof context2.UNSAFE_componentWillUpdate && "function" !== typeof context2.componentWillUpdate || ("function" === typeof context2.componentWillUpdate && context2.componentWillUpdate(nextProps, newState, oldProps), "function" === typeof context2.UNSAFE_componentWillUpdate && context2.UNSAFE_componentWillUpdate(
       nextProps,
       newState,
       oldProps
-    )), "function" === typeof context.componentDidUpdate && (workInProgress2.flags |= 4), "function" === typeof context.getSnapshotBeforeUpdate && (workInProgress2.flags |= 1024)) : ("function" !== typeof context.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = newState), context.props = nextProps, context.state = newState, context.context = oldProps, nextProps = contextType$jscomp$0) : ("function" !== typeof context.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), nextProps = false);
+    )), "function" === typeof context2.componentDidUpdate && (workInProgress2.flags |= 4), "function" === typeof context2.getSnapshotBeforeUpdate && (workInProgress2.flags |= 1024)) : ("function" !== typeof context2.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context2.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = newState), context2.props = nextProps, context2.state = newState, context2.context = oldProps, nextProps = contextType$jscomp$0) : ("function" !== typeof context2.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context2.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), nextProps = false);
   }
-  context = nextProps;
+  context2 = nextProps;
   markRef(current, workInProgress2);
   nextProps = 0 !== (workInProgress2.flags & 128);
-  context || nextProps ? (context = workInProgress2.stateNode, Component2 = nextProps && "function" !== typeof Component2.getDerivedStateFromError ? null : context.render(), workInProgress2.flags |= 1, null !== current && nextProps ? (workInProgress2.child = reconcileChildFibers(
+  context2 || nextProps ? (context2 = workInProgress2.stateNode, Component2 = nextProps && "function" !== typeof Component2.getDerivedStateFromError ? null : context2.render(), workInProgress2.flags |= 1, null !== current && nextProps ? (workInProgress2.child = reconcileChildFibers(
     workInProgress2,
     current.child,
     null,
@@ -22452,7 +22452,7 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
     null,
     Component2,
     renderLanes2
-  )) : reconcileChildren(current, workInProgress2, Component2, renderLanes2), workInProgress2.memoizedState = context.state, current = workInProgress2.child) : current = bailoutOnAlreadyFinishedWork(
+  )) : reconcileChildren(current, workInProgress2, Component2, renderLanes2), workInProgress2.memoizedState = context2.state, current = workInProgress2.child) : current = bailoutOnAlreadyFinishedWork(
     current,
     workInProgress2,
     renderLanes2
@@ -36580,14 +36580,14 @@ function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForD
 function createContext2(rootComponentName, defaultContext) {
   const Context = reactExports.createContext(defaultContext);
   const Provider2 = (props) => {
-    const { children, ...context } = props;
-    const value = reactExports.useMemo(() => context, Object.values(context));
+    const { children, ...context2 } = props;
+    const value = reactExports.useMemo(() => context2, Object.values(context2));
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
   };
   Provider2.displayName = rootComponentName + "Provider";
   function useContext2(consumerName) {
-    const context = reactExports.useContext(Context);
-    if (context) return context;
+    const context2 = reactExports.useContext(Context);
+    if (context2) return context2;
     if (defaultContext !== void 0) return defaultContext;
     throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
   }
@@ -36601,17 +36601,17 @@ function createContextScope$1(scopeName, createContextScopeDeps = []) {
     defaultContexts = [...defaultContexts, defaultContext];
     const Provider2 = (props) => {
       var _a2;
-      const { scope, children, ...context } = props;
+      const { scope, children, ...context2 } = props;
       const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const value = reactExports.useMemo(() => context, Object.values(context));
+      const value = reactExports.useMemo(() => context2, Object.values(context2));
       return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
     };
     Provider2.displayName = rootComponentName + "Provider";
     function useContext2(consumerName, scope) {
       var _a2;
       const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const context = reactExports.useContext(Context);
-      if (context) return context;
+      const context2 = reactExports.useContext(Context);
+      if (context2) return context2;
       if (defaultContext !== void 0) return defaultContext;
       throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
     }
@@ -36899,20 +36899,20 @@ var DismissableLayer = reactExports.forwardRef(
       onDismiss,
       ...layerProps
     } = props;
-    const context = reactExports.useContext(DismissableLayerContext);
+    const context2 = reactExports.useContext(DismissableLayerContext);
     const [node, setNode] = reactExports.useState(null);
     const ownerDocument = (node == null ? void 0 : node.ownerDocument) ?? (globalThis == null ? void 0 : globalThis.document);
     const [, force] = reactExports.useState({});
     const composedRefs = useComposedRefs(forwardedRef, (node2) => setNode(node2));
-    const layers = Array.from(context.layers);
-    const [highestLayerWithOutsidePointerEventsDisabled] = [...context.layersWithOutsidePointerEventsDisabled].slice(-1);
+    const layers = Array.from(context2.layers);
+    const [highestLayerWithOutsidePointerEventsDisabled] = [...context2.layersWithOutsidePointerEventsDisabled].slice(-1);
     const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
     const index2 = node ? layers.indexOf(node) : -1;
-    const isBodyPointerEventsDisabled = context.layersWithOutsidePointerEventsDisabled.size > 0;
+    const isBodyPointerEventsDisabled = context2.layersWithOutsidePointerEventsDisabled.size > 0;
     const isPointerEventsEnabled = index2 >= highestLayerWithOutsidePointerEventsDisabledIndex;
     const pointerDownOutside = usePointerDownOutside((event) => {
       const target = event.target;
-      const isPointerDownOnBranch = [...context.branches].some((branch) => branch.contains(target));
+      const isPointerDownOnBranch = [...context2.branches].some((branch) => branch.contains(target));
       if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
       onPointerDownOutside == null ? void 0 : onPointerDownOutside(event);
       onInteractOutside == null ? void 0 : onInteractOutside(event);
@@ -36920,14 +36920,14 @@ var DismissableLayer = reactExports.forwardRef(
     }, ownerDocument);
     const focusOutside = useFocusOutside((event) => {
       const target = event.target;
-      const isFocusInBranch = [...context.branches].some((branch) => branch.contains(target));
+      const isFocusInBranch = [...context2.branches].some((branch) => branch.contains(target));
       if (isFocusInBranch) return;
       onFocusOutside == null ? void 0 : onFocusOutside(event);
       onInteractOutside == null ? void 0 : onInteractOutside(event);
       if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
     }, ownerDocument);
     useEscapeKeydown((event) => {
-      const isHighestLayer = index2 === context.layers.size - 1;
+      const isHighestLayer = index2 === context2.layers.size - 1;
       if (!isHighestLayer) return;
       onEscapeKeyDown == null ? void 0 : onEscapeKeyDown(event);
       if (!event.defaultPrevented && onDismiss) {
@@ -36938,28 +36938,28 @@ var DismissableLayer = reactExports.forwardRef(
     reactExports.useEffect(() => {
       if (!node) return;
       if (disableOutsidePointerEvents) {
-        if (context.layersWithOutsidePointerEventsDisabled.size === 0) {
+        if (context2.layersWithOutsidePointerEventsDisabled.size === 0) {
           originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
           ownerDocument.body.style.pointerEvents = "none";
         }
-        context.layersWithOutsidePointerEventsDisabled.add(node);
+        context2.layersWithOutsidePointerEventsDisabled.add(node);
       }
-      context.layers.add(node);
+      context2.layers.add(node);
       dispatchUpdate();
       return () => {
-        if (disableOutsidePointerEvents && context.layersWithOutsidePointerEventsDisabled.size === 1) {
+        if (disableOutsidePointerEvents && context2.layersWithOutsidePointerEventsDisabled.size === 1) {
           ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
         }
       };
-    }, [node, ownerDocument, disableOutsidePointerEvents, context]);
+    }, [node, ownerDocument, disableOutsidePointerEvents, context2]);
     reactExports.useEffect(() => {
       return () => {
         if (!node) return;
-        context.layers.delete(node);
-        context.layersWithOutsidePointerEventsDisabled.delete(node);
+        context2.layers.delete(node);
+        context2.layersWithOutsidePointerEventsDisabled.delete(node);
         dispatchUpdate();
       };
-    }, [node, context]);
+    }, [node, context2]);
     reactExports.useEffect(() => {
       const handleUpdate = () => force({});
       document.addEventListener(CONTEXT_UPDATE, handleUpdate);
@@ -36987,18 +36987,18 @@ var DismissableLayer = reactExports.forwardRef(
 DismissableLayer.displayName = DISMISSABLE_LAYER_NAME;
 var BRANCH_NAME = "DismissableLayerBranch";
 var DismissableLayerBranch = reactExports.forwardRef((props, forwardedRef) => {
-  const context = reactExports.useContext(DismissableLayerContext);
+  const context2 = reactExports.useContext(DismissableLayerContext);
   const ref = reactExports.useRef(null);
   const composedRefs = useComposedRefs(forwardedRef, ref);
   reactExports.useEffect(() => {
     const node = ref.current;
     if (node) {
-      context.branches.add(node);
+      context2.branches.add(node);
       return () => {
-        context.branches.delete(node);
+        context2.branches.delete(node);
       };
     }
-  }, [context.branches]);
+  }, [context2.branches]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...props, ref: composedRefs });
 });
 DismissableLayerBranch.displayName = BRANCH_NAME;
@@ -38258,19 +38258,19 @@ var TRIGGER_NAME$3 = "DialogTrigger";
 var DialogTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...triggerProps } = props;
-    const context = useDialogContext(TRIGGER_NAME$3, __scopeDialog);
-    const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
+    const context2 = useDialogContext(TRIGGER_NAME$3, __scopeDialog);
+    const composedTriggerRef = useComposedRefs(forwardedRef, context2.triggerRef);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
         type: "button",
         "aria-haspopup": "dialog",
-        "aria-expanded": context.open,
-        "aria-controls": context.contentId,
-        "data-state": getState$1(context.open),
+        "aria-expanded": context2.open,
+        "aria-controls": context2.contentId,
+        "data-state": getState$1(context2.open),
         ...triggerProps,
         ref: composedTriggerRef,
-        onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
+        onClick: composeEventHandlers(props.onClick, context2.onOpenToggle)
       }
     );
   }
@@ -38282,8 +38282,8 @@ var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, 
 });
 var DialogPortal$1 = (props) => {
   const { __scopeDialog, forceMount, children, container } = props;
-  const context = useDialogContext(PORTAL_NAME$2, __scopeDialog);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
+  const context2 = useDialogContext(PORTAL_NAME$2, __scopeDialog);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
 };
 DialogPortal$1.displayName = PORTAL_NAME$2;
 var OVERLAY_NAME = "DialogOverlay";
@@ -38291,8 +38291,8 @@ var DialogOverlay$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext$1(OVERLAY_NAME, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
-    return context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
+    const context2 = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
+    return context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
   }
 );
 DialogOverlay$1.displayName = OVERLAY_NAME;
@@ -38300,14 +38300,14 @@ var Slot$1 = /* @__PURE__ */ createSlot("DialogOverlay.RemoveScroll");
 var DialogOverlayImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME, __scopeDialog);
+    const context2 = useDialogContext(OVERLAY_NAME, __scopeDialog);
     return (
       // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
       // ie. when `Overlay` and `Content` are siblings
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$1, allowPinchZoom: true, shards: [context.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$1, allowPinchZoom: true, shards: [context2.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         Primitive$1.div,
         {
-          "data-state": getState$1(context.open),
+          "data-state": getState$1(context2.open),
           ...overlayProps,
           ref: forwardedRef,
           style: { pointerEvents: "auto", ...overlayProps.style }
@@ -38321,16 +38321,16 @@ var DialogContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext$1(CONTENT_NAME$4, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: context2.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
   }
 );
 DialogContent$1.displayName = CONTENT_NAME$4;
 var DialogContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
+    const composedRefs = useComposedRefs(forwardedRef, context2.contentRef, contentRef);
     reactExports.useEffect(() => {
       const content = contentRef.current;
       if (content) return hideOthers(content);
@@ -38340,12 +38340,12 @@ var DialogContentModal = reactExports.forwardRef(
       {
         ...props,
         ref: composedRefs,
-        trapFocus: context.open,
+        trapFocus: context2.open,
         disableOutsidePointerEvents: true,
         onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
           var _a2;
           event.preventDefault();
-          (_a2 = context.triggerRef.current) == null ? void 0 : _a2.focus();
+          (_a2 = context2.triggerRef.current) == null ? void 0 : _a2.focus();
         }),
         onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
           const originalEvent = event.detail.originalEvent;
@@ -38363,7 +38363,7 @@ var DialogContentModal = reactExports.forwardRef(
 );
 var DialogContentNonModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const context2 = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     const hasPointerDownOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -38377,7 +38377,7 @@ var DialogContentNonModal = reactExports.forwardRef(
           var _a2, _b2;
           (_a2 = props.onCloseAutoFocus) == null ? void 0 : _a2.call(props, event);
           if (!event.defaultPrevented) {
-            if (!hasInteractedOutsideRef.current) (_b2 = context.triggerRef.current) == null ? void 0 : _b2.focus();
+            if (!hasInteractedOutsideRef.current) (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.focus();
             event.preventDefault();
           }
           hasInteractedOutsideRef.current = false;
@@ -38393,7 +38393,7 @@ var DialogContentNonModal = reactExports.forwardRef(
             }
           }
           const target = event.target;
-          const targetIsTrigger = (_b2 = context.triggerRef.current) == null ? void 0 : _b2.contains(target);
+          const targetIsTrigger = (_b2 = context2.triggerRef.current) == null ? void 0 : _b2.contains(target);
           if (targetIsTrigger) event.preventDefault();
           if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
             event.preventDefault();
@@ -38406,7 +38406,7 @@ var DialogContentNonModal = reactExports.forwardRef(
 var DialogContentImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$4, __scopeDialog);
+    const context2 = useDialogContext(CONTENT_NAME$4, __scopeDialog);
     const contentRef = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, contentRef);
     useFocusGuards();
@@ -38423,20 +38423,20 @@ var DialogContentImpl = reactExports.forwardRef(
             DismissableLayer,
             {
               role: "dialog",
-              id: context.contentId,
-              "aria-describedby": context.descriptionId,
-              "aria-labelledby": context.titleId,
-              "data-state": getState$1(context.open),
+              id: context2.contentId,
+              "aria-describedby": context2.descriptionId,
+              "aria-labelledby": context2.titleId,
+              "data-state": getState$1(context2.open),
               ...contentProps,
               ref: composedRefs,
-              onDismiss: () => context.onOpenChange(false)
+              onDismiss: () => context2.onOpenChange(false)
             }
           )
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context.titleId }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning, { contentRef, descriptionId: context.descriptionId })
+        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context2.titleId }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning, { contentRef, descriptionId: context2.descriptionId })
       ] })
     ] });
   }
@@ -38445,8 +38445,8 @@ var TITLE_NAME = "DialogTitle";
 var DialogTitle$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...titleProps } = props;
-    const context = useDialogContext(TITLE_NAME, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context.titleId, ...titleProps, ref: forwardedRef });
+    const context2 = useDialogContext(TITLE_NAME, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context2.titleId, ...titleProps, ref: forwardedRef });
   }
 );
 DialogTitle$1.displayName = TITLE_NAME;
@@ -38454,8 +38454,8 @@ var DESCRIPTION_NAME = "DialogDescription";
 var DialogDescription$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...descriptionProps } = props;
-    const context = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context.descriptionId, ...descriptionProps, ref: forwardedRef });
+    const context2 = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context2.descriptionId, ...descriptionProps, ref: forwardedRef });
   }
 );
 DialogDescription$1.displayName = DESCRIPTION_NAME;
@@ -38463,14 +38463,14 @@ var CLOSE_NAME = "DialogClose";
 var DialogClose = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...closeProps } = props;
-    const context = useDialogContext(CLOSE_NAME, __scopeDialog);
+    const context2 = useDialogContext(CLOSE_NAME, __scopeDialog);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
         type: "button",
         ...closeProps,
         ref: forwardedRef,
-        onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
+        onClick: composeEventHandlers(props.onClick, () => context2.onOpenChange(false))
       }
     );
   }
@@ -41747,7 +41747,7 @@ const executeBeforeLoad = (inner, matchId, index2, route) => {
   const parentMatchId = (_a2 = inner.matches[index2 - 1]) == null ? void 0 : _a2.id;
   const parentMatch = parentMatchId ? inner.router.getMatch(parentMatchId) : void 0;
   const parentMatchContext = (parentMatch == null ? void 0 : parentMatch.context) ?? inner.router.options.context ?? void 0;
-  const context = { ...parentMatchContext, ...match.__routeContext };
+  const context2 = { ...parentMatchContext, ...match.__routeContext };
   let isPending = false;
   const pending = () => {
     if (isPending) return;
@@ -41757,7 +41757,7 @@ const executeBeforeLoad = (inner, matchId, index2, route) => {
       isFetching: "beforeLoad",
       fetchCount: prev.fetchCount + 1,
       abortController,
-      context
+      context: context2
     }));
   };
   const resolve2 = () => {
@@ -41784,7 +41784,7 @@ const executeBeforeLoad = (inner, matchId, index2, route) => {
     abortController,
     params,
     preload: preload2,
-    context,
+    context: context2,
     location: inner.location,
     navigate: (opts) => inner.router.navigate({
       ...opts,
@@ -41889,7 +41889,7 @@ const executeHead = (inner, matchId, route) => {
 };
 const getLoaderContext = (inner, matchId, index2, route) => {
   const parentMatchPromise = inner.matchPromises[index2 - 1];
-  const { params, loaderDeps, abortController, context, cause } = inner.router.getMatch(matchId);
+  const { params, loaderDeps, abortController, context: context2, cause } = inner.router.getMatch(matchId);
   const preload2 = resolvePreload(inner, matchId);
   return {
     params,
@@ -41897,7 +41897,7 @@ const getLoaderContext = (inner, matchId, index2, route) => {
     preload: !!preload2,
     parentMatchPromise,
     abortController,
-    context,
+    context: context2,
     location: inner.location,
     navigate: (opts) => inner.router.navigate({
       ...opts,
@@ -47951,8 +47951,8 @@ function createCollection(name) {
   const CollectionSlot = React$4.forwardRef(
     (props, forwardedRef) => {
       const { scope, children } = props;
-      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
-      const composedRefs = useComposedRefs(forwardedRef, context.collectionRef);
+      const context2 = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs(forwardedRef, context2.collectionRef);
       return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionSlotImpl, { ref: composedRefs, children });
     }
   );
@@ -47965,27 +47965,27 @@ function createCollection(name) {
       const { scope, children, ...itemData } = props;
       const ref = React$4.useRef(null);
       const composedRefs = useComposedRefs(forwardedRef, ref);
-      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+      const context2 = useCollectionContext(ITEM_SLOT_NAME, scope);
       React$4.useEffect(() => {
-        context.itemMap.set(ref, { ref, ...itemData });
-        return () => void context.itemMap.delete(ref);
+        context2.itemMap.set(ref, { ref, ...itemData });
+        return () => void context2.itemMap.delete(ref);
       });
       return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionItemSlotImpl, { ...{ [ITEM_DATA_ATTR]: "" }, ref: composedRefs, children });
     }
   );
   CollectionItemSlot.displayName = ITEM_SLOT_NAME;
   function useCollection2(scope) {
-    const context = useCollectionContext(name + "CollectionConsumer", scope);
+    const context2 = useCollectionContext(name + "CollectionConsumer", scope);
     const getItems = React$4.useCallback(() => {
-      const collectionNode = context.collectionRef.current;
+      const collectionNode = context2.collectionRef.current;
       if (!collectionNode) return [];
       const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
-      const items = Array.from(context.itemMap.values());
+      const items = Array.from(context2.itemMap.values());
       const orderedItems = items.sort(
         (a2, b2) => orderedNodes.indexOf(a2.ref.current) - orderedNodes.indexOf(b2.ref.current)
       );
       return orderedItems;
-    }, [context.collectionRef, context.itemMap]);
+    }, [context2.collectionRef, context2.itemMap]);
     return getItems;
   }
   return [
@@ -48273,7 +48273,7 @@ var SliderImpl = reactExports.forwardRef(
       onStepKeyDown,
       ...sliderProps
     } = props;
-    const context = useSliderContext(SLIDER_NAME, __scopeSlider);
+    const context2 = useSliderContext(SLIDER_NAME, __scopeSlider);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.span,
       {
@@ -48295,7 +48295,7 @@ var SliderImpl = reactExports.forwardRef(
           const target = event.target;
           target.setPointerCapture(event.pointerId);
           event.preventDefault();
-          if (context.thumbs.has(target)) {
+          if (context2.thumbs.has(target)) {
             target.focus();
           } else {
             onSlideStart(event);
@@ -48320,12 +48320,12 @@ var TRACK_NAME = "SliderTrack";
 var SliderTrack = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSlider, ...trackProps } = props;
-    const context = useSliderContext(TRACK_NAME, __scopeSlider);
+    const context2 = useSliderContext(TRACK_NAME, __scopeSlider);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.span,
       {
-        "data-disabled": context.disabled ? "" : void 0,
-        "data-orientation": context.orientation,
+        "data-disabled": context2.disabled ? "" : void 0,
+        "data-orientation": context2.orientation,
         ...trackProps,
         ref: forwardedRef
       }
@@ -48337,21 +48337,21 @@ var RANGE_NAME = "SliderRange";
 var SliderRange = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSlider, ...rangeProps } = props;
-    const context = useSliderContext(RANGE_NAME, __scopeSlider);
+    const context2 = useSliderContext(RANGE_NAME, __scopeSlider);
     const orientation2 = useSliderOrientationContext(RANGE_NAME, __scopeSlider);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
-    const valuesCount = context.values.length;
-    const percentages = context.values.map(
-      (value) => convertValueToPercentage(value, context.min, context.max)
+    const valuesCount = context2.values.length;
+    const percentages = context2.values.map(
+      (value) => convertValueToPercentage(value, context2.min, context2.max)
     );
     const offsetStart = valuesCount > 1 ? Math.min(...percentages) : 0;
     const offsetEnd = 100 - Math.max(...percentages);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.span,
       {
-        "data-orientation": context.orientation,
-        "data-disabled": context.disabled ? "" : void 0,
+        "data-orientation": context2.orientation,
+        "data-disabled": context2.disabled ? "" : void 0,
         ...rangeProps,
         ref: composedRefs,
         style: {
@@ -48380,25 +48380,25 @@ var SliderThumb = reactExports.forwardRef(
 var SliderThumbImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSlider, index: index2, name, ...thumbProps } = props;
-    const context = useSliderContext(THUMB_NAME$1, __scopeSlider);
+    const context2 = useSliderContext(THUMB_NAME$1, __scopeSlider);
     const orientation2 = useSliderOrientationContext(THUMB_NAME$1, __scopeSlider);
     const [thumb, setThumb] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node) => setThumb(node));
-    const isFormControl = thumb ? context.form || !!thumb.closest("form") : true;
+    const isFormControl = thumb ? context2.form || !!thumb.closest("form") : true;
     const size2 = useSize(thumb);
-    const value = context.values[index2];
-    const percent = value === void 0 ? 0 : convertValueToPercentage(value, context.min, context.max);
-    const label = getLabel(index2, context.values.length);
+    const value = context2.values[index2];
+    const percent = value === void 0 ? 0 : convertValueToPercentage(value, context2.min, context2.max);
+    const label = getLabel(index2, context2.values.length);
     const orientationSize = size2 == null ? void 0 : size2[orientation2.size];
     const thumbInBoundsOffset = orientationSize ? getThumbInBoundsOffset(orientationSize, percent, orientation2.direction) : 0;
     reactExports.useEffect(() => {
       if (thumb) {
-        context.thumbs.add(thumb);
+        context2.thumbs.add(thumb);
         return () => {
-          context.thumbs.delete(thumb);
+          context2.thumbs.delete(thumb);
         };
       }
-    }, [thumb, context.thumbs]);
+    }, [thumb, context2.thumbs]);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "span",
       {
@@ -48413,26 +48413,26 @@ var SliderThumbImpl = reactExports.forwardRef(
             {
               role: "slider",
               "aria-label": props["aria-label"] || label,
-              "aria-valuemin": context.min,
+              "aria-valuemin": context2.min,
               "aria-valuenow": value,
-              "aria-valuemax": context.max,
-              "aria-orientation": context.orientation,
-              "data-orientation": context.orientation,
-              "data-disabled": context.disabled ? "" : void 0,
-              tabIndex: context.disabled ? void 0 : 0,
+              "aria-valuemax": context2.max,
+              "aria-orientation": context2.orientation,
+              "data-orientation": context2.orientation,
+              "data-disabled": context2.disabled ? "" : void 0,
+              tabIndex: context2.disabled ? void 0 : 0,
               ...thumbProps,
               ref: composedRefs,
               style: value === void 0 ? { display: "none" } : props.style,
               onFocus: composeEventHandlers(props.onFocus, () => {
-                context.valueIndexToChangeRef.current = index2;
+                context2.valueIndexToChangeRef.current = index2;
               })
             }
           ) }),
           isFormControl && /* @__PURE__ */ jsxRuntimeExports.jsx(
             SliderBubbleInput,
             {
-              name: name ?? (context.name ? context.name + (context.values.length > 1 ? "[]" : "") : void 0),
-              form: context.form,
+              name: name ?? (context2.name ? context2.name + (context2.values.length > 1 ? "[]" : "") : void 0),
+              form: context2.form,
               value
             },
             index2
@@ -48693,12 +48693,12 @@ var leafletSrc = { exports: {} };
       }
       return obj._leaflet_id;
     }
-    function throttle2(fn, time, context) {
+    function throttle2(fn, time, context2) {
       var lock, args, wrapperFn, later;
       later = function() {
         lock = false;
         if (args) {
-          wrapperFn.apply(context, args);
+          wrapperFn.apply(context2, args);
           args = false;
         }
       };
@@ -48706,7 +48706,7 @@ var leafletSrc = { exports: {} };
         if (lock) {
           args = arguments;
         } else {
-          fn.apply(context, arguments);
+          fn.apply(context2, arguments);
           setTimeout(later, time);
           lock = true;
         }
@@ -48786,11 +48786,11 @@ var leafletSrc = { exports: {} };
     var cancelFn = window.cancelAnimationFrame || getPrefixed("CancelAnimationFrame") || getPrefixed("CancelRequestAnimationFrame") || function(id) {
       window.clearTimeout(id);
     };
-    function requestAnimFrame(fn, context, immediate) {
+    function requestAnimFrame(fn, context2, immediate) {
       if (immediate && requestFn === timeoutDefer) {
-        fn.call(context);
+        fn.call(context2);
       } else {
-        return requestFn.call(window, bind(fn, context));
+        return requestFn.call(window, bind(fn, context2));
       }
     }
     function cancelAnimFrame(id) {
@@ -48913,7 +48913,7 @@ var leafletSrc = { exports: {} };
        * @method on(eventMap: Object): this
        * Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
        */
-      on: function(types, fn, context) {
+      on: function(types, fn, context2) {
         if (typeof types === "object") {
           for (var type in types) {
             this._on(type, types[type], fn);
@@ -48921,7 +48921,7 @@ var leafletSrc = { exports: {} };
         } else {
           types = splitWords(types);
           for (var i = 0, len = types.length; i < len; i++) {
-            this._on(types[i], fn, context);
+            this._on(types[i], fn, context2);
           }
         }
         return this;
@@ -48937,7 +48937,7 @@ var leafletSrc = { exports: {} };
        * @method off: this
        * Removes all listeners to all events on the object. This includes implicitly attached events.
        */
-      off: function(types, fn, context) {
+      off: function(types, fn, context2) {
         if (!arguments.length) {
           delete this._events;
         } else if (typeof types === "object") {
@@ -48951,25 +48951,25 @@ var leafletSrc = { exports: {} };
             if (removeAll) {
               this._off(types[i]);
             } else {
-              this._off(types[i], fn, context);
+              this._off(types[i], fn, context2);
             }
           }
         }
         return this;
       },
       // attach listener (without syntactic sugar now)
-      _on: function(type, fn, context, _once) {
+      _on: function(type, fn, context2, _once) {
         if (typeof fn !== "function") {
           console.warn("wrong listener type: " + typeof fn);
           return;
         }
-        if (this._listens(type, fn, context) !== false) {
+        if (this._listens(type, fn, context2) !== false) {
           return;
         }
-        if (context === this) {
-          context = void 0;
+        if (context2 === this) {
+          context2 = void 0;
         }
-        var newListener = { fn, ctx: context };
+        var newListener = { fn, ctx: context2 };
         if (_once) {
           newListener.once = true;
         }
@@ -48977,7 +48977,7 @@ var leafletSrc = { exports: {} };
         this._events[type] = this._events[type] || [];
         this._events[type].push(newListener);
       },
-      _off: function(type, fn, context) {
+      _off: function(type, fn, context2) {
         var listeners, i, len;
         if (!this._events) {
           return;
@@ -48999,7 +48999,7 @@ var leafletSrc = { exports: {} };
           console.warn("wrong listener type: " + typeof fn);
           return;
         }
-        var index3 = this._listens(type, fn, context);
+        var index3 = this._listens(type, fn, context2);
         if (index3 !== false) {
           var listener = listeners[index3];
           if (this._firingCount) {
@@ -49046,7 +49046,7 @@ var leafletSrc = { exports: {} };
       // @method listens(type: String, fn: Function, context?: Object, propagate?: Boolean): Boolean
       // Returns `true` if a particular event type has any listeners attached to it.
       // The verification can optionally be propagated, it will return `true` if parents have the listener attached to it.
-      listens: function(type, fn, context, propagate) {
+      listens: function(type, fn, context2, propagate) {
         if (typeof type !== "string") {
           console.warn('"string" type argument expected');
         }
@@ -49054,17 +49054,17 @@ var leafletSrc = { exports: {} };
         if (typeof fn !== "function") {
           propagate = !!fn;
           _fn = void 0;
-          context = void 0;
+          context2 = void 0;
         }
         var listeners = this._events && this._events[type];
         if (listeners && listeners.length) {
-          if (this._listens(type, _fn, context) !== false) {
+          if (this._listens(type, _fn, context2) !== false) {
             return true;
           }
         }
         if (propagate) {
           for (var id in this._eventParents) {
-            if (this._eventParents[id].listens(type, fn, context, propagate)) {
+            if (this._eventParents[id].listens(type, fn, context2, propagate)) {
               return true;
             }
           }
@@ -49072,7 +49072,7 @@ var leafletSrc = { exports: {} };
         return false;
       },
       // returns the index (number) or false
-      _listens: function(type, fn, context) {
+      _listens: function(type, fn, context2) {
         if (!this._events) {
           return false;
         }
@@ -49080,11 +49080,11 @@ var leafletSrc = { exports: {} };
         if (!fn) {
           return !!listeners.length;
         }
-        if (context === this) {
-          context = void 0;
+        if (context2 === this) {
+          context2 = void 0;
         }
         for (var i = 0, len = listeners.length; i < len; i++) {
-          if (listeners[i].fn === fn && listeners[i].ctx === context) {
+          if (listeners[i].fn === fn && listeners[i].ctx === context2) {
             return i;
           }
         }
@@ -49092,7 +49092,7 @@ var leafletSrc = { exports: {} };
       },
       // @method once(…): this
       // Behaves as [`on(…)`](#evented-on), except the listener will only get fired once and then removed.
-      once: function(types, fn, context) {
+      once: function(types, fn, context2) {
         if (typeof types === "object") {
           for (var type in types) {
             this._on(type, types[type], fn, true);
@@ -49100,7 +49100,7 @@ var leafletSrc = { exports: {} };
         } else {
           types = splitWords(types);
           for (var i = 0, len = types.length; i < len; i++) {
-            this._on(types[i], fn, context, true);
+            this._on(types[i], fn, context2, true);
           }
         }
         return this;
@@ -50323,7 +50323,7 @@ var leafletSrc = { exports: {} };
       getSizedParentNode,
       getScale: getScale2
     };
-    function on(obj, types, fn, context) {
+    function on(obj, types, fn, context2) {
       if (types && typeof types === "object") {
         for (var type in types) {
           addOne(obj, type, types[type], fn);
@@ -50331,13 +50331,13 @@ var leafletSrc = { exports: {} };
       } else {
         types = splitWords(types);
         for (var i = 0, len = types.length; i < len; i++) {
-          addOne(obj, types[i], fn, context);
+          addOne(obj, types[i], fn, context2);
         }
       }
       return this;
     }
     var eventsKey = "_leaflet_events";
-    function off(obj, types, fn, context) {
+    function off(obj, types, fn, context2) {
       if (arguments.length === 1) {
         batchRemove(obj);
         delete obj[eventsKey];
@@ -50353,7 +50353,7 @@ var leafletSrc = { exports: {} };
           });
         } else {
           for (var i = 0, len = types.length; i < len; i++) {
-            removeOne(obj, types[i], fn, context);
+            removeOne(obj, types[i], fn, context2);
           }
         }
       }
@@ -50372,13 +50372,13 @@ var leafletSrc = { exports: {} };
       mouseleave: "mouseout",
       wheel: !("onwheel" in window) && "mousewheel"
     };
-    function addOne(obj, type, fn, context) {
-      var id = type + stamp(fn) + (context ? "_" + stamp(context) : "");
+    function addOne(obj, type, fn, context2) {
+      var id = type + stamp(fn) + (context2 ? "_" + stamp(context2) : "");
       if (obj[eventsKey] && obj[eventsKey][id]) {
         return this;
       }
       var handler = function(e) {
-        return fn.call(context || obj, e || window.event);
+        return fn.call(context2 || obj, e || window.event);
       };
       var originalHandler = handler;
       if (!Browser.touchNative && Browser.pointer && type.indexOf("touch") === 0) {
@@ -50405,8 +50405,8 @@ var leafletSrc = { exports: {} };
       obj[eventsKey] = obj[eventsKey] || {};
       obj[eventsKey][id] = handler;
     }
-    function removeOne(obj, type, fn, context, id) {
-      id = id || type + stamp(fn) + (context ? "_" + stamp(context) : "");
+    function removeOne(obj, type, fn, context2, id) {
+      id = id || type + stamp(fn) + (context2 ? "_" + stamp(context2) : "");
       var handler = obj[eventsKey] && obj[eventsKey][id];
       if (!handler) {
         return this;
@@ -51624,11 +51624,11 @@ var leafletSrc = { exports: {} };
       // Runs the given function `fn` when the map gets initialized with
       // a view (center and zoom) and at least one layer, or immediately
       // if it's already initialized, optionally passing a function context.
-      whenReady: function(callback, context) {
+      whenReady: function(callback, context2) {
         if (this._loaded) {
-          callback.call(context || this, { target: this });
+          callback.call(context2 || this, { target: this });
         } else {
-          this.on("load", callback, context);
+          this.on("load", callback, context2);
         }
         return this;
       },
@@ -53154,9 +53154,9 @@ var leafletSrc = { exports: {} };
        * });
        * ```
        */
-      eachLayer: function(method, context) {
+      eachLayer: function(method, context2) {
         for (var i in this._layers) {
-          method.call(context, this._layers[i]);
+          method.call(context2, this._layers[i]);
         }
         return this;
       },
@@ -53274,9 +53274,9 @@ var leafletSrc = { exports: {} };
       // 	layer.bindPopup('Hello');
       // });
       // ```
-      eachLayer: function(method, context) {
+      eachLayer: function(method, context2) {
         for (var i in this._layers) {
-          method.call(context, this._layers[i]);
+          method.call(context2, this._layers[i]);
         }
         return this;
       },
@@ -58243,19 +58243,19 @@ function extendContext(source, extra) {
 }
 const LeafletContext = reactExports.createContext(null);
 function useLeafletContext() {
-  const context = reactExports.use(LeafletContext);
-  if (context == null) {
+  const context2 = reactExports.use(LeafletContext);
+  if (context2 == null) {
     throw new Error("No context provided: useLeafletContext() can only be used in a descendant of <MapContainer>");
   }
-  return context;
+  return context2;
 }
 function createContainerComponent(useElement) {
   function ContainerComponent(props, forwardedRef) {
-    const { instance, context } = useElement(props).current;
+    const { instance, context: context2 } = useElement(props).current;
     reactExports.useImperativeHandle(forwardedRef, () => instance);
     const { children } = props;
     return children == null ? null : /* @__PURE__ */ React$4.createElement(LeafletContext, {
-      value: context
+      value: context2
     }, children);
   }
   return /* @__PURE__ */ reactExports.forwardRef(ContainerComponent);
@@ -58286,31 +58286,31 @@ function useEventHandlers(element, eventHandlers) {
     eventHandlers
   ]);
 }
-function withPane(props, context) {
-  const pane = props.pane ?? context.pane;
+function withPane(props, context2) {
+  const pane = props.pane ?? context2.pane;
   return pane ? {
     ...props,
     pane
   } : props;
 }
-function createElementObject(instance, context, container) {
+function createElementObject(instance, context2, container) {
   return Object.freeze({
     instance,
-    context,
+    context: context2,
     container
   });
 }
 function createElementHook(createElement, updateElement) {
   if (updateElement == null) {
-    return function useImmutableLeafletElement(props, context) {
+    return function useImmutableLeafletElement(props, context2) {
       const elementRef = reactExports.useRef(void 0);
-      if (!elementRef.current) elementRef.current = createElement(props, context);
+      if (!elementRef.current) elementRef.current = createElement(props, context2);
       return elementRef;
     };
   }
-  return function useMutableLeafletElement(props, context) {
+  return function useMutableLeafletElement(props, context2) {
     const elementRef = reactExports.useRef(void 0);
-    if (!elementRef.current) elementRef.current = createElement(props, context);
+    if (!elementRef.current) elementRef.current = createElement(props, context2);
     const propsRef = reactExports.useRef(props);
     const { instance } = elementRef.current;
     reactExports.useEffect(function updateElementProps() {
@@ -58326,27 +58326,27 @@ function createElementHook(createElement, updateElement) {
     return elementRef;
   };
 }
-function useLayerLifecycle(element, context) {
+function useLayerLifecycle(element, context2) {
   reactExports.useEffect(function addLayer() {
-    const container = context.layerContainer ?? context.map;
+    const container = context2.layerContainer ?? context2.map;
     container.addLayer(element.instance);
     return function removeLayer() {
       var _a2;
-      (_a2 = context.layerContainer) == null ? void 0 : _a2.removeLayer(element.instance);
-      context.map.removeLayer(element.instance);
+      (_a2 = context2.layerContainer) == null ? void 0 : _a2.removeLayer(element.instance);
+      context2.map.removeLayer(element.instance);
     };
   }, [
-    context,
+    context2,
     element
   ]);
 }
 function createLayerHook(useElement) {
   return function useLayer(props) {
-    const context = useLeafletContext();
-    const elementRef = useElement(withPane(props, context), context);
-    useAttribution(context.map, props.attribution);
+    const context2 = useLeafletContext();
+    const elementRef = useElement(withPane(props, context2), context2);
+    useAttribution(context2.map, props.attribution);
     useEventHandlers(elementRef.current, props.eventHandlers);
-    useLayerLifecycle(elementRef.current, context);
+    useLayerLifecycle(elementRef.current, context2);
     return elementRef;
   };
 }
@@ -58365,10 +58365,10 @@ function usePathOptions(element, props) {
 }
 function createPathHook(useElement) {
   return function usePath(props) {
-    const context = useLeafletContext();
-    const elementRef = useElement(withPane(props, context), context);
+    const context2 = useLeafletContext();
+    const elementRef = useElement(withPane(props, context2), context2);
     useEventHandlers(elementRef.current, props.eventHandlers);
-    useLayerLifecycle(elementRef.current, context);
+    useLayerLifecycle(elementRef.current, context2);
     usePathOptions(elementRef.current, props);
     return elementRef;
   };
@@ -58425,10 +58425,10 @@ function MapContainerComponent({ bounds, boundsOptions, center, children, classN
     id,
     style: style2
   });
-  const [context, setContext] = reactExports.useState(null);
+  const [context2, setContext] = reactExports.useState(null);
   const mapInstanceRef = reactExports.useRef(void 0);
-  reactExports.useImperativeHandle(forwardedRef, () => (context == null ? void 0 : context.map) ?? null, [
-    context
+  reactExports.useImperativeHandle(forwardedRef, () => (context2 == null ? void 0 : context2.map) ?? null, [
+    context2
   ]);
   const mapRef = reactExports.useCallback((node) => {
     if (node !== null && !mapInstanceRef.current) {
@@ -58447,13 +58447,13 @@ function MapContainerComponent({ bounds, boundsOptions, center, children, classN
   }, []);
   reactExports.useEffect(() => {
     return () => {
-      context == null ? void 0 : context.map.remove();
+      context2 == null ? void 0 : context2.map.remove();
     };
   }, [
-    context
+    context2
   ]);
-  const contents = context ? /* @__PURE__ */ React$4.createElement(LeafletContext, {
-    value: context
+  const contents = context2 ? /* @__PURE__ */ React$4.createElement(LeafletContext, {
+    value: context2
   }, children) : placeholder ?? null;
   return /* @__PURE__ */ React$4.createElement("div", {
     ...props,
@@ -58487,9 +58487,9 @@ const Marker = createLayerComponent(function createMarker({ position, ...options
     }
   }
 });
-const TileLayer = createTileLayerComponent(function createTileLayer({ url, ...options }, context) {
-  const layer = new leafletSrcExports.TileLayer(url, withPane(options, context));
-  return createElementObject(layer, context);
+const TileLayer = createTileLayerComponent(function createTileLayer({ url, ...options }, context2) {
+  const layer = new leafletSrcExports.TileLayer(url, withPane(options, context2));
+  return createElementObject(layer, context2);
 }, function updateTileLayer(layer, props, prevProps) {
   updateGridLayer(layer, props, prevProps);
   const { url } = props;
@@ -58981,10 +58981,10 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     } = props;
     const autoId = useId();
     const id = tabStopId || autoId;
-    const context = useRovingFocusContext(ITEM_NAME$1, __scopeRovingFocusGroup);
-    const isCurrentTabStop = context.currentTabStopId === id;
+    const context2 = useRovingFocusContext(ITEM_NAME$1, __scopeRovingFocusGroup);
+    const isCurrentTabStop = context2.currentTabStopId === id;
     const getItems = useCollection$1(__scopeRovingFocusGroup);
-    const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context;
+    const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context2;
     reactExports.useEffect(() => {
       if (focusable) {
         onFocusableItemAdd();
@@ -59002,21 +59002,21 @@ var RovingFocusGroupItem = reactExports.forwardRef(
           Primitive$1.span,
           {
             tabIndex: isCurrentTabStop ? 0 : -1,
-            "data-orientation": context.orientation,
+            "data-orientation": context2.orientation,
             ...itemProps,
             ref: forwardedRef,
             onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
               if (!focusable) event.preventDefault();
-              else context.onItemFocus(id);
+              else context2.onItemFocus(id);
             }),
-            onFocus: composeEventHandlers(props.onFocus, () => context.onItemFocus(id)),
+            onFocus: composeEventHandlers(props.onFocus, () => context2.onItemFocus(id)),
             onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
               if (event.key === "Tab" && event.shiftKey) {
-                context.onItemShiftTab();
+                context2.onItemShiftTab();
                 return;
               }
               if (event.target !== event.currentTarget) return;
-              const focusIntent = getFocusIntent(event, context.orientation, context.dir);
+              const focusIntent = getFocusIntent(event, context2.orientation, context2.dir);
               if (focusIntent !== void 0) {
                 if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
                 event.preventDefault();
@@ -59026,7 +59026,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
                 else if (focusIntent === "prev" || focusIntent === "next") {
                   if (focusIntent === "prev") candidateNodes.reverse();
                   const currentIndex = candidateNodes.indexOf(event.currentTarget);
-                  candidateNodes = context.loop ? wrapArray$1(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
+                  candidateNodes = context2.loop ? wrapArray$1(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
                 }
                 setTimeout(() => focusFirst(candidateNodes));
               }
@@ -59125,21 +59125,21 @@ var TAB_LIST_NAME = "TabsList";
 var TabsList$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeTabs, loop = true, ...listProps } = props;
-    const context = useTabsContext(TAB_LIST_NAME, __scopeTabs);
+    const context2 = useTabsContext(TAB_LIST_NAME, __scopeTabs);
     const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeTabs);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Root$4,
       {
         asChild: true,
         ...rovingFocusGroupScope,
-        orientation: context.orientation,
-        dir: context.dir,
+        orientation: context2.orientation,
+        dir: context2.dir,
         loop,
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
           Primitive$1.div,
           {
             role: "tablist",
-            "aria-orientation": context.orientation,
+            "aria-orientation": context2.orientation,
             ...listProps,
             ref: forwardedRef
           }
@@ -59153,11 +59153,11 @@ var TRIGGER_NAME$2 = "TabsTrigger";
 var TabsTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeTabs, value, disabled = false, ...triggerProps } = props;
-    const context = useTabsContext(TRIGGER_NAME$2, __scopeTabs);
+    const context2 = useTabsContext(TRIGGER_NAME$2, __scopeTabs);
     const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeTabs);
-    const triggerId = makeTriggerId(context.baseId, value);
-    const contentId = makeContentId(context.baseId, value);
-    const isSelected = value === context.value;
+    const triggerId = makeTriggerId(context2.baseId, value);
+    const contentId = makeContentId(context2.baseId, value);
+    const isSelected = value === context2.value;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Item$1,
       {
@@ -59180,18 +59180,18 @@ var TabsTrigger$1 = reactExports.forwardRef(
             ref: forwardedRef,
             onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
               if (!disabled && event.button === 0 && event.ctrlKey === false) {
-                context.onValueChange(value);
+                context2.onValueChange(value);
               } else {
                 event.preventDefault();
               }
             }),
             onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
-              if ([" ", "Enter"].includes(event.key)) context.onValueChange(value);
+              if ([" ", "Enter"].includes(event.key)) context2.onValueChange(value);
             }),
             onFocus: composeEventHandlers(props.onFocus, () => {
-              const isAutomaticActivation = context.activationMode !== "manual";
+              const isAutomaticActivation = context2.activationMode !== "manual";
               if (!isSelected && !disabled && isAutomaticActivation) {
-                context.onValueChange(value);
+                context2.onValueChange(value);
               }
             })
           }
@@ -59205,10 +59205,10 @@ var CONTENT_NAME$3 = "TabsContent";
 var TabsContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeTabs, value, forceMount, children, ...contentProps } = props;
-    const context = useTabsContext(CONTENT_NAME$3, __scopeTabs);
-    const triggerId = makeTriggerId(context.baseId, value);
-    const contentId = makeContentId(context.baseId, value);
-    const isSelected = value === context.value;
+    const context2 = useTabsContext(CONTENT_NAME$3, __scopeTabs);
+    const triggerId = makeTriggerId(context2.baseId, value);
+    const contentId = makeContentId(context2.baseId, value);
+    const isSelected = value === context2.value;
     const isMountAnimationPreventedRef = reactExports.useRef(isSelected);
     reactExports.useEffect(() => {
       const rAF = requestAnimationFrame(() => isMountAnimationPreventedRef.current = false);
@@ -59218,7 +59218,7 @@ var TabsContent$1 = reactExports.forwardRef(
       Primitive$1.div,
       {
         "data-state": isSelected ? "active" : "inactive",
-        "data-orientation": context.orientation,
+        "data-orientation": context2.orientation,
         role: "tabpanel",
         "aria-labelledby": triggerId,
         hidden: !present,
@@ -61403,7 +61403,7 @@ var ANCHOR_NAME = "PopperAnchor";
 var PopperAnchor = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopePopper, virtualRef, ...anchorProps } = props;
-    const context = usePopperContext(ANCHOR_NAME, __scopePopper);
+    const context2 = usePopperContext(ANCHOR_NAME, __scopePopper);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
     const anchorRef = reactExports.useRef(null);
@@ -61411,7 +61411,7 @@ var PopperAnchor = reactExports.forwardRef(
       const previousAnchor = anchorRef.current;
       anchorRef.current = (virtualRef == null ? void 0 : virtualRef.current) || ref.current;
       if (previousAnchor !== anchorRef.current) {
-        context.onAnchorChange(anchorRef.current);
+        context2.onAnchorChange(anchorRef.current);
       }
     });
     return virtualRef ? null : /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...anchorProps, ref: composedRefs });
@@ -61439,7 +61439,7 @@ var PopperContent = reactExports.forwardRef(
       onPlaced,
       ...contentProps
     } = props;
-    const context = usePopperContext(CONTENT_NAME$2, __scopePopper);
+    const context2 = usePopperContext(CONTENT_NAME$2, __scopePopper);
     const [content, setContent] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
     const [arrow$12, setArrow] = reactExports.useState(null);
@@ -61467,7 +61467,7 @@ var PopperContent = reactExports.forwardRef(
         return cleanup;
       },
       elements: {
-        reference: context.anchor
+        reference: context2.anchor
       },
       middleware: [
         offset({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
@@ -61804,26 +61804,26 @@ var SelectTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, disabled = false, ...triggerProps } = props;
     const popperScope = usePopperScope$1(__scopeSelect);
-    const context = useSelectContext(TRIGGER_NAME$1, __scopeSelect);
-    const isDisabled = context.disabled || disabled;
-    const composedRefs = useComposedRefs(forwardedRef, context.onTriggerChange);
+    const context2 = useSelectContext(TRIGGER_NAME$1, __scopeSelect);
+    const isDisabled = context2.disabled || disabled;
+    const composedRefs = useComposedRefs(forwardedRef, context2.onTriggerChange);
     const getItems = useCollection(__scopeSelect);
     const pointerTypeRef = reactExports.useRef("touch");
     const [searchRef, handleTypeaheadSearch, resetTypeahead] = useTypeaheadSearch((search) => {
       const enabledItems = getItems().filter((item) => !item.disabled);
-      const currentItem = enabledItems.find((item) => item.value === context.value);
+      const currentItem = enabledItems.find((item) => item.value === context2.value);
       const nextItem = findNextItem(enabledItems, search, currentItem);
       if (nextItem !== void 0) {
-        context.onValueChange(nextItem.value);
+        context2.onValueChange(nextItem.value);
       }
     });
     const handleOpen = (pointerEvent) => {
       if (!isDisabled) {
-        context.onOpenChange(true);
+        context2.onOpenChange(true);
         resetTypeahead();
       }
       if (pointerEvent) {
-        context.triggerPointerDownPosRef.current = {
+        context2.triggerPointerDownPosRef.current = {
           x: Math.round(pointerEvent.pageX),
           y: Math.round(pointerEvent.pageY)
         };
@@ -61834,15 +61834,15 @@ var SelectTrigger$1 = reactExports.forwardRef(
       {
         type: "button",
         role: "combobox",
-        "aria-controls": context.contentId,
-        "aria-expanded": context.open,
-        "aria-required": context.required,
+        "aria-controls": context2.contentId,
+        "aria-expanded": context2.open,
+        "aria-required": context2.required,
         "aria-autocomplete": "none",
-        dir: context.dir,
-        "data-state": context.open ? "open" : "closed",
+        dir: context2.dir,
+        "data-state": context2.open ? "open" : "closed",
         disabled: isDisabled,
         "data-disabled": isDisabled ? "" : void 0,
-        "data-placeholder": shouldShowPlaceholder(context.value) ? "" : void 0,
+        "data-placeholder": shouldShowPlaceholder(context2.value) ? "" : void 0,
         ...triggerProps,
         ref: composedRefs,
         onClick: composeEventHandlers(triggerProps.onClick, (event) => {
@@ -61881,10 +61881,10 @@ var VALUE_NAME = "SelectValue";
 var SelectValue$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, className, style: style2, children, placeholder = "", ...valueProps } = props;
-    const context = useSelectContext(VALUE_NAME, __scopeSelect);
-    const { onValueNodeHasChildrenChange } = context;
+    const context2 = useSelectContext(VALUE_NAME, __scopeSelect);
+    const { onValueNodeHasChildrenChange } = context2;
     const hasChildren = children !== void 0;
-    const composedRefs = useComposedRefs(forwardedRef, context.onValueNodeChange);
+    const composedRefs = useComposedRefs(forwardedRef, context2.onValueNodeChange);
     useLayoutEffect2(() => {
       onValueNodeHasChildrenChange(hasChildren);
     }, [onValueNodeHasChildrenChange, hasChildren]);
@@ -61894,7 +61894,7 @@ var SelectValue$1 = reactExports.forwardRef(
         ...valueProps,
         ref: composedRefs,
         style: { pointerEvents: "none" },
-        children: shouldShowPlaceholder(context.value) ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: placeholder }) : children
+        children: shouldShowPlaceholder(context2.value) ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: placeholder }) : children
       }
     );
   }
@@ -61916,12 +61916,12 @@ SelectPortal.displayName = PORTAL_NAME$1;
 var CONTENT_NAME$1 = "SelectContent";
 var SelectContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useSelectContext(CONTENT_NAME$1, props.__scopeSelect);
+    const context2 = useSelectContext(CONTENT_NAME$1, props.__scopeSelect);
     const [fragment, setFragment] = reactExports.useState();
     useLayoutEffect2(() => {
       setFragment(new DocumentFragment());
     }, []);
-    if (!context.open) {
+    if (!context2.open) {
       const frag = fragment;
       return frag ? reactDomExports.createPortal(
         /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContentProvider, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection.Slot, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: props.children }) }) }),
@@ -61959,7 +61959,7 @@ var SelectContentImpl = reactExports.forwardRef(
       //
       ...contentProps
     } = props;
-    const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
+    const context2 = useSelectContext(CONTENT_NAME$1, __scopeSelect);
     const [content, setContent] = reactExports.useState(null);
     const [viewport, setViewport] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
@@ -61999,7 +61999,7 @@ var SelectContentImpl = reactExports.forwardRef(
         focusSelectedItem();
       }
     }, [isPositioned, focusSelectedItem]);
-    const { onOpenChange, triggerPointerDownPosRef } = context;
+    const { onOpenChange, triggerPointerDownPosRef } = context2;
     reactExports.useEffect(() => {
       if (content) {
         let pointerMoveDelta = { x: 0, y: 0 };
@@ -62051,24 +62051,24 @@ var SelectContentImpl = reactExports.forwardRef(
     const itemRefCallback = reactExports.useCallback(
       (node, value, disabled) => {
         const isFirstValidItem = !firstValidItemFoundRef.current && !disabled;
-        const isSelectedItem = context.value !== void 0 && context.value === value;
+        const isSelectedItem = context2.value !== void 0 && context2.value === value;
         if (isSelectedItem || isFirstValidItem) {
           setSelectedItem(node);
           if (isFirstValidItem) firstValidItemFoundRef.current = true;
         }
       },
-      [context.value]
+      [context2.value]
     );
     const handleItemLeave = reactExports.useCallback(() => content == null ? void 0 : content.focus(), [content]);
     const itemTextRefCallback = reactExports.useCallback(
       (node, value, disabled) => {
         const isFirstValidItem = !firstValidItemFoundRef.current && !disabled;
-        const isSelectedItem = context.value !== void 0 && context.value === value;
+        const isSelectedItem = context2.value !== void 0 && context2.value === value;
         if (isSelectedItem || isFirstValidItem) {
           setSelectedItemText(node);
         }
       },
-      [context.value]
+      [context2.value]
     );
     const SelectPosition = position === "popper" ? SelectPopperPosition : SelectItemAlignedPosition;
     const popperContentProps = SelectPosition === SelectPopperPosition ? {
@@ -62103,13 +62103,13 @@ var SelectContentImpl = reactExports.forwardRef(
           FocusScope,
           {
             asChild: true,
-            trapped: context.open,
+            trapped: context2.open,
             onMountAutoFocus: (event) => {
               event.preventDefault();
             },
             onUnmountAutoFocus: composeEventHandlers(onCloseAutoFocus, (event) => {
               var _a2;
-              (_a2 = context.trigger) == null ? void 0 : _a2.focus({ preventScroll: true });
+              (_a2 = context2.trigger) == null ? void 0 : _a2.focus({ preventScroll: true });
               event.preventDefault();
             }),
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -62120,14 +62120,14 @@ var SelectContentImpl = reactExports.forwardRef(
                 onEscapeKeyDown,
                 onPointerDownOutside,
                 onFocusOutside: (event) => event.preventDefault(),
-                onDismiss: () => context.onOpenChange(false),
+                onDismiss: () => context2.onOpenChange(false),
                 children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                   SelectPosition,
                   {
                     role: "listbox",
-                    id: context.contentId,
-                    "data-state": context.open ? "open" : "closed",
-                    dir: context.dir,
+                    id: context2.contentId,
+                    "data-state": context2.open ? "open" : "closed",
+                    dir: context2.dir,
                     onContextMenu: (event) => event.preventDefault(),
                     ...contentProps,
                     ...popperContentProps,
@@ -62174,7 +62174,7 @@ SelectContentImpl.displayName = CONTENT_IMPL_NAME;
 var ITEM_ALIGNED_POSITION_NAME = "SelectItemAlignedPosition";
 var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeSelect, onPlaced, ...popperProps } = props;
-  const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
+  const context2 = useSelectContext(CONTENT_NAME$1, __scopeSelect);
   const contentContext = useSelectContentContext(CONTENT_NAME$1, __scopeSelect);
   const [contentWrapper, setContentWrapper] = reactExports.useState(null);
   const [content, setContent] = reactExports.useState(null);
@@ -62184,12 +62184,12 @@ var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) =>
   const shouldRepositionRef = reactExports.useRef(true);
   const { viewport, selectedItem, selectedItemText, focusSelectedItem } = contentContext;
   const position = reactExports.useCallback(() => {
-    if (context.trigger && context.valueNode && contentWrapper && content && viewport && selectedItem && selectedItemText) {
-      const triggerRect = context.trigger.getBoundingClientRect();
+    if (context2.trigger && context2.valueNode && contentWrapper && content && viewport && selectedItem && selectedItemText) {
+      const triggerRect = context2.trigger.getBoundingClientRect();
       const contentRect = content.getBoundingClientRect();
-      const valueNodeRect = context.valueNode.getBoundingClientRect();
+      const valueNodeRect = context2.valueNode.getBoundingClientRect();
       const itemTextRect = selectedItemText.getBoundingClientRect();
-      if (context.dir !== "rtl") {
+      if (context2.dir !== "rtl") {
         const itemTextOffset = itemTextRect.left - contentRect.left;
         const left = valueNodeRect.left - itemTextOffset;
         const leftDelta = triggerRect.left - left;
@@ -62272,14 +62272,14 @@ var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) =>
     }
   }, [
     getItems,
-    context.trigger,
-    context.valueNode,
+    context2.trigger,
+    context2.valueNode,
     contentWrapper,
     content,
     viewport,
     selectedItem,
     selectedItemText,
-    context.dir,
+    context2.dir,
     onPlaced
   ]);
   useLayoutEffect2(() => position(), [position]);
@@ -62468,9 +62468,9 @@ var SelectItem$1 = reactExports.forwardRef(
       textValue: textValueProp,
       ...itemProps
     } = props;
-    const context = useSelectContext(ITEM_NAME, __scopeSelect);
+    const context2 = useSelectContext(ITEM_NAME, __scopeSelect);
     const contentContext = useSelectContentContext(ITEM_NAME, __scopeSelect);
-    const isSelected = context.value === value;
+    const isSelected = context2.value === value;
     const [textValue, setTextValue] = reactExports.useState(textValueProp ?? "");
     const [isFocused, setIsFocused] = reactExports.useState(false);
     const composedRefs = useComposedRefs(
@@ -62484,8 +62484,8 @@ var SelectItem$1 = reactExports.forwardRef(
     const pointerTypeRef = reactExports.useRef("touch");
     const handleSelect = () => {
       if (!disabled) {
-        context.onValueChange(value);
-        context.onOpenChange(false);
+        context2.onValueChange(value);
+        context2.onOpenChange(false);
       }
     };
     if (value === "") {
@@ -62570,7 +62570,7 @@ var ITEM_TEXT_NAME = "SelectItemText";
 var SelectItemText = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, className, style: style2, ...itemTextProps } = props;
-    const context = useSelectContext(ITEM_TEXT_NAME, __scopeSelect);
+    const context2 = useSelectContext(ITEM_TEXT_NAME, __scopeSelect);
     const contentContext = useSelectContentContext(ITEM_TEXT_NAME, __scopeSelect);
     const itemContext = useSelectItemContext(ITEM_TEXT_NAME, __scopeSelect);
     const nativeOptionsContext = useSelectNativeOptionsContext(ITEM_TEXT_NAME, __scopeSelect);
@@ -62596,7 +62596,7 @@ var SelectItemText = reactExports.forwardRef(
     }, [onNativeOptionAdd, onNativeOptionRemove, nativeOption]);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.span, { id: itemContext.textId, ...itemTextProps, ref: composedRefs }),
-      itemContext.isSelected && context.valueNode && !context.valueNodeHasChildren ? reactDomExports.createPortal(itemTextProps.children, context.valueNode) : null
+      itemContext.isSelected && context2.valueNode && !context2.valueNodeHasChildren ? reactDomExports.createPortal(itemTextProps.children, context2.valueNode) : null
     ] });
   }
 );
@@ -62734,9 +62734,9 @@ var SelectArrow = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...arrowProps } = props;
     const popperScope = usePopperScope$1(__scopeSelect);
-    const context = useSelectContext(ARROW_NAME$1, __scopeSelect);
+    const context2 = useSelectContext(ARROW_NAME$1, __scopeSelect);
     const contentContext = useSelectContentContext(ARROW_NAME$1, __scopeSelect);
-    return context.open && contentContext.position === "popper" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef }) : null;
+    return context2.open && contentContext.position === "popper" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef }) : null;
   }
 );
 SelectArrow.displayName = ARROW_NAME$1;
@@ -63664,6 +63664,182 @@ function AiStudioPanel() {
     ] })
   ] });
 }
+const PERFORATION_INSET_INCHES = 0.375;
+const SPINE_BAND_INCHES = 0.1875;
+const CREASE_COLOR = "rgba(1, 8, 10, 0.34)";
+const PERF_COLOR = "rgba(1, 8, 10, 0.46)";
+const SPINE_COLOR = "rgba(1, 8, 10, 0.38)";
+const WINDOW_COLOR = "#6366f1";
+const LAYER_Z = 7900;
+const WINDOW_Z = 7950;
+function Chip({
+  children,
+  scale,
+  className,
+  color
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "span",
+    {
+      className: cn(
+        "absolute px-1 font-mono uppercase tracking-wide text-white",
+        className
+      ),
+      style: {
+        fontSize: 9 / scale,
+        lineHeight: 1.4,
+        backgroundColor: color,
+        opacity: 0.8
+      },
+      children
+    }
+  );
+}
+function edgeStyle(edge, dims, band) {
+  const { designWidth: w2, designHeight: h2 } = dims;
+  switch (edge) {
+    case "left":
+      return { left: 0, top: 0, width: band, height: h2 };
+    case "right":
+      return { left: w2 - band, top: 0, width: band, height: h2 };
+    case "top":
+      return { left: 0, top: 0, width: w2, height: band };
+    default:
+      return { left: 0, top: h2 - band, width: w2, height: band };
+  }
+}
+function PhysicalOverlay({
+  dims,
+  traits,
+  scale,
+  subtle = false
+}) {
+  const stroke = 1 / scale;
+  const opacity = subtle ? 0.55 : 1;
+  const perfInset = PERFORATION_INSET_INCHES * DESIGN_PPI;
+  const spineBand = SPINE_BAND_INCHES * DESIGN_PPI;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      className: "pointer-events-none absolute inset-0",
+      style: { zIndex: LAYER_Z, opacity },
+      "data-ocid": "canvas.physical.overlay",
+      "data-stock": traits.stock,
+      children: [
+        traits.creases.map((crease) => {
+          const vertical = crease.axis === "vertical";
+          const pos = vertical ? crease.at * dims.designWidth : crease.at * dims.designHeight;
+          return /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "absolute",
+              style: vertical ? {
+                left: pos,
+                top: 0,
+                height: dims.designHeight,
+                borderLeft: `${stroke}px dashed ${CREASE_COLOR}`
+              } : {
+                top: pos,
+                left: 0,
+                width: dims.designWidth,
+                borderTop: `${stroke}px dashed ${CREASE_COLOR}`
+              },
+              "data-ocid": `canvas.physical.crease.${crease.axis}`,
+              children: !subtle && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                Chip,
+                {
+                  scale,
+                  color: "#01080a",
+                  className: vertical ? "left-0 top-0 rounded-br" : "left-0 top-0 rounded-b",
+                  children: crease.label
+                }
+              )
+            },
+            `${crease.axis}-${crease.at}`
+          );
+        }),
+        traits.perforations.map((edge) => {
+          const vertical = edge === "left" || edge === "right";
+          const offset2 = edge === "left" || edge === "top" ? perfInset : (vertical ? dims.designWidth : dims.designHeight) - perfInset;
+          return /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "absolute",
+              style: {
+                left: vertical ? offset2 : 0,
+                top: vertical ? 0 : offset2,
+                width: vertical ? 0 : dims.designWidth,
+                height: vertical ? dims.designHeight : 0,
+                borderLeft: vertical ? `${stroke * 1.5}px dotted ${PERF_COLOR}` : void 0,
+                borderTop: vertical ? void 0 : `${stroke * 1.5}px dotted ${PERF_COLOR}`
+              },
+              "data-ocid": `canvas.physical.perforation.${edge}`,
+              children: !subtle && edge === "bottom" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                Chip,
+                {
+                  scale,
+                  color: "#01080a",
+                  className: "left-0 top-0 rounded-b",
+                  children: "Tear strip"
+                }
+              )
+            },
+            `perf-${edge}`
+          );
+        }),
+        traits.spine && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "absolute",
+            style: {
+              ...edgeStyle(traits.spine, dims, spineBand),
+              backgroundImage: `repeating-linear-gradient(135deg, ${SPINE_COLOR} 0, ${SPINE_COLOR} ${stroke}px, transparent ${stroke}px, transparent ${stroke * 5}px)`,
+              borderRight: traits.spine === "left" ? `${stroke}px dashed ${CREASE_COLOR}` : void 0,
+              borderLeft: traits.spine === "right" ? `${stroke}px dashed ${CREASE_COLOR}` : void 0
+            },
+            "data-ocid": `canvas.physical.spine.${traits.spine}`,
+            children: !subtle && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Chip,
+              {
+                scale,
+                color: "#01080a",
+                className: "left-0 top-0 rounded-br",
+                children: "Score"
+              }
+            )
+          }
+        ),
+        traits.windows.map((win) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "absolute",
+            style: {
+              left: win.xInches * DESIGN_PPI,
+              top: win.yInches * DESIGN_PPI,
+              width: win.widthInches * DESIGN_PPI,
+              height: win.heightInches * DESIGN_PPI,
+              boxSizing: "border-box",
+              border: `${stroke}px dashed ${WINDOW_COLOR}`,
+              backgroundColor: "rgba(99, 102, 241, 0.07)",
+              zIndex: WINDOW_Z
+            },
+            "data-ocid": `canvas.physical.window.${win.label.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`,
+            children: !subtle && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Chip,
+              {
+                scale,
+                color: WINDOW_COLOR,
+                className: "left-0 top-0 rounded-br",
+                children: win.label
+              }
+            )
+          },
+          win.label
+        ))
+      ]
+    }
+  );
+}
 const ALIGNMENTS = [
   { id: "left", label: "Align left", icon: AlignStartVertical },
   { id: "center", label: "Align centre", icon: AlignCenterVertical },
@@ -63956,6 +64132,150 @@ function useCanvasInteractions(options) {
     isDragging: (active == null ? void 0 : active.kind) === "drag",
     isResizing: (active == null ? void 0 : active.kind) === "resize"
   };
+}
+const RETURN_WINDOW = {
+  xInches: 0.5,
+  widthInches: 3.5,
+  heightInches: 0.75,
+  /** Offset below the top crease of the outward panel. */
+  offsetInches: 0.25
+};
+const ADDRESS_WINDOW = {
+  xInches: 0.875,
+  widthInches: 4,
+  heightInches: 1,
+  offsetInches: 1.25
+};
+const LETTER_FOLD = [
+  { axis: "horizontal", at: 1 / 3, label: "Fold" },
+  { axis: "horizontal", at: 2 / 3, label: "Fold" }
+];
+const TRIFOLD = [
+  { axis: "vertical", at: 1 / 3, label: "Fold" },
+  { axis: "vertical", at: 2 / 3, label: "Fold" }
+];
+const BIFOLD = [{ axis: "vertical", at: 0.5, label: "Fold" }];
+const HALF_FOLD = [{ axis: "horizontal", at: 0.5, label: "Fold" }];
+const FLAT = {
+  stock: "card",
+  label: "Flat card",
+  creases: [],
+  perforations: [],
+  spine: null,
+  windows: []
+};
+function tenWindows(heightInches) {
+  const panelTop = heightInches / 3;
+  return [
+    {
+      label: "Return window",
+      xInches: RETURN_WINDOW.xInches,
+      yInches: panelTop + RETURN_WINDOW.offsetInches,
+      widthInches: RETURN_WINDOW.widthInches,
+      heightInches: RETURN_WINDOW.heightInches
+    },
+    {
+      label: "#10 address window",
+      xInches: ADDRESS_WINDOW.xInches,
+      yInches: panelTop + ADDRESS_WINDOW.offsetInches,
+      widthInches: ADDRESS_WINDOW.widthInches,
+      heightInches: ADDRESS_WINDOW.heightInches
+    }
+  ];
+}
+function physicalTraitsFor(layoutVariant) {
+  const row = getPricingRow(layoutVariant);
+  if (!row) return FLAT;
+  const enveloped = Boolean(row.envelope);
+  switch (row.layout) {
+    case "Double Sided Postcard":
+      return {
+        ...FLAT,
+        label: "Flat card · heavy stock"
+      };
+    case "Flat Notecard":
+      return { ...FLAT, label: "Flat notecard · heavy stock" };
+    case "Business Reply Postcard":
+      return { ...FLAT, label: "Reply card · heavy stock" };
+    case "Folded Notecard":
+      return {
+        stock: "card",
+        label: "Folded notecard · scored at the bound edge",
+        creases: [],
+        perforations: [],
+        // The artboard is the finished 4.25 x 5.5 face, not the flat spread,
+        // so the score sits on the bound edge rather than across the panel.
+        spine: "left",
+        windows: []
+      };
+    case "Address on Separate Page":
+      return {
+        stock: "paper",
+        label: enveloped ? "Letter · folded into a #10 double-window envelope" : "Letter · inserted into an envelope",
+        creases: LETTER_FOLD,
+        perforations: [],
+        spine: null,
+        windows: enveloped ? tenWindows(row.heightInches) : []
+      };
+    case "Certified Self Mailer":
+      return {
+        stock: "paper",
+        label: "Certified self-mailer · folded and sealed",
+        creases: HALF_FOLD,
+        perforations: [],
+        spine: null,
+        windows: []
+      };
+    case "EDDM Self Mailer":
+      return {
+        stock: "paper",
+        label: "EDDM® self-mailer · folded and tabbed",
+        creases: HALF_FOLD,
+        perforations: [],
+        spine: null,
+        windows: []
+      };
+    case "Unfolded Flyer":
+      return {
+        stock: "paper",
+        label: "Flyer · bifold, 2 panels",
+        creases: BIFOLD,
+        perforations: [],
+        spine: null,
+        windows: []
+      };
+    case "Trifold Self-Mailer":
+      return {
+        stock: "paper",
+        label: "Brochure · trifold, 3 panels",
+        creases: TRIFOLD,
+        perforations: [],
+        spine: null,
+        windows: []
+      };
+    case "Pressure Seal Snap Pack":
+      return {
+        stock: "paper",
+        label: "Snap pack · pressure sealed, tears on three edges",
+        creases: LETTER_FOLD,
+        perforations: ["left", "right", "bottom"],
+        spine: null,
+        windows: []
+      };
+    case "Saddle Stitched Booklet":
+    case "Address on Front Page":
+    case "Address on Back Page":
+      return {
+        stock: "paper",
+        label: "Booklet · saddle stitched on the left edge",
+        creases: [],
+        perforations: [],
+        spine: "left",
+        windows: []
+      };
+    default:
+      return FLAT;
+  }
 }
 var browser = {};
 var canPromise$1 = function() {
@@ -66560,6 +66880,14 @@ function CanvasEditor({
                       guide.key
                     );
                   }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    PhysicalOverlay,
+                    {
+                      dims,
+                      traits: physicalTraitsFor(dims.layoutVariant),
+                      scale
+                    }
+                  ),
                   activeSide === "back" && /* @__PURE__ */ jsxRuntimeExports.jsx(AddressZoneOverlay, { dims, scale }),
                   elements.map((el) => {
                     const box = elementBox(el);
@@ -66827,6 +67155,15 @@ function Face({
       },
       "data-ocid": `canvas.preview.face.${sideKey}`,
       children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          PhysicalOverlay,
+          {
+            dims,
+            traits: physicalTraitsFor(layoutVariant),
+            scale,
+            subtle: true
+          }
+        ),
         sideKey === "back" && /* @__PURE__ */ jsxRuntimeExports.jsx(
           AddressZoneOverlay,
           {
@@ -66911,6 +67248,8 @@ function CanvasPreview3D({ className }) {
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setInteracting(false), 700);
   }, []);
+  const traits = physicalTraitsFor(layoutVariant);
+  const edgeShadow = traits.stock === "card" ? "0 3px 0 0 rgba(1, 8, 10, 0.16), 0 18px 30px -12px rgba(1, 8, 10, 0.38)" : "0 1px 0 0 rgba(1, 8, 10, 0.1), 0 14px 26px -14px rgba(1, 8, 10, 0.3)";
   const previewScale = Math.min(
     280 / dims.designWidth,
     300 / dims.designHeight,
@@ -66968,11 +67307,16 @@ function CanvasPreview3D({ className }) {
                   transform: `rotateY(${baseY + rotationY}deg) rotateX(${tiltX}deg)`,
                   transition: "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)"
                 },
+                "data-ocid": "canvas.preview.card",
+                "data-width-inches": dims.widthInches,
+                "data-height-inches": dims.heightInches,
+                "data-stock": traits.stock,
                 children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
                     "div",
                     {
-                      className: "backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white shadow-2xl ring-1 ring-black/10",
+                      className: "backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white ring-1 ring-black/10",
+                      style: { boxShadow: edgeShadow },
                       "data-ocid": "canvas.preview.front",
                       children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                         Face,
@@ -66988,8 +67332,8 @@ function CanvasPreview3D({ className }) {
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
                     "div",
                     {
-                      className: "backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white shadow-2xl ring-1 ring-black/10",
-                      style: { transform: "rotateY(180deg)" },
+                      className: "backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white ring-1 ring-black/10",
+                      style: { transform: "rotateY(180deg)", boxShadow: edgeShadow },
                       "data-ocid": "canvas.preview.back",
                       children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                         Face,
@@ -67072,6 +67416,14 @@ function CanvasPreview3D({ className }) {
             }
           )
         ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "p",
+          {
+            className: "text-center text-[11px] text-muted-foreground",
+            "data-ocid": "canvas.preview.physical_label",
+            children: traits.label
+          }
+        ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-center text-[11px] text-muted-foreground", children: [
           "Editing the ",
           /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: activeSide }),
@@ -68182,9 +68534,113 @@ function StudioRail({
     }
   );
 }
+const TEXT_LINE_HEIGHT = 1.2;
+const TEXT_PADDING = 2;
+const DEFAULT_FAMILY = "Geist";
+const FALLBACK_CHAR_RATIO = 0.52;
+const FALLBACK_CONTENT_RATIO = 1.32;
+let measureCtx;
+function context() {
+  if (measureCtx !== void 0) return measureCtx;
+  try {
+    measureCtx = document.createElement("canvas").getContext("2d");
+  } catch {
+    measureCtx = null;
+  }
+  return measureCtx;
+}
+function widthOf(text, fontSize, fontWeight, fontFamily) {
+  const ctx = context();
+  if (!ctx) return text.length * fontSize * FALLBACK_CHAR_RATIO;
+  ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  return ctx.measureText(text).width;
+}
+function contentAreaRatio(spec2) {
+  const ctx = context();
+  if (!ctx) return FALLBACK_CONTENT_RATIO;
+  const { fontSize, fontWeight = 400, fontFamily = DEFAULT_FAMILY } = spec2;
+  ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  const m2 = ctx.measureText("Hgjpq");
+  const ascent = m2.fontBoundingBoxAscent;
+  const descent = m2.fontBoundingBoxDescent;
+  if (!Number.isFinite(ascent) || !Number.isFinite(descent)) {
+    return FALLBACK_CONTENT_RATIO;
+  }
+  const ratio = (ascent + descent) / fontSize;
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : FALLBACK_CONTENT_RATIO;
+}
+function countLines(text, opts) {
+  const {
+    width,
+    fontSize,
+    fontWeight = 400,
+    fontFamily = DEFAULT_FAMILY
+  } = opts;
+  const content = Math.max(1, width - TEXT_PADDING * 2);
+  const advance = (s) => widthOf(s, fontSize, fontWeight, fontFamily);
+  let lines = 0;
+  for (const paragraph of text.split("\n")) {
+    if (paragraph === "") {
+      lines += 1;
+      continue;
+    }
+    let current = "";
+    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (advance(candidate) <= content) {
+        current = candidate;
+        continue;
+      }
+      if (current) {
+        lines += 1;
+        current = "";
+      }
+      let chunk = "";
+      for (const char of word) {
+        if (advance(chunk + char) <= content) {
+          chunk += char;
+          continue;
+        }
+        if (chunk) lines += 1;
+        chunk = char;
+      }
+      current = chunk;
+    }
+    lines += 1;
+  }
+  return Math.max(1, lines);
+}
+function bandHeight(lines, spec2) {
+  const { fontSize } = spec2;
+  const spill = Math.max(0, contentAreaRatio(spec2) - TEXT_LINE_HEIGHT);
+  return Math.ceil(fontSize * TEXT_LINE_HEIGHT * lines + fontSize * spill) + TEXT_PADDING * 2;
+}
+function measuredHeight(text, opts) {
+  return bandHeight(countLines(text, opts), opts);
+}
+function fitFontSize(text, opts) {
+  const { startSize, minSize = 10, maxLines, ...rest } = opts;
+  const start = Math.max(minSize, Math.floor(startSize));
+  for (let size2 = start; size2 > minSize; size2 -= 1) {
+    if (countLines(text, { ...rest, fontSize: size2 }) <= maxLines) return size2;
+  }
+  return minSize;
+}
 const INK = "#01080a";
 const MUTED = "#575859";
 const INDIGO = "#6366f1";
+const MIN_HEADLINE = 11;
+function shrinkToFit(startBig, build, limit) {
+  const start = Math.max(MIN_HEADLINE, Math.floor(startBig));
+  for (let big = start; big > MIN_HEADLINE; big -= 1) {
+    const built = build(big);
+    if (built.bottom <= limit) return built.blocks;
+  }
+  return build(MIN_HEADLINE).blocks;
+}
+function baseSize(dims, divisor) {
+  return Math.round(Math.min(dims.designWidth, dims.designHeight) / divisor);
+}
 const LAYOUT_PRESETS = [
   {
     id: "hero",
@@ -68193,39 +68649,76 @@ const LAYOUT_PRESETS = [
     blocks: (dims) => {
       const safe = safeRect(dims);
       const w2 = Math.round(safe.w * 0.7);
-      const big = Math.round(Math.min(dims.designWidth, dims.designHeight) / 9);
-      return [
-        {
-          text: "Your big idea, delivered",
-          x: safe.x + 16,
-          y: safe.y + 16,
-          width: w2,
-          height: big * 2.6,
-          fontSize: big,
-          fontWeight: 800n,
-          color: INK
+      const headline = "Your big idea, delivered";
+      const support = "One line that explains the offer and why it matters right now.";
+      const cta = "Call 555-0142 · ezmailout.com/offer";
+      return shrinkToFit(
+        baseSize(dims, 9),
+        (big) => {
+          const headSize = fitFontSize(headline, {
+            width: w2,
+            maxLines: 2,
+            startSize: big,
+            minSize: MIN_HEADLINE,
+            fontWeight: 800
+          });
+          const headH = bandHeight(2, { fontSize: headSize, fontWeight: 800 });
+          const gap = Math.round(headSize * 0.35);
+          const bodySize = Math.max(9, Math.round(headSize * 0.5));
+          const supportH = measuredHeight(support, {
+            width: w2,
+            fontSize: bodySize,
+            fontWeight: 500
+          });
+          const ctaH = measuredHeight(cta, {
+            width: w2,
+            fontSize: bodySize,
+            fontWeight: 700
+          });
+          const headY = safe.y + 16;
+          const supportY = headY + headH + gap;
+          const ctaY = Math.max(
+            supportY + supportH + gap,
+            safe.y + safe.h - ctaH
+          );
+          return {
+            bottom: ctaY + ctaH,
+            blocks: [
+              {
+                text: headline,
+                x: safe.x + 16,
+                y: headY,
+                width: w2,
+                height: headH,
+                fontSize: headSize,
+                fontWeight: 800n,
+                color: INK
+              },
+              {
+                text: support,
+                x: safe.x + 16,
+                y: supportY,
+                width: w2,
+                height: supportH,
+                fontSize: bodySize,
+                fontWeight: 500n,
+                color: MUTED
+              },
+              {
+                text: cta,
+                x: safe.x + 16,
+                y: ctaY,
+                width: w2,
+                height: ctaH,
+                fontSize: bodySize,
+                fontWeight: 700n,
+                color: INDIGO
+              }
+            ]
+          };
         },
-        {
-          text: "One line that explains the offer and why it matters right now.",
-          x: safe.x + 16,
-          y: safe.y + 16 + big * 2.8,
-          width: w2,
-          height: Math.round(big * 1.6),
-          fontSize: Math.round(big * 0.5),
-          fontWeight: 500n,
-          color: MUTED
-        },
-        {
-          text: "Call 555-0142 · ezmailout.com/offer",
-          x: safe.x + 16,
-          y: safe.y + safe.h - Math.round(big * 1.2),
-          width: w2,
-          height: Math.round(big * 1.1),
-          fontSize: Math.round(big * 0.5),
-          fontWeight: 700n,
-          color: INDIGO
-        }
-      ];
+        safe.y + safe.h
+      );
     }
   },
   {
@@ -68235,43 +68728,76 @@ const LAYOUT_PRESETS = [
     blocks: (dims) => {
       const safe = safeRect(dims);
       const half = Math.round(safe.w * 0.46);
-      const big = Math.round(
-        Math.min(dims.designWidth, dims.designHeight) / 10
+      const headline = "Spring special";
+      const price = "$99";
+      const detail = "Includes inspection, tune-up and a written report. Book before the 30th.";
+      return shrinkToFit(
+        baseSize(dims, 10),
+        (big) => {
+          const headSize = fitFontSize(headline, {
+            width: half,
+            maxLines: 2,
+            startSize: big,
+            minSize: MIN_HEADLINE,
+            fontWeight: 800
+          });
+          const headH = bandHeight(2, { fontSize: headSize, fontWeight: 800 });
+          const priceSize = fitFontSize(price, {
+            width: half,
+            maxLines: 1,
+            startSize: Math.round(headSize * 1.8),
+            minSize: MIN_HEADLINE,
+            fontWeight: 800
+          });
+          const priceH = bandHeight(1, { fontSize: priceSize, fontWeight: 800 });
+          const detailSize = Math.max(9, Math.round(headSize * 0.45));
+          const detailH = measuredHeight(detail, {
+            width: half,
+            fontSize: detailSize,
+            fontWeight: 500
+          });
+          const top = safe.y + 12;
+          const detailY = top + priceH + Math.round(headSize * 0.25);
+          return {
+            bottom: Math.max(top + headH, detailY + detailH),
+            blocks: [
+              {
+                text: headline,
+                x: safe.x + 12,
+                y: top,
+                width: half,
+                height: headH,
+                fontSize: headSize,
+                fontWeight: 800n,
+                color: INK
+              },
+              {
+                text: price,
+                x: safe.x + safe.w - half - 12,
+                y: top,
+                width: half,
+                height: priceH,
+                fontSize: priceSize,
+                fontWeight: 800n,
+                color: INDIGO,
+                align: "right"
+              },
+              {
+                text: detail,
+                x: safe.x + safe.w - half - 12,
+                y: detailY,
+                width: half,
+                height: detailH,
+                fontSize: detailSize,
+                fontWeight: 500n,
+                color: MUTED,
+                align: "right"
+              }
+            ]
+          };
+        },
+        safe.y + safe.h
       );
-      return [
-        {
-          text: "Spring special",
-          x: safe.x + 12,
-          y: safe.y + 12,
-          width: half,
-          height: big * 2.6,
-          fontSize: big,
-          fontWeight: 800n,
-          color: INK
-        },
-        {
-          text: "$99",
-          x: safe.x + safe.w - half - 12,
-          y: safe.y + 12,
-          width: half,
-          height: Math.round(big * 2.2),
-          fontSize: Math.round(big * 1.8),
-          fontWeight: 800n,
-          color: INDIGO,
-          align: "right"
-        },
-        {
-          text: "Includes inspection, tune-up and a written report. Book before the 30th.",
-          x: safe.x + safe.w - half - 12,
-          y: safe.y + 12 + Math.round(big * 2.4),
-          width: half,
-          height: Math.round(big * 2),
-          fontSize: Math.round(big * 0.45),
-          fontWeight: 500n,
-          color: MUTED,
-          align: "right"
-        }
-      ];
     }
   },
   {
@@ -68280,32 +68806,60 @@ const LAYOUT_PRESETS = [
     description: "Leaves the top two-thirds for artwork; caption band below.",
     blocks: (dims) => {
       const safe = safeRect(dims);
-      const big = Math.round(
-        Math.min(dims.designWidth, dims.designHeight) / 11
-      );
-      const y2 = safe.y + Math.round(safe.h * 0.68);
-      return [
-        {
-          text: "Now open in your neighbourhood",
-          x: safe.x + 12,
-          y: y2,
-          width: Math.round(safe.w * 0.9),
-          height: Math.round(big * 1.6),
-          fontSize: big,
-          fontWeight: 800n,
-          color: INK
+      const w2 = Math.round(safe.w * 0.9);
+      const headline = "Now open in your neighbourhood";
+      const caption = "Show this card for 20% off your first visit.";
+      return shrinkToFit(
+        baseSize(dims, 11),
+        (big) => {
+          const headSize = fitFontSize(headline, {
+            width: w2,
+            maxLines: 2,
+            startSize: big,
+            minSize: MIN_HEADLINE,
+            fontWeight: 800
+          });
+          const headH = bandHeight(2, { fontSize: headSize, fontWeight: 800 });
+          const capSize = Math.max(9, Math.round(headSize * 0.55));
+          const capH = measuredHeight(caption, {
+            width: w2,
+            fontSize: capSize,
+            fontWeight: 500
+          });
+          const gap = Math.round(headSize * 0.25);
+          const headY = Math.min(
+            safe.y + Math.round(safe.h * 0.68),
+            safe.y + safe.h - headH - gap - capH
+          );
+          const capY = headY + headH + gap;
+          return {
+            bottom: capY + capH,
+            blocks: [
+              {
+                text: headline,
+                x: safe.x + 12,
+                y: headY,
+                width: w2,
+                height: headH,
+                fontSize: headSize,
+                fontWeight: 800n,
+                color: INK
+              },
+              {
+                text: caption,
+                x: safe.x + 12,
+                y: capY,
+                width: w2,
+                height: capH,
+                fontSize: capSize,
+                fontWeight: 500n,
+                color: MUTED
+              }
+            ]
+          };
         },
-        {
-          text: "Show this card for 20% off your first visit.",
-          x: safe.x + 12,
-          y: y2 + Math.round(big * 1.7),
-          width: Math.round(safe.w * 0.9),
-          height: Math.round(big * 1.2),
-          fontSize: Math.round(big * 0.55),
-          fontWeight: 500n,
-          color: MUTED
-        }
-      ];
+        safe.y + safe.h
+      );
     }
   },
   {
@@ -68314,46 +68868,79 @@ const LAYOUT_PRESETS = [
     description: "Date block, title and venue details, centred.",
     blocks: (dims) => {
       const safe = safeRect(dims);
-      const big = Math.round(
-        Math.min(dims.designWidth, dims.designHeight) / 10
-      );
       const w2 = Math.round(safe.w * 0.8);
       const x3 = safe.x + Math.round((safe.w - w2) / 2);
-      return [
-        {
-          text: "SATURDAY · JUNE 14",
-          x: x3,
-          y: safe.y + 16,
-          width: w2,
-          height: Math.round(big * 1.1),
-          fontSize: Math.round(big * 0.5),
-          fontWeight: 700n,
-          color: INDIGO,
-          align: "center"
+      const date = "SATURDAY · JUNE 14";
+      const title = "Community open house";
+      const venue = "10am–4pm · 120 Harbor View Dr · Free admission";
+      return shrinkToFit(
+        baseSize(dims, 10),
+        (big) => {
+          const titleSize = fitFontSize(title, {
+            width: w2,
+            maxLines: 2,
+            startSize: big,
+            minSize: MIN_HEADLINE,
+            fontWeight: 800
+          });
+          const titleH = bandHeight(2, { fontSize: titleSize, fontWeight: 800 });
+          const dateSize = Math.max(9, Math.round(titleSize * 0.5));
+          const dateH = measuredHeight(date, {
+            width: w2,
+            fontSize: dateSize,
+            fontWeight: 700
+          });
+          const venueSize = Math.max(9, Math.round(titleSize * 0.45));
+          const venueH = measuredHeight(venue, {
+            width: w2,
+            fontSize: venueSize,
+            fontWeight: 500
+          });
+          const gap = Math.round(titleSize * 0.2);
+          const dateY = safe.y + 16;
+          const titleY = dateY + dateH + gap;
+          const venueY = titleY + titleH + gap;
+          return {
+            bottom: venueY + venueH,
+            blocks: [
+              {
+                text: date,
+                x: x3,
+                y: dateY,
+                width: w2,
+                height: dateH,
+                fontSize: dateSize,
+                fontWeight: 700n,
+                color: INDIGO,
+                align: "center"
+              },
+              {
+                text: title,
+                x: x3,
+                y: titleY,
+                width: w2,
+                height: titleH,
+                fontSize: titleSize,
+                fontWeight: 800n,
+                color: INK,
+                align: "center"
+              },
+              {
+                text: venue,
+                x: x3,
+                y: venueY,
+                width: w2,
+                height: venueH,
+                fontSize: venueSize,
+                fontWeight: 500n,
+                color: MUTED,
+                align: "center"
+              }
+            ]
+          };
         },
-        {
-          text: "Community open house",
-          x: x3,
-          y: safe.y + 16 + Math.round(big * 1.2),
-          width: w2,
-          height: big * 2.4,
-          fontSize: big,
-          fontWeight: 800n,
-          color: INK,
-          align: "center"
-        },
-        {
-          text: "10am–4pm · 120 Harbor View Dr · Free admission",
-          x: x3,
-          y: safe.y + 16 + Math.round(big * 3.8),
-          width: w2,
-          height: Math.round(big * 1.2),
-          fontSize: Math.round(big * 0.45),
-          fontWeight: 500n,
-          color: MUTED,
-          align: "center"
-        }
-      ];
+        safe.y + safe.h
+      );
     }
   }
 ];
@@ -69552,17 +70139,17 @@ function createContextScope(scopeName, createContextScopeDeps = []) {
     defaultContexts = [...defaultContexts, defaultContext];
     const Provider2 = (props) => {
       var _a2;
-      const { scope, children, ...context } = props;
+      const { scope, children, ...context2 } = props;
       const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const value = reactExports.useMemo(() => context, Object.values(context));
+      const value = reactExports.useMemo(() => context2, Object.values(context2));
       return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children });
     };
     Provider2.displayName = rootComponentName + "Provider";
     function useContext2(consumerName, scope) {
       var _a2;
       const Context = ((_a2 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a2[index2]) || BaseContext;
-      const context = reactExports.useContext(Context);
-      if (context) return context;
+      const context2 = reactExports.useContext(Context);
+      if (context2) return context2;
       if (defaultContext !== void 0) return defaultContext;
       throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
     }
@@ -69647,13 +70234,13 @@ var INDICATOR_NAME = "ProgressIndicator";
 var ProgressIndicator = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeProgress, ...indicatorProps } = props;
-    const context = useProgressContext(INDICATOR_NAME, __scopeProgress);
+    const context2 = useProgressContext(INDICATOR_NAME, __scopeProgress);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive.div,
       {
-        "data-state": getProgressState(context.value, context.max),
-        "data-value": context.value ?? void 0,
-        "data-max": context.max,
+        "data-state": getProgressState(context2.value, context2.max),
+        "data-value": context2.value ?? void 0,
+        "data-max": context2.max,
         ...indicatorProps,
         ref: forwardedRef
       }
@@ -71231,12 +71818,12 @@ var THUMB_NAME = "SwitchThumb";
 var SwitchThumb = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSwitch, ...thumbProps } = props;
-    const context = useSwitchContext(THUMB_NAME, __scopeSwitch);
+    const context2 = useSwitchContext(THUMB_NAME, __scopeSwitch);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.span,
       {
-        "data-state": getState(context.checked),
-        "data-disabled": context.disabled ? "" : void 0,
+        "data-state": getState(context2.checked),
+        "data-disabled": context2.disabled ? "" : void 0,
         ...thumbProps,
         ref: forwardedRef
       }
@@ -71471,11 +72058,11 @@ var TRIGGER_NAME = "TooltipTrigger";
 var TooltipTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeTooltip, ...triggerProps } = props;
-    const context = useTooltipContext(TRIGGER_NAME, __scopeTooltip);
+    const context2 = useTooltipContext(TRIGGER_NAME, __scopeTooltip);
     const providerContext = useTooltipProviderContext(TRIGGER_NAME, __scopeTooltip);
     const popperScope = usePopperScope(__scopeTooltip);
     const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, ref, context.onTriggerChange);
+    const composedRefs = useComposedRefs(forwardedRef, ref, context2.onTriggerChange);
     const isPointerDownRef = reactExports.useRef(false);
     const hasPointerMoveOpenedRef = reactExports.useRef(false);
     const handlePointerUp = reactExports.useCallback(() => isPointerDownRef.current = false, []);
@@ -71485,33 +72072,33 @@ var TooltipTrigger$1 = reactExports.forwardRef(
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Anchor, { asChild: true, ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
-        "aria-describedby": context.open ? context.contentId : void 0,
-        "data-state": context.stateAttribute,
+        "aria-describedby": context2.open ? context2.contentId : void 0,
+        "data-state": context2.stateAttribute,
         ...triggerProps,
         ref: composedRefs,
         onPointerMove: composeEventHandlers(props.onPointerMove, (event) => {
           if (event.pointerType === "touch") return;
           if (!hasPointerMoveOpenedRef.current && !providerContext.isPointerInTransitRef.current) {
-            context.onTriggerEnter();
+            context2.onTriggerEnter();
             hasPointerMoveOpenedRef.current = true;
           }
         }),
         onPointerLeave: composeEventHandlers(props.onPointerLeave, () => {
-          context.onTriggerLeave();
+          context2.onTriggerLeave();
           hasPointerMoveOpenedRef.current = false;
         }),
         onPointerDown: composeEventHandlers(props.onPointerDown, () => {
-          if (context.open) {
-            context.onClose();
+          if (context2.open) {
+            context2.onClose();
           }
           isPointerDownRef.current = true;
           document.addEventListener("pointerup", handlePointerUp, { once: true });
         }),
         onFocus: composeEventHandlers(props.onFocus, () => {
-          if (!isPointerDownRef.current) context.onOpen();
+          if (!isPointerDownRef.current) context2.onOpen();
         }),
-        onBlur: composeEventHandlers(props.onBlur, context.onClose),
-        onClick: composeEventHandlers(props.onClick, context.onClose)
+        onBlur: composeEventHandlers(props.onBlur, context2.onClose),
+        onClick: composeEventHandlers(props.onClick, context2.onClose)
       }
     ) });
   }
@@ -71523,8 +72110,8 @@ var [PortalProvider, usePortalContext] = createTooltipContext(PORTAL_NAME, {
 });
 var TooltipPortal = (props) => {
   const { __scopeTooltip, forceMount, children, container } = props;
-  const context = useTooltipContext(PORTAL_NAME, __scopeTooltip);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeTooltip, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children }) }) });
+  const context2 = useTooltipContext(PORTAL_NAME, __scopeTooltip);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeTooltip, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children }) }) });
 };
 TooltipPortal.displayName = PORTAL_NAME;
 var CONTENT_NAME = "TooltipContent";
@@ -71532,17 +72119,17 @@ var TooltipContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext(CONTENT_NAME, props.__scopeTooltip);
     const { forceMount = portalContext.forceMount, side = "top", ...contentProps } = props;
-    const context = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: context.disableHoverableContent ? /* @__PURE__ */ jsxRuntimeExports.jsx(TooltipContentImpl, { side, ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(TooltipContentHoverable, { side, ...contentProps, ref: forwardedRef }) });
+    const context2 = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context2.open, children: context2.disableHoverableContent ? /* @__PURE__ */ jsxRuntimeExports.jsx(TooltipContentImpl, { side, ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(TooltipContentHoverable, { side, ...contentProps, ref: forwardedRef }) });
   }
 );
 var TooltipContentHoverable = reactExports.forwardRef((props, forwardedRef) => {
-  const context = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
+  const context2 = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
   const providerContext = useTooltipProviderContext(CONTENT_NAME, props.__scopeTooltip);
   const ref = reactExports.useRef(null);
   const composedRefs = useComposedRefs(forwardedRef, ref);
   const [pointerGraceArea, setPointerGraceArea] = reactExports.useState(null);
-  const { trigger, onClose } = context;
+  const { trigger, onClose } = context2;
   const content = ref.current;
   const { onPointerInTransitChange } = providerContext;
   const handleRemoveGraceArea = reactExports.useCallback(() => {
@@ -71609,23 +72196,23 @@ var TooltipContentImpl = reactExports.forwardRef(
       onPointerDownOutside,
       ...contentProps
     } = props;
-    const context = useTooltipContext(CONTENT_NAME, __scopeTooltip);
+    const context2 = useTooltipContext(CONTENT_NAME, __scopeTooltip);
     const popperScope = usePopperScope(__scopeTooltip);
-    const { onClose } = context;
+    const { onClose } = context2;
     reactExports.useEffect(() => {
       document.addEventListener(TOOLTIP_OPEN, onClose);
       return () => document.removeEventListener(TOOLTIP_OPEN, onClose);
     }, [onClose]);
     reactExports.useEffect(() => {
-      if (context.trigger) {
+      if (context2.trigger) {
         const handleScroll2 = (event) => {
           const target = event.target;
-          if (target == null ? void 0 : target.contains(context.trigger)) onClose();
+          if (target == null ? void 0 : target.contains(context2.trigger)) onClose();
         };
         window.addEventListener("scroll", handleScroll2, { capture: true });
         return () => window.removeEventListener("scroll", handleScroll2, { capture: true });
       }
-    }, [context.trigger, onClose]);
+    }, [context2.trigger, onClose]);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       DismissableLayer,
       {
@@ -71638,7 +72225,7 @@ var TooltipContentImpl = reactExports.forwardRef(
         children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
           Content,
           {
-            "data-state": context.stateAttribute,
+            "data-state": context2.stateAttribute,
             ...popperScope,
             ...contentProps,
             ref: forwardedRef,
@@ -71655,7 +72242,7 @@ var TooltipContentImpl = reactExports.forwardRef(
             },
             children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(Slottable, { children }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(VisuallyHiddenContentContextProvider, { scope: __scopeTooltip, isInside: true, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Root$2, { id: context.contentId, role: "tooltip", children: ariaLabel || children }) })
+              /* @__PURE__ */ jsxRuntimeExports.jsx(VisuallyHiddenContentContextProvider, { scope: __scopeTooltip, isInside: true, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Root$2, { id: context2.contentId, role: "tooltip", children: ariaLabel || children }) })
             ]
           }
         )

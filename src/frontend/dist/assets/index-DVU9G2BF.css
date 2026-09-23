@@ -3055,6 +3055,11 @@ body {
 	border-radius: calc(var(--radius) + 4px);
 }
 
+.rounded-b {
+	border-bottom-right-radius: 0.25rem;
+	border-bottom-left-radius: 0.25rem;
+}
+
 .rounded-l-md {
 	border-top-left-radius: calc(var(--radius) - 2px);
 	border-bottom-left-radius: calc(var(--radius) - 2px);

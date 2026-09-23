@@ -5,6 +5,7 @@ import type {
   TextBlockState,
 } from "@/backend";
 import { QrMode } from "@/backend";
+import { PhysicalOverlay } from "@/components/canvas/PhysicalOverlay";
 import {
   SELECTION_TOOLBAR_HEIGHT,
   SELECTION_TOOLBAR_WIDTH,
@@ -18,6 +19,7 @@ import {
 } from "@/components/canvas/useCanvasInteractions";
 import { BRAND } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
+import { physicalTraitsFor } from "@/lib/physical";
 import {
   DESIGN_PPI,
   type LayoutDims,
@@ -673,6 +675,13 @@ export function CanvasEditor({
               </div>
             );
           })}
+
+          {/* How the finished piece folds, tears and binds */}
+          <PhysicalOverlay
+            dims={dims}
+            traits={physicalTraitsFor(dims.layoutVariant)}
+            scale={scale}
+          />
 
           {activeSide === "back" && (
             <AddressZoneOverlay dims={dims} scale={scale} />

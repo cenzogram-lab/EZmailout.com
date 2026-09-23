@@ -5,7 +5,9 @@ import {
   sortedElements,
   textBlockStyle,
 } from "@/components/canvas/CanvasEditor";
+import { PhysicalOverlay } from "@/components/canvas/PhysicalOverlay";
 import { Button } from "@/components/ui/button";
+import { physicalTraitsFor } from "@/lib/physical";
 import { getLayoutDims } from "@/lib/printSpec";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -43,6 +45,12 @@ function Face({
       }}
       data-ocid={`canvas.preview.face.${sideKey}`}
     >
+      <PhysicalOverlay
+        dims={dims}
+        traits={physicalTraitsFor(layoutVariant)}
+        scale={scale}
+        subtle
+      />
       {sideKey === "back" && (
         <AddressZoneOverlay
           dims={dims}
@@ -132,6 +140,13 @@ export function CanvasPreview3D({ className }: { className?: string }) {
     timer.current = window.setTimeout(() => setInteracting(false), 700);
   }, []);
 
+  const traits = physicalTraitsFor(layoutVariant);
+  // Heavy stock stands proud of the table; text weight sits almost flat.
+  const edgeShadow =
+    traits.stock === "card"
+      ? "0 3px 0 0 rgba(1, 8, 10, 0.16), 0 18px 30px -12px rgba(1, 8, 10, 0.38)"
+      : "0 1px 0 0 rgba(1, 8, 10, 0.1), 0 14px 26px -14px rgba(1, 8, 10, 0.3)";
+
   // Fits inside the 340px studio column (panel padding + card border).
   const previewScale = Math.min(
     280 / dims.designWidth,
@@ -183,9 +198,14 @@ export function CanvasPreview3D({ className }: { className?: string }) {
             transform: `rotateY(${baseY + rotationY}deg) rotateX(${tiltX}deg)`,
             transition: "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
+          data-ocid="canvas.preview.card"
+          data-width-inches={dims.widthInches}
+          data-height-inches={dims.heightInches}
+          data-stock={traits.stock}
         >
           <div
-            className="backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white shadow-2xl ring-1 ring-black/10"
+            className="backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white ring-1 ring-black/10"
+            style={{ boxShadow: edgeShadow }}
             data-ocid="canvas.preview.front"
           >
             <Face
@@ -196,8 +216,8 @@ export function CanvasPreview3D({ className }: { className?: string }) {
             />
           </div>
           <div
-            className="backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white shadow-2xl ring-1 ring-black/10"
-            style={{ transform: "rotateY(180deg)" }}
+            className="backface-hidden absolute inset-0 overflow-hidden rounded-md bg-white ring-1 ring-black/10"
+            style={{ transform: "rotateY(180deg)", boxShadow: edgeShadow }}
             data-ocid="canvas.preview.back"
           >
             <Face
@@ -257,6 +277,12 @@ export function CanvasPreview3D({ className }: { className?: string }) {
           Reset
         </Button>
       </div>
+      <p
+        className="text-center text-[11px] text-muted-foreground"
+        data-ocid="canvas.preview.physical_label"
+      >
+        {traits.label}
+      </p>
       <p className="text-center text-[11px] text-muted-foreground">
         Editing the <strong>{activeSide}</strong> side · move your mouse over
         the card to tilt it
