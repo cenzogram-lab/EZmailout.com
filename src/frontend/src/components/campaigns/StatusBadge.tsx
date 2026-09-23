@@ -127,6 +127,7 @@ const PRODUCTION_LABELS: Record<ProductionStatus, string> = {
   [ProductionStatus.Draft]: "Draft",
   [ProductionStatus.AwaitingPayment]: "Awaiting payment",
   [ProductionStatus.ReadyToDispatch]: "Ready to dispatch",
+  [ProductionStatus.Processing]: "Dispatching…",
   [ProductionStatus.DocumentUploaded]: "Document uploaded",
   [ProductionStatus.AddressListReady]: "Address list ready",
   [ProductionStatus.JobCreated]: "Job created",
@@ -140,6 +141,8 @@ const PRODUCTION_STYLES: Record<ProductionStatus, string> = {
     "border-primary/40 bg-primary/15 text-primary-foreground",
   [ProductionStatus.ReadyToDispatch]:
     "border-primary/20 bg-primary/10 text-primary",
+  [ProductionStatus.Processing]:
+    "border-primary/30 bg-primary/10 text-primary animate-pulse",
   [ProductionStatus.DocumentUploaded]:
     "border-primary/20 bg-primary/10 text-primary",
   [ProductionStatus.AddressListReady]:

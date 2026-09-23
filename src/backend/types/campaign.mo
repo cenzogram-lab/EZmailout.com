@@ -89,6 +89,8 @@ module {
     #Draft;
     #AwaitingPayment;
     #ReadyToDispatch;
+    /// A Click2Mail dispatch is running; set before its first outcall.
+    #Processing;
     #DocumentUploaded;
     #AddressListReady;
     #JobCreated;

@@ -192,6 +192,7 @@ type ProductionStatus =
    Draft;
    Failed;
    JobCreated;
+   Processing;
    ReadyToDispatch;
    Submitted;
  };

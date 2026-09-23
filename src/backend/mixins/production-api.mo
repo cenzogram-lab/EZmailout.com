@@ -17,6 +17,8 @@ import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
+import Runtime "mo:core/Runtime";
+import Set "mo:core/Set";
 
 mixin (
   campaigns : Map.Map<Text, Types.CampaignRecord>,
@@ -31,8 +33,20 @@ mixin (
   transient let maxChunks : Nat = 8;
   transient let maxPollPerTick : Nat = 10;
 
+  /// Campaigns with a Click2Mail dispatch running. Taken before the first
+  /// outcall and released in `finally`, so it survives a trap in any
+  /// continuation. Deliberately transient: a canister cannot be upgraded with
+  /// calls in flight, so the set is always empty across an upgrade and can
+  /// never strand a campaign behind a stale lock.
+  transient let dispatchInFlight = Set.empty<Text>();
+
+  /// Set while a tracking poll runs, so the timer and a manual trigger never
+  /// pay for the same outcalls twice.
+  transient var pollRunning : Bool = false;
+
+  /// Owner or admin. Unowned legacy records are admin-only.
   private func isOwner(record : Types.CampaignRecord, caller : Principal) : Bool {
-    record.ownerId == caller.toText() or record.ownerId == "" or AdminLib.isAdmin(adminKeysState, caller);
+    CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
   };
 
   // ─── Document staging ────────────────────────────────────────────────────
@@ -41,6 +55,7 @@ mixin (
   public shared ({ caller }) func uploadDocumentChunk(campaignId : Text, chunkIndex : Nat, totalChunks : Nat, mimeType : Text, fileName : Text, data : Blob) : async Common.ApiResult {
     let record = switch (campaigns.get(campaignId)) { case (?r) r; case null { return { ok = false; error = ?"Campaign not found" } } };
     if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized" } };
+    if (dispatchInFlight.contains(campaignId)) { return { ok = false; error = ?"A dispatch is running for this campaign; upload again once it finishes" } };
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
     if (chunkIndex >= totalChunks) { return { ok = false; error = ?"chunkIndex out of range" } };
     if (data.size() == 0 or data.size() > maxChunkBytes) { return { ok = false; error = ?"Chunk must be between 1 byte and 1.9 MB" } };
@@ -64,7 +79,11 @@ mixin (
     { ok = true; error = null };
   };
 
-  public query func getDocumentUploadStatus(campaignId : Text) : async ?Types.DocumentUploadStatus {
+  public shared query ({ caller }) func getDocumentUploadStatus(campaignId : Text) : async ?Types.DocumentUploadStatus {
+    switch (campaigns.get(campaignId)) {
+      case (?record) { if (not isOwner(record, caller)) { Runtime.trap(CampaignLib.accessDenied) } };
+      case null { Runtime.trap(CampaignLib.accessDenied) };
+    };
     switch (documentUploads.get(campaignId)) {
       case null null;
       case (?u) {
@@ -102,17 +121,57 @@ mixin (
     if (not isOwner(record, caller)) { return dispatchResult(record, false, ?"Unauthorized") };
     if (record.paymentStatus != #Paid and record.paymentStatus != #Waived) { return dispatchResult(record, false, ?"Payment required before dispatch") };
     if (record.productionStatus == #Submitted) { return dispatchResult(record, true, null) };
+    // Checked and taken in the same message as the checks above, before the
+    // first await, so no interleaving call can get past it.
+    if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
     let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Click2Mail credentials not configured (Admin → Click2Mail)") } };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
     let returnAddress = switch (record.returnAddress) { case (?r) r; case null { return dispatchResult(record, false, ?"A return address is required") } };
+    if (record.c2mDocumentId == null) {
+      switch (documentUploads.get(campaignId)) {
+        case null { return dispatchResult(record, false, ?"Print document has not been uploaded") };
+        case (?u) { if (u.receivedChunks != u.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") } };
+      };
+    };
+
+    dispatchInFlight.add(campaignId);
+    record.productionStatus := #Processing;
+    record.lastError := null;
+    record.updatedAt := Time.now();
+    try {
+      await* runDispatch(record, campaignId, auth, recipients, returnAddress);
+    } finally {
+      dispatchInFlight.remove(campaignId);
+      // Every normal exit ends in #Submitted or #Failed. Anything else means a
+      // continuation trapped mid-run; the ids of completed steps are kept, so
+      // a retry resumes where this run stopped.
+      switch (record.productionStatus) {
+        case (#Submitted or #Failed) {};
+        case (_) {
+          record.productionStatus := #Failed;
+          record.lastError := ?"Dispatch was interrupted before Click2Mail confirmed it; completed steps are kept and it is safe to retry";
+          record.updatedAt := Time.now();
+        };
+      };
+    };
+  };
+
+  /// The four Click2Mail steps. Runs under `dispatchInFlight`; every return is
+  /// `markFailed` or the final `#Submitted` result.
+  private func runDispatch(
+    record : Types.CampaignRecord,
+    campaignId : Text,
+    auth : Text,
+    recipients : [Common.VerifiedAddress],
+    returnAddress : Common.ReturnAddress,
+  ) : async* Types.DispatchResult {
     let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
 
     // 1. Document
     if (record.c2mDocumentId == null) {
-      let upload = switch (documentUploads.get(campaignId)) { case (?u) u; case null { return dispatchResult(record, false, ?"Print document has not been uploaded") } };
-      if (upload.receivedChunks != upload.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") };
+      let upload = switch (documentUploads.get(campaignId)) { case (?u) u; case null { return markFailed(record, "Print document has not been uploaded") } };
       let bytes = Blob.fromArray(upload.chunks.map(func(b : Blob) : [Nat8] = b.toArray()).flatten());
       let boundary = "----EZmailoutBoundary" # Time.now().toText();
       let fileName = if (upload.fileName == "") { campaignId # ".pdf" } else { upload.fileName };
@@ -214,19 +273,34 @@ mixin (
     };
   };
 
-  /// Timer job: syncs up to 10 in-flight campaigns. Returns the number synced.
-  public shared func pollActiveTracking() : async Nat {
-    if (not AdminLib.hasClick2Mail(adminKeysState)) { return 0 };
+  /// Syncs up to 10 in-flight campaigns and returns how many were synced.
+  /// Private: the 6-hourly timer in `main.mo` calls it directly, so it is not
+  /// reachable as a canister method.
+  private func pollActiveCampaigns() : async Nat {
+    if (pollRunning or not AdminLib.hasClick2Mail(adminKeysState)) { return 0 };
     let pending = List.empty<Types.CampaignRecord>();
     for ((_, r) in campaigns.entries()) {
       if (r.c2mJobId != null and r.status != #Delivered and pending.size() < maxPollPerTick) { pending.add(r) };
     };
+    pollRunning := true;
     var synced = 0;
-    for (r in pending.values()) {
-      ignore await syncOne(r);
-      synced += 1;
+    try {
+      for (r in pending.values()) {
+        ignore await syncOne(r);
+        synced += 1;
+      };
+    } finally {
+      pollRunning := false;
     };
     synced;
+  };
+
+  /// Manual trigger for the tracking poll — controllers and the admin only.
+  /// One run makes up to 20 HTTPS outcalls (about 0.25 T cycles), so an open
+  /// endpoint would let anyone drain the canister.
+  public shared ({ caller }) func pollActiveTracking() : async Nat {
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { Runtime.trap("Only a controller or the admin can trigger a tracking poll") };
+    await pollActiveCampaigns();
   };
 
   // ─── Webhooks ────────────────────────────────────────────────────────────

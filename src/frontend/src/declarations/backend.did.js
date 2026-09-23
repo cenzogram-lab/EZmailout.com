@@ -184,6 +184,7 @@ export const ProductionStatus = IDL.Variant({
   'Draft' : IDL.Null,
   'AddressListReady' : IDL.Null,
   'Submitted' : IDL.Null,
+  'Processing' : IDL.Null,
   'JobCreated' : IDL.Null,
 });
 export const DispatchResult = IDL.Record({
@@ -805,6 +806,7 @@ export const idlFactory = ({ IDL }) => {
     'Draft' : IDL.Null,
     'AddressListReady' : IDL.Null,
     'Submitted' : IDL.Null,
+    'Processing' : IDL.Null,
     'JobCreated' : IDL.Null,
   });
   const DispatchResult = IDL.Record({

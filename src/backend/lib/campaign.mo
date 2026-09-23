@@ -8,8 +8,20 @@ import List "mo:core/List";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
+import Principal "mo:core/Principal";
 
 module {
+  /// Reply for an unknown *or* foreign campaign id. Identical on purpose, so a
+  /// caller cannot use it to probe which campaign ids exist.
+  public let accessDenied : Text = "Campaign not found or access denied";
+
+  /// Whether `caller` owns `record`. Campaigns carried over from the
+  /// pre-EZmailout ledger have no owner (`ownerId == ""`), so they belong to
+  /// nobody and only an admin can reach them.
+  public func isOwnedBy(record : Types.CampaignRecord, caller : Principal) : Bool {
+    not caller.isAnonymous() and record.ownerId != "" and record.ownerId == caller.toText();
+  };
+
   public func toShared(self : Types.CampaignRecord) : Types.CampaignRecordShared {
     {
       id = self.id;

@@ -179,6 +179,7 @@ export enum ProductionStatus {
     Draft = "Draft",
     Failed = "Failed",
     JobCreated = "JobCreated",
+    Processing = "Processing",
     ReadyToDispatch = "ReadyToDispatch",
     Submitted = "Submitted"
 }

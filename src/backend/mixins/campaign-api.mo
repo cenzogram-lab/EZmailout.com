@@ -13,6 +13,7 @@ import Int "mo:core/Int";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
+import Runtime "mo:core/Runtime";
 
 mixin (
   campaigns : Map.Map<Text, Types.CampaignRecord>,
@@ -24,8 +25,19 @@ mixin (
 ) {
   transient let maxRecipients : Nat = 5_000;
 
+  /// Owner or admin. Unowned legacy records are admin-only.
   private func canAccess(record : Types.CampaignRecord, caller : Principal) : Bool {
-    record.ownerId == caller.toText() or record.ownerId == "" or AdminLib.isAdmin(adminKeysState, caller);
+    CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
+  };
+
+  /// The campaign when `caller` may read it; traps otherwise, with the same
+  /// message for an unknown id as for a foreign one.
+  private func requireAccess(id : Text, caller : Principal) : Types.CampaignRecord {
+    switch (campaigns.get(id)) {
+      case (?record) { if (canAccess(record, caller)) { return record } };
+      case null {};
+    };
+    Runtime.trap(CampaignLib.accessDenied);
   };
 
   /// The retail pricing ledger (base cost, retail price, margin, print spec).
@@ -61,7 +73,7 @@ mixin (
     { ok = true; error = null; campaignId = ?id; unitPriceCents = ?row.retailPriceCents; totalCents = ?record.totalAmountChargedCents };
   };
 
-  /// Campaigns visible to the caller (own + legacy), newest first.
+  /// The caller's campaigns, newest first; an admin sees all of them, including unowned legacy records.
   public shared query ({ caller }) func getCampaigns() : async [Types.CampaignRecordShared] {
     let result = List.empty<Types.CampaignRecordShared>();
     for ((_, r) in campaigns.entries()) {
@@ -70,14 +82,12 @@ mixin (
     result.toArray().sort<Types.CampaignRecordShared>(func(a, b) = Int.compare(b.createdAt, a.createdAt));
   };
 
-  public query func getCampaign(id : Text) : async ?Types.CampaignRecordShared {
-    switch (campaigns.get(id)) {
-      case null null;
-      case (?r) ?r.toShared();
-    };
+  public shared query ({ caller }) func getCampaign(id : Text) : async ?Types.CampaignRecordShared {
+    ?requireAccess(id, caller).toShared();
   };
 
-  public query func getCampaignRecipients(campaignId : Text) : async [Common.VerifiedAddress] {
+  public shared query ({ caller }) func getCampaignRecipients(campaignId : Text) : async [Common.VerifiedAddress] {
+    ignore requireAccess(campaignId, caller);
     switch (campaignRecipients.get(campaignId)) {
       case null [];
       case (?addrs) addrs;
@@ -85,7 +95,8 @@ mixin (
   };
 
   /// CSV export with recipient ids and tracking URLs.
-  public query func exportCampaignRecipients(campaignId : Text) : async ?Text {
+  public shared query ({ caller }) func exportCampaignRecipients(campaignId : Text) : async ?Text {
+    ignore requireAccess(campaignId, caller);
     CampaignLib.exportAsCsv(campaignId, campaignRecipients, AdminLib.trackingBaseUrl);
   };
 
@@ -101,11 +112,8 @@ mixin (
     };
   };
 
-  public query func getCanvasState(campaignId : Text) : async ?Types.CanvasState {
-    switch (campaigns.get(campaignId)) {
-      case null null;
-      case (?record) record.canvasState;
-    };
+  public shared query ({ caller }) func getCanvasState(campaignId : Text) : async ?Types.CanvasState {
+    requireAccess(campaignId, caller).canvasState;
   };
 
   /// Admin-only manual status override (monotonic).
@@ -133,7 +141,8 @@ mixin (
     };
   };
 
-  public query func getTrackingEvents(campaignId : Text) : async [Types.TrackingEvent] {
+  public shared query ({ caller }) func getTrackingEvents(campaignId : Text) : async [Types.TrackingEvent] {
+    ignore requireAccess(campaignId, caller);
     let result = List.empty<Types.TrackingEvent>();
     for (e in trackingEvents.values()) {
       if (e.campaignId == campaignId) { result.add(e) };
@@ -160,7 +169,8 @@ mixin (
     };
   };
 
-  public query func getQrScanStats(campaignId : Text) : async Types.QrScanStats {
+  public shared query ({ caller }) func getQrScanStats(campaignId : Text) : async Types.QrScanStats {
+    ignore requireAccess(campaignId, caller);
     let unique = Set.empty<Text>();
     let recent = List.empty<Types.QrScanEvent>();
     var total = 0;

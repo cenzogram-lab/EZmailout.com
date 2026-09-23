@@ -29019,6 +29019,7 @@ const ProductionStatus$1 = Variant({
   "Draft": Null,
   "AddressListReady": Null,
   "Submitted": Null,
+  "Processing": Null,
   "JobCreated": Null
 });
 const DispatchResult = Record({
@@ -29636,6 +29637,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "Draft": IDL2.Null,
     "AddressListReady": IDL2.Null,
     "Submitted": IDL2.Null,
+    "Processing": IDL2.Null,
     "JobCreated": IDL2.Null
   });
   const DispatchResult2 = IDL2.Record({
@@ -30096,6 +30098,7 @@ var ProductionStatus = /* @__PURE__ */ ((ProductionStatus2) => {
   ProductionStatus2["Draft"] = "Draft";
   ProductionStatus2["Failed"] = "Failed";
   ProductionStatus2["JobCreated"] = "JobCreated";
+  ProductionStatus2["Processing"] = "Processing";
   ProductionStatus2["ReadyToDispatch"] = "ReadyToDispatch";
   ProductionStatus2["Submitted"] = "Submitted";
   return ProductionStatus2;
@@ -73232,6 +73235,7 @@ const PRODUCTION_LABELS = {
   [ProductionStatus.Draft]: "Draft",
   [ProductionStatus.AwaitingPayment]: "Awaiting payment",
   [ProductionStatus.ReadyToDispatch]: "Ready to dispatch",
+  [ProductionStatus.Processing]: "Dispatching…",
   [ProductionStatus.DocumentUploaded]: "Document uploaded",
   [ProductionStatus.AddressListReady]: "Address list ready",
   [ProductionStatus.JobCreated]: "Job created",
@@ -73242,6 +73246,7 @@ const PRODUCTION_STYLES = {
   [ProductionStatus.Draft]: "border-border bg-muted text-muted-foreground",
   [ProductionStatus.AwaitingPayment]: "border-primary/40 bg-primary/15 text-primary-foreground",
   [ProductionStatus.ReadyToDispatch]: "border-primary/20 bg-primary/10 text-primary",
+  [ProductionStatus.Processing]: "border-primary/30 bg-primary/10 text-primary animate-pulse",
   [ProductionStatus.DocumentUploaded]: "border-primary/20 bg-primary/10 text-primary",
   [ProductionStatus.AddressListReady]: "border-primary/20 bg-primary/10 text-primary",
   [ProductionStatus.JobCreated]: "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",

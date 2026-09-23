@@ -326,6 +326,7 @@ export type ProductionStatus = { 'ReadyToDispatch' : null } |
   { 'Draft' : null } |
   { 'AddressListReady' : null } |
   { 'Submitted' : null } |
+  { 'Processing' : null } |
   { 'JobCreated' : null };
 export interface PublicConfig {
   'click2mailEnvironment' : Click2MailEnvironment,

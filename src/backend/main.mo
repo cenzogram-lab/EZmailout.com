@@ -45,5 +45,6 @@ actor {
   include ProductionApi(campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
 
   // Non-blocking tracking poll every 6 hours (Click2Mail IMb scans → timeline).
-  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore await pollActiveTracking() });
+  // Calls the mixin's private poll directly, so the job has no public entry point.
+  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore await pollActiveCampaigns() });
 };
