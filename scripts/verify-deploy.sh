@@ -47,7 +47,9 @@ for path in "/" "/wizard?step=2" ${bundle:+"/${bundle}"}; do
   for d in "default-src 'self'" "object-src 'none'" "base-uri 'self'" "frame-ancestors 'none'" "https://icp-api.io" "https://js.stripe.com"; do
     [[ "$csp" == *"$d"* ]] || missing+=" [$d]"
   done
+  script_src=$(grep -o "script-src [^;]*" <<<"$csp")
   [[ "$csp" == *"'unsafe-eval'"* ]] && missing+=" [no 'unsafe-eval']"
+  [[ "$script_src" == *"'unsafe-inline'"* ]] && missing+=" [no 'unsafe-inline' in script-src]"
   if [[ -z "$csp" ]]; then fail "$path: no Content-Security-Policy (.ic-assets.json5 not applied?)"
   elif [[ -n "$missing" ]]; then fail "$path: CSP needs$missing"
   else pass "$path: Content-Security-Policy"; fi

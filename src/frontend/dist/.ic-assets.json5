@@ -15,9 +15,13 @@
     // no longer exist. The rules below only override Cache-Control, so the
     // security headers apply everywhere.
     //
-    // Content-Security-Policy: only what the browser itself loads. There is
-    // no 'unsafe-eval' (the bundle never evaluates strings), and hosts only
-    // canister outcalls talk to (OpenAI, Resend, Click2Mail) are not listed.
+    // Content-Security-Policy: only what the browser itself loads. Scripts
+    // come only from files: no 'unsafe-inline' (index.html loads the bundle
+    // with <script src>, and nothing uses inline scripts, on* attributes or
+    // javascript: URLs) and no 'unsafe-eval' (nothing evaluates strings).
+    // Styles keep 'unsafe-inline' for React style attributes and Leaflet.
+    // Hosts only canister outcalls talk to (OpenAI, Resend, Click2Mail) are
+    // not listed.
     //   'self'                    the bundle, Geist fonts, env.json
     //   icp0.io, icp-api.io,      the agent's API host: env.json's
     //   ic0.app                   backend_host, else icp0.io / ic0.app when
@@ -37,7 +41,7 @@
     match: "**/*",
     headers: {
       "Cache-Control": "public, max-age=0, must-revalidate",
-      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://*.stripe.com https://oaidalleapiprodscus.blob.core.windows.net https://*.tile.openstreetmap.org https://*.icp0.io https://*.raw.icp0.io; connect-src 'self' https://icp0.io https://*.icp0.io https://*.raw.icp0.io https://icp-api.io https://ic0.app https://api.stripe.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://oaidalleapiprodscus.blob.core.windows.net; frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' https://js.stripe.com https://*.js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://*.stripe.com https://oaidalleapiprodscus.blob.core.windows.net https://*.tile.openstreetmap.org https://*.icp0.io https://*.raw.icp0.io; connect-src 'self' https://icp0.io https://*.icp0.io https://*.raw.icp0.io https://icp-api.io https://ic0.app https://api.stripe.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://oaidalleapiprodscus.blob.core.windows.net; frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",
