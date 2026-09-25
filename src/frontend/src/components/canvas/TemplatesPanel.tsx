@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { LAYOUT_PRESETS } from "@/lib/layouts";
-import { getLayoutDims } from "@/lib/printSpec";
 import { templatesForLayout } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -16,6 +16,7 @@ export function TemplatesPanel() {
   const setDesignTemplate = useWizardStore((s) => s.setDesignTemplate);
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
   const layoutVariant = selectedLayout ?? "6x9";
+  const dims = useCanvasDims();
   const templates = templatesForLayout(
     layoutVariant,
     selectedProduct?.productType ?? null,
@@ -24,7 +25,6 @@ export function TemplatesPanel() {
   function applyLayout(id: string) {
     const preset = LAYOUT_PRESETS.find((p) => p.id === id);
     if (!preset) return;
-    const dims = getLayoutDims(layoutVariant);
     for (const block of preset.blocks(dims)) addTextBlock(activeSide, block);
     toast.success(`${preset.name} layout added to the ${activeSide} side`);
   }

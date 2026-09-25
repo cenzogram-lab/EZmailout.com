@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/sheet";
 import { useAccountSync } from "@/hooks/use-account";
 import { useGenerateAiCopy } from "@/hooks/use-backend";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { AI_COSTS } from "@/lib/credits";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { safeRect } from "@/lib/printSpec";
 import { useAccountStore } from "@/store/account";
 import { useWizardStore } from "@/store/wizard";
 import { Loader2, PenLine, Plus, Sparkles } from "lucide-react";
@@ -57,7 +58,7 @@ export function AiCopywriterDrawer({
   const setCreditBalance = useAccountStore((s) => s.setCreditBalance);
   const setTopUpOpen = useAccountStore((s) => s.setTopUpOpen);
   const activeSide = useWizardStore((s) => s.activeSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const dims = useCanvasDims();
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
   const generate = useGenerateAiCopy();
   const [businessName, setBusinessName] = useState("");
@@ -103,7 +104,6 @@ export function AiCopywriterDrawer({
   }
 
   function insert(kind: "headline" | "bullets" | "cta", text: string) {
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
     const safe = safeRect(dims);
     const y = safe.y + 12 + inserted * 52;
     const width = Math.round(safe.w * 0.62);

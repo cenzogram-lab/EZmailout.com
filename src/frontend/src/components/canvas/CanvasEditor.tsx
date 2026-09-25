@@ -17,13 +17,14 @@ import {
   type ResizeResult,
   useCanvasInteractions,
 } from "@/components/canvas/useCanvasInteractions";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
 import { physicalTraitsFor } from "@/lib/physical";
 import {
   DESIGN_PPI,
   type LayoutDims,
-  getLayoutDims,
+  canvasDims,
   insetRect,
 } from "@/lib/printSpec";
 import { qrDataUrl } from "@/lib/qr";
@@ -361,13 +362,17 @@ export function CanvasEditor({
   const canvas = useWizardStore((s) => s.canvas);
   const activeSide = useWizardStore((s) => s.activeSide);
   const selectedElementId = useWizardStore((s) => s.selectedElementId);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const setSelectedElementId = useWizardStore((s) => s.setSelectedElementId);
   const updateTextBlock = useWizardStore((s) => s.updateTextBlock);
 
-  const dims = useMemo(
-    () => getLayoutDims(selectedLayout ?? "6x9"),
-    [selectedLayout],
+  const dims = useCanvasDims();
+  const traits = useMemo(
+    () =>
+      physicalTraitsFor(
+        dims.layoutVariant,
+        dims.rotated ? "rotated" : "native",
+      ),
+    [dims],
   );
   const side = getSide(canvas, activeSide);
   const elements = useMemo(() => sortedElements(side), [side]);
@@ -471,7 +476,7 @@ export function CanvasEditor({
       const el = sortedElements(current).find((e) => e.id === id);
       if (!el) return;
       const box = elementBox(el);
-      const d = getLayoutDims(store.selectedLayout ?? "6x9");
+      const d = canvasDims(store.canvas, store.selectedLayout ?? "6x9");
       const nx = Math.min(
         Math.max(0, box.x + delta[0] * step),
         Math.max(0, d.designWidth - box.width),
@@ -613,6 +618,7 @@ export function CanvasEditor({
         data-ocid="canvas.editor.sheet"
         data-width-inches={dims.widthInches}
         data-height-inches={dims.heightInches}
+        data-orientation={dims.rotated ? "rotated" : "native"}
       >
         <div
           role="presentation"
@@ -677,11 +683,7 @@ export function CanvasEditor({
           })}
 
           {/* How the finished piece folds, tears and binds */}
-          <PhysicalOverlay
-            dims={dims}
-            traits={physicalTraitsFor(dims.layoutVariant)}
-            scale={scale}
-          />
+          <PhysicalOverlay dims={dims} traits={traits} scale={scale} />
 
           {activeSide === "back" && (
             <AddressZoneOverlay dims={dims} scale={scale} />

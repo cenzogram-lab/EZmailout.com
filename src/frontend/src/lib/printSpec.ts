@@ -49,15 +49,49 @@ export interface LayoutDims {
   hasBackSide: boolean;
   /** Reserved USPS address / indicia area on postcard backs (design px). */
   addressZone?: AddressZone;
+  /** True when the design is turned 90° from the product's own orientation. */
+  rotated: boolean;
+  /** The printed piece as Click2Mail produces it, whatever the design's orientation. */
+  nativeWidthInches: number;
+  nativeHeightInches: number;
 }
+
+/**
+ * How the design sits on the piece. `native` follows the product (its
+ * width × height in the Click2Mail name order); `rotated` turns the view of
+ * the whole sheet a quarter turn counter-clockwise, so width and height swap.
+ * The printed piece never changes: the export turns rotated pages back onto
+ * the native page (see `toNativePage` in `lib/rasterize.ts`).
+ */
+export type Orientation = "native" | "rotated";
 
 const FALLBACK_VARIANT = "6x9";
 
+/**
+ * Maps a rectangle on the native sheet into the rotated view. The view is the
+ * sheet turned a quarter turn counter-clockwise: the native top edge becomes
+ * the left edge and the native right edge becomes the top.
+ * `sheetWidth` is the native width, in the rectangle's units.
+ */
+export function rotateRect(
+  r: { x: number; y: number; w: number; h: number },
+  sheetWidth: number,
+): { x: number; y: number; w: number; h: number } {
+  return { x: r.y, y: sheetWidth - r.x - r.w, w: r.h, h: r.w };
+}
+
 /** Canvas dimensions and print guides for a layout variant. */
-export function getLayoutDims(layoutVariant: string): LayoutDims {
+export function getLayoutDims(
+  layoutVariant: string,
+  orientation: Orientation = "native",
+): LayoutDims {
   const row = getPricingRow(layoutVariant) ?? getPricingRow(FALLBACK_VARIANT);
-  const widthInches = row?.widthInches ?? 9;
-  const heightInches = row?.heightInches ?? 6;
+  const nativeWidthInches = row?.widthInches ?? 9;
+  const nativeHeightInches = row?.heightInches ?? 6;
+  const rotated =
+    orientation === "rotated" && nativeWidthInches !== nativeHeightInches;
+  const widthInches = rotated ? nativeHeightInches : nativeWidthInches;
+  const heightInches = rotated ? nativeWidthInches : nativeHeightInches;
   const designWidth = Math.round(widthInches * DESIGN_PPI);
   const designHeight = Math.round(heightInches * DESIGN_PPI);
   const dims: LayoutDims = {
@@ -70,20 +104,51 @@ export function getLayoutDims(layoutVariant: string): LayoutDims {
     bleedInsetInches: BLEED_INSET_INCHES,
     safeInsetInches: SAFE_INSET_INCHES,
     hasBackSide: true,
+    rotated,
+    nativeWidthInches,
+    nativeHeightInches,
   };
   if (row?.hasAddressBlock) {
-    // USPS reserves the lower-right area of the address side for the
-    // delivery address, postage indicia and IMb barcode.
-    const x = Math.round(designWidth / 2);
-    const y = Math.round(designHeight * ADDRESS_ZONE_TOP_PCT);
-    dims.addressZone = {
-      x,
-      y,
-      w: designWidth - x,
-      h: designHeight - y,
-    };
+    // USPS reserves the lower-right area of the native address side for the
+    // delivery address, postage indicia and IMb barcode. Click2Mail prints
+    // there whatever the design's orientation, so a rotated view shows the
+    // same patch of the sheet in its turned position.
+    const nativeW = Math.round(nativeWidthInches * DESIGN_PPI);
+    const nativeH = Math.round(nativeHeightInches * DESIGN_PPI);
+    const x = Math.round(nativeW / 2);
+    const y = Math.round(nativeH * ADDRESS_ZONE_TOP_PCT);
+    const zone = { x, y, w: nativeW - x, h: nativeH - y };
+    dims.addressZone = rotated ? rotateRect(zone, nativeW) : zone;
   }
   return dims;
+}
+
+/** Whether a canvas is laid out turned from its product's own orientation. */
+export function orientationOf(
+  canvas: { widthInches: number; heightInches: number },
+  layoutVariant: string,
+): Orientation {
+  const native = getLayoutDims(layoutVariant);
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.001;
+  return native.widthInches !== native.heightInches &&
+    near(canvas.widthInches, native.heightInches) &&
+    near(canvas.heightInches, native.widthInches)
+    ? "rotated"
+    : "native";
+}
+
+/** Dimensions of a canvas as laid out, orientation included. */
+export function canvasDims(
+  canvas: { widthInches: number; heightInches: number },
+  layoutVariant: string,
+): LayoutDims {
+  return getLayoutDims(layoutVariant, orientationOf(canvas, layoutVariant));
+}
+
+/** "Portrait", "Landscape" or "Square" for the design as laid out. */
+export function orientationName(dims: LayoutDims): string {
+  if (dims.widthInches === dims.heightInches) return "Square";
+  return dims.widthInches > dims.heightInches ? "Landscape" : "Portrait";
 }
 
 /** Rectangle inset from every canvas edge by `inches`, in design px. */

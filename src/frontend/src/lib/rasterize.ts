@@ -187,6 +187,31 @@ export async function rasterizeSide(
   return canvas;
 }
 
+/**
+ * Turns a side rendered in its design orientation onto the page Click2Mail
+ * prints. Native designs pass through; a rotated design (the sheet viewed a
+ * quarter turn counter-clockwise, see `rotateRect`) is turned back a quarter
+ * turn clockwise, so every page keeps the product's own size and the USPS
+ * zone, folds and windows land where the press expects them.
+ */
+export function toNativePage(
+  raster: HTMLCanvasElement,
+  dims: LayoutDims,
+  dpi: number = RASTER_DPI,
+): HTMLCanvasElement {
+  if (!dims.rotated) return raster;
+  const page = document.createElement("canvas");
+  page.width = Math.round(dims.nativeWidthInches * dpi);
+  page.height = Math.round(dims.nativeHeightInches * dpi);
+  const ctx = page.getContext("2d");
+  if (!ctx) throw new Error("2D canvas context unavailable");
+  // View point (u, v) sits at sheet point (W − v, u): the view's top edge is
+  // the sheet's right edge.
+  ctx.setTransform(0, 1, -1, 0, page.width, 0);
+  ctx.drawImage(raster, 0, 0);
+  return page;
+}
+
 export function canvasToJpegBlob(
   canvas: HTMLCanvasElement,
   quality = 0.92,

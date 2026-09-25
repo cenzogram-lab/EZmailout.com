@@ -1,4 +1,5 @@
 import { getPricingRow } from "@/lib/pricing";
+import { type Orientation, rotateRect } from "@/lib/printSpec";
 
 /**
  * How each Click2Mail layout behaves as a physical piece of mail.
@@ -105,8 +106,73 @@ function tenWindows(heightInches: number): WindowCut[] {
   ];
 }
 
+/**
+ * Where an edge of the native sheet lands in the rotated view (the sheet
+ * turned a quarter turn counter-clockwise, as in `rotateRect`).
+ */
+const ROTATED_EDGE: Record<SheetEdge, SheetEdge> = {
+  top: "left",
+  right: "top",
+  bottom: "right",
+  left: "bottom",
+};
+
+/**
+ * The same physical traits seen in the rotated view: folds, tear strips,
+ * binding and window cuts stay where the press puts them on the sheet, so
+ * they turn with it. `sheetWidthInches` is the native sheet width.
+ */
+export function rotateTraits(
+  traits: PhysicalTraits,
+  sheetWidthInches: number,
+): PhysicalTraits {
+  return {
+    ...traits,
+    // A vertical fold at x = a·W lands at y = (1 − a)·W, a horizontal one
+    // at y = b·H lands at x = b·H — H being the rotated view's width.
+    creases: traits.creases.map((c) =>
+      c.axis === "vertical"
+        ? { ...c, axis: "horizontal", at: 1 - c.at }
+        : { ...c, axis: "vertical", at: c.at },
+    ),
+    perforations: traits.perforations.map((e) => ROTATED_EDGE[e]),
+    spine: traits.spine ? ROTATED_EDGE[traits.spine] : null,
+    windows: traits.windows.map((w) => {
+      const r = rotateRect(
+        {
+          x: w.xInches,
+          y: w.yInches,
+          w: w.widthInches,
+          h: w.heightInches,
+        },
+        sheetWidthInches,
+      );
+      return {
+        label: w.label,
+        xInches: r.x,
+        yInches: r.y,
+        widthInches: r.w,
+        heightInches: r.h,
+      };
+    }),
+  };
+}
+
 /** Physical behaviour of the finished piece for a layout variant. */
-export function physicalTraitsFor(layoutVariant: string): PhysicalTraits {
+export function physicalTraitsFor(
+  layoutVariant: string,
+  orientation: Orientation = "native",
+): PhysicalTraits {
+  const row = getPricingRow(layoutVariant);
+  const traits = nativeTraitsFor(layoutVariant);
+  return orientation === "rotated" &&
+    row &&
+    row.widthInches !== row.heightInches
+    ? rotateTraits(traits, row.widthInches)
+    : traits;
+}
+
+function nativeTraitsFor(layoutVariant: string): PhysicalTraits {
   const row = getPricingRow(layoutVariant);
   if (!row) return FLAT;
   const enveloped = Boolean(row.envelope);

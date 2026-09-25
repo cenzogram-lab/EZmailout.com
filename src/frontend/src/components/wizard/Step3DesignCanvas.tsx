@@ -7,6 +7,7 @@ import { CanvasToolbar } from "@/components/canvas/CanvasToolbar";
 import { ElementInspector } from "@/components/canvas/ElementInspector";
 import { ElementsPanel } from "@/components/canvas/ElementsPanel";
 import { LayersPanel } from "@/components/canvas/LayersPanel";
+import { OrientationNotice } from "@/components/canvas/OrientationNotice";
 import { QrTool } from "@/components/canvas/QrTool";
 import { StudioRail } from "@/components/canvas/StudioRail";
 import { TemplatesPanel } from "@/components/canvas/TemplatesPanel";
@@ -14,8 +15,9 @@ import { TextPanel } from "@/components/canvas/TextPanel";
 import { UploadsPanel } from "@/components/canvas/UploadsPanel";
 import { StampyStep3Studio, StampyTip } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { layoutLabel } from "@/lib/format";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { type LayoutDims, safeRect } from "@/lib/printSpec";
 import { checkImageResolution } from "@/lib/rasterize";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -29,7 +31,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-function useResolutionWarning(url: string | undefined, layoutVariant: string) {
+function useResolutionWarning(url: string | undefined, dims: LayoutDims) {
   const [warning, setWarning] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +39,7 @@ function useResolutionWarning(url: string | undefined, layoutVariant: string) {
       setWarning(null);
       return;
     }
-    checkImageResolution(url, getLayoutDims(layoutVariant)).then((r) => {
+    checkImageResolution(url, dims).then((r) => {
       if (cancelled) return;
       if (r && !r.ok)
         setWarning(
@@ -48,7 +50,7 @@ function useResolutionWarning(url: string | undefined, layoutVariant: string) {
     return () => {
       cancelled = true;
     };
-  }, [url, layoutVariant]);
+  }, [url, dims]);
   return warning;
 }
 
@@ -72,12 +74,9 @@ export function Step3DesignCanvas() {
     () => window.matchMedia("(min-width: 1024px)").matches,
   );
   const layoutVariant = selectedLayout ?? "6x9";
-  const dims = getLayoutDims(layoutVariant);
+  const dims = useCanvasDims();
   const side = activeSide === "front" ? canvas.front : canvas.back;
-  const resolutionWarning = useResolutionWarning(
-    side.backgroundImageUrl,
-    layoutVariant,
-  );
+  const resolutionWarning = useResolutionWarning(side.backgroundImageUrl, dims);
 
   const outsideSafe = useMemo(() => {
     const safe = safeRect(dims);
@@ -211,6 +210,7 @@ export function Step3DesignCanvas() {
             print-ready assets.
           </StampyTip>
           <CanvasToolbar />
+          <OrientationNotice />
           <CanvasEditor maxHeight={540} />
           <div
             className="rounded-2xl border bg-card p-4 shadow-xs"

@@ -1,5 +1,6 @@
 import { SwatchRow } from "@/components/canvas/SwatchRow";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { safeRect } from "@/lib/printSpec";
 import {
   DEFAULT_SHAPE_FILL,
   SHAPES,
@@ -12,12 +13,11 @@ import { useState } from "react";
 /** Elements & shapes tool: vector shapes inserted as recolourable layers. */
 export function ElementsPanel() {
   const activeSide = useWizardStore((s) => s.activeSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const dims = useCanvasDims();
   const addLogo = useWizardStore((s) => s.addLogo);
   const [fill, setFill] = useState(DEFAULT_SHAPE_FILL);
 
   function add(shape: ShapeDef) {
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
     const safe = safeRect(dims);
     const width = Math.min(shape.width, Math.round(safe.w * 0.6));
     const height =

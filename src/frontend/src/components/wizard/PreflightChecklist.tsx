@@ -3,7 +3,7 @@ import { QrMode } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/format";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { canvasDims, safeRect } from "@/lib/printSpec";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, WizardAudienceType } from "@/types";
 import {
@@ -164,7 +164,7 @@ export function computePreflight(input: PreflightInput): PreflightReport {
 
   // 3. Safe-area boundary check
   if (input.selectedLayout) {
-    const dims = getLayoutDims(input.selectedLayout);
+    const dims = canvasDims(input.canvas, input.selectedLayout);
     const safe = safeRect(dims);
     const offenders = [
       ...outOfBoundsIds(input.canvas.front, safe).map((id) => `front:${id}`),

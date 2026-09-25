@@ -138,7 +138,7 @@ export function PhysicalOverlay({
         );
       })}
 
-      {traits.perforations.map((edge) => {
+      {traits.perforations.map((edge, index) => {
         // A tear line runs parallel to its edge, inset by the strip width.
         const vertical = edge === "left" || edge === "right";
         const offset =
@@ -163,7 +163,9 @@ export function PhysicalOverlay({
             }}
             data-ocid={`canvas.physical.perforation.${edge}`}
           >
-            {!subtle && edge === "bottom" && (
+            {/* Labelled once, on the last edge listed — the native bottom
+                strip, wherever the orientation puts it. */}
+            {!subtle && index === traits.perforations.length - 1 && (
               <Chip
                 scale={scale}
                 color="#01080a"

@@ -15,11 +15,12 @@ import {
   makeLogo,
   makeQrCode,
   makeTextBlock,
+  rotateCanvasState,
   withSide,
 } from "@/lib/canvas";
 import type { CatalogMailClass } from "@/lib/pricing";
 import { getPricingRow } from "@/lib/pricing";
-import { getLayoutDims } from "@/lib/printSpec";
+import { canvasDims, getLayoutDims, orientationOf } from "@/lib/printSpec";
 import type {
   CanvasAlignment,
   CanvasSideKey,
@@ -59,6 +60,13 @@ interface WizardData {
   sourcePresetId: string | null;
   designTemplate: DesignTemplate | null;
   canvas: CanvasState;
+  /**
+   * The canvas as it was before the last turn, paired with the canvas that
+   * turn produced. Turning back while the canvas is still that exact object
+   * (nothing edited since) restores the original instead of re-laying it, so
+   * elements the turn had to shrink come back at full size.
+   */
+  rotationUndo: { rotated: CanvasState; original: CanvasState } | null;
   activeSide: CanvasSideKey;
   selectedElementId: string | null;
   qrDestinationUrl: string;
@@ -82,6 +90,11 @@ interface WizardActions {
   setSourcePresetId: (id: string | null) => void;
   setDesignTemplate: (template: DesignTemplate | null) => void;
   setCanvas: (canvas: CanvasState) => void;
+  /**
+   * Turns the artboard between the product's own orientation and the
+   * rotated one (width ↔ height), re-laying both sides for the new frame.
+   */
+  rotateCanvas: () => void;
   setActiveSide: (side: CanvasSideKey) => void;
   setSelectedElementId: (id: string | null) => void;
   updateSide: (side: CanvasSideKey, patch: Partial<CanvasSide>) => void;
@@ -150,6 +163,7 @@ function initialData(): WizardData {
     sourcePresetId: null,
     designTemplate: null,
     canvas: emptyCanvasState(DEFAULT_LAYOUT),
+    rotationUndo: null,
     activeSide: "front",
     selectedElementId: null,
     qrDestinationUrl: "",
@@ -263,6 +277,8 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
           s.selectedLayout === layoutVariant
             ? s.canvas
             : emptyCanvasState(layoutVariant),
+        rotationUndo:
+          s.selectedLayout === layoutVariant ? s.rotationUndo : null,
         selectedElementId: null,
       };
     }),
@@ -284,11 +300,33 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
         ? canvasFromTemplate(
             template,
             s.selectedLayout ?? template.layoutVariant,
+            orientationOf(s.canvas, s.selectedLayout ?? template.layoutVariant),
           )
         : s.canvas,
+      rotationUndo: template ? null : s.rotationUndo,
       selectedElementId: null,
     })),
   setCanvas: (canvas) => set({ canvas }),
+  rotateCanvas: () =>
+    set((s) => {
+      if (s.rotationUndo?.rotated === s.canvas) {
+        return { canvas: s.rotationUndo.original, rotationUndo: null };
+      }
+      const layout = s.selectedLayout ?? DEFAULT_LAYOUT;
+      const from = canvasDims(s.canvas, layout);
+      const to = getLayoutDims(layout, from.rotated ? "native" : "rotated");
+      if (
+        to.widthInches === from.widthInches &&
+        to.heightInches === from.heightInches
+      ) {
+        return {};
+      }
+      const rotated = rotateCanvasState(s.canvas, from, to);
+      return {
+        canvas: rotated,
+        rotationUndo: { rotated, original: s.canvas },
+      };
+    }),
   setActiveSide: (activeSide) => set({ activeSide, selectedElementId: null }),
   setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
   updateSide: (sideKey, patch) =>
@@ -465,7 +503,7 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
       const side = getSide(s.canvas, sideKey);
       const geo = geometryOf(side, id);
       if (!geo) return {};
-      const dims = getLayoutDims(s.selectedLayout ?? DEFAULT_LAYOUT);
+      const dims = canvasDims(s.canvas, s.selectedLayout ?? DEFAULT_LAYOUT);
       let { x, y } = geo;
       switch (alignment) {
         case "left":

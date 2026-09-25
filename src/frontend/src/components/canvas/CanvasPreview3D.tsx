@@ -7,8 +7,9 @@ import {
 } from "@/components/canvas/CanvasEditor";
 import { PhysicalOverlay } from "@/components/canvas/PhysicalOverlay";
 import { Button } from "@/components/ui/button";
-import { physicalTraitsFor } from "@/lib/physical";
-import { getLayoutDims } from "@/lib/printSpec";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { type PhysicalTraits, physicalTraitsFor } from "@/lib/physical";
+import type { LayoutDims } from "@/lib/printSpec";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasSideKey } from "@/types";
@@ -20,14 +21,16 @@ function Face({
   side,
   sideKey,
   scale,
-  layoutVariant,
+  dims,
+  traits,
 }: {
   side: CanvasSide;
   sideKey: CanvasSideKey;
   scale: number;
-  layoutVariant: string;
+  /** The canvas as laid out, orientation included, so the face never stretches. */
+  dims: LayoutDims;
+  traits: PhysicalTraits;
 }) {
-  const dims = getLayoutDims(layoutVariant);
   const elements = useMemo(() => sortedElements(side), [side]);
   return (
     <div
@@ -45,12 +48,7 @@ function Face({
       }}
       data-ocid={`canvas.preview.face.${sideKey}`}
     >
-      <PhysicalOverlay
-        dims={dims}
-        traits={physicalTraitsFor(layoutVariant)}
-        scale={scale}
-        subtle
-      />
+      <PhysicalOverlay dims={dims} traits={traits} scale={scale} subtle />
       {sideKey === "back" && (
         <AddressZoneOverlay
           dims={dims}
@@ -122,10 +120,8 @@ function Face({
  */
 export function CanvasPreview3D({ className }: { className?: string }) {
   const canvas = useWizardStore((s) => s.canvas);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const activeSide = useWizardStore((s) => s.activeSide);
-  const layoutVariant = selectedLayout ?? "6x9";
-  const dims = getLayoutDims(layoutVariant);
+  const dims = useCanvasDims();
 
   const [rotationY, setRotationY] = useState(0);
   const [tiltX, setTiltX] = useState(-6);
@@ -140,14 +136,22 @@ export function CanvasPreview3D({ className }: { className?: string }) {
     timer.current = window.setTimeout(() => setInteracting(false), 700);
   }, []);
 
-  const traits = physicalTraitsFor(layoutVariant);
+  const traits = useMemo(
+    () =>
+      physicalTraitsFor(
+        dims.layoutVariant,
+        dims.rotated ? "rotated" : "native",
+      ),
+    [dims],
+  );
   // Heavy stock stands proud of the table; text weight sits almost flat.
   const edgeShadow =
     traits.stock === "card"
       ? "0 3px 0 0 rgba(1, 8, 10, 0.16), 0 18px 30px -12px rgba(1, 8, 10, 0.38)"
       : "0 1px 0 0 rgba(1, 8, 10, 0.1), 0 14px 26px -14px rgba(1, 8, 10, 0.3)";
 
-  // Fits inside the 340px studio column (panel padding + card border).
+  // Fits inside the 340px studio column (panel padding + card border). One
+  // scale for both axes, so a rotated artboard re-aspects instead of stretching.
   const previewScale = Math.min(
     280 / dims.designWidth,
     300 / dims.designHeight,
@@ -201,6 +205,7 @@ export function CanvasPreview3D({ className }: { className?: string }) {
           data-ocid="canvas.preview.card"
           data-width-inches={dims.widthInches}
           data-height-inches={dims.heightInches}
+          data-orientation={dims.rotated ? "rotated" : "native"}
           data-stock={traits.stock}
         >
           <div
@@ -212,7 +217,8 @@ export function CanvasPreview3D({ className }: { className?: string }) {
               side={canvas.front}
               sideKey="front"
               scale={previewScale}
-              layoutVariant={layoutVariant}
+              dims={dims}
+              traits={traits}
             />
           </div>
           <div
@@ -224,7 +230,8 @@ export function CanvasPreview3D({ className }: { className?: string }) {
               side={canvas.back}
               sideKey="back"
               scale={previewScale}
-              layoutVariant={layoutVariant}
+              dims={dims}
+              traits={traits}
             />
           </div>
         </div>

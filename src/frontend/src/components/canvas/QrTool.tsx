@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND, DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
-import { getLayoutDims } from "@/lib/printSpec";
 import { normalizeDestinationUrl, qrSvgString } from "@/lib/qr";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -42,7 +42,7 @@ export function QrTool() {
   const qrDestinationUrl = useWizardStore((s) => s.qrDestinationUrl);
   const setQrDestinationUrl = useWizardStore((s) => s.setQrDestinationUrl);
   const activeSide = useWizardStore((s) => s.activeSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const dims = useCanvasDims();
   const addQrCode = useWizardStore((s) => s.addQrCode);
   const [mode, setMode] = useState<QrMode>(QrMode.DynamicTracking);
   const [size, setSize] = useState(110);
@@ -80,7 +80,6 @@ export function QrTool() {
       toast.error("Enter a valid destination URL first");
       return;
     }
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
     addQrCode(target, {
       mode,
       url:

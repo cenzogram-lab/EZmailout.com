@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { safeRect } from "@/lib/printSpec";
 import { useWizardStore } from "@/store/wizard";
 import { ImagePlus, Upload, X } from "lucide-react";
 import { useRef } from "react";
@@ -9,13 +10,12 @@ import { toast } from "sonner";
 export function UploadsPanel() {
   const canvas = useWizardStore((s) => s.canvas);
   const activeSide = useWizardStore((s) => s.activeSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const dims = useCanvasDims();
   const setBackgroundImage = useWizardStore((s) => s.setBackgroundImage);
   const addLogo = useWizardStore((s) => s.addLogo);
   const bgInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
   const side = activeSide === "front" ? canvas.front : canvas.back;
-  const dims = getLayoutDims(selectedLayout ?? "6x9");
 
   function onBackgroundFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

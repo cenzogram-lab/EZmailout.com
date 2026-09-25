@@ -1,10 +1,11 @@
 import type { CanvasSide, CanvasState } from "@/backend";
 import { type PdfImagePage, buildPdfFromJpegs } from "@/lib/pdf";
-import { RASTER_DPI, getLayoutDims } from "@/lib/printSpec";
+import { RASTER_DPI, canvasDims } from "@/lib/printSpec";
 import {
   canvasToJpegBlob,
   checkImageResolution,
   rasterizeSide,
+  toNativePage,
 } from "@/lib/rasterize";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasSideKey } from "@/types";
@@ -96,28 +97,34 @@ function downscaleToDataUrl(source: HTMLCanvasElement, maxWidth = 720): string {
 /**
  * Builds the print-ready PDF for a campaign: the front face, plus the back
  * face when it carries any content, each rasterized at 300 DPI and embedded
- * as a JPEG page sized to the physical mail piece.
+ * as a JPEG page sized to the physical mail piece. A rotated design is
+ * rasterized as laid out, then turned back onto the product's own page, so
+ * Click2Mail always receives pages of the size it prints.
  */
 export async function buildPrintPdf(
   canvas: CanvasState,
   layoutVariant: string,
   sampleRecipientId: string,
 ): Promise<BuiltPrintDocument> {
-  const dims = getLayoutDims(layoutVariant);
+  const dims = canvasDims(canvas, layoutVariant);
   const options = { dpi: RASTER_DPI, sampleRecipientId };
   const pages: PdfImagePage[] = [];
   const front = await rasterizeSide(canvas.front, dims, options);
-  pages.push(await canvasToPage(front));
+  pages.push(await canvasToPage(toNativePage(front, dims)));
   if (sideHasContent(canvas.back)) {
     const back = await rasterizeSide(canvas.back, dims, options);
-    pages.push(await canvasToPage(back));
+    pages.push(await canvasToPage(toNativePage(back, dims)));
   }
-  const pdf = buildPdfFromJpegs(pages, dims.widthInches, dims.heightInches);
+  const pdf = buildPdfFromJpegs(
+    pages,
+    dims.nativeWidthInches,
+    dims.nativeHeightInches,
+  );
   return {
     pdf,
     pages: pages.length,
-    widthInches: dims.widthInches,
-    heightInches: dims.heightInches,
+    widthInches: dims.nativeWidthInches,
+    heightInches: dims.nativeHeightInches,
   };
 }
 
@@ -141,7 +148,7 @@ export function usePrintDocument() {
   const runPreflight = useCallback(async () => {
     setPreflight((p) => ({ ...p, status: "running", error: null }));
     try {
-      const dims = getLayoutDims(layoutVariant);
+      const dims = canvasDims(canvas, layoutVariant);
       const front = await rasterizeSide(canvas.front, dims, {
         dpi: RASTER_DPI,
         sampleRecipientId: "preview",

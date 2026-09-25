@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { getLayoutDims, safeRect } from "@/lib/printSpec";
+import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { safeRect } from "@/lib/printSpec";
 import { useWizardStore } from "@/store/wizard";
 import { Heading1, Heading2, PenLine, Pilcrow } from "lucide-react";
 
@@ -43,13 +44,12 @@ export function TextPanel({
   onOpenCopywriter: () => void;
 }) {
   const activeSide = useWizardStore((s) => s.activeSide);
-  const selectedLayout = useWizardStore((s) => s.selectedLayout);
+  const dims = useCanvasDims();
   const canvas = useWizardStore((s) => s.canvas);
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
   const side = activeSide === "front" ? canvas.front : canvas.back;
 
   function add(preset: (typeof PRESETS)[number]) {
-    const dims = getLayoutDims(selectedLayout ?? "6x9");
     const safe = safeRect(dims);
     const count = side.textBlocks.length;
     addTextBlock(activeSide, {
