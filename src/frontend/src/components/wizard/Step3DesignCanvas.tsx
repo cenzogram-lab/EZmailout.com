@@ -66,7 +66,11 @@ export function Step3DesignCanvas() {
   const setStep = useWizardStore((s) => s.setStep);
   const [copywriterOpen, setCopywriterOpen] = useState(false);
   const [tool, setTool] = useState<StudioTool>("templates");
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  // Below lg the drawer stacks above the artboard, so an open drawer pushes
+  // the design out of sight: start collapsed there; a rail tab opens it.
+  const [drawerOpen, setDrawerOpen] = useState(
+    () => window.matchMedia("(min-width: 1024px)").matches,
+  );
   const layoutVariant = selectedLayout ?? "6x9";
   const dims = getLayoutDims(layoutVariant);
   const side = activeSide === "front" ? canvas.front : canvas.back;
