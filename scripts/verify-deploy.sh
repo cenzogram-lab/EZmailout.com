@@ -37,6 +37,25 @@ else
   fail "could not find the hashed bundle in index.html"
 fi
 
+echo "── Security headers (index.html, a deep link and the bundle)"
+# Header value by name from one response (empty when missing).
+header() { tr -d '\r' <<<"$1" | awk -v n="$(tr '[:upper:]' '[:lower:]' <<<"$2")" -F': ' 'tolower($1)==n{sub(/^[^:]*: /,""); print; exit}'; }
+for path in "/" "/wizard?step=2" ${bundle:+"/${bundle}"}; do
+  hdrs=$(curl -sS -D - -o /dev/null "${SCHEME}://${FRONTEND}${path}") || { fail "$path (request failed)"; continue; }
+  csp=$(header "$hdrs" content-security-policy)
+  missing=""
+  for d in "default-src 'self'" "object-src 'none'" "base-uri 'self'" "frame-ancestors 'none'" "https://icp-api.io" "https://js.stripe.com"; do
+    [[ "$csp" == *"$d"* ]] || missing+=" [$d]"
+  done
+  if [[ -z "$csp" ]]; then fail "$path: no Content-Security-Policy (.ic-assets.json5 not applied?)"
+  elif [[ -n "$missing" ]]; then fail "$path: CSP lacks$missing"
+  else pass "$path: Content-Security-Policy"; fi
+  [[ "$(header "$hdrs" x-content-type-options)" == "nosniff" ]] && pass "$path: X-Content-Type-Options" || fail "$path: X-Content-Type-Options is '$(header "$hdrs" x-content-type-options)'"
+  [[ "$(header "$hdrs" x-frame-options)" == "DENY" ]] && pass "$path: X-Frame-Options" || fail "$path: X-Frame-Options is '$(header "$hdrs" x-frame-options)'"
+  [[ "$(header "$hdrs" referrer-policy)" == "strict-origin-when-cross-origin" ]] && pass "$path: Referrer-Policy" || fail "$path: Referrer-Policy is '$(header "$hdrs" referrer-policy)'"
+  [[ "$(header "$hdrs" permissions-policy)" == *"camera=()"* ]] && pass "$path: Permissions-Policy" || fail "$path: Permissions-Policy is '$(header "$hdrs" permissions-policy)'"
+done
+
 if [[ -n "$BACKEND" ]]; then
   RAW="https://${BACKEND}.raw.icp0.io"
   echo "── Backend (${RAW})"
