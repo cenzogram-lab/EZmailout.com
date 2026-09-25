@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import { Check } from "lucide-react";
+import { useEffect } from "react";
 
 const STEPS = [
   { id: 1, label: "Product" },
@@ -19,6 +20,14 @@ export function WizardLayout({
   const setStep = useWizardStore((s) => s.setStep);
   const campaignName = useWizardStore((s) => s.campaignName);
   const wide = currentStep === 3;
+  // Every step starts at the top: otherwise the previous step's scroll
+  // position carries over and the new heading, this stepper and Stampy's tip
+  // open off-screen. Keyed on the step, so Continue, Back, the stepper,
+  // Stampy's chips and ?step= deep links are all covered.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on step change by design
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
   return (
     <div
       className={cn(

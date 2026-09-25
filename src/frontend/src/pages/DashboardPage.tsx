@@ -200,11 +200,11 @@ export function DashboardPage() {
         <SignInPrompt message="Sign in with Internet Identity to see your dashboard, credits and referral rewards." />
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-1">
+          <div className="min-w-0 space-y-6 lg:col-span-1">
             <AccountCard />
             <SubscriptionWidget />
           </div>
-          <div className="space-y-6 lg:col-span-2">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
             <QuickLinks />
             <RecentCampaigns />
             <CreditsWidget />

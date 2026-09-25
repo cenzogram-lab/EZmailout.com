@@ -1,6 +1,16 @@
-import { CATALOG, CATALOG_SIZE_COUNT, categoryFromCents } from "@/lib/catalog";
+import {
+  CATALOG,
+  CATALOG_SIZE_COUNT,
+  categoryFromCents,
+  categoryRows,
+} from "@/lib/catalog";
 import { AI_COSTS, CREDIT_VALUE_CENTS, MONTHLY_ALLOWANCE } from "@/lib/credits";
-import { SUBSCRIPTION_PRICE_CENTS, formatCents } from "@/lib/pricing";
+import {
+  PRICING_LEDGER,
+  type ProductSpec,
+  SUBSCRIPTION_PRICE_CENTS,
+  formatCents,
+} from "@/lib/pricing";
 
 /**
  * Stampy's navigation chips. Replies may only point at these — the canister
@@ -89,18 +99,22 @@ interface Intent {
   keywords: RegExp;
   answer: () => string;
   chips: NavKey[];
+  /** Catalog and pricing questions, which a size or family price answers better. */
+  priceable?: boolean;
 }
 
 // Most specific first: when two intents score the same, the earlier wins,
 // so a credits question that also says "how much" is not a pricing question.
+const CREDITS: Intent = {
+  keywords:
+    /\b(credit|credits|ai|generate|generator|image\w*|copywrit\w*|headline\w*)\b/i,
+  answer: () =>
+    `AI Studio lives in the design rail. 1 AI credit = ${usd(CREDIT_VALUE_CENTS)}: copy costs ${AI_COSTS.copy} credit, images ${AI_COSTS.squareImage}, ${AI_COSTS.wideImage} or ${AI_COSTS.hdImage}. Members get ${MONTHLY_ALLOWANCE} free credits every month, and packs are available any time.`,
+  chips: ["studio"],
+};
+
 const INTENTS: Intent[] = [
-  {
-    keywords:
-      /\b(credit|credits|ai|generate|generator|image\w*|copywrit\w*|headline\w*)\b/i,
-    answer: () =>
-      `AI Studio lives in the design rail. 1 AI credit = ${usd(CREDIT_VALUE_CENTS)}: copy costs ${AI_COSTS.copy} credit, images ${AI_COSTS.squareImage}, ${AI_COSTS.wideImage} or ${AI_COSTS.hdImage}. Members get ${MONTHLY_ALLOWANCE} free credits every month, and packs are available any time.`,
-    chips: ["studio"],
-  },
+  CREDITS,
   {
     keywords: /\b(refer\w*|invite\w*|friend\w*|free month|reward\w*)\b/i,
     answer: () =>
@@ -138,6 +152,7 @@ const INTENTS: Intent[] = [
   {
     keywords:
       /\b(size|sizes|product|products|catalog|format|postcard\w*|letter\w*|brochure\w*|flyer\w*|booklet\w*|eddm|certified|priority|notecard\w*|rack card\w*|jumbo|trifold)\b/i,
+    priceable: true,
     answer: () =>
       `We print ${CATALOG.length} product families in ${CATALOG_SIZE_COUNT} sizes — postcards from 3.5×5 up to the Jumbo 6×11, letters, Certified Mail, EDDM®, Priority Mail, flyers, brochures, booklets and more. Step 1 of the wizard shows every size with its exact per-piece price.`,
     chips: ["catalog"],
@@ -145,6 +160,7 @@ const INTENTS: Intent[] = [
   {
     keywords:
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
+    priceable: true,
     answer: () =>
       `A ${membership}/month membership unlocks Click2Mail wholesale print and USPS postage with no batch minimums — mail one piece or thousands. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
     chips: ["catalog"],
@@ -165,24 +181,136 @@ const FALLBACK: Intent = {
   chips: ["catalog", "support"],
 };
 
-/** Best-matching quick answer: the intent with the most keyword hits wins. */
+// ─── Size and family prices ─────────────────────────────────────────────────
+// "How much is a 6x9 postcard?" should get the 6 × 9 price, not the catalog
+// overview. Prices come from PRICING_LEDGER, the table checkout charges from.
+
+const PRICE_WORDS =
+  /\b(price\w*|cost\w*|how much|rate|rates|cheap\w*|fee|per piece)\b|\$/i;
+const MEMBERSHIP_WORDS = /\b(membership|member|subscri\w*|minimum\w*)\b|\$9\b/i;
+const INCLUDED = "printing, postage and CASS address verification included";
+/** A shared size lists at most this many formats, cheapest first. */
+const MAX_LISTED = 5;
+
+/** Product-family words, most specific first ("reply postcard" is Reply Mail). */
+const FAMILY_WORDS: [RegExp, string][] = [
+  [/\bcertified\b/i, "certified-mail"],
+  [/\beddm\b|\bevery door\b/i, "eddm"],
+  [/\bexpress\b/i, "priority-mail-express"],
+  [/\bpriority\b/i, "priority-mail-plus"],
+  [/\bsecure\b|\bpressure[- ]?seal\b|\bsnap ?pack\b/i, "secure-mailers"],
+  [/\breply\b/i, "reply-mail"],
+  [/\brack ?cards?\b/i, "rack-cards"],
+  [/\bnote ?cards?\b/i, "notecards"],
+  [/\bbooklets?\b/i, "booklets"],
+  [/\bbrochures?\b|\btri-?fold\b/i, "brochures"],
+  [/\bflyers?\b|\bfliers?\b/i, "flyers"],
+  [/\bcard ?stock\b/i, "card-stock"],
+  [/\bletters?\b/i, "letters"],
+  [/\bpost ?cards?\b/i, "postcards"],
+];
+
+/** Two dimensions such as 6x9, 6 × 9, 8.5"x11 or 6 by 9, each 3–14 inches. */
+const SIZE =
+  /(?<![\d.])(\d{1,2}(?:\.\d{1,2})?)\s*(?:["″”]|in(?:ch(?:es)?)?)?\s*(?:x|×|by)\s*(\d{1,2}(?:\.\d{1,2})?)(?![\d.])/i;
+
+function familyIn(question: string): string | null {
+  return FAMILY_WORDS.find(([re]) => re.test(question))?.[1] ?? null;
+}
+
+function sizeIn(question: string): [number, number] | null {
+  const m = question.match(SIZE);
+  if (!m) return null;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  return a >= 3 && a <= 14 && b >= 3 && b <= 14 ? [a, b] : null;
+}
+
+const sameSize = (row: ProductSpec, [a, b]: [number, number]) => {
+  const near = (x: number, y: number) => Math.abs(x - y) < 0.01;
+  return (
+    (near(row.widthInches, a) && near(row.heightInches, b)) ||
+    (near(row.widthInches, b) && near(row.heightInches, a))
+  );
+};
+
+function priceAnswer(question: string): string | null {
+  const family = familyIn(question);
+  const size = sizeIn(question);
+  if (size) {
+    const all = PRICING_LEDGER.filter((r) => sameSize(r, size));
+    const inFamily = all.filter((r) => r.category === family);
+    const rows = inFamily.length ? inFamily : all;
+    if (rows.length === 1) {
+      return `The ${rows[0].name} is ${usd(rows[0].retailPriceCents)} per piece, with ${INCLUDED}.`;
+    }
+    if (rows.length > 1) {
+      const cheapestFirst = [...rows].sort(
+        (a, b) => a.retailPriceCents - b.retailPriceCents,
+      );
+      const list = cheapestFirst
+        .slice(0, MAX_LISTED)
+        .map((r) => `${r.name} ${usd(r.retailPriceCents)}`)
+        .join(", ");
+      const more =
+        rows.length > MAX_LISTED
+          ? ` and ${rows.length - MAX_LISTED} more in Step 1`
+          : "";
+      return `${size[0]} × ${size[1]} comes in ${rows.length} formats: ${list}${more}. Each price is per piece, with ${INCLUDED}.`;
+    }
+    return `We don't print a ${size[0]} × ${size[1]} piece. Step 1 of the wizard lists all ${CATALOG_SIZE_COUNT} sizes with their prices.`;
+  }
+  if (
+    family &&
+    PRICE_WORDS.test(question) &&
+    !MEMBERSHIP_WORDS.test(question)
+  ) {
+    const category = CATALOG.find((c) => c.id === family);
+    const rows = category ? categoryRows(category) : [];
+    if (!category || !rows.length) return null;
+    const low = rows.reduce((a, b) =>
+      b.retailPriceCents < a.retailPriceCents ? b : a,
+    );
+    if (rows.length === 1) {
+      return `The ${low.name} is ${usd(low.retailPriceCents)} per piece, with ${INCLUDED}.`;
+    }
+    return `Prices for ${category.name} start at ${usd(low.retailPriceCents)} per piece (${low.name}), across ${rows.length} sizes. Every price has ${INCLUDED}.`;
+  }
+  return null;
+}
+
+const hitsFor = (intent: Intent, question: string) => {
+  const flags = intent.keywords.flags.includes("g")
+    ? intent.keywords.flags
+    : `${intent.keywords.flags}g`;
+  return [...question.matchAll(new RegExp(intent.keywords, flags))].length;
+};
+
+/**
+ * Best quick answer. A question naming a size or a product family with a
+ * price word gets that exact price; otherwise the intent with the most
+ * keyword hits wins. The price lookup stands aside when another topic
+ * (credits, tracking, design…) is what the question is about.
+ */
 export function quickAnswer(question: string): {
   text: string;
   chips: NavKey[];
 } {
+  const hits = INTENTS.map((intent) => hitsFor(intent, question));
+  const otherTopic = INTENTS.some((intent, i) => !intent.priceable && hits[i]);
+  const aboutCredits = hitsFor(CREDITS, question) > 0;
+  if (!aboutCredits && (!otherTopic || PRICE_WORDS.test(question))) {
+    const text = priceAnswer(question);
+    if (text) return { text, chips: ["catalog"] };
+  }
   let best = FALLBACK;
   let bestHits = 0;
-  for (const intent of INTENTS) {
-    const flags = intent.keywords.flags.includes("g")
-      ? intent.keywords.flags
-      : `${intent.keywords.flags}g`;
-    const hits = [...question.matchAll(new RegExp(intent.keywords, flags))]
-      .length;
-    if (hits > bestHits) {
+  INTENTS.forEach((intent, i) => {
+    if (hits[i] > bestHits) {
       best = intent;
-      bestHits = hits;
+      bestHits = hits[i];
     }
-  }
+  });
   return { text: best.answer(), chips: best.chips };
 }
 
