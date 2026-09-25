@@ -59,6 +59,18 @@ for path in "/" "/wizard?step=2" ${bundle:+"/${bundle}"}; do
   [[ "$(header "$hdrs" permissions-policy)" == *"camera=()"* ]] && pass "$path: Permissions-Policy" || fail "$path: Permissions-Policy is '$(header "$hdrs" permissions-policy)'"
 done
 
+echo "── Custom domains (/.well-known/ic-domains)"
+resp=$(curl -sS -w '\n%{http_code}' "${SCHEME}://${FRONTEND}/.well-known/ic-domains") || resp=$'\n000'
+code=${resp##*$'\n'}
+domains=${resp%$'\n'*}
+if [[ "$domains" == *'<div id="root">'* ]]; then
+  fail "ic-domains → the app shell, not the file (.well-known was not uploaded; check the ignore rule in .ic-assets.json5)"
+elif [[ "$code" == "200" ]] && grep -qx 'ezmailout.com' <<<"$domains" && grep -qx 'www.ezmailout.com' <<<"$domains"; then
+  pass "ic-domains lists: $(tr '\n' ' ' <<<"$domains")"
+else
+  fail "ic-domains → HTTP $code, body '$(tr '\n' ' ' <<<"$domains")' (expected ezmailout.com and www.ezmailout.com)"
+fi
+
 if [[ -n "$BACKEND" ]]; then
   RAW="https://${BACKEND}.raw.icp0.io"
   echo "── Backend (${RAW})"

@@ -70,4 +70,13 @@
       "Cache-Control": "public, max-age=604800",
     },
   },
+  {
+    // Custom domains: the boundary nodes read /.well-known/ic-domains (one
+    // domain per line) to confirm this canister accepts ezmailout.com and
+    // www.ezmailout.com. The asset canister skips hidden files and folders
+    // unless a rule un-ignores them. The `**/*` rule above still applies, so
+    // the file revalidates on every load.
+    match: ".well-known",
+    ignore: false,
+  },
 ]
