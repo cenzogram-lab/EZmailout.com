@@ -88,9 +88,13 @@ mixin (
 
   // ─── Credits ─────────────────────────────────────────────────────────────
 
-  /// Atomically deducts AI credits (fails when the balance is insufficient).
+  /// Manual adjustment of the caller's own balance, for controllers and the
+  /// admin only. Every AI endpoint charges its own cost server-side (debited
+  /// before the outcall, refunded on failure), so no client ever calls this;
+  /// kept as a gated method rather than removed so the candid interface stays
+  /// compatible with the deployed canister.
   public shared ({ caller }) func deductAiCredits(costCredits : Nat, reason : Text) : async Account.CreditResult {
-    if (not signedIn(caller)) { return { ok = false; error = ?"Sign in required"; balance = null } };
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { return { ok = false; error = ?"Only a controller or the admin can adjust credits directly"; balance = null } };
     let a = account(caller);
     if (a.creditBalance < costCredits) {
       return { ok = false; error = ?"Insufficient credits"; balance = ?a.creditBalance };
@@ -268,13 +272,23 @@ mixin (
     };
     if (not record.sandbox) {
       let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Stripe secret key not configured") } };
-      let resp = await Http.get(Stripe.apiBase # "/payment_intents/" # record.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      // Replicated: every replica fetches the intent and they must agree on
+      // the reduced response before any credit or paid status is granted, so
+      // one faulty node cannot report a payment that did not happen. GET is
+      // idempotent, so the subnet's parallel requests are harmless.
+      let opts = {
+        AdminLib.outcallOptions(adminKeysState, 32_000) with
+        isReplicated = true;
+        transformContext = Http.jsonSummary(Stripe.intentSummaryKeys);
+      };
+      let resp = await Http.get(Stripe.apiBase # "/payment_intents/" # record.paymentIntentId, Stripe.headers(secret, null), opts, transformFn);
       if (not Http.isSuccess(resp)) { return fail(if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body)) };
       switch (Stripe.parseIntent(resp.body)) {
         case null { return fail("Unexpected Stripe response") };
         case (?intent) {
+          if (intent.id != record.paymentIntentId) { return fail("Stripe returned a different payment") };
           if (intent.status != "succeeded") { return fail("Payment not completed yet (status: " # intent.status # ")") };
-          if (intent.amount != record.amountCents) { return fail("Payment amount mismatch") };
+          if (intent.amount != record.amountCents or intent.currency != "usd") { return fail("Payment amount mismatch") };
         };
       };
       // Re-check after the await: another call may have confirmed meanwhile.

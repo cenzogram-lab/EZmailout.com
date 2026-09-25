@@ -7,6 +7,7 @@ import Nat64 "mo:core/Nat64";
 import Error "mo:core/Error";
 import Array "mo:core/Array";
 import Iter "mo:core/Iter";
+import Transform "transform";
 
 module {
   public type Header = { name : Text; value : Text };
@@ -42,18 +43,15 @@ module {
     transformContext : Blob;
   };
 
-  /// Transform context for calls whose success body is only volatile ids
-  /// (e.g. Resend's `{"id":"<uuid>"}`): a 2xx body is dropped so every
-  /// replica sees the same response. Error bodies are kept for diagnosis.
-  public let maskSuccessBody : Blob = "mask-success-body";
+  /// Transform contexts; see `lib/transform.mo`.
+  public let maskSuccessBody : Blob = Transform.maskSuccessBody;
+  public func jsonSummary(keys : [Text]) : Blob { Transform.jsonSummary(keys) };
 
   /// Strips response headers so replicas reach consensus on status and body,
-  /// and blanks the body of a successful call tagged `maskSuccessBody`.
-  /// Deterministic: depends only on the response and the context.
+  /// and rewrites the body as the request's transform context asks.
   public func transform(input : TransformationInput) : TransformationOutput {
     let status = input.response.status;
-    let masked = input.context == maskSuccessBody and status >= 200 and status < 300;
-    { status; body = if (masked) Blob.empty() else input.response.body; headers = [] };
+    { status; body = Transform.apply(input.context, status, input.response.body); headers = [] };
   };
 
   /// Cycles required by the management canister for an outcall of the given

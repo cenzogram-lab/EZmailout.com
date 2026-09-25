@@ -19,7 +19,6 @@ import type {
   CreateCampaignResult,
   CreditLedgerEntry,
   CreditPack,
-  CreditResult,
   DispatchResult,
   DocumentUploadStatus,
   PaymentIntentResult,
@@ -364,25 +363,6 @@ export function useAiPricing() {
     queryFn: async () => (actor ? actor.getAiPricing() : null),
     enabled: ready,
     staleTime: 600_000,
-  });
-}
-
-export function useDeductAiCredits() {
-  const queryClient = useQueryClient();
-  const { actor } = useBackendActor();
-  return useMutation<
-    CreditResult,
-    Error,
-    { costCredits: bigint; reason: string }
-  >({
-    mutationFn: async ({ costCredits, reason }) => {
-      if (!actor) throw new Error(NO_BACKEND);
-      return actor.deductAiCredits(costCredits, reason);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myAccount"] });
-      queryClient.invalidateQueries({ queryKey: ["creditLedger"] });
-    },
   });
 }
 

@@ -37,21 +37,30 @@ module {
     ]);
   };
 
-  public type IntentInfo = { id : Text; clientSecret : ?Text; status : Text; amount : Nat };
+  public type IntentInfo = { id : Text; clientSecret : ?Text; status : Text; amount : Nat; currency : Text };
 
+  /// Members payment verification reads; the replicated verification call
+  /// reduces Stripe's response to exactly these (`Http.jsonSummary`).
+  public let intentSummaryKeys : [Text] = ["id", "status", "amount", "currency"];
+
+  /// Reads the PaymentIntent's own top-level members. The any-depth getters
+  /// would pick up a nested `status` or `amount` first — on older API versions
+  /// the embedded `charges` list sorts before the intent's own `status`, so a
+  /// declined earlier attempt could be read as the intent's state.
   public func parseIntent(body : Text) : ?IntentInfo {
-    switch (Json.getString(body, "id")) {
+    switch (Json.topLevelString(body, "id")) {
       case null null;
       case (?id) {
-        let amount : Nat = switch (Json.getNumber(body, "amount")) {
+        let amount : Nat = switch (Json.topLevelNumber(body, "amount")) {
           case (?a) { if (a < 0) 0 else a.toNat() };
           case null 0;
         };
         ?{
           id;
-          clientSecret = Json.getString(body, "client_secret");
-          status = switch (Json.getString(body, "status")) { case (?s) s; case null "" };
+          clientSecret = Json.topLevelString(body, "client_secret");
+          status = switch (Json.topLevelString(body, "status")) { case (?s) s; case null "" };
           amount;
+          currency = switch (Json.topLevelString(body, "currency")) { case (?c) c; case null "" };
         };
       };
     };

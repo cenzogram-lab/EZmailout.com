@@ -91,6 +91,101 @@ module {
     null;
   };
 
+  /// Index just after the JSON value starting at `start`: a string, an object
+  /// or array (nested, string-aware), or a scalar. Null when malformed.
+  private func skipValue(chars : [Char], start : Nat) : ?Nat {
+    if (start >= chars.size()) { return null };
+    let c = chars[start];
+    if (c == '\22') {
+      return switch (readString(chars, start)) { case (?(_, e)) ?e; case null null };
+    };
+    if (c == '{' or c == '[') {
+      var depth = 0;
+      var i = start;
+      while (i < chars.size()) {
+        let d = chars[i];
+        if (d == '\22') {
+          switch (readString(chars, i)) { case (?(_, e)) { i := e }; case null { return null } };
+        } else {
+          if (d == '{' or d == '[') { depth += 1 } else if (d == '}' or d == ']') {
+            depth -= 1;
+            if (depth == 0) { return ?(i + 1) };
+          };
+          i += 1;
+        };
+      };
+      return null;
+    };
+    var i = start;
+    while (i < chars.size() and chars[i] != ',' and chars[i] != '}' and chars[i] != ']' and chars[i] != ' ' and chars[i] != '\n' and chars[i] != '\r' and chars[i] != '\t') { i += 1 };
+    if (i == start) null else ?i;
+  };
+
+  /// The members of the outermost JSON object as (key, raw value text), in
+  /// document order. Values nested inside other objects or arrays are never
+  /// returned, so a key buried in them cannot shadow a top-level one — unlike
+  /// the any-depth getters below. Empty for anything that is not an object.
+  public func topLevel(json : Text) : [(Text, Text)] {
+    let chars = json.toArray();
+    let out = List.empty<(Text, Text)>();
+    var i = skipWs(chars, 0);
+    if (i >= chars.size() or chars[i] != '{') { return [] };
+    i := skipWs(chars, i + 1);
+    label members while (i < chars.size() and chars[i] != '}') {
+      let (key, afterKey) = switch (readString(chars, i)) { case (?r) r; case null { return out.toArray() } };
+      let colon = skipWs(chars, afterKey);
+      if (colon >= chars.size() or chars[colon] != ':') { return out.toArray() };
+      let start = skipWs(chars, colon + 1);
+      let end = switch (skipValue(chars, start)) { case (?e) e; case null { return out.toArray() } };
+      out.add((key, Text.fromArray(chars.sliceToArray(start, end))));
+      i := skipWs(chars, end);
+      if (i < chars.size() and chars[i] == ',') { i := skipWs(chars, i + 1) } else { break members };
+    };
+    out.toArray();
+  };
+
+  /// Top-level `"key": "value"` → value, escapes decoded.
+  public func topLevelString(json : Text, key : Text) : ?Text {
+    for ((k, raw) in topLevel(json).vals()) {
+      if (k == key) {
+        return switch (readString(raw.toArray(), 0)) { case (?(v, _)) ?v; case null null };
+      };
+    };
+    null;
+  };
+
+  /// Top-level integer member, e.g. `"amount": 2000`.
+  public func topLevelNumber(json : Text, key : Text) : ?Int {
+    for ((k, raw) in topLevel(json).vals()) {
+      if (k == key) { return getNumber("{\"v\":" # raw # "}", "v") };
+    };
+    null;
+  };
+
+  /// `{"k1":v1,"k2":v2}` holding only the listed top-level scalar members, in
+  /// the order of `keys`, strings re-encoded canonically. Two responses that
+  /// differ only in whitespace, member order or unlisted fields produce the
+  /// same text, which is what replicated outcalls need to reach consensus.
+  public func canonicalSummary(json : Text, keys : [Text]) : Text {
+    let members = topLevel(json);
+    var out = "";
+    for (key in keys.vals()) {
+      label find for ((k, raw) in members.vals()) {
+        if (k == key) {
+          let chars = raw.toArray();
+          let value = if (chars.size() > 0 and chars[0] == '\22') {
+            switch (readString(chars, 0)) { case (?(v, _)) str(v); case null "null" };
+          } else if (chars.size() > 0 and (chars[0] == '{' or chars[0] == '[')) {
+            "null";
+          } else { raw };
+          out := (if (out == "") "" else out # ",") # str(key) # ":" # value;
+          break find;
+        };
+      };
+    };
+    "{" # out # "}";
+  };
+
   /// `"key": "value"` → value (with escapes decoded).
   public func getString(json : Text, key : Text) : ?Text {
     let chars = json.toArray();

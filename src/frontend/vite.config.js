@@ -17,7 +17,9 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     sourcemap: false,
-    minify: false,
+    // Vite's esbuild minifier for JS and CSS: this ships to the asset canister,
+    // so every byte is stable memory and per-request egress.
+    minify: "esbuild",
   },
   css: {
     postcss: "./postcss.config.js",
