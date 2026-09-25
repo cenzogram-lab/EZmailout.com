@@ -47,8 +47,9 @@ for path in "/" "/wizard?step=2" ${bundle:+"/${bundle}"}; do
   for d in "default-src 'self'" "object-src 'none'" "base-uri 'self'" "frame-ancestors 'none'" "https://icp-api.io" "https://js.stripe.com"; do
     [[ "$csp" == *"$d"* ]] || missing+=" [$d]"
   done
+  [[ "$csp" == *"'unsafe-eval'"* ]] && missing+=" [no 'unsafe-eval']"
   if [[ -z "$csp" ]]; then fail "$path: no Content-Security-Policy (.ic-assets.json5 not applied?)"
-  elif [[ -n "$missing" ]]; then fail "$path: CSP lacks$missing"
+  elif [[ -n "$missing" ]]; then fail "$path: CSP needs$missing"
   else pass "$path: Content-Security-Policy"; fi
   [[ "$(header "$hdrs" x-content-type-options)" == "nosniff" ]] && pass "$path: X-Content-Type-Options" || fail "$path: X-Content-Type-Options is '$(header "$hdrs" x-content-type-options)'"
   [[ "$(header "$hdrs" x-frame-options)" == "DENY" ]] && pass "$path: X-Frame-Options" || fail "$path: X-Frame-Options is '$(header "$hdrs" x-frame-options)'"

@@ -15,8 +15,10 @@
     // no longer exist. The rules below only override Cache-Control, so the
     // security headers apply everywhere.
     //
-    // Content-Security-Policy, by origin:
-    //   'self'                    the bundle, fonts, env.json
+    // Content-Security-Policy: only what the browser itself loads. There is
+    // no 'unsafe-eval' (the bundle never evaluates strings), and hosts only
+    // canister outcalls talk to (OpenAI, Resend, Click2Mail) are not listed.
+    //   'self'                    the bundle, Geist fonts, env.json
     //   icp0.io, icp-api.io,      the agent's API host: env.json's
     //   ic0.app                   backend_host, else icp0.io / ic0.app when
     //                             served from a canister domain, else icp-api.io
@@ -24,23 +26,18 @@
     //   *.js.stripe.com,          Stripe.js and the Payment Element frames
     //   js.stripe.com,
     //   hooks.stripe.com, api.stripe.com, *.stripe.com (images)
-    //   identity.ic0.app          legacy Internet Identity (sign-in itself is a
-    //                             popup to id.ai, which CSP does not govern)
     //   oaidalleapiprodscus...    DALL·E image URLs: shown, and fetched into a
     //                             blob so the studio can rasterise them
     //   *.tile.openstreetmap.org  audience radius map tiles
     //   nominatim.openstreetmap.org  address search on the radius map
-    //   api.openai.com, api.resend.com, rest.click2mail.com  called only by
-    //                             canister outcalls today; listed so a
-    //                             browser-side call is not silently blocked
-    // Google Fonts is allowed but unused (Geist is self-hosted).
+    // Internet Identity sign-in is a popup to id.ai, which CSP does not govern.
     //
     // Permissions-Policy keeps geolocation for this origin only: the radius
     // map's "Use my location" needs it; embedded frames get none.
     match: "**/*",
     headers: {
       "Cache-Control": "public, max-age=0, must-revalidate",
-      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.js.stripe.com https://identity.ic0.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.stripe.com https://oaidalleapiprodscus.blob.core.windows.net https://*.tile.openstreetmap.org https://*.icp0.io https://*.raw.icp0.io; connect-src 'self' https://icp0.io https://*.icp0.io https://*.raw.icp0.io https://icp-api.io https://ic0.app https://identity.ic0.app https://api.stripe.com https://api.openai.com https://api.resend.com https://rest.click2mail.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://oaidalleapiprodscus.blob.core.windows.net; frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://identity.ic0.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://*.stripe.com https://oaidalleapiprodscus.blob.core.windows.net https://*.tile.openstreetmap.org https://*.icp0.io https://*.raw.icp0.io; connect-src 'self' https://icp0.io https://*.icp0.io https://*.raw.icp0.io https://icp-api.io https://ic0.app https://api.stripe.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://oaidalleapiprodscus.blob.core.windows.net; frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",
