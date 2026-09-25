@@ -79,4 +79,16 @@
     match: ".well-known",
     ignore: false,
   },
+  {
+    // Internet Identity fetches this from https://ezmailout.com, the
+    // canonical derivation origin (src/lib/identityOrigin.ts), before it lets
+    // https://www.ezmailout.com sign in as it. II reads it cross-origin from
+    // its own site, so it must be JSON, open to any origin, and served
+    // without a redirect.
+    match: ".well-known/ii-alternative-origins",
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  },
 ]

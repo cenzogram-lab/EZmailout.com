@@ -71,6 +71,21 @@ else
   fail "ic-domains → HTTP $code, body '$(tr '\n' ' ' <<<"$domains")' (expected ezmailout.com and www.ezmailout.com)"
 fi
 
+echo "── Internet Identity alternative origins (/.well-known/ii-alternative-origins)"
+url="${SCHEME}://${FRONTEND}/.well-known/ii-alternative-origins"
+ii_hdrs=$(curl -sS -D - -o /dev/null "$url") || ii_hdrs=""
+ii_body=$(curl -sS "$url") || ii_body=""
+if [[ "$ii_body" == *'<div id="root">'* ]]; then
+  fail "ii-alternative-origins → the app shell, not the file (.well-known was not uploaded)"
+elif python3 -c 'import json,sys; o=json.loads(sys.argv[1])["alternativeOrigins"]; sys.exit(0 if "https://www.ezmailout.com" in o and len(o) <= 10 else 1)' "$ii_body" 2>/dev/null; then
+  pass "ii-alternative-origins lists https://www.ezmailout.com"
+else
+  fail "ii-alternative-origins is not JSON listing https://www.ezmailout.com: '$(head -c 120 <<<"$ii_body")'"
+fi
+[[ "$(header "$ii_hdrs" content-type)" == application/json* ]] && pass "ii-alternative-origins: Content-Type application/json" || fail "ii-alternative-origins Content-Type is '$(header "$ii_hdrs" content-type)'"
+[[ "$(header "$ii_hdrs" access-control-allow-origin)" == "*" ]] && pass "ii-alternative-origins: Access-Control-Allow-Origin *" || fail "ii-alternative-origins Access-Control-Allow-Origin is '$(header "$ii_hdrs" access-control-allow-origin)' (II reads it cross-origin)"
+[[ "$(header "$ii_hdrs" location)" == "" ]] && pass "ii-alternative-origins: no redirect" || fail "ii-alternative-origins redirects (II refuses redirects)"
+
 if [[ -n "$BACKEND" ]]; then
   RAW="https://${BACKEND}.raw.icp0.io"
   echo "── Backend (${RAW})"
