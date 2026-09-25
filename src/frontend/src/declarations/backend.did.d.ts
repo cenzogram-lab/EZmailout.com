@@ -521,6 +521,13 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
+  '_initialize_access_control' : ActorMethod<[], undefined>,
+  '_internet_identity_sign_in_finish' : ActorMethod<
+    [],
+    { 'ok' : null } |
+      { 'err' : {} }
+  >,
+  '_internet_identity_sign_in_start' : ActorMethod<[], Uint8Array>,
   'applyReferralReward' : ActorMethod<[string], ApiResult>,
   'askStampy' : ActorMethod<[Array<StampyTurn>], StampyReply>,
   'confirmPayment' : ActorMethod<[string], ConfirmPaymentResult>,

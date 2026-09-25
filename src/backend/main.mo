@@ -12,6 +12,7 @@ import BillingApi "mixins/billing-api";
 import AiApi "mixins/ai-api";
 import ProductionApi "mixins/production-api";
 import SupportApi "mixins/support-api";
+import AuthApi "mixins/auth-api";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Timer "mo:core/Timer";
@@ -47,6 +48,7 @@ actor {
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
   include ProductionApi(campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
   include SupportApi(supportTickets, adminKeysState, transform);
+  include AuthApi();
 
   // Non-blocking tracking poll every 6 hours (Click2Mail IMb scans → timeline).
   // Calls the mixin's private poll directly, so the job has no public entry point.

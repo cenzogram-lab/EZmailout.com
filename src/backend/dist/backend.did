@@ -620,6 +620,12 @@ type AccountResult =
 /// EZmailout backend canister: direct mail campaigns fulfilled through the
 /// Click2Mail REST API, AI credit ledger, Stripe billing and referral rewards.
 service : {
+  _initialize_access_control: () -> ();
+  _internet_identity_sign_in_finish: () -> (variant {
+                                              err: record {};
+                                              ok;
+                                            });
+  _internet_identity_sign_in_start: () -> (blob);
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
   askStampy: (turns: vec StampyTurn) -> (StampyReply);
   confirmPayment: (paymentIntentId: text) -> (ConfirmPaymentResult);

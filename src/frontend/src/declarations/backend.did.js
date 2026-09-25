@@ -548,6 +548,13 @@ export const TransformationOutput = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  '_initialize_access_control' : IDL.Func([], [], []),
+  '_internet_identity_sign_in_finish' : IDL.Func(
+      [],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Record({}) })],
+      [],
+    ),
+  '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
   'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
   'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
   'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
@@ -1213,6 +1220,13 @@ export const idlFactory = ({ IDL }) => {
     'headers' : IDL.Vec(http_header),
   });
   return IDL.Service({
+    '_initialize_access_control' : IDL.Func([], [], []),
+    '_internet_identity_sign_in_finish' : IDL.Func(
+        [],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Record({}) })],
+        [],
+      ),
+    '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
     'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
     'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
     'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),

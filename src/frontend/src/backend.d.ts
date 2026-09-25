@@ -555,6 +555,9 @@ export interface AccountResult {
     ok: boolean;
 }
 export interface backendInterface {
+    _initialize_access_control(): Promise<void>;
+    _internet_identity_sign_in_finish(): Promise<{ err: {  } } | { ok: null }>;
+    _internet_identity_sign_in_start(): Promise<Uint8Array>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
     askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     confirmPayment(arg0: string): Promise<ConfirmPaymentResult>;
