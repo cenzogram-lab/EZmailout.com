@@ -25,7 +25,12 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <InternetIdentityProvider createOptions={identityOptions}>
+    <InternetIdentityProvider
+      createOptions={identityOptions}
+      // Plain sign-in: EZmailout reads no II attributes, so users are not
+      // asked to share their email.
+      withAttributes={false}
+    >
       <App />
     </InternetIdentityProvider>
   </QueryClientProvider>,
