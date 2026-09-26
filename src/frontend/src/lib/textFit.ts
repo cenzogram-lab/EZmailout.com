@@ -60,6 +60,12 @@ export interface MeasureOptions extends FontSpec {
   width: number;
 }
 
+/** Advance width of `text` set on one line (design px), padding excluded. */
+export function textWidth(text: string, spec: FontSpec): number {
+  const { fontSize, fontWeight = 400, fontFamily = DEFAULT_FAMILY } = spec;
+  return widthOf(text, fontSize, fontWeight, fontFamily);
+}
+
 /**
  * Height of the font's content area as a multiple of the font size.
  *

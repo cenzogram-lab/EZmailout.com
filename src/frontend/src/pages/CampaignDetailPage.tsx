@@ -53,6 +53,8 @@ import {
 import { downloadText } from "@/lib/download";
 import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
 import { formatCents } from "@/lib/pricing";
+import { isShapeUrl } from "@/lib/shapes";
+import { cn } from "@/lib/utils";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -118,7 +120,10 @@ function CanvasThumbnail({ canvas }: { canvas: CanvasState }) {
           key={logo.id}
           src={logo.url}
           alt=""
-          className="absolute object-contain"
+          className={cn(
+            "absolute",
+            isShapeUrl(logo.url) ? "object-fill" : "object-contain",
+          )}
           style={{
             left: logo.x * scale,
             top: logo.y * scale,

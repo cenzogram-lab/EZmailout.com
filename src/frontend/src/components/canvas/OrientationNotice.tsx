@@ -1,7 +1,7 @@
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { physicalTraitsFor } from "@/lib/physical";
 import { orientationName } from "@/lib/printSpec";
-import { useWizardStore } from "@/store/wizard";
+import { isTemplatePristine, useWizardStore } from "@/store/wizard";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 
 type NoticeKind = "window" | "address" | "envelope";
@@ -23,6 +23,12 @@ function noticeKind(hasWindows: boolean, hasAddressZone: boolean): NoticeKind {
 export function OrientationNotice() {
   const dims = useCanvasDims();
   const rotateCanvas = useWizardStore((s) => s.rotateCanvas);
+  // Named only while an untouched template is on the rotated artboard.
+  const rebuiltTemplate = useWizardStore((s) =>
+    dims.rotated && isTemplatePristine(s)
+      ? (s.designTemplate?.name ?? null)
+      : null,
+  );
   if (!dims.rotated) return null;
 
   const traits = physicalTraitsFor(dims.layoutVariant, "rotated");
@@ -59,6 +65,14 @@ export function OrientationNotice() {
         <p className="text-xs leading-relaxed text-amber-900/80">
           {copy[kind].body}
         </p>
+        {rebuiltTemplate ? (
+          <p
+            className="text-xs leading-relaxed text-amber-900/80"
+            data-ocid="canvas.orientation.template_rebuilt"
+          >
+            {`The “${rebuiltTemplate}” template is laid out natively for ${turned}. Until you edit it, turning the artboard lays it out again rather than shrinking it.`}
+          </p>
+        ) : null}
       </div>
       <button
         type="button"

@@ -16,6 +16,7 @@ import {
   makeQrCode,
   makeTextBlock,
   rotateCanvasState,
+  sideSignature,
   withSide,
 } from "@/lib/canvas";
 import type { CatalogMailClass } from "@/lib/pricing";
@@ -66,7 +67,18 @@ interface WizardData {
    * (nothing edited since) restores the original instead of re-laying it, so
    * elements the turn had to shrink come back at full size.
    */
-  rotationUndo: { rotated: CanvasState; original: CanvasState } | null;
+  rotationUndo: {
+    rotated: CanvasState;
+    original: CanvasState;
+    /** `templateSignature` as it was before the turn, restored with it. */
+    templateSignature: string | null;
+  } | null;
+  /**
+   * `sideSignature` of the front as `designTemplate` last laid it out. While
+   * the front still matches it the template is untouched ("pristine"), and
+   * turning the artboard rebuilds it natively instead of re-laying it.
+   */
+  templateSignature: string | null;
   activeSide: CanvasSideKey;
   selectedElementId: string | null;
   qrDestinationUrl: string;
@@ -164,6 +176,7 @@ function initialData(): WizardData {
     designTemplate: null,
     canvas: emptyCanvasState(DEFAULT_LAYOUT),
     rotationUndo: null,
+    templateSignature: null,
     activeSide: "front",
     selectedElementId: null,
     qrDestinationUrl: "",
@@ -250,6 +263,20 @@ function reindex(side: CanvasSide, id: string, z: bigint): CanvasSide {
   };
 }
 
+/**
+ * True while the front is exactly what `designTemplate` laid out: no element
+ * added, moved, restyled or removed since, in the current orientation.
+ */
+export function isTemplatePristine(
+  s: Pick<WizardData, "designTemplate" | "templateSignature" | "canvas">,
+): boolean {
+  return (
+    s.designTemplate !== null &&
+    s.templateSignature !== null &&
+    s.templateSignature === sideSignature(s.canvas)
+  );
+}
+
 export const useWizardStore = create<WizardStore>()((set, get) => ({
   ...initialData(),
 
@@ -279,6 +306,11 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
             : emptyCanvasState(layoutVariant),
         rotationUndo:
           s.selectedLayout === layoutVariant ? s.rotationUndo : null,
+        templateSignature:
+          s.selectedLayout === layoutVariant ? s.templateSignature : null,
+        // The blank canvas no longer carries the template.
+        designTemplate:
+          s.selectedLayout === layoutVariant ? s.designTemplate : null,
         selectedElementId: null,
       };
     }),
@@ -294,23 +326,51 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
   setGeoTarget: (geoTarget) => set({ geoTarget }),
   setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
   setDesignTemplate: (template) =>
-    set((s) => ({
-      designTemplate: template,
-      canvas: template
-        ? canvasFromTemplate(
-            template,
-            s.selectedLayout ?? template.layoutVariant,
-            orientationOf(s.canvas, s.selectedLayout ?? template.layoutVariant),
-          )
-        : s.canvas,
-      rotationUndo: template ? null : s.rotationUndo,
-      selectedElementId: null,
-    })),
+    set((s) => {
+      if (!template) {
+        return {
+          designTemplate: null,
+          templateSignature: null,
+          selectedElementId: null,
+        };
+      }
+      const layout = s.selectedLayout ?? template.layoutVariant;
+      const built = canvasFromTemplate(
+        template,
+        layout,
+        orientationOf(s.canvas, layout),
+      );
+      // A template replaces the front only; the back stays when it belongs
+      // to the same artboard.
+      const sameArtboard =
+        built.widthInches === s.canvas.widthInches &&
+        built.heightInches === s.canvas.heightInches;
+      const canvas = sameArtboard ? { ...built, back: s.canvas.back } : built;
+      return {
+        designTemplate: template,
+        canvas,
+        templateSignature: sideSignature(canvas),
+        rotationUndo: null,
+        selectedElementId: null,
+      };
+    }),
   setCanvas: (canvas) => set({ canvas }),
   rotateCanvas: () =>
     set((s) => {
       if (s.rotationUndo?.rotated === s.canvas) {
-        return { canvas: s.rotationUndo.original, rotationUndo: null };
+        const original = s.rotationUndo.original;
+        // A rebuilt front has new ids, so the selection may not survive.
+        const selected =
+          s.selectedElementId &&
+          geometryOf(getSide(original, s.activeSide), s.selectedElementId)
+            ? s.selectedElementId
+            : null;
+        return {
+          canvas: original,
+          templateSignature: s.rotationUndo.templateSignature,
+          rotationUndo: null,
+          selectedElementId: selected,
+        };
       }
       const layout = s.selectedLayout ?? DEFAULT_LAYOUT;
       const from = canvasDims(s.canvas, layout);
@@ -321,10 +381,32 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
       ) {
         return {};
       }
-      const rotated = rotateCanvasState(s.canvas, from, to);
+      const relaid = rotateCanvasState(s.canvas, from, to);
+      const rotationUndo = {
+        original: s.canvas,
+        templateSignature: s.templateSignature,
+      };
+      if (isTemplatePristine(s) && s.designTemplate) {
+        // An untouched template is laid out again for the new frame; the
+        // back, which templates never fill, is re-laid as usual.
+        const rebuilt = canvasFromTemplate(
+          s.designTemplate,
+          layout,
+          to.rotated ? "rotated" : "native",
+        );
+        const rotated = { ...relaid, front: rebuilt.front };
+        return {
+          canvas: rotated,
+          templateSignature: sideSignature(rotated),
+          rotationUndo: { ...rotationUndo, rotated },
+          // Front ids are new; back ids survive the re-layout.
+          selectedElementId:
+            s.activeSide === "front" ? null : s.selectedElementId,
+        };
+      }
       return {
-        canvas: rotated,
-        rotationUndo: { rotated, original: s.canvas },
+        canvas: relaid,
+        rotationUndo: { ...rotationUndo, rotated: relaid },
       };
     }),
   setActiveSide: (activeSide) => set({ activeSide, selectedElementId: null }),

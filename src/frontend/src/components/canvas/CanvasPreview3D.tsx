@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { type PhysicalTraits, physicalTraitsFor } from "@/lib/physical";
 import type { LayoutDims } from "@/lib/printSpec";
+import { isShapeUrl } from "@/lib/shapes";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasSideKey } from "@/types";
@@ -83,7 +84,10 @@ function Face({
               src={el.data.url}
               alt=""
               draggable={false}
-              className="absolute object-contain"
+              className={cn(
+                "absolute",
+                isShapeUrl(el.data.url) ? "object-fill" : "object-contain",
+              )}
               style={{
                 left: el.data.x,
                 top: el.data.y,

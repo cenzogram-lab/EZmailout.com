@@ -14,6 +14,7 @@ import {
   getLayoutDims,
   safeRect,
 } from "@/lib/printSpec";
+import { layoutTemplate } from "@/lib/templateLayout";
 import { bandHeight, countLines } from "@/lib/textFit";
 import type { CanvasSideKey, DesignTemplate } from "@/types";
 
@@ -138,7 +139,12 @@ export function clampToCanvas(
   };
 }
 
-/** Builds a canvas from a gallery template (front side only). */
+/**
+ * Builds a canvas from a gallery template (front side only), laid out
+ * natively for the artboard in the given orientation — see
+ * `lib/templateLayout.ts`. The result depends only on the template, the
+ * format and the orientation, so rebuilding it gives the same design.
+ */
 export function canvasFromTemplate(
   template: DesignTemplate,
   layoutVariant: string,
@@ -150,30 +156,76 @@ export function canvasFromTemplate(
     ...base.front,
     backgroundColor: template.backgroundColor,
   };
-  const textBlocks = template.textBlocks.map((tb, i) =>
-    makeTextBlock(front, {
-      text: tb.text,
-      x: Math.max(24, (tb.x / 100) * dims.designWidth),
-      y: Math.max(24, (tb.y / 100) * dims.designHeight),
-      width: Math.round(dims.designWidth * 0.6),
-      height: Math.round(tb.fontSize * 2.2),
-      fontSize: tb.fontSize * 1.4,
-      color: tb.color,
-      fontWeight: i === 0 ? 800n : 600n,
-      zIndex: BigInt(i + 1),
-    }),
-  );
-  const qrCodes = template.hasQrCode
-    ? [
-        makeQrCode(front, {
-          x: dims.designWidth - 150,
-          y: dims.designHeight - 150,
-          size: 110,
-          zIndex: BigInt(textBlocks.length + 1),
-        }),
-      ]
-    : [];
-  return { ...base, front: { ...front, textBlocks, qrCodes } };
+  let z = 0n;
+  for (const el of layoutTemplate(template, dims)) {
+    z += 1n;
+    if (el.kind === "text") {
+      front.textBlocks.push(makeTextBlock(front, { ...el.block, zIndex: z }));
+    } else if (el.kind === "shape") {
+      front.logos.push(makeLogo(front, el.logo.url, { ...el.logo, zIndex: z }));
+    } else {
+      front.qrCodes.push(makeQrCode(front, { ...el.qr, zIndex: z }));
+    }
+  }
+  return { ...base, front };
+}
+
+/**
+ * Content signature of one side as laid out: artboard size, background and
+ * every element in paint order, without element ids or z-index values.
+ * Two sides with the same signature look the same, so the store compares
+ * signatures to tell whether a template is still untouched.
+ */
+export function sideSignature(
+  canvas: CanvasState,
+  key: CanvasSideKey = "front",
+): string {
+  const side = getSide(canvas, key);
+  const r = (n: number) => Math.round(n * 100) / 100;
+  const items: { z: bigint; item: unknown[] }[] = [
+    ...side.textBlocks.map((t) => ({
+      z: t.zIndex,
+      item: [
+        "text",
+        t.text,
+        r(t.x),
+        r(t.y),
+        r(t.width),
+        r(t.height),
+        r(t.fontSize),
+        t.color,
+        t.fontFamily,
+        String(t.fontWeight),
+        t.align,
+      ],
+    })),
+    ...side.logos.map((l) => ({
+      z: l.zIndex,
+      item: ["logo", l.url, r(l.x), r(l.y), r(l.width), r(l.height)],
+    })),
+    ...side.qrCodes.map((q) => ({
+      z: q.zIndex,
+      item: [
+        "qr",
+        q.url,
+        String(q.mode),
+        r(q.x),
+        r(q.y),
+        r(q.size),
+        q.foreground,
+        q.background,
+        q.caption ?? null,
+      ],
+    })),
+  ];
+  items.sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : 0));
+  return JSON.stringify([
+    r(canvas.widthInches),
+    r(canvas.heightInches),
+    side.backgroundColor,
+    side.backgroundImageUrl ?? null,
+    items.map((i) => i.item),
+  ]);
 }
 
 export function getSide(canvas: CanvasState, key: CanvasSideKey): CanvasSide {

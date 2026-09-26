@@ -745,7 +745,14 @@ export function CanvasEditor({
                     src={el.data.url}
                     alt="Logo"
                     draggable={false}
-                    className="pointer-events-none size-full object-contain"
+                    // Shapes stretch to their box, as the 300 DPI export
+                    // draws them; images keep their own proportions.
+                    className={cn(
+                      "pointer-events-none size-full",
+                      isShapeUrl(el.data.url)
+                        ? "object-fill"
+                        : "object-contain",
+                    )}
                   />
                 )}
                 {el.kind === "qr" && (
