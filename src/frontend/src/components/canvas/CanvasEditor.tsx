@@ -6,11 +6,7 @@ import type {
 } from "@/backend";
 import { QrMode } from "@/backend";
 import { PhysicalOverlay } from "@/components/canvas/PhysicalOverlay";
-import {
-  SELECTION_TOOLBAR_HEIGHT,
-  SELECTION_TOOLBAR_WIDTH,
-  SelectionToolbar,
-} from "@/components/canvas/SelectionToolbar";
+import { SelectionToolbar } from "@/components/canvas/SelectionToolbar";
 import {
   type ElementBox,
   type ResizeCorner,
@@ -528,25 +524,6 @@ export function CanvasEditor({
     if (!selectedElement || editingId === selectedElement.id) return null;
     const box = elementBox(selectedElement);
     const elTop = WORKSPACE_PADDING + box.y * scale;
-    const elLeft = sheetLeft + box.x * scale;
-    const above = elTop - SELECTION_TOOLBAR_HEIGHT - 8;
-    const top =
-      above >= 2
-        ? above
-        : Math.min(
-            elTop + box.height * scale + 8,
-            displayHeight +
-              WORKSPACE_PADDING * 2 -
-              SELECTION_TOOLBAR_HEIGHT -
-              2,
-          );
-    const maxLeft = Math.max(
-      2,
-      (containerWidth || displayWidth + WORKSPACE_PADDING * 2) -
-        SELECTION_TOOLBAR_WIDTH -
-        2,
-    );
-    const left = Math.min(Math.max(2, elLeft), maxLeft);
     return (
       <SelectionToolbar
         side={activeSide}
@@ -558,8 +535,15 @@ export function CanvasEditor({
             ? "shape"
             : undefined
         }
-        left={left}
-        top={top}
+        anchor={{
+          left: sheetLeft + box.x * scale,
+          top: elTop,
+          bottom: elTop + box.height * scale,
+        }}
+        bounds={{
+          width: containerWidth || displayWidth + WORKSPACE_PADDING * 2,
+          height: displayHeight + WORKSPACE_PADDING * 2,
+        }}
       />
     );
   })();

@@ -470,10 +470,12 @@ export function Step4ReviewLaunch() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
-        <div className="space-y-6">
+        {/* min-w-0: a grid item is otherwise as wide as its content, which
+            widened the page past a phone's viewport. */}
+        <div className="min-w-0 space-y-6">
           <Card className="bg-card" data-ocid="review.proof.card">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between gap-2 text-base">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
                 <span className="flex items-center gap-2">
                   <FileImage className="size-4 text-primary" /> Print proof
                 </span>
@@ -537,7 +539,7 @@ export function Step4ReviewLaunch() {
           <ReturnAddressForm />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <StampyTip id="step4" mascot={StampyStep4Preflight}>
             Looking sharp! Inspect your front/back 3D proof, verify your
             recipient count, and click Launch when you're ready to print and
