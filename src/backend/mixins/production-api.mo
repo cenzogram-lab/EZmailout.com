@@ -9,6 +9,7 @@ import Click2Mail "../lib/click2mail";
 import Http "../lib/http";
 import Json "../lib/json";
 import Limits "../lib/limits";
+import Secrets "../lib/secrets";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
@@ -52,8 +53,17 @@ mixin (
   transient var pollRunning : Bool = false;
 
   /// Owners may trigger a live tracking lookup at most once per campaign in
-  /// this window; one lookup is two outcalls and about 24.6 B cycles.
-  transient let syncCooldownNanos : Int = 10 * 60 * 1_000_000_000;
+  /// this window, the same interval as the automatic poll; one lookup is two
+  /// outcalls and about 24.6 B cycles.
+  transient let syncCooldownNanos : Int = 6 * 3_600 * 1_000_000_000;
+
+  // Owner dispatch retries: each one can re-post a 1.9 MB file (about 16 B
+  // cycles), so a campaign gets at most 5 runs a day, 5 minutes apart.
+  // Controllers and the admin are not limited.
+  transient let dispatchRunsPerDay : Nat = 5;
+  transient let dispatchGapNs : Int = 5 * 60 * 1_000_000_000;
+  transient let dispatchWindowNs : Int = 24 * 3_600 * 1_000_000_000;
+  transient let dispatchRuns = Map.empty<Text, Limits.Window>();
 
   /// Time of the last live Click2Mail lookup per campaign, from any path
   /// (owner, admin or the timer). Transient: it only rate-limits, so losing it
@@ -176,6 +186,15 @@ mixin (
       };
     };
 
+    // Charged only now, once the run will reach Click2Mail.
+    if (not AdminLib.isAdmin(adminKeysState, caller)) {
+      switch (Limits.admit(dispatchRuns, [{ key = campaignId; limit = dispatchRunsPerDay; minGapNs = dispatchGapNs }], Time.now(), dispatchWindowNs)) {
+        case (#ok) {};
+        case (#wait secs) { return dispatchResult(record, false, ?("Wait " # (secs / 60 + 1).toText() # " minutes before retrying this dispatch")) };
+        case (#full) { return dispatchResult(record, false, ?"This campaign has used today's 5 dispatch attempts; try again tomorrow or contact support") };
+      };
+    };
+
     dispatchInFlight.add(campaignId);
     record.productionStatus := #Processing;
     record.lastError := null;
@@ -209,6 +228,9 @@ mixin (
   ) : async* Types.DispatchResult {
     let base = Click2Mail.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
+    // A job from an earlier run may have been submitted even though that run
+    // never heard back (a timed-out submit), so it is checked before step 4.
+    let jobFromEarlierRun = record.c2mJobId != null;
 
     // 1. Document
     if (record.c2mDocumentId == null) {
@@ -253,15 +275,30 @@ mixin (
       };
     };
 
-    // 4. Submit
+    // 4. Submit, unless an earlier run's submit already went through.
     let jobId = switch (record.c2mJobId) { case (?j) j; case null "" };
+    if (jobFromEarlierRun) {
+      let probe = await Http.get(base # "/jobs/" # jobId, Click2Mail.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      if (Http.isSuccess(probe) and Click2Mail.jobSubmitted(probe.body) == ?true) {
+        return markSubmitted(record, campaignId, jobId, "Click2Mail already had this job submitted; it was not submitted again");
+      };
+    };
     let submit = await Http.postText(base # "/jobs/" # jobId # "/submit", Click2Mail.jsonHeaders(auth, "application/x-www-form-urlencoded"), Click2Mail.formEncode([("billingType", "User Credit")]), opts, transformFn);
-    if (not Http.isSuccess(submit) or Click2Mail.reportedFailure(submit.body)) { return markFailed(record, responseError("Job submission failed", submit)) };
+    if (not Http.isSuccess(submit) or Click2Mail.reportedFailure(submit.body)) {
+      if (jobFromEarlierRun and Click2Mail.submittedAlready(submit.body)) {
+        return markSubmitted(record, campaignId, jobId, "Click2Mail reports this job was already submitted");
+      };
+      return markFailed(record, responseError("Job submission failed", submit));
+    };
+    markSubmitted(record, campaignId, jobId, "Click2Mail job submitted for production");
+  };
+
+  private func markSubmitted(record : Types.CampaignRecord, campaignId : Text, jobId : Text, detail : Text) : Types.DispatchResult {
     record.productionStatus := #Submitted;
     record.lastError := null;
     record.updatedAt := Time.now();
     if (CampaignLib.advanceStatus(record, #InProduction)) {
-      CampaignLib.appendEvent(trackingEvents, state, campaignId, #InProduction, "job.submitted", jobId, #System, ?"Click2Mail job submitted for production");
+      CampaignLib.appendEvent(trackingEvents, state, campaignId, #InProduction, "job.submitted", jobId, #System, ?detail);
     };
     dispatchResult(record, true, null);
   };
@@ -303,9 +340,10 @@ mixin (
     { ok = true; error = null; status = ?record.status; newEvents; cached = false };
   };
 
-  /// Polls Click2Mail for IMb scan events and advances the 5-stage timeline.
-  /// Owners get the stored state instead of a new lookup within 10 minutes of
-  /// the last one; controllers and the admin are not rate-limited.
+  /// Polls Click2Mail for IMb scan events and advances the timeline.
+  /// Owners get the stored state instead of a new lookup once tracking is
+  /// finished (`CampaignLib.trackingFinished`) or within 6 hours of the last
+  /// lookup; controllers and the admin can still force one.
   public shared ({ caller }) func syncClick2MailTracking(campaignId : Text) : async Types.SyncResult {
     switch (campaigns.get(campaignId)) {
       case null { { ok = false; error = ?"Campaign not found"; status = null; newEvents = 0; cached = false } };
@@ -317,6 +355,9 @@ mixin (
         if (record.c2mJobId != null and AdminLib.hasClick2Mail(adminKeysState)) {
           let now = Time.now();
           if (not AdminLib.isAdmin(adminKeysState, caller)) {
+            if (CampaignLib.trackingFinished(record)) {
+              return { ok = true; error = null; status = ?record.status; newEvents = 0; cached = true };
+            };
             switch (syncCooldowns.get(campaignId)) {
               case (?lastSync) {
                 if (now - lastSync < syncCooldownNanos) {
@@ -340,7 +381,7 @@ mixin (
     if (pollRunning or not AdminLib.hasClick2Mail(adminKeysState)) { return 0 };
     let pending = List.empty<Types.CampaignRecord>();
     for ((_, r) in campaigns.entries()) {
-      if (r.c2mJobId != null and r.status != #Delivered and pending.size() < maxPollPerTick) { pending.add(r) };
+      if (r.c2mJobId != null and not CampaignLib.trackingFinished(r) and pending.size() < maxPollPerTick) { pending.add(r) };
     };
     pollRunning := true;
     var synced = 0;
@@ -375,7 +416,7 @@ mixin (
 
   private func processWebhook(secret : Text, payload : Text) : Types.WebhookResult {
     let expected = switch (adminKeysState.webhookSecret) { case (?s) s; case null { return { ok = false; error = ?"Webhook secret not configured; rejecting"; campaignId = null; status = null } } };
-    if (secret != expected) { return { ok = false; error = ?"Unauthorized"; campaignId = null; status = null } };
+    if (not Secrets.equal(secret, expected)) { return { ok = false; error = ?"Unauthorized"; campaignId = null; status = null } };
     if (payload.size() > 200_000) { return { ok = false; error = ?"Payload too large"; campaignId = null; status = null } };
     let record : Types.CampaignRecord = switch (Json.getString(payload, "campaignId")) {
       case (?cid) { switch (campaigns.get(cid)) { case (?r) r; case null { return { ok = false; error = ?"Unknown campaign"; campaignId = ?cid; status = null } } } };

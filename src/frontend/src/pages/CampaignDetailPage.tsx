@@ -12,6 +12,7 @@ import {
   PaymentStatusBadge,
   ProductionStatusBadge,
   StatusBadge,
+  isDeliveryOutcome,
 } from "@/components/campaigns/StatusBadge";
 import { TrackingTimeline } from "@/components/campaigns/TrackingTimeline";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -297,9 +298,15 @@ export function CampaignDetailPage() {
     try {
       const result = await syncMutation.mutateAsync(campaign.id);
       if (result.ok && result.cached) {
-        // Inside the backend's 10-minute sync cooldown: no lookup was made.
+        // No lookup was made: tracking is finished, or the backend's 6-hour
+        // cooldown (the automatic poll's interval) has not run out.
+        const finished =
+          isDeliveryOutcome(campaign.status) ||
+          campaign.productionStatus === ProductionStatus.Failed;
         toast.info(
-          "Tracking was checked in the last 10 minutes — showing the latest status.",
+          finished
+            ? "Tracking is complete for this campaign — showing the final status."
+            : "Tracking was checked in the last 6 hours — showing the latest status.",
         );
       } else if (result.ok) {
         const count = Number(result.newEvents);

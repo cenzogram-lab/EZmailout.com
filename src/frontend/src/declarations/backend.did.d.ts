@@ -140,6 +140,8 @@ export interface CampaignRecordShared {
 export type CampaignStatus = { 'InTransit' : null } |
   { 'InProduction' : null } |
   { 'Delivered' : null } |
+  { 'Undeliverable' : null } |
+  { 'Returned' : null } |
   { 'Created' : null } |
   { 'SortedAtLocalHub' : null };
 export interface CanvasSide {

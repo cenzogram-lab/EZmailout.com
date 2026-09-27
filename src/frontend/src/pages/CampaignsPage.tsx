@@ -4,6 +4,7 @@ import {
   PaymentStatusBadge,
   ProductionStatusBadge,
   StatusBadge,
+  isDeliveryOutcome,
 } from "@/components/campaigns/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -265,7 +266,7 @@ export function CampaignsPage() {
   ).length;
   const inFlightCount = list.filter(
     (campaign) =>
-      campaign.status !== CampaignStatus.Delivered &&
+      !isDeliveryOutcome(campaign.status) &&
       campaign.status !== CampaignStatus.Created,
   ).length;
 

@@ -30,12 +30,17 @@ module {
   };
 
   /// 5-stage USPS Intelligent Mail Barcode timeline.
+  /// The five delivery stages, then the two outcomes that end a campaign
+  /// without delivery: USPS could not deliver (including forwarded mail,
+  /// which never reached the listed address), or returned it to the sender.
   public type CampaignStatus = {
     #Created;
     #InProduction;
     #InTransit;
     #SortedAtLocalHub;
     #Delivered;
+    #Undeliverable;
+    #Returned;
   };
 
   public type AudienceType = {

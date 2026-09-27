@@ -125,7 +125,7 @@ const INTENTS: Intent[] = [
     keywords:
       /\b(track\w*|deliver\w*|imb|scan\w*|status|where is|arriv\w*|timeline|usps|qr)\b/i,
     answer: () =>
-      "Every campaign is tracked with USPS Intelligent Mail barcode scans on a five-stage timeline: created, in production, in transit, sorted at the local hub and delivered. Dynamic QR codes on your piece record scans too.",
+      "Every campaign is tracked with USPS Intelligent Mail barcode scans on a five-stage timeline: created, in production, in transit, sorted at the local hub and delivered. Mail USPS cannot deliver (forwarded mail included) is marked Undeliverable, and mail sent back is marked Returned. Dynamic QR codes on your piece record scans too.",
     chips: ["tracking"],
   },
   {

@@ -469,7 +469,9 @@ type CampaignStatus =
    Delivered;
    InProduction;
    InTransit;
+   Returned;
    SortedAtLocalHub;
+   Undeliverable;
  };
 type CampaignRecordShared = 
  record {

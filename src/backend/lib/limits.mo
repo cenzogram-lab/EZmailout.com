@@ -46,6 +46,24 @@ module {
     };
   };
 
+  /// One budget to admit a call against: a key, its hourly limit, and the
+  /// minimum gap between that key's calls (0 for none).
+  public type Budget = { key : Text; limit : Nat; minGapNs : Int };
+
+  /// Admits a call only if every budget has room, then charges all of them.
+  /// Nothing is charged when any one refuses, so a caller over their own
+  /// limit never uses up the canister-wide one. Returns the first refusal.
+  public func admit(windows : Map.Map<Text, Window>, budgets : [Budget], now : Int, windowNs : Int) : Check {
+    for (b in budgets.vals()) {
+      switch (check(windows.get(b.key), now, windowNs, b.limit, b.minGapNs)) {
+        case (#ok) {};
+        case (refused) { return refused };
+      };
+    };
+    for (b in budgets.vals()) { commit(windows, b.key, now, windowNs) };
+    #ok;
+  };
+
   /// Counts `log` entries per key. Used to rebuild a transient count after an
   /// upgrade, so the counts never disagree with the stable log.
   public func countByKey<T>(log : List.List<T>, keyOf : T -> Text) : Map.Map<Text, Nat> {

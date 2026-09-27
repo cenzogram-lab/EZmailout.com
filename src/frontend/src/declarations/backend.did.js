@@ -316,6 +316,8 @@ export const CampaignStatus = IDL.Variant({
   'InTransit' : IDL.Null,
   'InProduction' : IDL.Null,
   'Delivered' : IDL.Null,
+  'Undeliverable' : IDL.Null,
+  'Returned' : IDL.Null,
   'Created' : IDL.Null,
   'SortedAtLocalHub' : IDL.Null,
 });
@@ -993,6 +995,8 @@ export const idlFactory = ({ IDL }) => {
     'InTransit' : IDL.Null,
     'InProduction' : IDL.Null,
     'Delivered' : IDL.Null,
+    'Undeliverable' : IDL.Null,
+    'Returned' : IDL.Null,
     'Created' : IDL.Null,
     'SortedAtLocalHub' : IDL.Null,
   });

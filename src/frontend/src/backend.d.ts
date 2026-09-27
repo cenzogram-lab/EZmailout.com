@@ -420,7 +420,9 @@ export enum CampaignStatus {
     Delivered = "Delivered",
     InProduction = "InProduction",
     InTransit = "InTransit",
-    SortedAtLocalHub = "SortedAtLocalHub"
+    Returned = "Returned",
+    SortedAtLocalHub = "SortedAtLocalHub",
+    Undeliverable = "Undeliverable"
 }
 export interface CampaignRecordShared {
     audienceType: AudienceType;

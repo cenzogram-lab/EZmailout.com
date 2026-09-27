@@ -4,6 +4,7 @@ import Common "../types/common";
 import Json "json";
 import AddressLib "address";
 import PricingLib "pricing";
+import CampaignLib "campaign";
 import Text "mo:core/Text";
 import Blob "mo:core/Blob";
 import Array "mo:core/Array";
@@ -200,39 +201,56 @@ module {
     out.toArray();
   };
 
-  /// Highest stage reached by at least half of the pieces (fallback: highest seen).
+  /// Highest stage reached by at least half of the scans, on the ranking of
+  /// `CampaignLib.stageIndex`: a campaign turns Undeliverable or Returned only
+  /// when at least half of its scans say so, never for one bad address.
   public func aggregateStage(statuses : [Text]) : ?Types.CampaignStatus {
     let stages = List.empty<Nat>();
     for (s in statuses.vals()) {
-      switch (stageFromText(s)) {
-        case (?idx) { stages.add(idx) };
+      switch (CampaignLib.statusFromText(s)) {
+        case (?status) { stages.add(CampaignLib.stageIndex(status)) };
         case null {};
       };
     };
     let total = stages.size();
     if (total == 0) { return null };
-    var best : Nat = 0;
-    var stage : Nat = 4;
-    var chosen : ?Nat = null;
-    while (chosen == null) {
+    var stage : Nat = CampaignLib.stageIndex(#Returned);
+    loop {
       var count = 0;
       for (idx in stages.values()) { if (idx >= stage) { count += 1 } };
-      if (count * 2 >= total) { chosen := ?stage } else if (stage == 0) { chosen := ?0 } else { stage -= 1 };
-      if (count > 0 and stage > best) { best := stage };
-    };
-    switch (chosen) {
-      case (?c) ?indexToStage(c);
-      case null null;
+      if (count * 2 >= total or stage == 0) { return ?CampaignLib.stageFromIndex(stage) };
+      stage -= 1;
     };
   };
 
-  private func stageFromText(s : Text) : ?Nat {
-    let t = s.toLower();
-    let has = func(p : Text) : Bool { t.contains(#text p) };
-    if (has("out for") or has("sorted") or has("local") or has("destination") or has("arrived") or has("processed for") or has("processed_for")) { ?3 } else if (has("deliver") or has("returned") or has("re-routed")) { ?4 } else if (has("transit") or has("mailed") or has("accepted") or has("en route") or has("usps") or has("processed")) { ?2 } else if (has("production") or has("print") or has("processing") or has("submitted") or has("imposition")) { ?1 } else if (has("created") or has("received") or has("queued") or has("pending")) { ?0 } else { null };
+  /// What a `GET /jobs/{id}` answer says about submission: `?true` once the
+  /// job is submitted or further along, `?false` while it is still being
+  /// edited, `null` when the answer does not say. Only the job's own
+  /// top-level fields are read (a nested document or address list has a
+  /// `status` of its own), and only unambiguous words count: a wrong "yes"
+  /// would mark a job that never printed as submitted, while a wrong "no"
+  /// only re-submits, which Click2Mail refuses (`submittedAlready`).
+  public func jobSubmitted(body : Text) : ?Bool {
+    let texts = List.empty<Text>();
+    for (k in ["jobStatus", "job_status", "statusDescription", "status", "description", "state"].vals()) {
+      switch (Json.topLevelString(body, k)) { case (?v) texts.add(v); case null {} };
+      switch (Json.xmlTag(body, k)) { case (?v) texts.add(v); case null {} };
+    };
+    var editing = false;
+    for (raw in texts.values()) {
+      let t = raw.toLower();
+      let has = func(p : Text) : Bool { t.contains(#text p) };
+      if (has("submitted") or has("in production") or has("printing") or has("printed") or has("mailed") or has("completed") or has("shipped")) {
+        return ?true;
+      };
+      if (has("edit") or has("draft")) { editing := true };
+    };
+    if (editing) ?false else null;
   };
 
-  private func indexToStage(i : Nat) : Types.CampaignStatus {
-    if (i >= 4) { #Delivered } else if (i == 3) { #SortedAtLocalHub } else if (i == 2) { #InTransit } else if (i == 1) { #InProduction } else { #Created };
+  /// Click2Mail refused a submit because the job was submitted already.
+  public func submittedAlready(body : Text) : Bool {
+    let t = parseDescription(body).toLower();
+    t.contains(#text "already") and (t.contains(#text "submit") or t.contains(#text "process"));
   };
 };

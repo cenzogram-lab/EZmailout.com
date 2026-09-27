@@ -6,8 +6,10 @@ import {
   Factory,
   Inbox,
   type LucideIcon,
+  MailX,
   MapPin,
   Truck,
+  Undo2,
 } from "lucide-react";
 
 export interface CampaignStage {
@@ -51,12 +53,52 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
   },
 ];
 
+/**
+ * Outcomes that end a campaign without delivery. On the timeline one of them
+ * takes the place of "Delivered"; tracking outcalls stop there.
+ */
+export const DELIVERY_EXCEPTIONS: CampaignStage[] = [
+  {
+    key: CampaignStatus.Undeliverable,
+    label: "Undeliverable",
+    description:
+      "USPS could not deliver to the listed address (including forwarded mail).",
+    icon: MailX,
+  },
+  {
+    key: CampaignStatus.Returned,
+    label: "Returned",
+    description: "USPS returned the mail to the sender.",
+    icon: Undo2,
+  },
+];
+
+export function isDeliveryException(status: CampaignStatus): boolean {
+  return (
+    status === CampaignStatus.Undeliverable ||
+    status === CampaignStatus.Returned
+  );
+}
+
+/** Delivered, undeliverable or returned: USPS has finished with the mail. */
+export function isDeliveryOutcome(status: CampaignStatus): boolean {
+  return status === CampaignStatus.Delivered || isDeliveryException(status);
+}
+
+function stageFor(status: CampaignStatus): CampaignStage | undefined {
+  return [...CAMPAIGN_STAGES, ...DELIVERY_EXCEPTIONS].find(
+    (stage) => stage.key === status,
+  );
+}
+
+/** Position on the five-stage timeline; an exception sits in the last slot. */
 export function stageIndex(status: CampaignStatus): number {
+  if (isDeliveryException(status)) return CAMPAIGN_STAGES.length - 1;
   return CAMPAIGN_STAGES.findIndex((stage) => stage.key === status);
 }
 
 export function statusLabel(status: CampaignStatus): string {
-  return CAMPAIGN_STAGES.find((stage) => stage.key === status)?.label ?? status;
+  return stageFor(status)?.label ?? status;
 }
 
 /** Navy → emerald progression across the five stages. */
@@ -69,6 +111,8 @@ const STATUS_STYLES: Record<CampaignStatus, string> = {
     "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
   [CampaignStatus.Delivered]:
     "border-emerald-brand bg-emerald-brand text-white",
+  [CampaignStatus.Undeliverable]: "border-amber-300 bg-amber-50 text-amber-900",
+  [CampaignStatus.Returned]: "border-amber-500 bg-amber-500 text-white",
 };
 
 export function StatusBadge({
@@ -80,7 +124,7 @@ export function StatusBadge({
   className?: string;
   showIcon?: boolean;
 }) {
-  const stage = CAMPAIGN_STAGES.find((s) => s.key === status);
+  const stage = stageFor(status);
   const Icon = stage?.icon;
   return (
     <Badge

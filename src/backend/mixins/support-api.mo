@@ -4,6 +4,7 @@ import Support "../types/support";
 import AddressLib "../lib/address";
 import AdminLib "../lib/admin";
 import Http "../lib/http";
+import Limits "../lib/limits";
 import OpenAi "../lib/openai";
 import Resend "../lib/resend";
 import Stampy "../lib/stampy";
@@ -35,7 +36,11 @@ mixin (
   transient let maxMessageChars : Nat = 4_000;
 
   // One copilot message is one HTTPS outcall plus an OpenAI completion.
+  // Identities are free to mint, so the per-identity limit has a
+  // canister-wide partner that bounds the total spend.
   transient let chatMessagesPerHour : Nat = 30;
+  transient let chatMessagesPerHourGlobal : Nat = 300;
+  transient let chatGlobalKey : Text = "*";
   transient let maxTurns : Nat = 8;
   transient let maxTurnChars : Nat = 1_000;
   transient let maxReplyChars : Nat = 2_000;
@@ -47,7 +52,7 @@ mixin (
 
   /// Rolling one-hour usage per principal. Transient: it only rate-limits.
   transient let ticketUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
-  transient let chatUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
+  transient let chatWindows = Map.empty<Text, Limits.Window>();
   transient let emailUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
 
   /// How each ticket's email notification went, by ticket id. Transient: the
@@ -177,7 +182,20 @@ mixin (
     if (turns.size() == 0) { return fail("Ask Stampy a question") };
     let last = turns[turns.size() - 1];
     if (last.role != #User or AddressLib.sanitizeText(last.content) == "") { return fail("Ask Stampy a question") };
-    if (not charge(chatUsage, caller.toText(), chatMessagesPerHour)) { return fail("You've reached Stampy's hourly message limit; try again later") };
+    let budgets : [Limits.Budget] = [
+      { key = chatGlobalKey; limit = chatMessagesPerHourGlobal; minGapNs = 0 },
+      { key = caller.toText(); limit = chatMessagesPerHour; minGapNs = 0 },
+    ];
+    switch (Limits.admit(chatWindows, budgets, Time.now(), hourNs)) {
+      case (#ok) {};
+      case _ {
+        // Tell the caller which limit it was.
+        return fail(switch (Limits.check(chatWindows.get(caller.toText()), Time.now(), hourNs, chatMessagesPerHour, 0)) {
+          case (#ok) "Stampy is answering a lot of questions right now; try again in a few minutes";
+          case _ "You've reached Stampy's hourly message limit; try again later";
+        });
+      };
+    };
     let start : Nat = if (turns.size() > maxTurns) { turns.size() - maxTurns } else { 0 };
     let recent = turns.sliceToArray(start, turns.size()).map(
       func(t : Support.StampyTurn) : Support.StampyTurn = { role = t.role; content = clipSupport(t.content, maxTurnChars) }

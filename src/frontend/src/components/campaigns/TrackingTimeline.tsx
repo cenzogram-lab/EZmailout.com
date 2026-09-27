@@ -6,6 +6,7 @@ import {
 import {
   CAMPAIGN_STAGES,
   type CampaignStage,
+  DELIVERY_EXCEPTIONS,
   stageIndex,
 } from "@/components/campaigns/StatusBadge";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,16 @@ import { formatTimestamp } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Check, Loader2 } from "lucide-react";
 
-type StageState = "done" | "current" | "pending";
+type StageState = "done" | "current" | "pending" | "exception";
+
+/**
+ * The five stages as this campaign sees them: an undeliverable or returned
+ * campaign shows that outcome in place of "Delivered".
+ */
+function stagesFor(status: CampaignStatus): CampaignStage[] {
+  const outcome = DELIVERY_EXCEPTIONS.find((stage) => stage.key === status);
+  return outcome ? [...CAMPAIGN_STAGES.slice(0, -1), outcome] : CAMPAIGN_STAGES;
+}
 
 const SOURCE_STYLES: Record<TrackingSource, string> = {
   [TrackingSource.Webhook]: "border-primary/20 bg-primary/10 text-primary",
@@ -48,7 +58,12 @@ export function latestEventFor(
   return latest;
 }
 
-function stateFor(idx: number, currentIdx: number): StageState {
+function stateFor(
+  idx: number,
+  currentIdx: number,
+  stage: CampaignStage,
+): StageState {
+  if (DELIVERY_EXCEPTIONS.includes(stage)) return "exception";
   if (idx < currentIdx) return "done";
   if (idx === currentIdx) return "current";
   return "pending";
@@ -71,6 +86,8 @@ function StageMarker({
         state === "current" &&
           "animate-pipeline-pulse border-primary bg-primary text-primary-foreground ring-4 ring-primary/20",
         state === "pending" && "border-border bg-card text-muted-foreground",
+        state === "exception" &&
+          "border-amber-500 bg-amber-500 text-white ring-4 ring-amber-500/20",
       )}
       aria-current={state === "current" ? "step" : undefined}
     >
@@ -108,6 +125,7 @@ function StageDetails({
           state === "current" && "text-primary",
           state === "done" && "text-foreground",
           state === "pending" && "text-muted-foreground",
+          state === "exception" && "text-amber-700",
         )}
       >
         {stage.label}
@@ -151,7 +169,7 @@ function StageDetails({
         <p className="mt-1 text-xs text-muted-foreground">
           {state === "pending"
             ? "Awaiting update"
-            : state === "current"
+            : state === "current" || state === "exception"
               ? stage.description
               : "Completed"}
         </p>
@@ -169,7 +187,8 @@ export interface TrackingTimelineProps {
 
 /**
  * Five-stage delivery stepper: horizontal on desktop, vertical on mobile.
- * Done stages are emerald, the current stage is orange, upcoming stages muted.
+ * Done stages are emerald, the current stage is indigo, upcoming stages muted;
+ * an undeliverable or returned outcome takes the last slot in amber.
  */
 export function TrackingTimeline({
   status,
@@ -178,6 +197,7 @@ export function TrackingTimeline({
   className,
 }: TrackingTimelineProps) {
   const currentIdx = stageIndex(status);
+  const stages = stagesFor(status);
 
   return (
     <div
@@ -193,8 +213,8 @@ export function TrackingTimeline({
 
       {/* Desktop: horizontal stepper */}
       <ol className="hidden md:grid md:grid-cols-5 md:gap-3">
-        {CAMPAIGN_STAGES.map((stage, idx) => {
-          const state = stateFor(idx, currentIdx);
+        {stages.map((stage, idx) => {
+          const state = stateFor(idx, currentIdx, stage);
           const event = latestEventFor(events, stage.key);
           return (
             <li
@@ -202,7 +222,7 @@ export function TrackingTimeline({
               className="relative flex flex-col items-center gap-3"
               data-ocid={`campaign_detail.tracking.item.${idx + 1}`}
             >
-              {idx < CAMPAIGN_STAGES.length - 1 ? (
+              {idx < stages.length - 1 ? (
                 <span
                   aria-hidden="true"
                   className={cn(
@@ -225,10 +245,10 @@ export function TrackingTimeline({
 
       {/* Mobile: vertical stepper */}
       <ol className="md:hidden">
-        {CAMPAIGN_STAGES.map((stage, idx) => {
-          const state = stateFor(idx, currentIdx);
+        {stages.map((stage, idx) => {
+          const state = stateFor(idx, currentIdx, stage);
           const event = latestEventFor(events, stage.key);
-          const isLast = idx === CAMPAIGN_STAGES.length - 1;
+          const isLast = idx === stages.length - 1;
           return (
             <li
               key={stage.key}

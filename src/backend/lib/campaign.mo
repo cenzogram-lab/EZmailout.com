@@ -100,6 +100,9 @@ module {
     };
   };
 
+  /// Rank on the timeline. The delivery exceptions rank after `#Delivered`:
+  /// a late return overrides a delivery scan, and a piece USPS could not
+  /// deliver is usually returned to the sender afterwards.
   public func stageIndex(status : Types.CampaignStatus) : Nat {
     switch (status) {
       case (#Created) 0;
@@ -107,6 +110,8 @@ module {
       case (#InTransit) 2;
       case (#SortedAtLocalHub) 3;
       case (#Delivered) 4;
+      case (#Undeliverable) 5;
+      case (#Returned) 6;
     };
   };
 
@@ -117,11 +122,28 @@ module {
       case (#InTransit) "in_transit";
       case (#SortedAtLocalHub) "sorted_at_local_hub";
       case (#Delivered) "delivered";
+      case (#Undeliverable) "undeliverable";
+      case (#Returned) "returned";
     };
   };
 
   public func stageFromIndex(i : Nat) : Types.CampaignStatus {
-    if (i >= 4) { #Delivered } else if (i == 3) { #SortedAtLocalHub } else if (i == 2) { #InTransit } else if (i == 1) { #InProduction } else { #Created };
+    if (i >= 6) { #Returned } else if (i == 5) { #Undeliverable } else if (i == 4) { #Delivered } else if (i == 3) { #SortedAtLocalHub } else if (i == 2) { #InTransit } else if (i == 1) { #InProduction } else { #Created };
+  };
+
+  /// Delivered, undeliverable or returned: USPS has finished with the mail.
+  public func isDeliveryOutcome(status : Types.CampaignStatus) : Bool {
+    switch (status) {
+      case (#Delivered or #Undeliverable or #Returned) true;
+      case _ false;
+    };
+  };
+
+  /// No more tracking outcalls: the mail reached an outcome, or the dispatch
+  /// failed (a retried dispatch checks Click2Mail itself, see `runDispatch`).
+  /// Webhooks still record anything that arrives later.
+  public func trackingFinished(record : Types.CampaignRecord) : Bool {
+    isDeliveryOutcome(record.status) or record.productionStatus == #Failed;
   };
 
   /// Advances a campaign's status monotonically. Returns true when the status changed.
@@ -133,14 +155,17 @@ module {
     } else { false };
   };
 
-  /// Maps free-form IMb / provider event text onto the 5-stage timeline.
+  /// Maps free-form IMb / provider event text onto the timeline. The delivery
+  /// exceptions are tested first: "undeliverable" contains "deliver", and a
+  /// returned or forwarded piece never reached the address on the list.
   public func statusFromText(raw : Text) : ?Types.CampaignStatus {
     let t = raw.toLower();
     let has = func(p : Text) : Bool { t.contains(#text p) };
-    if (has("out for") or has("sorted") or has("local") or has("destination") or has("arrived") or has("processed_for") or has("processed for")) { return ?#SortedAtLocalHub };
+    if (has("return to sender") or has("return_to_sender") or has("returned")) { return ?#Returned };
+    if (has("undeliverable") or has("undelivered") or has("not deliverable") or has("unable to deliver") or has("forward") or has("no such") or has("vacant") or has("insufficient address") or has("left no address")) { return ?#Undeliverable };
+    if (has("out for") or has("sorted") or has("local") or has("destination") or has("arrived") or has("processed_for") or has("processed for") or has("attempt")) { return ?#SortedAtLocalHub };
     if (has("deliver")) { return ?#Delivered };
-    if (has("returned") or has("re-routed") or has("rerouted")) { return ?#Delivered };
-    if (has("transit") or has("mailed") or has("accepted") or has("en route") or has("enroute") or has("usps") or has("in_transit") or has("processed")) { return ?#InTransit };
+    if (has("transit") or has("mailed") or has("accepted") or has("en route") or has("enroute") or has("usps") or has("in_transit") or has("processed") or has("re-routed") or has("rerouted")) { return ?#InTransit };
     if (has("production") or has("print") or has("processing") or has("submitted") or has("rendered") or has("imposition")) { return ?#InProduction };
     if (has("created") or has("received") or has("queued") or has("pending")) { return ?#Created };
     null;
