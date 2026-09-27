@@ -15,6 +15,7 @@ import {
   useUploadDocumentChunk,
 } from "@/hooks/use-backend";
 import { formatNumber, layoutLabel } from "@/lib/format";
+import { canvasForStorage } from "@/lib/inputLimits";
 import {
   catalogMailClassLabel,
   catalogMailClassToWire,
@@ -235,7 +236,8 @@ export function Step4ReviewLaunch() {
               recipients: state.verifiedAddresses,
               recipientCount: BigInt(state.recipientCount),
               designTemplateId: state.designTemplate?.id,
-              canvasState: state.canvas,
+              // A preview copy that always fits the canister's canvas bounds.
+              canvasState: canvasForStorage(state.canvas),
               // Sent only as a web address the canister will accept.
               qrDestinationUrl:
                 normalizeRedirectUrl(state.qrDestinationUrl) ?? undefined,

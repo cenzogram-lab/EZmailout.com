@@ -1,6 +1,7 @@
 /// Admin credential management (Click2Mail, Stripe, Resend, OpenAI, webhook secret).
 import Common "../types/common";
 import AdminLib "../lib/admin";
+import Inputs "../lib/inputs";
 import Principal "mo:core/Principal";
 
 mixin (adminKeysState : Common.AdminState) {
@@ -18,7 +19,28 @@ mixin (adminKeysState : Common.AdminState) {
     if (not AdminLib.isAdmin(adminKeysState, caller)) {
       return { ok = false; error = ?"Unauthorized: only the admin principal or a canister controller may update keys" };
     };
-    // Validated before anything is written, so a bad address saves nothing.
+    // Validated before anything is written, so a bad value saves nothing.
+    // Every key is sent with its outcalls, so each one is bounded.
+    let values = [keys.click2mailUsername, keys.click2mailPassword, keys.stripeSecretKey, keys.stripePublishableKey, keys.resendKey, keys.openAiKey, keys.webhookSecret, keys.outcallProxyUrl, keys.supportEmailAddress];
+    for (v in values.vals()) {
+      switch (v) {
+        case (?t) {
+          if (t.size() > Inputs.maxAdminValueChars) {
+            return { ok = false; error = ?("Keys and addresses are limited to " # Inputs.maxAdminValueChars.toText() # " characters") };
+          };
+        };
+        case null {};
+      };
+    };
+    // Every outcall and its credentials go through the proxy: https only.
+    switch (keys.outcallProxyUrl) {
+      case (?raw) {
+        if (AdminLib.sanitizeKey(raw) != null and Inputs.proxyUrl(raw) == null) {
+          return { ok = false; error = ?"The outcall proxy must be an https:// address" };
+        };
+      };
+      case null {};
+    };
     let supportEmail : ?(?Text) = switch (keys.supportEmailAddress) {
       case null null;
       case (?raw) {

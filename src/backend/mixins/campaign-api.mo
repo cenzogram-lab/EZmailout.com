@@ -137,6 +137,11 @@ mixin (
     };
     let idTooLong = func(t : ?Text) : Bool { switch (t) { case (?v) v.size() > Inputs.maxIdChars; case null false } };
     if (idTooLong(input.designTemplateId) or idTooLong(input.sourcePresetId)) { return fail("The template or preset reference is too long") };
+    if (idTooLong(input.product.colorOption)) { return fail("The colour option is not valid") };
+    switch (input.canvasState) {
+      case (?c) { switch (Inputs.canvasError(c)) { case (?e) { return fail(e) }; case null {} } };
+      case null {};
+    };
     let qrDestination : ?Text = switch (input.qrDestinationUrl) {
       case (?raw) {
         if (AddressLib.sanitizeText(raw) == "") null else {
@@ -183,11 +188,14 @@ mixin (
     CampaignLib.exportAsCsv(campaignId, campaignRecipients, AdminLib.trackingBaseUrl);
   };
 
+  /// Replaces an unpaid draft's stored design. Once paid, the stored canvas is
+  /// the design that was ordered and stays as it is.
   public shared ({ caller }) func saveCanvasState(campaignId : Text, canvas : Types.CanvasState) : async Bool {
     switch (campaigns.get(campaignId)) {
       case null false;
       case (?record) {
         if (not canAccess(record, caller)) { return false };
+        if (record.paymentStatus != #Unpaid or Inputs.canvasError(canvas) != null) { return false };
         record.canvasState := ?canvas;
         record.updatedAt := Time.now();
         true;
@@ -199,26 +207,27 @@ mixin (
     requireAccess(campaignId, caller).canvasState;
   };
 
-  /// Admin-only manual status override (monotonic).
+  /// Admin-only manual status override. Follows `CampaignLib.deliveryMoveAllowed`
+  /// like every other delivery update: forward only, and only once Click2Mail
+  /// has the job. Returns whether the campaign moved.
   public shared ({ caller }) func updateCampaignStatus(id : Text, status : Types.CampaignStatus, providerEventId : Text, timestamp : Int) : async Bool {
     if (not AdminLib.isAdmin(adminKeysState, caller)) { return false };
     switch (campaigns.get(id)) {
       case null false;
       case (?record) {
-        if (CampaignLib.advanceStatus(record, status)) {
-          let evtId = state.nextEventId;
-          state.nextEventId += 1;
-          trackingEvents.add({
-            id = evtId;
-            campaignId = id;
-            status;
-            eventType = "manual." # CampaignLib.stageName(status);
-            timestamp = if (timestamp > 0) timestamp else Time.now();
-            providerEventId;
-            source = #Manual;
-            detail = ?"Status set by admin";
-          });
-        };
+        if (not CampaignLib.advanceStatus(record, status)) { return false };
+        let evtId = state.nextEventId;
+        state.nextEventId += 1;
+        trackingEvents.add({
+          id = evtId;
+          campaignId = id;
+          status;
+          eventType = "manual." # CampaignLib.stageName(status);
+          timestamp = if (timestamp > 0) timestamp else Time.now();
+          providerEventId = Limits.clip(AddressLib.sanitizeText(providerEventId), Inputs.maxEventIdChars);
+          source = #Manual;
+          detail = ?"Status set by admin";
+        });
         true;
       };
     };

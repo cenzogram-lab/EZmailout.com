@@ -178,9 +178,22 @@ module {
     true;
   };
 
-  /// Advances a campaign's status monotonically. Returns true when the status changed.
+  /// The delivery moves a campaign may make: forward only (`stageIndex`, so
+  /// an outcome never goes back to the mail stream), and only once Click2Mail
+  /// has accepted the job. An unpaid draft or a failed dispatch has no mail
+  /// for USPS to scan, whatever a webhook, a poll or an override says.
+  public func deliveryMoveAllowed(
+    production : Types.ProductionStatus,
+    from : Types.CampaignStatus,
+    to : Types.CampaignStatus,
+  ) : Bool {
+    production == #Submitted and stageIndex(to) > stageIndex(from);
+  };
+
+  /// Advances a campaign's status when `deliveryMoveAllowed` says so. Every
+  /// delivery-status write goes through here. Returns true when it changed.
   public func advanceStatus(record : Types.CampaignRecord, status : Types.CampaignStatus) : Bool {
-    if (stageIndex(status) > stageIndex(record.status)) {
+    if (deliveryMoveAllowed(record.productionStatus, record.status, status)) {
       record.status := status;
       record.updatedAt := Time.now();
       true;

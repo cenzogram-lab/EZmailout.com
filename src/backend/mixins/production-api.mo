@@ -10,6 +10,7 @@ import Http "../lib/http";
 import Json "../lib/json";
 import Limits "../lib/limits";
 import Secrets "../lib/secrets";
+import Inputs "../lib/inputs";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
@@ -440,20 +441,25 @@ mixin (
         };
       };
     };
+    // Nothing at Click2Mail can report on a campaign it never received.
+    if (record.c2mJobId == null) { return { ok = false; error = ?"Campaign has not been dispatched to Click2Mail"; campaignId = ?record.id; status = ?record.status } };
     var eventText = "";
     for (k in ["event", "status", "scanEvent", "scanDescription", "eventType"].vals()) {
       if (eventText == "") {
-        switch (Json.getString(payload, k)) { case (?v) { eventText := v }; case null {} };
+        switch (Json.getString(payload, k)) { case (?v) { eventText := Limits.clip(AddressLib.sanitizeText(v), Inputs.maxEventTextChars) }; case null {} };
       };
     };
     let status = switch (CampaignLib.statusFromText(eventText)) {
       case (?s) s;
       case null { return { ok = false; error = ?("Unrecognized event: " # eventText); campaignId = ?record.id; status = ?record.status } };
     };
-    let providerEventId = switch (Json.getString(payload, "eventId")) {
-      case (?e) e;
-      case null { switch (Json.getString(payload, "id")) { case (?e) e; case null ("webhook:" # Time.now().toText()) } };
-    };
+    let providerEventId = Limits.clip(
+      switch (Json.getString(payload, "eventId")) {
+        case (?e) e;
+        case null { switch (Json.getString(payload, "id")) { case (?e) e; case null ("webhook:" # Time.now().toText()) } };
+      },
+      Inputs.maxEventIdChars,
+    );
     let ts : Int = switch (Json.getNumber(payload, "timestamp")) {
       case (?t) { if (t > 100_000_000_000_000) t else if (t > 100_000_000_000) t * 1_000_000 else if (t > 0) t * 1_000_000_000 else Time.now() };
       case null Time.now();
@@ -461,7 +467,10 @@ mixin (
     let advanced = CampaignLib.advanceStatus(record, status);
     let evtId = state.nextEventId;
     state.nextEventId += 1;
-    trackingEvents.add({ id = evtId; campaignId = record.id; status; eventType = "webhook." # CampaignLib.stageName(status); timestamp = ts; providerEventId; source = #Webhook; detail = ?(if (advanced) eventText else eventText # " (no stage change)") });
+    // A job whose submission was never confirmed keeps the event as evidence
+    // (a retried dispatch checks the job itself) without moving the timeline.
+    let note = if (advanced) "" else if (record.productionStatus != #Submitted) " (not applied: submission not confirmed)" else " (no stage change)";
+    trackingEvents.add({ id = evtId; campaignId = record.id; status; eventType = "webhook." # CampaignLib.stageName(status); timestamp = ts; providerEventId; source = #Webhook; detail = ?(eventText # note) });
     { ok = true; error = null; campaignId = ?record.id; status = ?record.status };
   };
 

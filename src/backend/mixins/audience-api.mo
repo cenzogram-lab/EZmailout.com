@@ -27,6 +27,10 @@ mixin (
   transformFn : Http.TransformFn,
 ) {
   transient let maxAddresses : Nat = 5_000;
+  // Presets cost nothing to save, so what one identity can keep is bounded
+  // like its unpaid drafts are.
+  transient let maxPresetsPerOwner : Nat = 20;
+  transient let maxPresetAddressesPerOwner : Nat = 25_000;
   /// Rolling per-account verification quota (transient: a fresh window after upgrades).
   transient let verifyWindowNs : Int = 3_600_000_000_000;
   transient let verifyAddressesPerWindow : Nat = 25_000;
@@ -232,6 +236,25 @@ mixin (
     };
   };
 
+  /// The owner's presets other than `except`: how many, and how many addresses they hold.
+  private func ownerPresets(owner : Text, except : ?Text) : (Nat, Nat) {
+    var presets = 0;
+    var addresses = 0;
+    for ((_, p) in presetMeta.entries()) {
+      if (p.ownerId == owner and ?p.id != except) {
+        presets += 1;
+        addresses += p.recipientCount;
+      };
+    };
+    (presets, addresses);
+  };
+
+  private func presetQuotaError(heldAddresses : Nat, adding : Nat) : ?Text {
+    if (heldAddresses + adding > maxPresetAddressesPerOwner) {
+      ?"Saved audiences may hold at most 25,000 addresses in total. Delete a preset you no longer need first.";
+    } else null;
+  };
+
   private func cleanName(name : Text) : Text {
     let t = AddressLib.sanitizeText(name);
     if (t == "") "Audience preset" else t;
@@ -243,7 +266,16 @@ mixin (
     if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address"; presetId = null } };
     if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses"; presetId = null } };
     switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
+    switch (sourceCampaignId) {
+      case (?c) { if (c.size() > Inputs.maxIdChars) { return { ok = false; error = ?"The source campaign reference is too long"; presetId = null } } };
+      case null {};
+    };
     let owner = caller.toText();
+    let (held, heldAddresses) = ownerPresets(owner, null);
+    if (held >= maxPresetsPerOwner) {
+      return { ok = false; error = ?"You can keep up to 20 saved audiences. Delete one you no longer need first."; presetId = null };
+    };
+    switch (presetQuotaError(heldAddresses, addresses.size())) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
     let id = "pre_" # state.nextPresetId.toText();
     state.nextPresetId += 1;
     let now = Time.now();
@@ -263,6 +295,8 @@ mixin (
         if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address" } };
         if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses" } };
         switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e } }; case null {} };
+        let (_, heldAddresses) = ownerPresets(owner, ?presetId);
+        switch (presetQuotaError(heldAddresses, addresses.size())) { case (?e) { return { ok = false; error = ?e } }; case null {} };
         let clean = addresses.map(AddressLib.sanitizeVerified);
         savedAudiencePresets.add(key(owner, presetId), clean);
         let updated : Types.AudiencePreset = { id = meta.id; ownerId = meta.ownerId; name = cleanName(name); sourceCampaignId = meta.sourceCampaignId; recipientCount = clean.size(); createdAt = meta.createdAt; var updatedAt = Time.now() };

@@ -13,6 +13,7 @@ import {
   PaymentStatusBadge,
   ProductionStatusBadge,
   StatusBadge,
+  deliveryMoveAllowed,
   isDeliveryException,
   isDeliveryOutcome,
   stageIndex,
@@ -260,6 +261,16 @@ export function CampaignDetailPage() {
   const [overrideStatus, setOverrideStatus] = useState<CampaignStatus | "">("");
 
   const campaign = campaignQuery.data ?? null;
+  // The stages an admin may move this campaign to (`deliveryMoveAllowed`).
+  const overrideTargets = campaign
+    ? [...CAMPAIGN_STAGES, ...DELIVERY_EXCEPTIONS].filter((stage) =>
+        deliveryMoveAllowed(
+          campaign.productionStatus,
+          campaign.status,
+          stage.key,
+        ),
+      )
+    : [];
   const events = eventsQuery.data ?? [];
   const qrStats = qrStatsQuery.data ?? null;
   const isAdmin = adminKeysQuery.data?.callerIsAdmin === true;
@@ -340,7 +351,9 @@ export function CampaignDetailPage() {
         toast.success("Campaign status overridden.");
         setOverrideStatus("");
       } else {
-        toast.error("The canister rejected the status override.");
+        toast.error(
+          "The canister refused this move: the timeline only moves forward, once Click2Mail has the job.",
+        );
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Override failed.");
@@ -813,61 +826,77 @@ export function CampaignDetailPage() {
                       Override status
                       <Badge
                         variant="outline"
-                        className="ml-auto border-primary/20 bg-primary/10 text-primary"
+                        className="ml-auto border-primary/20 bg-primary/10 text-primary-ink"
                       >
                         Admin
                       </Badge>
                     </CardTitle>
                     <CardDescription>
-                      Records a manual tracking event and moves the campaign to
-                      the chosen stage.
+                      Records a manual tracking event and moves the campaign
+                      forward to the chosen stage.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Label htmlFor="campaign-override-status">New stage</Label>
-                    <Select
-                      value={overrideStatus}
-                      onValueChange={(value) =>
-                        setOverrideStatus(value as CampaignStatus)
-                      }
-                    >
-                      <SelectTrigger
-                        id="campaign-override-status"
-                        className="w-full"
-                        data-ocid="campaign_detail.admin.status.select"
+                    {overrideTargets.length === 0 ? (
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-ocid="campaign_detail.admin.override.unavailable"
                       >
-                        <SelectValue placeholder="Choose a stage" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[...CAMPAIGN_STAGES, ...DELIVERY_EXCEPTIONS].map(
-                          (stage) => (
-                            <SelectItem
-                              key={stage.key}
-                              value={stage.key}
-                              data-ocid={`campaign_detail.admin.status.option.${stage.key.toLowerCase()}`}
-                            >
-                              {stage.label}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      className="w-full"
-                      onClick={handleOverride}
-                      disabled={
-                        !overrideStatus ||
-                        overrideStatus === campaign.status ||
-                        overrideMutation.isPending
-                      }
-                      data-ocid="campaign_detail.admin.override.button"
-                    >
-                      {overrideMutation.isPending ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : null}
-                      Apply override
-                    </Button>
+                        {campaign.productionStatus !==
+                        ProductionStatus.Submitted
+                          ? "Stages can be set once Click2Mail has accepted the job."
+                          : "This campaign has reached its last stage."}
+                      </p>
+                    ) : (
+                      <>
+                        <Label htmlFor="campaign-override-status">
+                          New stage
+                        </Label>
+                        <Select
+                          value={overrideStatus}
+                          onValueChange={(value) =>
+                            setOverrideStatus(value as CampaignStatus)
+                          }
+                        >
+                          <SelectTrigger
+                            id="campaign-override-status"
+                            className="w-full"
+                            data-ocid="campaign_detail.admin.status.select"
+                          >
+                            <SelectValue placeholder="Choose a stage" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {overrideTargets.map((stage) => (
+                              <SelectItem
+                                key={stage.key}
+                                value={stage.key}
+                                data-ocid={`campaign_detail.admin.status.option.${stage.key.toLowerCase()}`}
+                              >
+                                {stage.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={handleOverride}
+                          disabled={
+                            !overrideStatus ||
+                            !overrideTargets.some(
+                              (s) => s.key === overrideStatus,
+                            ) ||
+                            overrideMutation.isPending
+                          }
+                          data-ocid="campaign_detail.admin.override.button"
+                        >
+                          {overrideMutation.isPending ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : null}
+                          Apply override
+                        </Button>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               ) : null}

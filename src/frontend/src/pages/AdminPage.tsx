@@ -737,7 +737,7 @@ export function AdminPage() {
                       secret={false}
                       optional
                       placeholder="https://relay.example.com/"
-                      helper="Optional IPv6-capable relay for Internet Computer outcalls; requests are sent here with an x-target-url header"
+                      helper="Optional https:// relay (IPv6-capable) for Internet Computer outcalls; requests and their credentials are sent here with an x-target-url header"
                     />
                   </div>
 

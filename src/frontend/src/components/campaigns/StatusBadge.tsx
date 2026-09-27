@@ -97,6 +97,37 @@ export function stageIndex(status: CampaignStatus): number {
   return CAMPAIGN_STAGES.findIndex((stage) => stage.key === status);
 }
 
+/**
+ * The canister's ranking (`CampaignLib.stageIndex`): the five stages, then
+ * Undeliverable and Returned after Delivered. `stageIndex` above is the
+ * timeline slot, where both exceptions share the last one.
+ */
+const STATUS_RANK: Record<CampaignStatus, number> = {
+  [CampaignStatus.Created]: 0,
+  [CampaignStatus.InProduction]: 1,
+  [CampaignStatus.InTransit]: 2,
+  [CampaignStatus.SortedAtLocalHub]: 3,
+  [CampaignStatus.Delivered]: 4,
+  [CampaignStatus.Undeliverable]: 5,
+  [CampaignStatus.Returned]: 6,
+};
+
+/**
+ * Mirrors `CampaignLib.deliveryMoveAllowed`: the timeline only moves forward
+ * (a return overrides a delivery, never the reverse), and only once
+ * Click2Mail has accepted the job.
+ */
+export function deliveryMoveAllowed(
+  production: ProductionStatus,
+  from: CampaignStatus,
+  to: CampaignStatus,
+): boolean {
+  return (
+    production === ProductionStatus.Submitted &&
+    STATUS_RANK[to] > STATUS_RANK[from]
+  );
+}
+
 export function statusLabel(status: CampaignStatus): string {
   return stageFor(status)?.label ?? status;
 }

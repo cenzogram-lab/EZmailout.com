@@ -8,6 +8,7 @@ import AdminLib "../lib/admin";
 import CampaignLib "../lib/campaign";
 import Credits "../lib/credits";
 import Http "../lib/http";
+import Limits "../lib/limits";
 import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
@@ -109,7 +110,7 @@ mixin (
     if (a.creditBalance < costCredits) {
       return { ok = false; error = ?"Insufficient credits"; balance = ?a.creditBalance };
     };
-    let balance = AccountLib.applyCredits(creditLedger, state, a, -costCredits, AddressLib.sanitizeText(reason), null);
+    let balance = AccountLib.applyCredits(creditLedger, state, a, -costCredits, Limits.clip(AddressLib.sanitizeText(reason), 120), null);
     { ok = true; error = null; balance = ?balance };
   };
 
