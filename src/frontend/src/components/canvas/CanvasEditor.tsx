@@ -215,9 +215,10 @@ export function AddressZoneOverlay({
 /**
  * Click2Mail guides drawn inside the artboard: the cut line at the trim edge
  * (fine dashed) and the 1/4″ safe zone (soft green). The 1/8″ bleed edge is
- * drawn outside the artboard in the stage (solid red). The safe zone's label
- * sits in the workspace under the sheet, lined up with the safe line: inside
- * the zone it covered whatever a design puts in its top-left corner.
+ * drawn outside the artboard in the stage (solid red). The bleed and safe
+ * labels sit in the workspace, above the bleed frame's right edge and under
+ * the sheet on the safe line: inside the frame the sheet hid the bleed label,
+ * and inside the safe zone its label covered the design's top-left corner.
  */
 const GUIDES = [
   {
@@ -244,6 +245,10 @@ const SAFE_LABEL_COLOR = "#10b981";
 
 /** Height of a 9 px guide label at line-height 1.4 (screen px). */
 const GUIDE_LABEL_HEIGHT = 13;
+
+/** A guide label parked in the workspace outside the sheet. */
+const WORKSPACE_LABEL_CLASS =
+  "pointer-events-none absolute whitespace-nowrap rounded px-1 font-mono text-[9px] uppercase tracking-wide text-white";
 
 const BLEED_COLOR = "#ef4444";
 
@@ -522,10 +527,12 @@ export function CanvasEditor({
   const outline = 2 / scale;
   const bleedPx = dims.bleedInsetInches * DESIGN_PPI * scale;
   const safePx = dims.safeInsetInches * DESIGN_PPI * scale;
-  // Under the bleed edge, or as low as the workspace margin allows.
-  const safeLabelTop =
-    displayHeight +
-    Math.min(bleedPx + 4, WORKSPACE_PADDING - GUIDE_LABEL_HEIGHT - 4);
+  // Workspace labels clear the bleed edge, or keep as far from the sheet as
+  // the margin allows.
+  const labelOffset = Math.min(
+    bleedPx + 4,
+    WORKSPACE_PADDING - GUIDE_LABEL_HEIGHT - 4,
+  );
   const containerWidth = containerRef.current?.clientWidth ?? 0;
   const sheetLeft = containerWidth
     ? (containerWidth - displayWidth) / 2
@@ -594,14 +601,7 @@ export function CanvasEditor({
           opacity: 0.9,
         }}
         data-ocid="canvas.editor.guide.bleed"
-      >
-        <span
-          className="absolute right-0 top-0 rounded-bl px-1 font-mono text-[9px] uppercase tracking-wide text-white"
-          style={{ backgroundColor: BLEED_COLOR, lineHeight: 1.4 }}
-        >
-          Bleed ⅛″
-        </span>
-      </div>
+      />
       <div
         className="absolute shadow-lg"
         style={{
@@ -786,10 +786,22 @@ export function CanvasEditor({
           })}
         </div>
         <span
-          className="pointer-events-none absolute whitespace-nowrap rounded px-1 font-mono text-[9px] uppercase tracking-wide text-white"
+          className={WORKSPACE_LABEL_CLASS}
+          style={{
+            right: -bleedPx,
+            bottom: `calc(100% + ${labelOffset}px)`,
+            lineHeight: 1.4,
+            backgroundColor: BLEED_COLOR,
+          }}
+          data-ocid="canvas.editor.guide.bleed_label"
+        >
+          Bleed ⅛″
+        </span>
+        <span
+          className={WORKSPACE_LABEL_CLASS}
           style={{
             left: safePx,
-            top: safeLabelTop,
+            top: displayHeight + labelOffset,
             lineHeight: 1.4,
             backgroundColor: SAFE_LABEL_COLOR,
             opacity: 0.85,
