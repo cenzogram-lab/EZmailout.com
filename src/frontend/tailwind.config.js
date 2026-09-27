@@ -24,6 +24,7 @@ export default {
         primary: {
           DEFAULT: "oklch(var(--primary) / <alpha-value>)",
           foreground: "oklch(var(--primary-foreground))",
+          ink: "oklch(var(--primary-ink))",
         },
         secondary: {
           DEFAULT: "oklch(var(--secondary) / <alpha-value>)",

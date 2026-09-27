@@ -149,7 +149,7 @@ function SecretField({
           {value !== undefined && (
             <Badge
               variant="outline"
-              className="border-primary/40 bg-primary/15 text-primary-foreground"
+              className="border-primary/40 bg-primary/15 text-primary-ink"
             >
               {cleared ? "Will be cleared" : "Unsaved change"}
             </Badge>

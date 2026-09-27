@@ -1,4 +1,8 @@
-import { type CampaignRecordShared, CampaignStatus } from "@/backend";
+import {
+  type CampaignRecordShared,
+  CampaignStatus,
+  ProductionStatus,
+} from "@/backend";
 import { SavePresetDialog } from "@/components/campaigns/SavePresetDialog";
 import {
   PaymentStatusBadge,
@@ -257,10 +261,13 @@ export function CampaignsPage() {
   }
 
   const list = campaigns ?? [];
-  const totalPieces = list.reduce(
-    (sum, campaign) => sum + Number(campaign.recipientCount),
-    0,
-  );
+  // Only campaigns handed to Click2Mail count as mailed; drafts and
+  // campaigns still dispatching do not.
+  const totalPieces = list
+    .filter(
+      (campaign) => campaign.productionStatus === ProductionStatus.Submitted,
+    )
+    .reduce((sum, campaign) => sum + Number(campaign.recipientCount), 0);
   const deliveredCount = list.filter(
     (campaign) => campaign.status === CampaignStatus.Delivered,
   ).length;

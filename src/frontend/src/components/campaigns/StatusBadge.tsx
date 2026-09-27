@@ -104,7 +104,8 @@ export function statusLabel(status: CampaignStatus): string {
 /** Navy → emerald progression across the five stages. */
 const STATUS_STYLES: Record<CampaignStatus, string> = {
   [CampaignStatus.Created]: "border-border bg-muted text-muted-foreground",
-  [CampaignStatus.InProduction]: "border-primary/20 bg-primary/10 text-primary",
+  [CampaignStatus.InProduction]:
+    "border-primary/20 bg-primary/10 text-primary-ink",
   [CampaignStatus.InTransit]:
     "border-primary bg-primary text-primary-foreground",
   [CampaignStatus.SortedAtLocalHub]:
@@ -139,12 +140,11 @@ export function StatusBadge({
 }
 
 const PAYMENT_STYLES: Record<PaymentStatus, string> = {
-  [PaymentStatus.Unpaid]:
-    "border-primary/40 bg-primary/15 text-primary-foreground",
+  [PaymentStatus.Unpaid]: "border-primary/40 bg-primary/15 text-primary-ink",
   [PaymentStatus.Pending]: "border-border bg-muted text-muted-foreground",
   [PaymentStatus.Paid]:
     "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
-  [PaymentStatus.Waived]: "border-primary/20 bg-primary/10 text-primary",
+  [PaymentStatus.Waived]: "border-primary/20 bg-primary/10 text-primary-ink",
   [PaymentStatus.Refunded]:
     "border-destructive/30 bg-destructive/10 text-destructive",
 };
@@ -187,15 +187,15 @@ const PRODUCTION_LABELS: Record<ProductionStatus, string> = {
 const PRODUCTION_STYLES: Record<ProductionStatus, string> = {
   [ProductionStatus.Draft]: "border-border bg-muted text-muted-foreground",
   [ProductionStatus.AwaitingPayment]:
-    "border-primary/40 bg-primary/15 text-primary-foreground",
+    "border-primary/40 bg-primary/15 text-primary-ink",
   [ProductionStatus.ReadyToDispatch]:
-    "border-primary/20 bg-primary/10 text-primary",
+    "border-primary/20 bg-primary/10 text-primary-ink",
   [ProductionStatus.Processing]:
-    "border-primary/30 bg-primary/10 text-primary animate-pulse",
+    "border-primary/30 bg-primary/10 text-primary-ink animate-pulse",
   [ProductionStatus.DocumentUploaded]:
-    "border-primary/20 bg-primary/10 text-primary",
+    "border-primary/20 bg-primary/10 text-primary-ink",
   [ProductionStatus.AddressListReady]:
-    "border-primary/20 bg-primary/10 text-primary",
+    "border-primary/20 bg-primary/10 text-primary-ink",
   [ProductionStatus.JobCreated]:
     "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
   [ProductionStatus.Submitted]:

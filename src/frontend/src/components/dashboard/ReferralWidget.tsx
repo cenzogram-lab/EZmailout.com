@@ -200,7 +200,7 @@ export function ReferralWidget() {
             </div>
 
             {stats && !stats.subscriptionActive && (
-              <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary-foreground">
+              <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary-ink">
                 Your membership is inactive. Rewards only accrue while it is
                 active — start or renew it to keep earning.
               </p>

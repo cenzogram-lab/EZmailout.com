@@ -126,7 +126,7 @@ export function ReferralLandingPage() {
           <div className="mb-2 flex items-center gap-2">
             <Badge
               variant="outline"
-              className="border-primary/40 bg-primary/15 font-mono text-primary-foreground"
+              className="border-primary/40 bg-primary/15 font-mono text-primary-ink"
               data-ocid="referral.code.badge"
             >
               <Gift className="size-3" /> {code || "No code"}

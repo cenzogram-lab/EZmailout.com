@@ -26,10 +26,9 @@ function stagesFor(status: CampaignStatus): CampaignStage[] {
 }
 
 const SOURCE_STYLES: Record<TrackingSource, string> = {
-  [TrackingSource.Webhook]: "border-primary/20 bg-primary/10 text-primary",
+  [TrackingSource.Webhook]: "border-primary/20 bg-primary/10 text-primary-ink",
   [TrackingSource.Poll]: "border-border bg-muted text-muted-foreground",
-  [TrackingSource.Manual]:
-    "border-primary/40 bg-primary/15 text-primary-foreground",
+  [TrackingSource.Manual]: "border-primary/40 bg-primary/15 text-primary-ink",
   [TrackingSource.System]:
     "border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand",
 };

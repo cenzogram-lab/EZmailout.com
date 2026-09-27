@@ -9,10 +9,14 @@ import {
 import { StripeCheckout } from "@/components/billing/StripeCheckout";
 import {
   CAMPAIGN_STAGES,
+  DELIVERY_EXCEPTIONS,
   PaymentStatusBadge,
   ProductionStatusBadge,
   StatusBadge,
+  isDeliveryException,
   isDeliveryOutcome,
+  stageIndex,
+  statusLabel,
 } from "@/components/campaigns/StatusBadge";
 import { TrackingTimeline } from "@/components/campaigns/TrackingTimeline";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -470,15 +474,10 @@ export function CampaignDetailPage() {
               <CardTitle className="font-display text-base">
                 Delivery tracking
               </CardTitle>
-              <CardDescription>
-                Stage{" "}
-                {Math.max(
-                  1,
-                  CAMPAIGN_STAGES.findIndex((s) => s.key === campaign.status) +
-                    1,
-                )}{" "}
-                of {CAMPAIGN_STAGES.length} · updates arrive from USPS via
-                Click2Mail webhooks and polling.
+              <CardDescription data-ocid="campaign_detail.tracking.summary">
+                {isDeliveryException(campaign.status)
+                  ? `Outcome: ${statusLabel(campaign.status)} · tracking lookups have stopped; later USPS updates still arrive through Click2Mail webhooks.`
+                  : `Stage ${stageIndex(campaign.status) + 1} of ${CAMPAIGN_STAGES.length} · updates arrive from USPS via Click2Mail webhooks and polling.`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -840,15 +839,17 @@ export function CampaignDetailPage() {
                         <SelectValue placeholder="Choose a stage" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CAMPAIGN_STAGES.map((stage) => (
-                          <SelectItem
-                            key={stage.key}
-                            value={stage.key}
-                            data-ocid={`campaign_detail.admin.status.option.${stage.key.toLowerCase()}`}
-                          >
-                            {stage.label}
-                          </SelectItem>
-                        ))}
+                        {[...CAMPAIGN_STAGES, ...DELIVERY_EXCEPTIONS].map(
+                          (stage) => (
+                            <SelectItem
+                              key={stage.key}
+                              value={stage.key}
+                              data-ocid={`campaign_detail.admin.status.option.${stage.key.toLowerCase()}`}
+                            >
+                              {stage.label}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                     <Button
