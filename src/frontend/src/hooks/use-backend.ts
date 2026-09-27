@@ -41,6 +41,7 @@ import type {
   VerifiedAddress,
 } from "@/backend";
 import { useActor } from "@caffeineai/core-infrastructure";
+import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useBackendActor() {
@@ -518,6 +519,23 @@ export function useDispatchClick2MailJob() {
   });
 }
 
+/** Deletes one of the caller's unpaid drafts (recipients and staged file too). */
+export function useDeleteCampaignDraft() {
+  const queryClient = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation<ApiResult, Error, string>({
+    mutationFn: async (campaignId) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.deleteCampaignDraft(campaignId);
+    },
+    onSuccess: (result, campaignId) => {
+      if (!result.ok) return;
+      queryClient.removeQueries({ queryKey: ["campaign", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    },
+  });
+}
+
 export function useSyncClick2MailTracking() {
   const queryClient = useQueryClient();
   const { actor } = useBackendActor();
@@ -557,6 +575,21 @@ export function useSaveAdminKeys() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminKeys"] });
       queryClient.invalidateQueries({ queryKey: ["publicConfig"] });
+    },
+  });
+}
+
+/** Assigns the admin principal. The canister accepts it from controllers only. */
+export function useAssignAdmin() {
+  const queryClient = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation<ApiResult, Error, string>({
+    mutationFn: async (principalText) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.assignAdmin(Principal.fromText(principalText.trim()));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminKeys"] });
     },
   });
 }

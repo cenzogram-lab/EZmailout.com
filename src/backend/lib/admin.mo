@@ -21,14 +21,17 @@ module {
     };
   };
 
-  /// Whether the caller may perform admin actions; claims the admin slot on first use.
-  public func authorizeAdmin(state : Common.AdminState, caller : Principal) : Bool {
-    if (caller.isController()) { return true };
-    if (caller.isAnonymous()) { return false };
-    switch (state.adminPrincipal) {
-      case (?p) { p == caller.toText() };
-      case null { state.adminPrincipal := ?caller.toText(); true };
+  /// Assigns (or replaces) the admin principal. Only controllers may call
+  /// this; nothing else ever writes the slot, so it cannot be claimed.
+  public func assignAdmin(state : Common.AdminState, caller : Principal, admin : Principal) : Common.ApiResult {
+    if (not caller.isController()) {
+      return { ok = false; error = ?"Only a canister controller can assign the admin" };
     };
+    if (admin.isAnonymous()) {
+      return { ok = false; error = ?"The anonymous principal cannot be the admin" };
+    };
+    state.adminPrincipal := ?admin.toText();
+    { ok = true; error = null };
   };
 
   public func maskKey(key : ?Text) : ?Text {

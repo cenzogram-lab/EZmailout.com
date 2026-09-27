@@ -44,6 +44,7 @@ export interface AdminKeysInput {
 }
 export interface AdminKeysView {
   'openAiKeyMasked' : [] | [string],
+  'callerIsController' : boolean,
   'adminPrincipal' : [] | [string],
   'click2mailUsername' : [] | [string],
   'click2mailEnvironment' : Click2MailEnvironment,
@@ -118,6 +119,7 @@ export interface CampaignRecordShared {
   'baseCostCents' : bigint,
   'name' : string,
   'createdAt' : bigint,
+  'testMode' : boolean,
   'c2mDocumentId' : [] | [string],
   'updatedAt' : bigint,
   'canvasState' : [] | [CanvasState],
@@ -530,6 +532,7 @@ export interface _SERVICE {
   '_internet_identity_sign_in_start' : ActorMethod<[], Uint8Array>,
   'applyReferralReward' : ActorMethod<[string], ApiResult>,
   'askStampy' : ActorMethod<[Array<StampyTurn>], StampyReply>,
+  'assignAdmin' : ActorMethod<[Principal], ApiResult>,
   'confirmPayment' : ActorMethod<[string], ConfirmPaymentResult>,
   'createCampaign' : ActorMethod<[CreateCampaignInput], CreateCampaignResult>,
   'createPaymentIntent' : ActorMethod<
@@ -537,6 +540,7 @@ export interface _SERVICE {
     PaymentIntentResult
   >,
   'deductAiCredits' : ActorMethod<[bigint, string], CreditResult>,
+  'deleteCampaignDraft' : ActorMethod<[string], ApiResult>,
   'deletePreset' : ActorMethod<[string], ApiResult>,
   'dispatchClick2MailJob' : ActorMethod<[string], DispatchResult>,
   'ensureAccount' : ActorMethod<[[] | [string], [] | [string]], AccountResult>,

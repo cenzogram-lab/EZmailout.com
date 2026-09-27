@@ -8,6 +8,7 @@ import CampaignLib "../lib/campaign";
 import Click2Mail "../lib/click2mail";
 import Http "../lib/http";
 import Json "../lib/json";
+import Limits "../lib/limits";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
@@ -31,6 +32,12 @@ mixin (
 ) {
   transient let maxChunkBytes : Nat = 1_900_000;
   transient let maxChunks : Nat = 8;
+  /// The whole print file, not just a chunk: dispatch posts it to Click2Mail
+  /// in one HTTPS outcall, and an outcall request (URL, headers, multipart
+  /// framing and body) may not exceed 2 MB. Checked at upload, before the
+  /// customer pays, so a file that cannot be sent is never charged for.
+  transient let maxDocumentBytes : Nat = 1_900_000;
+  transient let allowedMimeTypes : [Text] = ["application/pdf", "image/png", "image/jpeg"];
   transient let maxPollPerTick : Nat = 10;
 
   /// Campaigns with a Click2Mail dispatch running. Taken before the first
@@ -58,6 +65,18 @@ mixin (
     CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
   };
 
+  /// Where a campaign's Click2Mail job lives. A test-mode campaign (paid
+  /// through sandbox checkout) always goes to Staging, whatever the admin's
+  /// environment setting, so it can never print or bill on Production.
+  private func environmentFor(record : Types.CampaignRecord) : Common.Click2MailEnvironment {
+    if (CampaignLib.isTestMode(record)) #Staging else adminKeysState.click2mailEnvironment;
+  };
+
+  /// A file name that cannot break out of its multipart header.
+  private func safeFileName(name : Text) : Text {
+    Limits.clip(AddressLib.sanitizeText(name).map(func(c : Char) : Char = if (c == '\22' or c == '\r' or c == '\n' or c == '\\') '_' else c), 120);
+  };
+
   // ─── Document staging ────────────────────────────────────────────────────
 
   /// Stages one chunk of the print-ready PDF/PNG for a campaign (≤ 1.9 MB per chunk, ≤ 8 chunks).
@@ -65,19 +84,28 @@ mixin (
     let record = switch (campaigns.get(campaignId)) { case (?r) r; case null { return { ok = false; error = ?"Campaign not found" } } };
     if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized" } };
     if (dispatchInFlight.contains(campaignId)) { return { ok = false; error = ?"A dispatch is running for this campaign; upload again once it finishes" } };
+    // Once Click2Mail holds the document (the campaign was dispatched, or a
+    // dispatch failed after that step) a new upload could never be used.
+    if (record.c2mDocumentId != null or record.productionStatus == #Submitted) {
+      return { ok = false; error = ?"This campaign's print file is already with Click2Mail and can no longer be replaced" };
+    };
+    if (not allowedMimeTypes.any(func(m : Text) : Bool { m == mimeType })) { return { ok = false; error = ?"The print file must be a PDF, PNG or JPEG" } };
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
     if (chunkIndex >= totalChunks) { return { ok = false; error = ?"chunkIndex out of range" } };
     if (data.size() == 0 or data.size() > maxChunkBytes) { return { ok = false; error = ?"Chunk must be between 1 byte and 1.9 MB" } };
-    let upload : Types.DocumentUpload = switch (documentUploads.get(campaignId)) {
-      case (?u) {
-        if (u.totalChunks == totalChunks and u.mimeType == mimeType) u else {
-          let fresh : Types.DocumentUpload = { campaignId; mimeType; fileName = AddressLib.sanitizeText(fileName); totalChunks; var chunks = Array.repeat<Blob>(Blob.empty(), totalChunks); var receivedChunks = 0; createdAt = Time.now() };
-          documentUploads.add(campaignId, fresh);
-          fresh;
-        };
-      };
+    let existing : ?Types.DocumentUpload = switch (documentUploads.get(campaignId)) {
+      case (?u) { if (u.totalChunks == totalChunks and u.mimeType == mimeType) ?u else null };
+      case null null;
+    };
+    // The staged file with this chunk in place must still fit one outcall.
+    let staged = switch (existing) { case (?u) Limits.stagedBytes(u.chunks, chunkIndex, data.size()); case null data.size() };
+    if (staged > maxDocumentBytes) {
+      return { ok = false; error = ?"The print file must be 1.9 MB or smaller so it can be sent to Click2Mail. Export it at a lower image quality and upload again." };
+    };
+    let upload : Types.DocumentUpload = switch (existing) {
+      case (?u) u;
       case null {
-        let fresh : Types.DocumentUpload = { campaignId; mimeType; fileName = AddressLib.sanitizeText(fileName); totalChunks; var chunks = Array.repeat<Blob>(Blob.empty(), totalChunks); var receivedChunks = 0; createdAt = Time.now() };
+        let fresh : Types.DocumentUpload = { campaignId; mimeType; fileName = safeFileName(fileName); totalChunks; var chunks = Array.repeat<Blob>(Blob.empty(), totalChunks); var receivedChunks = 0; createdAt = Time.now() };
         documentUploads.add(campaignId, fresh);
         fresh;
       };
@@ -140,7 +168,11 @@ mixin (
     if (record.c2mDocumentId == null) {
       switch (documentUploads.get(campaignId)) {
         case null { return dispatchResult(record, false, ?"Print document has not been uploaded") };
-        case (?u) { if (u.receivedChunks != u.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") } };
+        case (?u) {
+          if (u.receivedChunks != u.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") };
+          // Files staged before the upload limit existed may still be too big.
+          if (Limits.stagedBytes(u.chunks, u.totalChunks, 0) > maxDocumentBytes) { return dispatchResult(record, false, ?"The print file is larger than 1.9 MB and cannot be sent to Click2Mail; upload a smaller export") };
+        };
       };
     };
 
@@ -175,7 +207,7 @@ mixin (
     recipients : [Common.VerifiedAddress],
     returnAddress : Common.ReturnAddress,
   ) : async* Types.DispatchResult {
-    let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
+    let base = Click2Mail.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
 
     // 1. Document
@@ -239,7 +271,7 @@ mixin (
   private func syncOne(record : Types.CampaignRecord) : async Types.SyncResult {
     let jobId = switch (record.c2mJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
     let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Click2Mail credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
-    let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
+    let base = Click2Mail.baseUrl(environmentFor(record));
     let headers = Click2Mail.jsonHeaders(auth, "application/json");
     let jobResp = await Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
     let trackResp = await Http.get(base # "/jobs/" # jobId # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);

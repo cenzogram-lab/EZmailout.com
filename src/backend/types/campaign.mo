@@ -218,6 +218,8 @@ module {
     qrScanCount : Nat;
     returnAddress : ?Common.ReturnAddress;
     sourcePresetId : ?Text;
+    /// Paid through sandbox checkout; its Click2Mail job goes to Staging.
+    testMode : Bool;
   };
 
   public type CreateCampaignInput = {

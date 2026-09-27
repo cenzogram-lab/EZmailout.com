@@ -1,6 +1,7 @@
 /// Admin credential management (Click2Mail, Stripe, Resend, OpenAI, webhook secret).
 import Common "../types/common";
 import AdminLib "../lib/admin";
+import Principal "mo:core/Principal";
 
 mixin (adminKeysState : Common.AdminState) {
   private func applyText(current : ?Text, input : ?Text) : ?Text {
@@ -11,8 +12,10 @@ mixin (adminKeysState : Common.AdminState) {
   };
 
   /// Store admin credentials. Per field: null = unchanged, "" = clear, value = set.
+  /// The admin (assigned by a controller) or a controller only: saving never
+  /// claims the admin role.
   public shared ({ caller }) func saveAdminKeys(keys : Common.AdminKeysInput) : async Common.ApiResult {
-    if (not AdminLib.authorizeAdmin(adminKeysState, caller)) {
+    if (not AdminLib.isAdmin(adminKeysState, caller)) {
       return { ok = false; error = ?"Unauthorized: only the admin principal or a canister controller may update keys" };
     };
     // Validated before anything is written, so a bad address saves nothing.
@@ -54,10 +57,17 @@ mixin (adminKeysState : Common.AdminState) {
     { ok = true; error = null };
   };
 
-  /// Masked view of the stored credentials (last 4 characters only).
+  /// Assigns or replaces the admin principal. Controllers only: this is the
+  /// one way the admin slot is ever written.
+  public shared ({ caller }) func assignAdmin(newAdmin : Principal) : async Common.ApiResult {
+    AdminLib.assignAdmin(adminKeysState, caller, newAdmin);
+  };
+
+  /// Masked view of the stored credentials (last 4 characters only), shown to
+  /// the admin and controllers only.
   public shared query ({ caller }) func getAdminKeys() : async Common.AdminKeysView {
     let isAdmin = AdminLib.isAdmin(adminKeysState, caller);
-    let visible = isAdmin or adminKeysState.adminPrincipal == null;
+    let visible = isAdmin;
     {
       click2mailUsername = if (visible) adminKeysState.click2mailUsername else null;
       click2mailPasswordMasked = if (visible) AdminLib.maskKey(adminKeysState.click2mailPassword) else null;
@@ -71,6 +81,7 @@ mixin (adminKeysState : Common.AdminState) {
       sandboxCheckout = adminKeysState.sandboxCheckout;
       adminPrincipal = adminKeysState.adminPrincipal;
       callerIsAdmin = isAdmin;
+      callerIsController = caller.isController();
       webhookPath = AdminLib.webhookPath;
       supportEmailAddress = if (visible) adminKeysState.supportEmailAddress else null;
     };

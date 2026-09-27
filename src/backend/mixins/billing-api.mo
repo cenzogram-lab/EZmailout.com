@@ -166,6 +166,12 @@ mixin (
         refText := "subscription";
       };
     };
+    // Test mode covers campaign orders only, and those print on Click2Mail
+    // Staging. Credit packs and memberships would hand out real value
+    // (OpenAI spend, monthly allowances), so they need live checkout.
+    if (adminKeysState.sandboxCheckout and purpose != #CampaignOrder) {
+      return intentFail("Test-mode checkout covers campaign orders only; credit packs and memberships need live Stripe checkout");
+    };
     let seq = state.nextPaymentId;
     state.nextPaymentId += 1;
     if (adminKeysState.sandboxCheckout) {
@@ -194,7 +200,7 @@ mixin (
   private func isFirstPayment(userId : Text, paymentIntentId : Text) : Bool {
     var earliest : ?Account.PaymentRecord = null;
     for ((_, p) in payments.entries()) {
-      if (p.userId == userId and (p.state == #Succeeded or p.state == #Waived) and p.amountCents > 0) {
+      if (p.userId == userId and (p.state == #Succeeded or p.state == #Waived) and p.amountCents > 0 and not p.sandbox) {
         switch (earliest) {
           case null { earliest := ?p };
           case (?e) { if (p.createdAt < e.createdAt) { earliest := ?p } };
@@ -211,6 +217,8 @@ mixin (
   private func tryReferralReward(record : Account.PaymentRecord) : Bool {
     if (record.state != #Succeeded and record.state != #Waived) { return false };
     if (record.amountCents == 0) { return false };
+    // Test-mode payments move no money, so they never earn a free month.
+    if (record.sandbox) { return false };
     for (r in referralRewards.values()) { if (r.paymentIntentId == record.paymentIntentId) { return false } };
     let payer = switch (accounts.get(record.userId)) { case (?p) p; case null { return false } };
     if (not isFirstPayment(payer.id, record.paymentIntentId)) { return false };
@@ -229,7 +237,7 @@ mixin (
   private func applyPaymentEffects(record : Account.PaymentRecord, a : Account.UserAccount) : (?Nat, ?Text, ?Bool) {
     record.state := #Succeeded;
     record.confirmedAt := ?Time.now();
-    if (a.firstPaymentAt == null and record.amountCents > 0) { a.firstPaymentAt := ?Time.now() };
+    if (a.firstPaymentAt == null and record.amountCents > 0 and not record.sandbox) { a.firstPaymentAt := ?Time.now() };
     switch (record.purpose) {
       case (#CampaignOrder) {
         let campaignId = switch (record.reference) { case (?r) r; case null "" };
@@ -270,7 +278,12 @@ mixin (
     if (record.state == #Succeeded or record.state == #Waived) {
       return { ok = true; error = null; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = record.reference; subscriptionActive = ?AccountLib.isSubscriptionLive(a, Time.now()); referralRewardApplied = false };
     };
-    if (not record.sandbox) {
+    if (record.sandbox) {
+      // A test payment only stands while test mode is on, and only for a
+      // campaign order (older test records for packs or memberships included).
+      if (not adminKeysState.sandboxCheckout) { return fail("Test-mode checkout is off; this test payment can no longer be confirmed") };
+      if (record.purpose != #CampaignOrder) { return fail("Test-mode checkout covers campaign orders only") };
+    } else {
       let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Stripe secret key not configured") } };
       // Replicated: every replica fetches the intent and they must agree on
       // the reduced response before any credit or paid status is granted, so

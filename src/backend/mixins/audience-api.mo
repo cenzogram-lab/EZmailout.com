@@ -6,12 +6,14 @@ import AdminLib "../lib/admin";
 import Click2Mail "../lib/click2mail";
 import Http "../lib/http";
 import Json "../lib/json";
+import Limits "../lib/limits";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
 import VarArray "mo:core/VarArray";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import Nat64 "mo:core/Nat64";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
@@ -28,6 +30,37 @@ mixin (
   transient let verifyWindowNs : Int = 3_600_000_000_000;
   transient let verifyAddressesPerWindow : Nat = 25_000;
   transient let verifyUsage = Map.empty<Text, { var windowStart : Int; var addresses : Nat }>();
+
+  // Every verification is two Click2Mail outcalls whatever the batch size, so
+  // calls are budgeted as well as addresses: per identity (identities are
+  // free to mint), for the whole canister, and with a gap between one
+  // identity's calls so one-address batches cannot be streamed.
+  transient let verifyCallsPerHour : Nat = 20;
+  transient let verifyCallsPerHourGlobal : Nat = 300;
+  transient let verifyMinGapNs : Int = 15_000_000_000;
+  transient let verifyCalls = Map.empty<Text, Limits.Window>();
+  transient let verifyGlobalKey : Text = "*";
+
+  /// Response budget for a batch: up to 1 KB of detail per address plus
+  /// headroom, instead of a flat 1.5 MB (outcalls are charged on the budget,
+  /// and an answer larger than it fails the call).
+  private func verifyResponseBytes(addresses : Nat) : Nat64 {
+    Nat64.fromNat(Nat.min(1_500_000, 32_000 + addresses * 1_000));
+  };
+
+  /// Why this caller's verification must wait, or null when it may go ahead.
+  /// Only reads: the call is recorded once every budget has been checked.
+  private func verifyCallBlocked(userId : Text, now : Int) : ?Text {
+    switch (Limits.check(verifyCalls.get(verifyGlobalKey), now, verifyWindowNs, verifyCallsPerHourGlobal, 0)) {
+      case (#ok) {};
+      case _ { return ?"Address verification is busy right now; try again in a few minutes" };
+    };
+    switch (Limits.check(verifyCalls.get(userId), now, verifyWindowNs, verifyCallsPerHour, verifyMinGapNs)) {
+      case (#ok) null;
+      case (#wait secs) ?("Wait " # secs.toText() # " seconds before verifying another list");
+      case (#full) ?"Hourly address-verification limit reached for this account; try again later";
+    };
+  };
 
   /// Charges `count` addresses against the caller's hourly quota; false when exceeded.
   private func chargeVerifyQuota(userId : Text, count : Nat) : Bool {
@@ -95,9 +128,6 @@ mixin (
     if (caller.isAnonymous()) { return batch(false, ?"Sign in with Internet Identity to verify addresses", [], null) };
     if (addresses.size() == 0) { return batch(false, ?"No addresses supplied", [], null) };
     if (addresses.size() > maxAddresses) { return batch(false, ?"Verify at most 5,000 addresses per batch", [], null) };
-    if (not chargeVerifyQuota(caller.toText(), addresses.size())) {
-      return batch(false, ?"Hourly address-verification limit reached for this account; try again later", [], null);
-    };
     let sanitized = addresses.map(AddressLib.sanitize);
     let results = VarArray.tabulate<Common.AddressVerificationResult>(sanitized.size(), func(i) {
       let a = sanitized[i];
@@ -124,10 +154,28 @@ mixin (
       };
     };
     let candidates = candidateIdx.toArray().map(func(idx : Nat) : Common.AddressInput = sanitized[idx]);
+    // Budgets are checked and charged together, in this message, before the
+    // first await: only a batch that will reach Click2Mail counts.
+    let userId = caller.toText();
+    let now = Time.now();
+    switch (verifyCallBlocked(userId, now)) {
+      case (?msg) {
+        markAll(msg);
+        return batch(false, ?msg, results.toArray(), null);
+      };
+      case null {};
+    };
+    if (not chargeVerifyQuota(userId, candidates.size())) {
+      let msg = "Hourly address-verification limit reached for this account; try again later";
+      markAll(msg);
+      return batch(false, ?msg, results.toArray(), null);
+    };
+    Limits.commit(verifyCalls, userId, now, verifyWindowNs);
+    Limits.commit(verifyCalls, verifyGlobalKey, now, verifyWindowNs);
     let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
     let listName = "EZmailout verify " # Time.now().toText();
     let xml = Click2Mail.buildVerificationXml(listName, candidates);
-    let opts = AdminLib.outcallOptions(adminKeysState, 1_500_000);
+    let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
     let resp = await Http.postText(base # "/addressLists", Click2Mail.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
     if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) {
       let msg = if (resp.status == 0) resp.body else "Click2Mail rejected the address list: " # Click2Mail.parseDescription(resp.body);

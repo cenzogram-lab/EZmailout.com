@@ -281,6 +281,7 @@ export const Click2MailEnvironment = IDL.Variant({
 });
 export const AdminKeysView = IDL.Record({
   'openAiKeyMasked' : IDL.Opt(IDL.Text),
+  'callerIsController' : IDL.Bool,
   'adminPrincipal' : IDL.Opt(IDL.Text),
   'click2mailUsername' : IDL.Opt(IDL.Text),
   'click2mailEnvironment' : Click2MailEnvironment,
@@ -346,6 +347,7 @@ export const CampaignRecordShared = IDL.Record({
   'baseCostCents' : IDL.Nat,
   'name' : IDL.Text,
   'createdAt' : IDL.Int,
+  'testMode' : IDL.Bool,
   'c2mDocumentId' : IDL.Opt(IDL.Text),
   'updatedAt' : IDL.Int,
   'canvasState' : IDL.Opt(CanvasState),
@@ -557,6 +559,7 @@ export const idlService = IDL.Service({
   '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
   'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
   'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
+  'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),
   'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
   'createCampaign' : IDL.Func(
       [CreateCampaignInput],
@@ -569,6 +572,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
+  'deleteCampaignDraft' : IDL.Func([IDL.Text], [ApiResult], []),
   'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
   'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
   'ensureAccount' : IDL.Func(
@@ -954,6 +958,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const AdminKeysView = IDL.Record({
     'openAiKeyMasked' : IDL.Opt(IDL.Text),
+    'callerIsController' : IDL.Bool,
     'adminPrincipal' : IDL.Opt(IDL.Text),
     'click2mailUsername' : IDL.Opt(IDL.Text),
     'click2mailEnvironment' : Click2MailEnvironment,
@@ -1019,6 +1024,7 @@ export const idlFactory = ({ IDL }) => {
     'baseCostCents' : IDL.Nat,
     'name' : IDL.Text,
     'createdAt' : IDL.Int,
+    'testMode' : IDL.Bool,
     'c2mDocumentId' : IDL.Opt(IDL.Text),
     'updatedAt' : IDL.Int,
     'canvasState' : IDL.Opt(CanvasState),
@@ -1229,6 +1235,7 @@ export const idlFactory = ({ IDL }) => {
     '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
     'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
     'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
+    'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),
     'confirmPayment' : IDL.Func([IDL.Text], [ConfirmPaymentResult], []),
     'createCampaign' : IDL.Func(
         [CreateCampaignInput],
@@ -1241,6 +1248,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
+    'deleteCampaignDraft' : IDL.Func([IDL.Text], [ApiResult], []),
     'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
     'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
     'ensureAccount' : IDL.Func(

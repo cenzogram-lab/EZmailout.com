@@ -22,6 +22,12 @@ module {
     not caller.isAnonymous() and record.ownerId != "" and record.ownerId == caller.toText();
   };
 
+  /// Paid through sandbox checkout (the only way a campaign becomes
+  /// `#Waived`): its Click2Mail job always goes to Staging.
+  public func isTestMode(record : Types.CampaignRecord) : Bool {
+    record.paymentStatus == #Waived;
+  };
+
   public func toShared(self : Types.CampaignRecord) : Types.CampaignRecordShared {
     {
       id = self.id;
@@ -50,6 +56,7 @@ module {
       qrScanCount = self.qrScanCount;
       returnAddress = self.returnAddress;
       sourcePresetId = self.sourcePresetId;
+      testMode = isTestMode(self);
     };
   };
 

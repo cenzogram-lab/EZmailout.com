@@ -43,6 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   useAdminKeys,
   useCampaign,
+  useDeleteCampaignDraft,
   useDispatchClick2MailJob,
   useExportCampaign,
   useQrScanStats,
@@ -55,7 +56,7 @@ import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
 import { formatCents } from "@/lib/pricing";
 import { isShapeUrl } from "@/lib/shapes";
 import { cn } from "@/lib/utils";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -70,6 +71,7 @@ import {
   ScanLine,
   Send,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -243,6 +245,9 @@ export function CampaignDetailPage() {
   const adminKeysQuery = useAdminKeys();
   const exportMutation = useExportCampaign();
   const dispatchMutation = useDispatchClick2MailJob();
+  const deleteDraft = useDeleteCampaignDraft();
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const syncMutation = useSyncClick2MailTracking();
   const overrideMutation = useUpdateCampaignStatus();
 
@@ -328,6 +333,31 @@ export function CampaignDetailPage() {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Override failed.");
+    }
+  }
+
+  /** Two clicks: the first arms the button, the second deletes. */
+  async function handleDeleteDraft() {
+    if (!campaign) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setConfirmDelete(false);
+    try {
+      const result = await deleteDraft.mutateAsync(campaign.id);
+      if (result.ok) {
+        toast.success("Draft deleted.");
+        void navigate({ to: "/campaigns" });
+      } else {
+        toast.error(result.error ?? "The draft could not be deleted.");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "The draft could not be deleted.",
+      );
     }
   }
 
@@ -521,6 +551,24 @@ export function CampaignDetailPage() {
                       >
                         <CreditCard className="size-4" />
                         Pay now
+                      </Button>
+                    ) : null}
+                    {canPay ? (
+                      <Button
+                        type="button"
+                        variant={confirmDelete ? "destructive" : "outline"}
+                        className="gap-2"
+                        onClick={handleDeleteDraft}
+                        onBlur={() => setConfirmDelete(false)}
+                        disabled={deleteDraft.isPending}
+                        data-ocid="campaign_detail.delete_draft.button"
+                      >
+                        {deleteDraft.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-4" />
+                        )}
+                        {confirmDelete ? "Confirm delete" : "Delete draft"}
                       </Button>
                     ) : null}
                     <Button

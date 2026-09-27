@@ -117,8 +117,13 @@ export function PaymentStatusBadge({
       variant="outline"
       className={cn("font-medium", PAYMENT_STYLES[status], className)}
       data-ocid={`campaigns.payment.${status.toLowerCase()}.badge`}
+      title={
+        status === PaymentStatus.Waived
+          ? "Paid through test-mode checkout: the Click2Mail job goes to Staging and never prints."
+          : undefined
+      }
     >
-      {status}
+      {status === PaymentStatus.Waived ? "Test mode" : status}
     </Badge>
   );
 }

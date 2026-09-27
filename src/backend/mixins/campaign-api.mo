@@ -1,10 +1,12 @@
 /// Campaign ledger, canvas persistence, tracking timeline and dynamic QR links.
 import Types "../types/campaign";
 import Common "../types/common";
+import Account "../types/account";
 import CampaignLib "../lib/campaign";
 import AddressLib "../lib/address";
 import PricingLib "../lib/pricing";
 import AdminLib "../lib/admin";
+import Limits "../lib/limits";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Set "mo:core/Set";
@@ -22,8 +24,56 @@ mixin (
   qrScans : List.List<Types.QrScanEvent>,
   state : Common.Counters,
   adminKeysState : Common.AdminState,
+  documentUploads : Map.Map<Text, Types.DocumentUpload>,
+  payments : Map.Map<Text, Account.PaymentRecord>,
 ) {
   transient let maxRecipients : Nat = 5_000;
+
+  // Drafts cost nothing to create, and identities are free to mint, so what
+  // one identity can stage before paying is bounded.
+  transient let maxUnpaidDrafts : Nat = 5;
+  transient let maxUnpaidRecipients : Nat = 10_000;
+  /// A draft with a checkout opened this recently may still be paid.
+  transient let openCheckoutNs : Int = 86_400_000_000_000;
+
+  // QR scans arrive from anyone, signed out. Only paid campaigns log them,
+  // each campaign keeps its newest `maxStoredScans` (FIFO), and the free-text
+  // fields are clipped. `qrScanCount` still counts every scan.
+  transient let maxStoredScans : Nat = 500;
+  transient let scanTrimBatch : Nat = 50;
+  transient let maxScanCodeChars : Nat = 64;
+  transient let maxUserAgentChars : Nat = 128;
+  /// Stored scans per campaign. Rebuilt from `qrScans` on first use after an
+  /// upgrade, so it never disagrees with the stable log.
+  transient var storedScans : ?Map.Map<Text, Nat> = null;
+
+  private func isPaid(record : Types.CampaignRecord) : Bool {
+    record.paymentStatus == #Paid or record.paymentStatus == #Waived;
+  };
+
+  /// The owner's unpaid drafts: how many, and how many recipients they hold.
+  private func unpaidDrafts(owner : Text) : (Nat, Nat) {
+    var drafts = 0;
+    var recipients = 0;
+    for ((_, r) in campaigns.entries()) {
+      if (r.ownerId == owner and r.paymentStatus == #Unpaid) {
+        drafts += 1;
+        recipients += r.recipientCount;
+      };
+    };
+    (drafts, recipients);
+  };
+
+  private func scanKey(s : Types.QrScanEvent) : Text { s.campaignId };
+
+  /// Appends a scan, keeping each campaign's newest `maxStoredScans`.
+  private func logScan(scan : Types.QrScanEvent) {
+    let counts = switch (storedScans) {
+      case (?c) c;
+      case null { let c = Limits.countByKey(qrScans, scanKey); storedScans := ?c; c };
+    };
+    Limits.appendCapped(qrScans, counts, scan, scanKey, maxStoredScans, scanTrimBatch);
+  };
 
   /// Owner or admin. Unowned legacy records are admin-only.
   private func canAccess(record : Types.CampaignRecord, caller : Principal) : Bool {
@@ -60,6 +110,13 @@ mixin (
     };
     if (caller.isAnonymous()) { return fail("Sign in with Internet Identity before creating a campaign") };
     if (input.recipients.size() > maxRecipients) { return fail("A campaign may include at most 5,000 recipients") };
+    let (drafts, draftRecipients) = unpaidDrafts(caller.toText());
+    if (drafts >= maxUnpaidDrafts) {
+      return fail("You have " # drafts.toText() # " unpaid drafts. Pay for one or delete a draft from Campaigns before starting another.");
+    };
+    if (draftRecipients + input.recipients.size() > maxUnpaidRecipients) {
+      return fail("Unpaid drafts may hold at most 10,000 recipients in total. Pay for or delete a draft before adding this list.");
+    };
     let recipients = input.recipients.map(AddressLib.sanitizeVerified);
     // Billing and Click2Mail dispatch both key off the stored list, so a campaign
     // is priced for exactly the addresses supplied — never an estimated count.
@@ -150,16 +207,44 @@ mixin (
     result.toArray();
   };
 
-  /// Resolves `/t/{code}` and `/track/{code}` links, recording the scan.
+  /// Deletes one of the caller's unpaid drafts with its recipients and staged
+  /// print file. Refused once the campaign is paid, while a checkout opened
+  /// in the last 24 hours could still complete, or after its document reached
+  /// Click2Mail.
+  public shared ({ caller }) func deleteCampaignDraft(campaignId : Text) : async Common.ApiResult {
+    let record = switch (campaigns.get(campaignId)) {
+      case (?r) { if (canAccess(r, caller)) r else { return { ok = false; error = ?CampaignLib.accessDenied } } };
+      case null { return { ok = false; error = ?CampaignLib.accessDenied } };
+    };
+    if (record.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } };
+    if (record.c2mDocumentId != null) { return { ok = false; error = ?"This draft's document is already with Click2Mail" } };
+    let now = Time.now();
+    for ((_, p) in payments.entries()) {
+      if (p.reference == ?campaignId and p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {
+        return { ok = false; error = ?"A checkout for this draft was opened in the last 24 hours; try again later" };
+      };
+    };
+    campaigns.remove(campaignId);
+    campaignRecipients.remove(campaignId);
+    documentUploads.remove(campaignId);
+    { ok = true; error = null };
+  };
+
+  /// Resolves `/t/{code}` and `/track/{code}` links. Scans are counted and
+  /// logged for paid campaigns only (unpaid drafts are never mailed).
   public shared func resolveTrackingLink(code : Text, userAgent : ?Text) : async Types.TrackingResolveResult {
-    let trimmed = AddressLib.sanitizeText(code);
+    let trimmed = Limits.clip(AddressLib.sanitizeText(code), maxScanCodeChars);
     let campaignId = AddressLib.campaignIdOf(trimmed);
     switch (campaigns.get(campaignId)) {
       case null { { ok = false; destinationUrl = null; campaignId = null; recipientId = null } };
       case (?record) {
-        record.qrScanCount += 1;
-        record.updatedAt := Time.now();
-        qrScans.add({ campaignId; recipientId = trimmed; timestamp = Time.now(); userAgent });
+        if (isPaid(record)) {
+          let now = Time.now();
+          record.qrScanCount += 1;
+          record.updatedAt := now;
+          let agent = switch (userAgent) { case (?u) ?Limits.clip(AddressLib.sanitizeText(u), maxUserAgentChars); case null null };
+          logScan({ campaignId; recipientId = trimmed; timestamp = now; userAgent = agent });
+        };
         let destination = switch (record.qrDestinationUrl) {
           case (?d) { if (d == "") "https://ezmailout.com" else d };
           case null "https://ezmailout.com";

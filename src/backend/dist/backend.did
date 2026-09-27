@@ -496,6 +496,7 @@ type CampaignRecordShared =
    returnAddress: opt ReturnAddress;
    sourcePresetId: opt text;
    status: CampaignStatus;
+   testMode: bool;
    totalAmountChargedCents: nat;
    unitPriceCents: nat;
    updatedAt: int;
@@ -568,6 +569,7 @@ type AdminKeysView =
  record {
    adminPrincipal: opt text;
    callerIsAdmin: bool;
+   callerIsController: bool;
    click2mailEnvironment: Click2MailEnvironment;
    click2mailPasswordMasked: opt text;
    click2mailUsername: opt text;
@@ -628,11 +630,13 @@ service : {
   _internet_identity_sign_in_start: () -> (blob);
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
   askStampy: (turns: vec StampyTurn) -> (StampyReply);
+  assignAdmin: (newAdmin: principal) -> (ApiResult);
   confirmPayment: (paymentIntentId: text) -> (ConfirmPaymentResult);
   createCampaign: (input: CreateCampaignInput) -> (CreateCampaignResult);
   createPaymentIntent: (purpose: PaymentPurpose, reference: opt text, pack:
    opt CreditPack) -> (PaymentIntentResult);
   deductAiCredits: (costCredits: nat, reason: text) -> (CreditResult);
+  deleteCampaignDraft: (campaignId: text) -> (ApiResult);
   deletePreset: (presetId: text) -> (ApiResult);
   dispatchClick2MailJob: (campaignId: text) -> (DispatchResult);
   ensureAccount: (referralCode: opt text, email: opt text) -> (AccountResult);

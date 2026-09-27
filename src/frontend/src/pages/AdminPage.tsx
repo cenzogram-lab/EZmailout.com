@@ -33,6 +33,7 @@ import {
 import { useAccountSync } from "@/hooks/use-account";
 import {
   useAdminKeys,
+  useAssignAdmin,
   usePublicConfig,
   useSaveAdminKeys,
   useSupportTickets,
@@ -57,7 +58,7 @@ import {
   Webhook,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type TextField =
@@ -298,6 +299,75 @@ function ConfigFlag({
   );
 }
 
+/** Controllers only: the one way the admin role is ever assigned. */
+function AssignAdminForm() {
+  const assign = useAssignAdmin();
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    try {
+      const result = await assign.mutateAsync(value);
+      if (result.ok) {
+        toast.success("Admin assigned.");
+        setValue("");
+      } else {
+        setError(result.error ?? "The canister rejected the change.");
+      }
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message.includes("principal")
+          ? "That is not a valid principal."
+          : e instanceof Error
+            ? e.message
+            : "Could not assign the admin.",
+      );
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="space-y-2 border-t pt-3"
+      data-ocid="admin.assign.form"
+    >
+      <Label htmlFor="admin-assign-principal">Assign admin (controllers)</Label>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
+          id="admin-assign-principal"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="aaaaa-bbbbb-…-cai"
+          className="min-w-0 font-mono text-xs"
+          data-ocid="admin.assign.input"
+        />
+        <Button
+          type="submit"
+          disabled={assign.isPending || value.trim() === ""}
+          data-ocid="admin.assign.submit"
+        >
+          {assign.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ShieldCheck className="size-4" />
+          )}
+          Assign
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Replaces the current admin. Only a canister controller can do this.
+      </p>
+      {error ? (
+        <p className="text-xs text-destructive" data-ocid="admin.assign.error">
+          {error}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
 function principalShort(p: string): string {
   return p.length > 20 ? `${p.slice(0, 10)}…${p.slice(-6)}` : p;
 }
@@ -431,7 +501,7 @@ export function AdminPage() {
           <Loader2 className="size-4 animate-spin" /> Checking your session…
         </div>
       ) : !isAuthenticated ? (
-        <SignInPrompt message="Sign in with Internet Identity to manage admin settings. The first signed-in caller claims the admin role." />
+        <SignInPrompt message="Sign in with Internet Identity to manage admin settings. Only the admin a canister controller assigned, or a controller, can change them." />
       ) : (
         <div className="space-y-6">
           <Card data-ocid="admin.identity.card">
@@ -468,7 +538,7 @@ export function AdminPage() {
                   >
                     {keysQuery.isLoading
                       ? "Loading…"
-                      : "Not claimed yet — the first signed-in caller to save settings claims admin."}
+                      : "Not assigned — a canister controller assigns the admin."}
                   </span>
                 )}
               </div>
@@ -478,16 +548,18 @@ export function AdminPage() {
                   {principal ? principalShort(principal) : "—"}
                 </code>
               </div>
-              {view && !view.callerIsAdmin && view.adminPrincipal && (
+              {view && !view.callerIsAdmin && (
                 <Alert variant="destructive" data-ocid="admin.not_admin.alert">
                   <AlertCircle className="size-4" />
                   <AlertTitle>Read-only</AlertTitle>
                   <AlertDescription>
-                    Another principal holds the admin role. Saving will be
-                    rejected by the canister.
+                    {view.adminPrincipal
+                      ? "Another principal holds the admin role. Saving will be rejected by the canister."
+                      : "No admin is assigned. Ask a canister controller to assign your principal; until then saving is rejected."}
                   </AlertDescription>
                 </Alert>
               )}
+              {view?.callerIsController ? <AssignAdminForm /> : null}
             </CardContent>
           </Card>
 

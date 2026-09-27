@@ -14,8 +14,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 /** Minimum effective DPI for a raster background to print crisply. */
 export const MIN_PRINT_DPI = 150;
 
-/** JPEG quality used for the print-ready pages. */
+/** JPEG quality used for the print-ready pages when the file fits. */
 export const PRINT_JPEG_QUALITY = 0.92;
+
+/**
+ * Largest print file the canister accepts. Dispatch posts it to Click2Mail in
+ * one HTTPS outcall, whose request may not exceed 2 MB. Mirrors
+ * `maxDocumentBytes` in `src/backend/mixins/production-api.mo`; change both.
+ */
+export const MAX_PRINT_FILE_BYTES = 1_900_000;
+
+/** Qualities tried in turn, best first, until the PDF fits the limit. */
+const PRINT_JPEG_QUALITIES = [PRINT_JPEG_QUALITY, 0.85, 0.78, 0.7, 0.62, 0.55];
 
 const FALLBACK_LAYOUT = "6x9";
 
@@ -43,6 +53,8 @@ export interface PreflightRaster {
 export interface BuiltPrintDocument {
   pdf: Uint8Array;
   pages: number;
+  /** JPEG quality the pages were encoded at to fit `MAX_PRINT_FILE_BYTES`. */
+  quality: number;
   widthInches: number;
   heightInches: number;
 }
@@ -76,8 +88,11 @@ function messageOf(error: unknown): string {
   return typeof error === "string" ? error : "Unknown rendering error";
 }
 
-async function canvasToPage(canvas: HTMLCanvasElement): Promise<PdfImagePage> {
-  const blob = await canvasToJpegBlob(canvas, PRINT_JPEG_QUALITY);
+async function canvasToPage(
+  canvas: HTMLCanvasElement,
+  quality: number,
+): Promise<PdfImagePage> {
+  const blob = await canvasToJpegBlob(canvas, quality);
   const jpeg = new Uint8Array(await blob.arrayBuffer());
   return { jpeg, widthPx: canvas.width, heightPx: canvas.height };
 }
@@ -99,7 +114,10 @@ function downscaleToDataUrl(source: HTMLCanvasElement, maxWidth = 720): string {
  * face when it carries any content, each rasterized at 300 DPI and embedded
  * as a JPEG page sized to the physical mail piece. A rotated design is
  * rasterized as laid out, then turned back onto the product's own page, so
- * Click2Mail always receives pages of the size it prints.
+ * Click2Mail always receives pages of the size it prints. Pages are encoded
+ * at the best JPEG quality that keeps the file within `MAX_PRINT_FILE_BYTES`;
+ * a design that does not fit even at the lowest quality is rejected here,
+ * before the campaign is paid for.
  */
 export async function buildPrintPdf(
   canvas: CanvasState,
@@ -108,24 +126,39 @@ export async function buildPrintPdf(
 ): Promise<BuiltPrintDocument> {
   const dims = canvasDims(canvas, layoutVariant);
   const options = { dpi: RASTER_DPI, sampleRecipientId };
-  const pages: PdfImagePage[] = [];
-  const front = await rasterizeSide(canvas.front, dims, options);
-  pages.push(await canvasToPage(toNativePage(front, dims)));
+  const rasters: HTMLCanvasElement[] = [
+    toNativePage(await rasterizeSide(canvas.front, dims, options), dims),
+  ];
   if (sideHasContent(canvas.back)) {
-    const back = await rasterizeSide(canvas.back, dims, options);
-    pages.push(await canvasToPage(toNativePage(back, dims)));
+    rasters.push(
+      toNativePage(await rasterizeSide(canvas.back, dims, options), dims),
+    );
   }
-  const pdf = buildPdfFromJpegs(
-    pages,
-    dims.nativeWidthInches,
-    dims.nativeHeightInches,
+  let smallest = Number.POSITIVE_INFINITY;
+  for (const quality of PRINT_JPEG_QUALITIES) {
+    const pages: PdfImagePage[] = [];
+    for (const raster of rasters)
+      pages.push(await canvasToPage(raster, quality));
+    const pdf = buildPdfFromJpegs(
+      pages,
+      dims.nativeWidthInches,
+      dims.nativeHeightInches,
+    );
+    if (pdf.byteLength <= MAX_PRINT_FILE_BYTES) {
+      return {
+        pdf,
+        pages: pages.length,
+        quality,
+        widthInches: dims.nativeWidthInches,
+        heightInches: dims.nativeHeightInches,
+      };
+    }
+    smallest = Math.min(smallest, pdf.byteLength);
+  }
+  const mb = (bytes: number) => (bytes / 1_000_000).toFixed(1);
+  throw new Error(
+    `The print file is ${mb(smallest)} MB even at reduced image quality, and Click2Mail uploads are limited to ${mb(MAX_PRINT_FILE_BYTES)} MB. Use a simpler background image and try again.`,
   );
-  return {
-    pdf,
-    pages: pages.length,
-    widthInches: dims.nativeWidthInches,
-    heightInches: dims.nativeHeightInches,
-  };
 }
 
 /**

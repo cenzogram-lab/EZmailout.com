@@ -446,6 +446,7 @@ export interface CampaignRecordShared {
     returnAddress?: ReturnAddress;
     sourcePresetId?: string;
     status: CampaignStatus;
+    testMode: boolean;
     totalAmountChargedCents: bigint;
     unitPriceCents: bigint;
     updatedAt: bigint;
@@ -509,6 +510,7 @@ export interface AiCopyInput {
 export interface AdminKeysView {
     adminPrincipal?: string;
     callerIsAdmin: boolean;
+    callerIsController: boolean;
     click2mailEnvironment: Click2MailEnvironment;
     click2mailPasswordMasked?: string;
     click2mailUsername?: string;
@@ -560,10 +562,12 @@ export interface backendInterface {
     _internet_identity_sign_in_start(): Promise<Uint8Array>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
     askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
+    assignAdmin(arg0: Principal): Promise<ApiResult>;
     confirmPayment(arg0: string): Promise<ConfirmPaymentResult>;
     createCampaign(arg0: CreateCampaignInput): Promise<CreateCampaignResult>;
     createPaymentIntent(arg0: PaymentPurpose, arg1: string | null, arg2: CreditPack | null): Promise<PaymentIntentResult>;
     deductAiCredits(arg0: bigint, arg1: string): Promise<CreditResult>;
+    deleteCampaignDraft(arg0: string): Promise<ApiResult>;
     deletePreset(arg0: string): Promise<ApiResult>;
     dispatchClick2MailJob(arg0: string): Promise<DispatchResult>;
     ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult>;

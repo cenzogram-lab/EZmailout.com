@@ -42,7 +42,7 @@ actor {
 
   // Mixin composition — all public endpoints are delegated to mixins.
   include AdminApi(adminKeysState);
-  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState);
+  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments);
   include AudienceApi(savedAudiencePresets, presetMeta, state, adminKeysState, transform);
   include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, trackingEvents, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);

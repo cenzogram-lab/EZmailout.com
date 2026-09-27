@@ -103,6 +103,7 @@ module {
     sandboxCheckout : Bool;
     adminPrincipal : ?Text;
     callerIsAdmin : Bool;
+    callerIsController : Bool;
     webhookPath : Text;
     supportEmailAddress : ?Text;
   };
