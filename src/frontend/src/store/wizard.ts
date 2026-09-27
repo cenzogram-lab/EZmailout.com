@@ -22,6 +22,7 @@ import {
 import type { CatalogMailClass } from "@/lib/pricing";
 import { getPricingRow } from "@/lib/pricing";
 import { canvasDims, getLayoutDims, orientationOf } from "@/lib/printSpec";
+import { isShapeUrl, reshapeForBox } from "@/lib/shapes";
 import type {
   CanvasAlignment,
   CanvasSideKey,
@@ -474,7 +475,20 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
       return {
         canvas: withSide(s.canvas, sideKey, {
           ...side,
-          logos: side.logos.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+          logos: side.logos.map((l) => {
+            if (l.id !== id) return l;
+            const next = { ...l, ...patch };
+            // A resized pill or rounded rectangle is redrawn for its new
+            // aspect, so its corners stay round instead of stretching.
+            if (
+              (patch.width !== undefined || patch.height !== undefined) &&
+              patch.url === undefined &&
+              isShapeUrl(next.url)
+            ) {
+              next.url = reshapeForBox(next.url, next.width, next.height);
+            }
+            return next;
+          }),
         }),
       };
     }),

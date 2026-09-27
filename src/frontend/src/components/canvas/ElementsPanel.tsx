@@ -24,7 +24,7 @@ export function ElementsPanel() {
       shape.kind === "line"
         ? shape.height
         : Math.round((width / shape.width) * shape.height);
-    addLogo(activeSide, shapeUrl(shape.kind, fill), {
+    addLogo(activeSide, shapeUrl(shape.kind, fill, width / height), {
       x: safe.x + Math.round((safe.w - width) / 2),
       y: safe.y + Math.round((safe.h - height) / 2),
       width,

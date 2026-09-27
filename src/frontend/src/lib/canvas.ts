@@ -7,6 +7,7 @@ import type {
 } from "@/backend";
 import { QrMode } from "@/backend";
 import { DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
+import { physicalTraitsFor } from "@/lib/physical";
 import {
   DESIGN_PPI,
   type LayoutDims,
@@ -157,7 +158,8 @@ export function canvasFromTemplate(
     backgroundColor: template.backgroundColor,
   };
   let z = 0n;
-  for (const el of layoutTemplate(template, dims)) {
+  const traits = physicalTraitsFor(layoutVariant, orientation);
+  for (const el of layoutTemplate(template, dims, traits)) {
     z += 1n;
     if (el.kind === "text") {
       front.textBlocks.push(makeTextBlock(front, { ...el.block, zIndex: z }));
@@ -182,6 +184,14 @@ export function sideSignature(
 ): string {
   const side = getSide(canvas, key);
   const r = (n: number) => Math.round(n * 100) / 100;
+  // Image data URLs can run to megabytes and this runs on store updates, so
+  // long URLs are keyed by length and ends rather than copied whole.
+  const url = (u: string | null | undefined) =>
+    u == null
+      ? null
+      : u.length <= 512
+        ? u
+        : `${u.length}:${u.slice(0, 128)}…${u.slice(-128)}`;
   const items: { z: bigint; item: unknown[] }[] = [
     ...side.textBlocks.map((t) => ({
       z: t.zIndex,
@@ -201,13 +211,13 @@ export function sideSignature(
     })),
     ...side.logos.map((l) => ({
       z: l.zIndex,
-      item: ["logo", l.url, r(l.x), r(l.y), r(l.width), r(l.height)],
+      item: ["logo", url(l.url), r(l.x), r(l.y), r(l.width), r(l.height)],
     })),
     ...side.qrCodes.map((q) => ({
       z: q.zIndex,
       item: [
         "qr",
-        q.url,
+        url(q.url),
         String(q.mode),
         r(q.x),
         r(q.y),
@@ -223,7 +233,7 @@ export function sideSignature(
     r(canvas.widthInches),
     r(canvas.heightInches),
     side.backgroundColor,
-    side.backgroundImageUrl ?? null,
+    url(side.backgroundImageUrl),
     items.map((i) => i.item),
   ]);
 }

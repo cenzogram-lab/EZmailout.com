@@ -1,12 +1,11 @@
-import type { PhysicalTraits, SheetEdge } from "@/lib/physical";
+import {
+  PERFORATION_INSET_INCHES,
+  type PhysicalTraits,
+  SPINE_BAND_INCHES,
+  type SheetEdge,
+} from "@/lib/physical";
 import { DESIGN_PPI, type LayoutDims } from "@/lib/printSpec";
 import { cn } from "@/lib/utils";
-
-/** Distance a pressure-seal tear strip sits in from the trim edge. */
-export const PERFORATION_INSET_INCHES = 0.375;
-
-/** Width of the saddle-stitch spine / score band at the bound edge. */
-export const SPINE_BAND_INCHES = 0.1875;
 
 const CREASE_COLOR = "rgba(1, 8, 10, 0.34)";
 const PERF_COLOR = "rgba(1, 8, 10, 0.46)";

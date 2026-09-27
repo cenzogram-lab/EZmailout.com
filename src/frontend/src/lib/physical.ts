@@ -11,6 +11,12 @@ import { type Orientation, rotateRect } from "@/lib/printSpec";
  * corner, so it scales with the artboard and stays true at any zoom.
  */
 
+/** Distance a pressure-seal tear strip sits in from the trim edge. */
+export const PERFORATION_INSET_INCHES = 0.375;
+
+/** Width of the saddle-stitch spine / score band at the bound edge. */
+export const SPINE_BAND_INCHES = 0.1875;
+
 export type FoldAxis = "vertical" | "horizontal";
 
 export interface Crease {

@@ -2,6 +2,7 @@ import type { CanvasSide } from "@/backend";
 import { QrMode } from "@/backend";
 import { DESIGN_PPI, type LayoutDims, RASTER_DPI } from "@/lib/printSpec";
 import { qrToCanvas } from "@/lib/qr";
+import { isShapeUrl } from "@/lib/shapes";
 
 export interface RasterizeOptions {
   dpi?: number;
@@ -110,13 +111,20 @@ export async function rasterizeSide(
       draw: async () => {
         const img = await loadImage(logo.url);
         if (!img) return;
-        ctx.drawImage(
-          img,
-          logo.x * scale,
-          logo.y * scale,
-          logo.width * scale,
-          logo.height * scale,
-        );
+        const x = logo.x * scale;
+        const y = logo.y * scale;
+        const w = logo.width * scale;
+        const h = logo.height * scale;
+        // Shapes stretch to their box; images are fitted inside it and
+        // centred, exactly as the editor draws them (object-fill / contain).
+        if (isShapeUrl(logo.url) || !img.naturalWidth || !img.naturalHeight) {
+          ctx.drawImage(img, x, y, w, h);
+          return;
+        }
+        const fit = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+        const dw = img.naturalWidth * fit;
+        const dh = img.naturalHeight * fit;
+        ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
       },
     });
   }
@@ -129,7 +137,14 @@ export async function rasterizeSide(
         const fontSize = block.fontSize * scale;
         ctx.font = `${Number(block.fontWeight)} ${fontSize}px "${block.fontFamily}", "Geist", sans-serif`;
         ctx.fillStyle = block.color;
-        ctx.textBaseline = "top";
+        // Place each line on its baseline exactly where CSS does: the font's
+        // ascent + descent is centred in the 1.2 line box (half-leading), so
+        // the PDF matches the editor. `textBaseline = "top"` sat ~0.15 em high.
+        const metrics = ctx.measureText("Hg");
+        const ascent = metrics.fontBoundingBoxAscent;
+        const descent = metrics.fontBoundingBoxDescent;
+        const cssBaseline = Number.isFinite(ascent) && Number.isFinite(descent);
+        ctx.textBaseline = cssBaseline ? "alphabetic" : "top";
         const align =
           block.align === "center" || block.align === "right"
             ? block.align
@@ -145,11 +160,14 @@ export async function rasterizeSide(
             : align === "right"
               ? boxX + boxW
               : boxX + 2 * scale;
+        const baselineOffset = cssBaseline
+          ? (lineHeight - (ascent + descent)) / 2 + ascent
+          : 0;
         lines.forEach((line, i) => {
           ctx.fillText(
             line,
             originX,
-            block.y * scale + 2 * scale + i * lineHeight,
+            block.y * scale + 2 * scale + i * lineHeight + baselineOffset,
           );
         });
       },
