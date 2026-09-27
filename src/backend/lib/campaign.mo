@@ -94,12 +94,17 @@ module {
     r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment) and r.c2mDocumentId == null and r.c2mJobId == null;
   };
 
-  /// When an expirable draft is removed: `draftTtlNs` after the later of its
-  /// own last update and `lastActivity` (a staged print file, a checkout
-  /// opened for it). Null for anything that never expires.
+  /// When a campaign was last touched: the later of its own last update and
+  /// `outside` (a staged print file, a checkout opened for it).
+  public func lastActivityAt(r : Types.CampaignRecord, outside : Int) : Int {
+    if (outside > r.updatedAt) outside else r.updatedAt;
+  };
+
+  /// When an expirable draft is removed: `draftTtlNs` after `lastActivityAt`.
+  /// Null for anything that never expires.
   public func draftExpiresAt(r : Types.CampaignRecord, lastActivity : Int) : ?Int {
     if (not isExpirableDraft(r)) { return null };
-    ?((if (lastActivity > r.updatedAt) lastActivity else r.updatedAt) + draftTtlNs);
+    ?(lastActivityAt(r, lastActivity) + draftTtlNs);
   };
 
   /// Ids of the drafts in `campaigns` that have expired by `now`, given each
@@ -113,6 +118,24 @@ module {
       };
     };
     out.toArray();
+  };
+
+  /// The draft to evict when the canister-wide cap is full and nothing has
+  /// expired: the expirable draft idle longest (`lastActivityAt`, ties to the
+  /// first id in key order), skipping `isProtected` ones (a confirmed
+  /// payment, a checkout that may still complete). Null when none may go.
+  public func oldestIdleDraft(campaigns : Map.Map<Text, Types.CampaignRecord>, lastActivity : Text -> Int, isProtected : Text -> Bool) : ?Text {
+    var best : ?(Text, Int) = null;
+    for ((id, r) in campaigns.entries()) {
+      if (isExpirableDraft(r) and not isProtected(id)) {
+        let at = lastActivityAt(r, lastActivity(id));
+        switch (best) {
+          case (?(_, t)) { if (at < t) { best := ?(id, at) } };
+          case null { best := ?(id, at) };
+        };
+      };
+    };
+    switch (best) { case (?(id, _)) ?id; case null null };
   };
 
   public func create(

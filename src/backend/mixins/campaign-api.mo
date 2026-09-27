@@ -66,10 +66,9 @@ mixin (
   };
 
   /// Why this owner cannot stage `adding` more recipients in a new draft, or
-  /// null when both their own caps and the canister-wide one have room.
-  private func draftCapRefusal(owner : Text, adding : Nat) : ?Text {
-    var total = 0;
-    for ((_, r) in campaigns.entries()) { if (r.paymentStatus == #Unpaid) { total += 1 } };
+  /// null when their own caps have room. The canister-wide cap never
+  /// refuses while a draft can be evicted (`makeRoomForDraft`).
+  private func ownerDraftRefusal(owner : Text, adding : Nat) : ?Text {
     let (drafts, recipients) = unpaidDrafts(owner);
     if (drafts >= maxUnpaidDrafts) {
       return ?("You have " # drafts.toText() # " unpaid drafts. Pay for one or delete a draft from Campaigns before starting another.");
@@ -77,10 +76,49 @@ mixin (
     if (recipients + adding > maxUnpaidRecipients) {
       return ?"Unpaid drafts may hold at most 10,000 recipients in total. Pay for or delete a draft before adding this list.";
     };
-    if (total >= CampaignLib.maxUnpaidDraftsGlobal) {
-      return ?"EZmailout is holding as many unpaid drafts as it can right now. Please try again later, or pay for a draft you already have.";
-    };
     null;
+  };
+
+  private func unpaidDraftTotal() : Nat {
+    var total = 0;
+    for ((_, r) in campaigns.entries()) { if (r.paymentStatus == #Unpaid) { total += 1 } };
+    total;
+  };
+
+  /// Drafts an eviction must never touch: one with a confirmed payment, or
+  /// with a live checkout opened in the last 24 hours that may still
+  /// complete (the same window `deleteCampaignDraft` respects).
+  private func evictionProtected(now : Int) : Set.Set<Text> {
+    let out = Set.empty<Text>();
+    for ((_, p) in payments.entries()) {
+      switch (p.purpose, p.reference) {
+        case (#CampaignOrder, ?id) {
+          let confirmed = p.state == #Succeeded or p.state == #Waived;
+          let openCheckout = p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs;
+          if (confirmed or openCheckout) { out.add(id) };
+        };
+        case _ {};
+      };
+    };
+    out;
+  };
+
+  /// Makes room under the canister-wide cap for one new draft: expired
+  /// drafts go first, then the oldest idle ones (`CampaignLib.oldestIdleDraft`),
+  /// so a full canister never turns away a new draft while an unprotected
+  /// draft could make way. False only when nothing may be evicted.
+  private func makeRoomForDraft(now : Int) : Bool {
+    if (unpaidDraftTotal() < CampaignLib.maxUnpaidDraftsGlobal) { return true };
+    ignore pruneExpiredDrafts(now);
+    let checkouts = checkoutActivity();
+    let isProtected = evictionProtected(now);
+    while (unpaidDraftTotal() >= CampaignLib.maxUnpaidDraftsGlobal) {
+      switch (CampaignLib.oldestIdleDraft(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), func(id : Text) : Bool = isProtected.contains(id))) {
+        case (?id) { removeDrafts([id]) };
+        case null { return false };
+      };
+    };
+    true;
   };
 
   /// The newest checkout opened for each campaign.
@@ -185,11 +223,11 @@ mixin (
     };
     if (caller.isAnonymous()) { return fail("Sign in with Internet Identity before creating a campaign") };
     if (input.recipients.size() > maxRecipients) { return fail("A campaign may include at most 5,000 recipients") };
-    // Drafts past their 14 days are pruned before a cap refuses, so an
-    // expired draft never holds a slot the timer has not freed yet.
+    // Drafts past their 14 days are pruned before an owner's cap refuses, so
+    // an expired draft never holds a slot the timer has not freed yet.
     let owner = caller.toText();
-    let refusal = switch (draftCapRefusal(owner, input.recipients.size())) {
-      case (?_) { ignore pruneExpiredDrafts(Time.now()); draftCapRefusal(owner, input.recipients.size()) };
+    let refusal = switch (ownerDraftRefusal(owner, input.recipients.size())) {
+      case (?_) { ignore pruneExpiredDrafts(Time.now()); ownerDraftRefusal(owner, input.recipients.size()) };
       case null null;
     };
     switch (refusal) { case (?msg) { return fail(msg) }; case null {} };
@@ -227,6 +265,11 @@ mixin (
         };
       };
       case null null;
+    };
+    // Only now, with every check passed, may the canister-wide cap evict an
+    // idle draft: a request that would be refused anyway evicts nothing.
+    if (not makeRoomForDraft(Time.now())) {
+      return fail("EZmailout is holding as many unpaid drafts as it can right now. Please try again later, or pay for a draft you already have.");
     };
     let id = CampaignLib.nextId(state);
     let record = CampaignLib.create(id, caller.toText(), { input with qrDestinationUrl = qrDestination }, printSpec, row.retailPriceCents, row.baseCostCents, count);
