@@ -16,6 +16,7 @@ import AuthApi "mixins/auth-api";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Timer "mo:core/Timer";
+import Time "mo:core/Time";
 
 actor {
   // Stable state — initialized by the migration chain (no inline initializers).
@@ -53,4 +54,8 @@ actor {
   // Non-blocking tracking poll every 6 hours (Click2Mail IMb scans → timeline).
   // Calls the mixin's private poll directly, so the job has no public entry point.
   ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore await pollActiveCampaigns() });
+
+  // Unpaid drafts expire 14 days after their last activity; swept on the same
+  // 6-hour cadence, on its own timer so a slow poll never delays it.
+  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now()) });
 };

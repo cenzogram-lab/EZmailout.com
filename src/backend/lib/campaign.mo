@@ -28,7 +28,7 @@ module {
     record.paymentStatus == #Waived;
   };
 
-  public func toShared(self : Types.CampaignRecord) : Types.CampaignRecordShared {
+  public func toShared(self : Types.CampaignRecord, draftExpiresAt : ?Int) : Types.CampaignRecordShared {
     {
       id = self.id;
       ownerId = self.ownerId;
@@ -57,7 +57,62 @@ module {
       returnAddress = self.returnAddress;
       sourcePresetId = self.sourcePresetId;
       testMode = isTestMode(self);
+      draftExpiresAt;
     };
+  };
+
+  /// The list row for `getCampaigns`: no canvas, no recipients.
+  public func toSummary(self : Types.CampaignRecord, draftExpiresAt : ?Int) : Types.CampaignSummary {
+    {
+      id = self.id;
+      ownerId = self.ownerId;
+      name = self.name;
+      product = self.product;
+      recipientCount = self.recipientCount;
+      status = self.status;
+      paymentStatus = self.paymentStatus;
+      productionStatus = self.productionStatus;
+      totalAmountChargedCents = self.totalAmountChargedCents;
+      createdAt = self.createdAt;
+      updatedAt = self.updatedAt;
+      testMode = isTestMode(self);
+      draftExpiresAt;
+    };
+  };
+
+  // ─── Unpaid draft expiry ────────────────────────────────────────────────
+
+  /// An unpaid draft is removed this long after its last activity.
+  public let draftTtlNs : Int = 1_209_600_000_000_000; // 14 days
+  /// Unpaid drafts the whole canister holds at most: identities are free to
+  /// mint, so the per-identity draft cap alone does not bound storage.
+  public let maxUnpaidDraftsGlobal : Nat = 500;
+
+  /// A campaign that may expire: never paid (or waived) and never sent to
+  /// Click2Mail. Anything else is an order and is never removed.
+  public func isExpirableDraft(r : Types.CampaignRecord) : Bool {
+    r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment) and r.c2mDocumentId == null and r.c2mJobId == null;
+  };
+
+  /// When an expirable draft is removed: `draftTtlNs` after the later of its
+  /// own last update and `lastActivity` (a staged print file, a checkout
+  /// opened for it). Null for anything that never expires.
+  public func draftExpiresAt(r : Types.CampaignRecord, lastActivity : Int) : ?Int {
+    if (not isExpirableDraft(r)) { return null };
+    ?((if (lastActivity > r.updatedAt) lastActivity else r.updatedAt) + draftTtlNs);
+  };
+
+  /// Ids of the drafts in `campaigns` that have expired by `now`, given each
+  /// campaign's latest outside activity.
+  public func expiredDrafts(campaigns : Map.Map<Text, Types.CampaignRecord>, lastActivity : Text -> Int, now : Int) : [Text] {
+    let out = List.empty<Text>();
+    for ((id, r) in campaigns.entries()) {
+      switch (draftExpiresAt(r, lastActivity(id))) {
+        case (?t) { if (t <= now) { out.add(id) } };
+        case null {};
+      };
+    };
+    out.toArray();
   };
 
   public func create(

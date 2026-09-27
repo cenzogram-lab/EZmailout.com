@@ -7,6 +7,7 @@ import {
   ProductionStatus,
 } from "@/backend";
 import { StripeCheckout } from "@/components/billing/StripeCheckout";
+import { DraftExpiryNote } from "@/components/campaigns/DraftExpiry";
 import {
   CAMPAIGN_STAGES,
   DELIVERY_EXCEPTIONS,
@@ -557,6 +558,8 @@ export function CampaignDetailPage() {
                       </AlertDescription>
                     </Alert>
                   ) : null}
+
+                  <DraftExpiryNote expiresAt={campaign.draftExpiresAt} />
 
                   <Separator />
 

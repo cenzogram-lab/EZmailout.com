@@ -65,6 +65,80 @@ mixin (
     (drafts, recipients);
   };
 
+  /// Why this owner cannot stage `adding` more recipients in a new draft, or
+  /// null when both their own caps and the canister-wide one have room.
+  private func draftCapRefusal(owner : Text, adding : Nat) : ?Text {
+    var total = 0;
+    for ((_, r) in campaigns.entries()) { if (r.paymentStatus == #Unpaid) { total += 1 } };
+    let (drafts, recipients) = unpaidDrafts(owner);
+    if (drafts >= maxUnpaidDrafts) {
+      return ?("You have " # drafts.toText() # " unpaid drafts. Pay for one or delete a draft from Campaigns before starting another.");
+    };
+    if (recipients + adding > maxUnpaidRecipients) {
+      return ?"Unpaid drafts may hold at most 10,000 recipients in total. Pay for or delete a draft before adding this list.";
+    };
+    if (total >= CampaignLib.maxUnpaidDraftsGlobal) {
+      return ?"EZmailout is holding as many unpaid drafts as it can right now. Please try again later, or pay for a draft you already have.";
+    };
+    null;
+  };
+
+  /// The newest checkout opened for each campaign.
+  private func checkoutActivity() : Map.Map<Text, Int> {
+    let latest = Map.empty<Text, Int>();
+    for ((_, p) in payments.entries()) {
+      switch (p.purpose, p.reference) {
+        case (#CampaignOrder, ?id) {
+          switch (latest.get(id)) {
+            case (?t) { if (p.createdAt > t) { latest.add(id, p.createdAt) } };
+            case null { latest.add(id, p.createdAt) };
+          };
+        };
+        case _ {};
+      };
+    };
+    latest;
+  };
+
+  /// A campaign's latest activity outside its record: a staged print file
+  /// or a checkout opened for it.
+  private func lastDraftActivity(id : Text, checkouts : Map.Map<Text, Int>) : Int {
+    let checkout : Int = switch (checkouts.get(id)) { case (?t) t; case null 0 };
+    switch (documentUploads.get(id)) {
+      case (?u) { if (u.createdAt > checkout) u.createdAt else checkout };
+      case null checkout;
+    };
+  };
+
+  /// When `record` expires if it stays unpaid (`CampaignLib.draftExpiresAt`).
+  private func draftExpiry(record : Types.CampaignRecord, checkouts : Map.Map<Text, Int>) : ?Int {
+    CampaignLib.draftExpiresAt(record, lastDraftActivity(record.id, checkouts));
+  };
+
+  /// Removes drafts with their recipients, staged print files and timeline.
+  private func removeDrafts(ids : [Text]) {
+    if (ids.size() == 0) { return };
+    let gone = Set.empty<Text>();
+    for (id in ids.vals()) {
+      campaigns.remove(id);
+      campaignRecipients.remove(id);
+      documentUploads.remove(id);
+      gone.add(id);
+    };
+    trackingEvents.retain(func(e : Types.TrackingEvent) : Bool { not gone.contains(e.campaignId) });
+  };
+
+  /// Removes every unpaid draft whose `draftExpiry` has passed and returns
+  /// how many. Orders (paid, waived, or sent to Click2Mail) never expire.
+  /// Runs from the 6-hourly timer in `main.mo`, and from `createCampaign`
+  /// before a draft cap refuses.
+  private func pruneExpiredDrafts(now : Int) : Nat {
+    let checkouts = checkoutActivity();
+    let expired = CampaignLib.expiredDrafts(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), now);
+    removeDrafts(expired);
+    expired.size();
+  };
+
   private func scanKey(s : Types.QrScanEvent) : Text { s.campaignId };
 
   /// Appends a scan, keeping each campaign's newest `maxStoredScans`.
@@ -111,13 +185,14 @@ mixin (
     };
     if (caller.isAnonymous()) { return fail("Sign in with Internet Identity before creating a campaign") };
     if (input.recipients.size() > maxRecipients) { return fail("A campaign may include at most 5,000 recipients") };
-    let (drafts, draftRecipients) = unpaidDrafts(caller.toText());
-    if (drafts >= maxUnpaidDrafts) {
-      return fail("You have " # drafts.toText() # " unpaid drafts. Pay for one or delete a draft from Campaigns before starting another.");
+    // Drafts past their 14 days are pruned before a cap refuses, so an
+    // expired draft never holds a slot the timer has not freed yet.
+    let owner = caller.toText();
+    let refusal = switch (draftCapRefusal(owner, input.recipients.size())) {
+      case (?_) { ignore pruneExpiredDrafts(Time.now()); draftCapRefusal(owner, input.recipients.size()) };
+      case null null;
     };
-    if (draftRecipients + input.recipients.size() > maxUnpaidRecipients) {
-      return fail("Unpaid drafts may hold at most 10,000 recipients in total. Pay for or delete a draft before adding this list.");
-    };
+    switch (refusal) { case (?msg) { return fail(msg) }; case null {} };
     let recipients = input.recipients.map(AddressLib.sanitizeVerified);
     // Billing and Click2Mail dispatch both key off the stored list, so a campaign
     // is priced for exactly the addresses supplied — never an estimated count.
@@ -161,17 +236,22 @@ mixin (
     { ok = true; error = null; campaignId = ?id; unitPriceCents = ?row.retailPriceCents; totalCents = ?record.totalAmountChargedCents };
   };
 
-  /// The caller's campaigns, newest first; an admin sees all of them, including unowned legacy records.
-  public shared query ({ caller }) func getCampaigns() : async [Types.CampaignRecordShared] {
-    let result = List.empty<Types.CampaignRecordShared>();
+  /// The caller's campaigns as list rows, newest first; an admin sees all of
+  /// them, including unowned legacy records. Rows carry no design or
+  /// recipients, so the reply stays small however many campaigns there are.
+  public shared query ({ caller }) func getCampaigns() : async [Types.CampaignSummary] {
+    let checkouts = checkoutActivity();
+    let result = List.empty<Types.CampaignSummary>();
     for ((_, r) in campaigns.entries()) {
-      if (canAccess(r, caller)) { result.add(r.toShared()) };
+      if (canAccess(r, caller)) { result.add(r.toSummary(draftExpiry(r, checkouts))) };
     };
-    result.toArray().sort<Types.CampaignRecordShared>(func(a, b) = Int.compare(b.createdAt, a.createdAt));
+    result.toArray().sort<Types.CampaignSummary>(func(a, b) = Int.compare(b.createdAt, a.createdAt));
   };
 
+  /// One campaign in full, stored canvas included.
   public shared query ({ caller }) func getCampaign(id : Text) : async ?Types.CampaignRecordShared {
-    ?requireAccess(id, caller).toShared();
+    let record = requireAccess(id, caller);
+    ?record.toShared(draftExpiry(record, checkoutActivity()));
   };
 
   public shared query ({ caller }) func getCampaignRecipients(campaignId : Text) : async [Common.VerifiedAddress] {
@@ -259,9 +339,7 @@ mixin (
         return { ok = false; error = ?"A checkout for this draft was opened in the last 24 hours; try again later" };
       };
     };
-    campaigns.remove(campaignId);
-    campaignRecipients.remove(campaignId);
-    documentUploads.remove(campaignId);
+    removeDrafts([campaignId]);
     { ok = true; error = null };
   };
 

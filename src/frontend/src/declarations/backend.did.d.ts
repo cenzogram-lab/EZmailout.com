@@ -116,6 +116,7 @@ export interface CampaignRecordShared {
   'c2mAddressListId' : [] | [string],
   'returnAddress' : [] | [ReturnAddress],
   'ownerId' : string,
+  'draftExpiresAt' : [] | [bigint],
   'baseCostCents' : bigint,
   'name' : string,
   'createdAt' : bigint,
@@ -144,6 +145,21 @@ export type CampaignStatus = { 'InTransit' : null } |
   { 'Returned' : null } |
   { 'Created' : null } |
   { 'SortedAtLocalHub' : null };
+export interface CampaignSummary {
+  'id' : string,
+  'status' : CampaignStatus,
+  'paymentStatus' : PaymentStatus,
+  'ownerId' : string,
+  'draftExpiresAt' : [] | [bigint],
+  'name' : string,
+  'createdAt' : bigint,
+  'testMode' : boolean,
+  'updatedAt' : bigint,
+  'productionStatus' : ProductionStatus,
+  'recipientCount' : bigint,
+  'totalAmountChargedCents' : bigint,
+  'product' : ProductSelection,
+}
 export interface CanvasSide {
   'backgroundColor' : string,
   'backgroundImageUrl' : [] | [string],
@@ -557,7 +573,7 @@ export interface _SERVICE {
   'getAiPricing' : ActorMethod<[], AiPricing>,
   'getCampaign' : ActorMethod<[string], [] | [CampaignRecordShared]>,
   'getCampaignRecipients' : ActorMethod<[string], Array<VerifiedAddress>>,
-  'getCampaigns' : ActorMethod<[], Array<CampaignRecordShared>>,
+  'getCampaigns' : ActorMethod<[], Array<CampaignSummary>>,
   'getCanvasState' : ActorMethod<[string], [] | [CanvasState]>,
   'getCreditLedger' : ActorMethod<[], Array<CreditLedgerEntry>>,
   'getDocumentUploadStatus' : ActorMethod<

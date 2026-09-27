@@ -463,6 +463,22 @@ type CanvasSide =
    qrCodes: vec QrCodeState;
    textBlocks: vec TextBlockState;
  };
+type CampaignSummary = 
+ record {
+   createdAt: int;
+   draftExpiresAt: opt int;
+   id: text;
+   name: text;
+   ownerId: text;
+   paymentStatus: PaymentStatus;
+   product: ProductSelection;
+   productionStatus: ProductionStatus;
+   recipientCount: nat;
+   status: CampaignStatus;
+   testMode: bool;
+   totalAmountChargedCents: nat;
+   updatedAt: int;
+ };
 type CampaignStatus = 
  variant {
    Created;
@@ -483,6 +499,7 @@ type CampaignRecordShared =
    canvasState: opt CanvasState;
    createdAt: int;
    designTemplateId: opt text;
+   draftExpiresAt: opt int;
    id: text;
    lastError: opt text;
    name: text;
@@ -651,7 +668,7 @@ service : {
   getAiPricing: () -> (AiPricing) query;
   getCampaign: (id: text) -> (opt CampaignRecordShared) query;
   getCampaignRecipients: (campaignId: text) -> (vec VerifiedAddress) query;
-  getCampaigns: () -> (vec CampaignRecordShared) query;
+  getCampaigns: () -> (vec CampaignSummary) query;
   getCanvasState: (campaignId: text) -> (opt CanvasState) query;
   getCreditLedger: () -> (vec CreditLedgerEntry) query;
   getDocumentUploadStatus: (campaignId: text) ->

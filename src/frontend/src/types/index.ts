@@ -36,6 +36,7 @@ export type {
   AiPricing,
   AudiencePresetShared,
   CampaignRecordShared,
+  CampaignSummary,
   CanvasSide,
   CanvasState,
   ConfirmPaymentResult,

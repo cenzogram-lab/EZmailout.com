@@ -346,6 +346,7 @@ export const CampaignRecordShared = IDL.Record({
   'c2mAddressListId' : IDL.Opt(IDL.Text),
   'returnAddress' : IDL.Opt(ReturnAddress),
   'ownerId' : IDL.Text,
+  'draftExpiresAt' : IDL.Opt(IDL.Int),
   'baseCostCents' : IDL.Nat,
   'name' : IDL.Text,
   'createdAt' : IDL.Int,
@@ -366,6 +367,21 @@ export const CampaignRecordShared = IDL.Record({
   'product' : ProductSelection,
   'paymentIntentId' : IDL.Opt(IDL.Text),
   'sourcePresetId' : IDL.Opt(IDL.Text),
+});
+export const CampaignSummary = IDL.Record({
+  'id' : IDL.Text,
+  'status' : CampaignStatus,
+  'paymentStatus' : PaymentStatus,
+  'ownerId' : IDL.Text,
+  'draftExpiresAt' : IDL.Opt(IDL.Int),
+  'name' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'testMode' : IDL.Bool,
+  'updatedAt' : IDL.Int,
+  'productionStatus' : ProductionStatus,
+  'recipientCount' : IDL.Nat,
+  'totalAmountChargedCents' : IDL.Nat,
+  'product' : ProductSelection,
 });
 export const CreditLedgerEntry = IDL.Record({
   'id' : IDL.Nat,
@@ -606,7 +622,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(VerifiedAddress)],
       ['query'],
     ),
-  'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignRecordShared)], ['query']),
+  'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
   'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
   'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
   'getDocumentUploadStatus' : IDL.Func(
@@ -1025,6 +1041,7 @@ export const idlFactory = ({ IDL }) => {
     'c2mAddressListId' : IDL.Opt(IDL.Text),
     'returnAddress' : IDL.Opt(ReturnAddress),
     'ownerId' : IDL.Text,
+    'draftExpiresAt' : IDL.Opt(IDL.Int),
     'baseCostCents' : IDL.Nat,
     'name' : IDL.Text,
     'createdAt' : IDL.Int,
@@ -1045,6 +1062,21 @@ export const idlFactory = ({ IDL }) => {
     'product' : ProductSelection,
     'paymentIntentId' : IDL.Opt(IDL.Text),
     'sourcePresetId' : IDL.Opt(IDL.Text),
+  });
+  const CampaignSummary = IDL.Record({
+    'id' : IDL.Text,
+    'status' : CampaignStatus,
+    'paymentStatus' : PaymentStatus,
+    'ownerId' : IDL.Text,
+    'draftExpiresAt' : IDL.Opt(IDL.Int),
+    'name' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'testMode' : IDL.Bool,
+    'updatedAt' : IDL.Int,
+    'productionStatus' : ProductionStatus,
+    'recipientCount' : IDL.Nat,
+    'totalAmountChargedCents' : IDL.Nat,
+    'product' : ProductSelection,
   });
   const CreditLedgerEntry = IDL.Record({
     'id' : IDL.Nat,
@@ -1284,7 +1316,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(VerifiedAddress)],
         ['query'],
       ),
-    'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignRecordShared)], ['query']),
+    'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
     'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
     'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
     'getDocumentUploadStatus' : IDL.Func(

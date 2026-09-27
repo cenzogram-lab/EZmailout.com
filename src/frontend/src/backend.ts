@@ -464,6 +464,21 @@ export interface CanvasSide {
     qrCodes: Array<QrCodeState>;
     textBlocks: Array<TextBlockState>;
 }
+export interface CampaignSummary {
+    createdAt: bigint;
+    draftExpiresAt?: bigint;
+    id: string;
+    name: string;
+    ownerId: string;
+    paymentStatus: PaymentStatus;
+    product: ProductSelection;
+    productionStatus: ProductionStatus;
+    recipientCount: bigint;
+    status: CampaignStatus;
+    testMode: boolean;
+    totalAmountChargedCents: bigint;
+    updatedAt: bigint;
+}
 export enum CampaignStatus {
     Created = "Created",
     Delivered = "Delivered",
@@ -482,6 +497,7 @@ export interface CampaignRecordShared {
     canvasState?: CanvasState;
     createdAt: bigint;
     designTemplateId?: string;
+    draftExpiresAt?: bigint;
     id: string;
     lastError?: string;
     name: string;
@@ -630,7 +646,7 @@ export interface backendInterface {
     getAiPricing(): Promise<AiPricing>;
     getCampaign(arg0: string): Promise<CampaignRecordShared | null>;
     getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>>;
-    getCampaigns(): Promise<Array<CampaignRecordShared>>;
+    getCampaigns(): Promise<Array<CampaignSummary>>;
     getCanvasState(arg0: string): Promise<CanvasState | null>;
     getCreditLedger(): Promise<Array<CreditLedgerEntry>>;
     getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null>;
@@ -829,8 +845,8 @@ export class Backend implements backendInterface {
     async getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>> {
         return this._call("getCampaignRecipients", [arg0]) as Promise<Array<VerifiedAddress>>;
     }
-    async getCampaigns(): Promise<Array<CampaignRecordShared>> {
-        return this._call("getCampaigns", []) as Promise<Array<CampaignRecordShared>>;
+    async getCampaigns(): Promise<Array<CampaignSummary>> {
+        return this._call("getCampaigns", []) as Promise<Array<CampaignSummary>>;
     }
     async getCanvasState(arg0: string): Promise<CanvasState | null> {
         return this._call("getCanvasState", [arg0]) as Promise<CanvasState | null>;

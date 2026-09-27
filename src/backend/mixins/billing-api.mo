@@ -327,7 +327,14 @@ mixin (
         return { ok = true; error = null; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = record.reference; subscriptionActive = ?AccountLib.isSubscriptionLive(a, Time.now()); referralRewardApplied = false };
       };
     };
+    // A draft removed after 14 unpaid days (or deleted by its owner) whose
+    // old checkout was paid anyway: the payment is recorded as received, so
+    // support can refund it, but it buys nothing and earns no referral.
+    let orphaned = record.purpose == #CampaignOrder and (switch (record.reference) { case (?id) not campaigns.containsKey(id); case null true });
     let (balance, campaignId, subActive) = applyPaymentEffects(record, a);
+    if (orphaned) {
+      return { ok = false; error = ?"This draft was removed before the payment arrived (unpaid drafts expire after 14 days). The payment is recorded; contact support for a refund."; state = ?record.state; creditBalance = balance; campaignId = null; subscriptionActive = null; referralRewardApplied = false };
+    };
     let rewarded = tryReferralReward(record);
     { ok = true; error = null; state = ?record.state; creditBalance = balance; campaignId; subscriptionActive = switch (subActive) { case (?s) ?s; case null ?AccountLib.isSubscriptionLive(a, Time.now()) }; referralRewardApplied = rewarded };
   };

@@ -13,6 +13,7 @@ import type {
   AudiencePresetShared,
   CampaignRecordShared,
   CampaignStatus,
+  CampaignSummary,
   CanvasState,
   ConfirmPaymentResult,
   CreateCampaignInput,
@@ -75,9 +76,10 @@ export function usePricingLedger() {
 
 // ─── Campaigns ──────────────────────────────────────────────────────────────
 
+/** List rows only: the stored design comes with `useCampaign(id)`. */
 export function useCampaigns() {
   const { actor, ready } = useBackendActor();
-  return useQuery<CampaignRecordShared[]>({
+  return useQuery<CampaignSummary[]>({
     queryKey: ["campaigns"],
     queryFn: async () => (actor ? actor.getCampaigns() : []),
     enabled: ready,

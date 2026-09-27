@@ -1,8 +1,9 @@
 import {
-  type CampaignRecordShared,
   CampaignStatus,
+  type CampaignSummary,
   ProductionStatus,
 } from "@/backend";
+import { DraftExpiry } from "@/components/campaigns/DraftExpiry";
 import { SavePresetDialog } from "@/components/campaigns/SavePresetDialog";
 import {
   PaymentStatusBadge,
@@ -49,11 +50,11 @@ import { toast } from "sonner";
 
 const RERUN_TOAST_ID = "campaigns-rerun";
 
-function productLabel(campaign: CampaignRecordShared): string {
+function productLabel(campaign: CampaignSummary): string {
   return layoutLabel(campaign.product.layoutVariant);
 }
 
-function productSubLabel(campaign: CampaignRecordShared): string {
+function productSubLabel(campaign: CampaignSummary): string {
   const color = campaign.product.colorOption
     ? ` · ${campaign.product.colorOption}`
     : "";
@@ -61,13 +62,13 @@ function productSubLabel(campaign: CampaignRecordShared): string {
 }
 
 interface RowActionsProps {
-  campaign: CampaignRecordShared;
+  campaign: CampaignSummary;
   index: number;
   exporting: boolean;
   rerunning: boolean;
-  onExport: (campaign: CampaignRecordShared) => void;
-  onSavePreset: (campaign: CampaignRecordShared) => void;
-  onRerun: (campaign: CampaignRecordShared) => void;
+  onExport: (campaign: CampaignSummary) => void;
+  onSavePreset: (campaign: CampaignSummary) => void;
+  onRerun: (campaign: CampaignSummary) => void;
 }
 
 function RowActions({
@@ -160,13 +161,11 @@ export function CampaignsPage() {
   const { data: campaigns, isLoading } = useCampaigns();
   const exportMutation = useExportCampaign();
   const [exportingId, setExportingId] = useState<string | null>(null);
-  const [presetTarget, setPresetTarget] = useState<CampaignRecordShared | null>(
+  const [presetTarget, setPresetTarget] = useState<CampaignSummary | null>(
     null,
   );
   const [presetOpen, setPresetOpen] = useState(false);
-  const [rerunTarget, setRerunTarget] = useState<CampaignRecordShared | null>(
-    null,
-  );
+  const [rerunTarget, setRerunTarget] = useState<CampaignSummary | null>(null);
   const rerunRecipients = useCampaignRecipients(rerunTarget?.id ?? null);
 
   const resetWizard = useWizardStore((s) => s.reset);
@@ -231,7 +230,7 @@ export function CampaignsPage() {
     setCurrentStep,
   ]);
 
-  async function handleExport(campaign: CampaignRecordShared) {
+  async function handleExport(campaign: CampaignSummary) {
     setExportingId(campaign.id);
     try {
       const csv = await exportMutation.mutateAsync(campaign.id);
@@ -250,12 +249,12 @@ export function CampaignsPage() {
     }
   }
 
-  function handleSavePreset(campaign: CampaignRecordShared) {
+  function handleSavePreset(campaign: CampaignSummary) {
     setPresetTarget(campaign);
     setPresetOpen(true);
   }
 
-  function handleRerun(campaign: CampaignRecordShared) {
+  function handleRerun(campaign: CampaignSummary) {
     toast.loading("Loading audience…", { id: RERUN_TOAST_ID });
     setRerunTarget(campaign);
   }
@@ -443,6 +442,7 @@ export function CampaignsPage() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                       {formatTimestamp(campaign.createdAt, false)}
+                      <DraftExpiry expiresAt={campaign.draftExpiresAt} />
                     </TableCell>
                     <TableCell>
                       <RowActions
@@ -521,6 +521,7 @@ export function CampaignsPage() {
                       <dt className="text-xs text-muted-foreground">Created</dt>
                       <dd className="text-foreground">
                         {formatTimestamp(campaign.createdAt, false)}
+                        <DraftExpiry expiresAt={campaign.draftExpiresAt} />
                       </dd>
                     </div>
                   </dl>

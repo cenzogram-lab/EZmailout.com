@@ -225,6 +225,27 @@ module {
     sourcePresetId : ?Text;
     /// Paid through sandbox checkout; its Click2Mail job goes to Staging.
     testMode : Bool;
+    /// When this unpaid draft is removed (`CampaignLib.draftTtlNs` after its
+    /// last activity); null for anything paid or sent to Click2Mail.
+    draftExpiresAt : ?Int;
+  };
+
+  /// One row of `getCampaigns`. List queries carry no design or recipients:
+  /// the full record, stored canvas included, comes from `getCampaign(id)`.
+  public type CampaignSummary = {
+    id : Text;
+    ownerId : Text;
+    name : Text;
+    product : ProductSelection;
+    recipientCount : Nat;
+    status : CampaignStatus;
+    paymentStatus : PaymentStatus;
+    productionStatus : ProductionStatus;
+    totalAmountChargedCents : Nat;
+    createdAt : Int;
+    updatedAt : Int;
+    testMode : Bool;
+    draftExpiresAt : ?Int;
   };
 
   public type CreateCampaignInput = {
