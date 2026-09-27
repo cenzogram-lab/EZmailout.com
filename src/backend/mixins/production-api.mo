@@ -148,7 +148,7 @@ mixin (
   };
 
   private func markFailed(record : Types.CampaignRecord, msg : Text) : Types.DispatchResult {
-    record.productionStatus := #Failed;
+    ignore CampaignLib.moveProduction(record, #Failed);
     record.lastError := ?msg;
     record.updatedAt := Time.now();
     dispatchResult(record, false, ?msg);
@@ -168,6 +168,14 @@ mixin (
     if (not isOwner(record, caller)) { return dispatchResult(record, false, ?"Unauthorized") };
     if (record.paymentStatus != #Paid and record.paymentStatus != #Waived) { return dispatchResult(record, false, ?"Payment required before dispatch") };
     if (record.productionStatus == #Submitted) { return dispatchResult(record, true, null) };
+    // Paid records from before payment opened dispatch may still read as
+    // awaiting payment; payment was checked just above.
+    if (record.productionStatus == #Draft or record.productionStatus == #AwaitingPayment) {
+      ignore CampaignLib.moveProduction(record, #ReadyToDispatch);
+    };
+    if (not CampaignLib.productionMoveAllowed(record.productionStatus, #Processing)) {
+      return dispatchResult(record, false, ?"This campaign cannot be dispatched from its current production state");
+    };
     // Checked and taken in the same message as the checks above, before the
     // first await, so no interleaving call can get past it.
     if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
@@ -196,7 +204,7 @@ mixin (
     };
 
     dispatchInFlight.add(campaignId);
-    record.productionStatus := #Processing;
+    ignore CampaignLib.moveProduction(record, #Processing);
     record.lastError := null;
     record.updatedAt := Time.now();
     try {
@@ -209,7 +217,7 @@ mixin (
       switch (record.productionStatus) {
         case (#Submitted or #Failed) {};
         case (_) {
-          record.productionStatus := #Failed;
+          ignore CampaignLib.moveProduction(record, #Failed);
           record.lastError := ?"Dispatch was interrupted before Click2Mail confirmed it; completed steps are kept and it is safe to retry";
           record.updatedAt := Time.now();
         };
@@ -246,7 +254,7 @@ mixin (
       let resp = await Http.postBlob(base # "/documents", Click2Mail.jsonHeaders(auth, "multipart/form-data; boundary=" # boundary), body, opts, transformFn);
       if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Document upload failed", resp)) };
       switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mDocumentId := ?id; record.productionStatus := #DocumentUploaded; record.updatedAt := Time.now(); documentUploads.remove(campaignId) };
+        case (?id) { record.c2mDocumentId := ?id; ignore CampaignLib.moveProduction(record, #DocumentUploaded); record.updatedAt := Time.now(); documentUploads.remove(campaignId) };
         case null { return markFailed(record, "Document upload returned no id") };
       };
     };
@@ -257,7 +265,7 @@ mixin (
       let resp = await Http.postText(base # "/addressLists", Click2Mail.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
       if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed", resp)) };
       switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mAddressListId := ?id; record.productionStatus := #AddressListReady; record.updatedAt := Time.now() };
+        case (?id) { record.c2mAddressListId := ?id; ignore CampaignLib.moveProduction(record, #AddressListReady); record.updatedAt := Time.now() };
         case null { return markFailed(record, "Address list returned no id") };
       };
     };
@@ -270,7 +278,7 @@ mixin (
       let resp = await Http.postText(base # "/jobs", Click2Mail.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
       if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed", resp)) };
       switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mJobId := ?id; record.productionStatus := #JobCreated; record.updatedAt := Time.now() };
+        case (?id) { record.c2mJobId := ?id; ignore CampaignLib.moveProduction(record, #JobCreated); record.updatedAt := Time.now() };
         case null { return markFailed(record, "Job creation returned no id") };
       };
     };
@@ -294,7 +302,7 @@ mixin (
   };
 
   private func markSubmitted(record : Types.CampaignRecord, campaignId : Text, jobId : Text, detail : Text) : Types.DispatchResult {
-    record.productionStatus := #Submitted;
+    ignore CampaignLib.moveProduction(record, #Submitted);
     record.lastError := null;
     record.updatedAt := Time.now();
     if (CampaignLib.advanceStatus(record, #InProduction)) {

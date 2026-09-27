@@ -80,6 +80,16 @@
     ignore: false,
   },
   {
+    // Plain text, one domain per line, readable from any origin (boundary
+    // nodes fetch it server-side; the header also lets browser-based domain
+    // checks read it).
+    match: ".well-known/ic-domains",
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Access-Control-Allow-Origin": "*",
+    },
+  },
+  {
     // Internet Identity fetches this from https://ezmailout.com, the
     // canonical derivation origin (src/lib/identityOrigin.ts), before it lets
     // https://www.ezmailout.com sign in as it. II reads it cross-origin from

@@ -1,5 +1,6 @@
 /// Address sanitization, local validation and recipient id helpers.
 import Common "../types/common";
+import Inputs "inputs";
 import Text "mo:core/Text";
 import Char "mo:core/Char";
 import Array "mo:core/Array";
@@ -78,6 +79,7 @@ module {
 
   /// Returns an error message when the address fails local (pre-CASS) checks.
   public func validateLocal(addr : Common.AddressInput) : ?Text {
+    if (Inputs.addressInputTooLong(addr)) { return ?"Address lines are limited to 100 characters" };
     if (addr.name == "") { return ?"Recipient name is required" };
     if (addr.address_line1 == "") { return ?"Street address is required" };
     if (addr.city == "") { return ?"City is required" };

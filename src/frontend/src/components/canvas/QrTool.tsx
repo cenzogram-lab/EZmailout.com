@@ -5,7 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND, DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
-import { normalizeDestinationUrl, qrSvgString } from "@/lib/qr";
+import {
+  normalizeDestinationUrl,
+  normalizeRedirectUrl,
+  qrSvgString,
+} from "@/lib/qr";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import {
@@ -51,6 +55,12 @@ export function QrTool() {
   const [svg, setSvg] = useState<string | null>(null);
 
   const normalized = normalizeDestinationUrl(qrDestinationUrl);
+  // A tracked code redirects through ezmailout.com, which only forwards to
+  // web addresses; a static code can encode tel:, mailto: and sms: directly.
+  const redirectOk = normalizeRedirectUrl(qrDestinationUrl) !== null;
+  const destinationInvalid =
+    !!qrDestinationUrl.trim() &&
+    (mode === QrMode.DynamicTracking ? !redirectOk : !normalized);
   const encoded = useMemo(
     () =>
       mode === QrMode.DynamicTracking
@@ -116,11 +126,21 @@ export function QrTool() {
             value={qrDestinationUrl}
             onChange={(e) => setQrDestinationUrl(e.target.value)}
             placeholder="https://yourbusiness.com/offer, a calendar link, tel:+1…, or your menu"
-            className={cn(
-              qrDestinationUrl && !normalized && "border-destructive",
-            )}
+            className={cn(destinationInvalid && "border-destructive")}
+            aria-invalid={destinationInvalid}
             data-ocid="canvas.qr.destination_input"
           />
+          {mode === QrMode.DynamicTracking &&
+          qrDestinationUrl.trim() &&
+          !redirectOk ? (
+            <p
+              className="text-xs text-destructive"
+              data-ocid="canvas.qr.destination_error"
+            >
+              Tracked codes forward to web addresses only (https://…). For a
+              phone number or email, choose Static URL.
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-1.5">
             {EXAMPLES.map((ex) => (
               <button

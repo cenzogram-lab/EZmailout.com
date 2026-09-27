@@ -43,7 +43,17 @@ mixin (
   /// Creates the caller's account on first use (capturing a referral code) and returns it.
   public shared ({ caller }) func ensureAccount(referralCode : ?Text, email : ?Text) : async Account.AccountResult {
     if (not signedIn(caller)) { return { ok = false; error = ?"Sign in with Internet Identity to create an account"; account = null } };
-    let a = AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), email, referralCode);
+    // Optional hints: an email is kept only if it looks like one, and a
+    // referral code only at a code's length; anything else is ignored.
+    let cleanEmail : ?Text = switch (email) {
+      case (?e) { let t = AddressLib.sanitizeText(e).toLower(); if (AdminLib.looksLikeEmail(t)) ?t else null };
+      case null null;
+    };
+    let cleanCode : ?Text = switch (referralCode) {
+      case (?c) { let t = AddressLib.sanitizeText(c); if (t.size() > 0 and t.size() <= 32) ?t else null };
+      case null null;
+    };
+    let a = AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), cleanEmail, cleanCode);
     { ok = true; error = null; account = ?AccountLib.toShared(a, Time.now()) };
   };
 
@@ -243,11 +253,18 @@ mixin (
         let campaignId = switch (record.reference) { case (?r) r; case null "" };
         switch (campaigns.get(campaignId)) {
           case (?c) {
-            c.paymentStatus := if (record.sandbox) #Waived else #Paid;
-            c.paymentIntentId := ?record.paymentIntentId;
-            c.productionStatus := #ReadyToDispatch;
-            c.updatedAt := Time.now();
-            CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.confirmed", record.paymentIntentId, #System, ?"Payment confirmed; ready for print dispatch");
+            // Only the first confirmed payment settles the campaign. A second
+            // intent paid for the same campaign (two checkouts opened) must not
+            // reopen a dispatched campaign or turn a paid one into a test.
+            if (c.paymentStatus == #Unpaid or c.paymentStatus == #Pending) {
+              c.paymentStatus := if (record.sandbox) #Waived else #Paid;
+              c.paymentIntentId := ?record.paymentIntentId;
+              ignore CampaignLib.moveProduction(c, #ReadyToDispatch);
+              c.updatedAt := Time.now();
+              CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.confirmed", record.paymentIntentId, #System, ?"Payment confirmed; ready for print dispatch");
+            } else {
+              CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.duplicate", record.paymentIntentId, #System, ?"A second payment for an already paid campaign; refund it in Stripe");
+            };
           };
           case null {};
         };

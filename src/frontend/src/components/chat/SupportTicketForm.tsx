@@ -3,13 +3,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSubmitSupportTicket } from "@/hooks/use-backend";
+import {
+  MAX_TICKET_MESSAGE_CHARS,
+  MAX_TICKET_SUBJECT_CHARS,
+} from "@/lib/inputLimits";
 import { useAccountStore } from "@/store/account";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { queueTicket } from "./supportOutbox";
 
 /** Mirrors the limits `submitSupportTicket` enforces in the canister. */
-const LIMITS = { name: 120, email: 254, subject: 160, message: 4000 } as const;
+const LIMITS = {
+  name: 120,
+  email: 254,
+  subject: MAX_TICKET_SUBJECT_CHARS,
+  message: MAX_TICKET_MESSAGE_CHARS,
+} as const;
 const EMAIL = /^[^\s@]+@[^\s@.][^\s@]*\.[^\s@]+$/;
 
 export const TICKET_CONFIRMATION =

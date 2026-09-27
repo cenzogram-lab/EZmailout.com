@@ -33,7 +33,7 @@ mixin (
   transient let maxNameChars : Nat = 120;
   transient let maxEmailChars : Nat = 254;
   transient let maxSubjectChars : Nat = 160;
-  transient let maxMessageChars : Nat = 4_000;
+  transient let maxMessageChars : Nat = 2_000;
 
   // One copilot message is one HTTPS outcall plus an OpenAI completion.
   // Identities are free to mint, so the per-identity limit has a

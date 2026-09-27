@@ -45,19 +45,29 @@ mixin (
     let a = aiAccount(caller);
     if (a.creditBalance < cost) { return fail("Insufficient credits: this generation costs " # debug_show(cost) # " credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_image", null);
-    let resp = await Http.postText(OpenAi.imagesUrl, OpenAi.headers(apiKey), OpenAi.imageRequestBody(cleanPrompt, size), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-    if (not Http.isSuccess(resp)) {
-      let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
-      return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
-    };
-    switch (OpenAi.parseImage(resp.body)) {
-      case null {
+    // Settled once the result is known: kept on success, refunded on failure.
+    // If the reply's handling traps instead, `finally` refunds the charge.
+    var settled = false;
+    try {
+      let resp = await Http.postText(OpenAi.imagesUrl, OpenAi.headers(apiKey), OpenAi.imageRequestBody(cleanPrompt, size), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
-        fail("OpenAI returned no image", ?balance);
+        settled := true;
+        return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
       };
-      case (?img) {
-        { ok = true; error = null; imageUrl = ?img.url; revisedPrompt = img.revisedPrompt; creditsCharged = cost; creditBalance = ?a.creditBalance };
+      switch (OpenAi.parseImage(resp.body)) {
+        case null {
+          let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
+          settled := true;
+          fail("OpenAI returned no image", ?balance);
+        };
+        case (?img) {
+          settled := true;
+          { ok = true; error = null; imageUrl = ?img.url; revisedPrompt = img.revisedPrompt; creditsCharged = cost; creditBalance = ?a.creditBalance };
+        };
       };
+    } finally {
+      if (not settled) { ignore AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null) };
     };
   };
 
@@ -80,19 +90,27 @@ mixin (
     let a = aiAccount(caller);
     if (a.creditBalance < cost) { return fail("Insufficient credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_copy", null);
-    let resp = await Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), OpenAi.chatRequestBody(clean), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-    if (not Http.isSuccess(resp)) {
-      let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
-      return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
-    };
-    switch (OpenAi.parseCopy(resp.body)) {
-      case null {
+    var settled = false;
+    try {
+      let resp = await Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), OpenAi.chatRequestBody(clean), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
-        fail("Could not parse the copy response", ?balance);
+        settled := true;
+        return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
       };
-      case (?copy) {
-        { ok = true; error = null; headlines = copy.headlines; bullets = copy.bullets; ctas = copy.ctas; creditsCharged = cost; creditBalance = ?a.creditBalance };
+      switch (OpenAi.parseCopy(resp.body)) {
+        case null {
+          let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
+          settled := true;
+          fail("Could not parse the copy response", ?balance);
+        };
+        case (?copy) {
+          settled := true;
+          { ok = true; error = null; headlines = copy.headlines; bullets = copy.bullets; ctas = copy.ctas; creditsCharged = cost; creditBalance = ?a.creditBalance };
+        };
       };
+    } finally {
+      if (not settled) { ignore AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null) };
     };
   };
 };

@@ -7,6 +7,7 @@ import AddressLib "../lib/address";
 import PricingLib "../lib/pricing";
 import AdminLib "../lib/admin";
 import Limits "../lib/limits";
+import Inputs "../lib/inputs";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Set "mo:core/Set";
@@ -122,8 +123,33 @@ mixin (
     // is priced for exactly the addresses supplied — never an estimated count.
     let count : Nat = recipients.size();
     if (count == 0) { return fail("Add at least one verified recipient address before creating a campaign") };
+    // Text bounds at the boundary (lib/inputs.mo, mirrored in the frontend).
+    if (AddressLib.sanitizeText(input.name).size() > Inputs.maxCampaignNameChars) {
+      return fail("Campaign names are limited to " # Inputs.maxCampaignNameChars.toText() # " characters");
+    };
+    switch (Inputs.firstLongRecipient(recipients)) {
+      case (?i) { return fail("Recipient " # (i + 1).toText() # " has an address line longer than " # Inputs.maxAddressFieldChars.toText() # " characters") };
+      case null {};
+    };
+    switch (input.returnAddress) {
+      case (?r) { if (Inputs.returnAddressTooLong(r)) { return fail("Return address lines are limited to " # Inputs.maxAddressFieldChars.toText() # " characters") } };
+      case null {};
+    };
+    let idTooLong = func(t : ?Text) : Bool { switch (t) { case (?v) v.size() > Inputs.maxIdChars; case null false } };
+    if (idTooLong(input.designTemplateId) or idTooLong(input.sourcePresetId)) { return fail("The template or preset reference is too long") };
+    let qrDestination : ?Text = switch (input.qrDestinationUrl) {
+      case (?raw) {
+        if (AddressLib.sanitizeText(raw) == "") null else {
+          switch (Inputs.redirectUrl(raw)) {
+            case (?u) ?u;
+            case null { return fail("The QR destination must be a web address starting with https:// or http://") };
+          };
+        };
+      };
+      case null null;
+    };
     let id = CampaignLib.nextId(state);
-    let record = CampaignLib.create(id, caller.toText(), input, printSpec, row.retailPriceCents, row.baseCostCents, count);
+    let record = CampaignLib.create(id, caller.toText(), { input with qrDestinationUrl = qrDestination }, printSpec, row.retailPriceCents, row.baseCostCents, count);
     campaigns.add(id, record);
     campaignRecipients.add(id, recipients);
     CampaignLib.appendEvent(trackingEvents, state, id, #Created, "campaign.created", id, #System, ?"Campaign draft created");
@@ -245,8 +271,10 @@ mixin (
           let agent = switch (userAgent) { case (?u) ?Limits.clip(AddressLib.sanitizeText(u), maxUserAgentChars); case null null };
           logScan({ campaignId; recipientId = trimmed; timestamp = now; userAgent = agent });
         };
+        // Stored destinations are checked again, so a record saved before the
+        // rule existed can never send a scan somewhere unsafe.
         let destination = switch (record.qrDestinationUrl) {
-          case (?d) { if (d == "") "https://ezmailout.com" else d };
+          case (?d) { switch (Inputs.redirectUrl(d)) { case (?u) u; case null "https://ezmailout.com" } };
           case null "https://ezmailout.com";
         };
         { ok = true; destinationUrl = ?destination; campaignId = ?campaignId; recipientId = ?trimmed };

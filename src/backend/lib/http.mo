@@ -64,10 +64,6 @@ module {
     ((base + perRequest + perResponse) * 12) / 10;
   };
 
-  public func defaultOptions(proxyUrl : ?Text) : RequestOptions {
-    { maxResponseBytes = 256_000; isReplicated = false; proxyUrl; transformContext = Blob.empty() };
-  };
-
   /// Performs an HTTPS outcall. Never traps: failures are reported as
   /// `{ status = 0; body = "outcall failed: ..." }`.
   public func request(

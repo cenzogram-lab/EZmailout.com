@@ -7,6 +7,7 @@ import Click2Mail "../lib/click2mail";
 import Http "../lib/http";
 import Json "../lib/json";
 import Limits "../lib/limits";
+import Inputs "../lib/inputs";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
@@ -220,6 +221,17 @@ mixin (
     { id = p.id; ownerId = p.ownerId; name = p.name; sourceCampaignId = p.sourceCampaignId; recipientCount = p.recipientCount; createdAt = p.createdAt; updatedAt = p.updatedAt };
   };
 
+  /// Name and address bounds for a preset (lib/inputs.mo).
+  private func presetInputError(name : Text, addresses : [Common.VerifiedAddress]) : ?Text {
+    if (AddressLib.sanitizeText(name).size() > Inputs.maxPresetNameChars) {
+      return ?("Preset names are limited to " # Inputs.maxPresetNameChars.toText() # " characters");
+    };
+    switch (Inputs.firstLongRecipient(addresses.map(AddressLib.sanitizeVerified))) {
+      case (?i) ?("Address " # (i + 1).toText() # " has a line longer than " # Inputs.maxAddressFieldChars.toText() # " characters");
+      case null null;
+    };
+  };
+
   private func cleanName(name : Text) : Text {
     let t = AddressLib.sanitizeText(name);
     if (t == "") "Audience preset" else t;
@@ -230,6 +242,7 @@ mixin (
     if (caller.isAnonymous()) { return { ok = false; error = ?signInRequired; presetId = null } };
     if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address"; presetId = null } };
     if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses"; presetId = null } };
+    switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
     let owner = caller.toText();
     let id = "pre_" # state.nextPresetId.toText();
     state.nextPresetId += 1;
@@ -249,6 +262,7 @@ mixin (
       case (?meta) {
         if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address" } };
         if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses" } };
+        switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e } }; case null {} };
         let clean = addresses.map(AddressLib.sanitizeVerified);
         savedAudiencePresets.add(key(owner, presetId), clean);
         let updated : Types.AudiencePreset = { id = meta.id; ownerId = meta.ownerId; name = cleanName(name); sourceCampaignId = meta.sourceCampaignId; recipientCount = clean.size(); createdAt = meta.createdAt; var updatedAt = Time.now() };

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MAX_ADDRESS_FIELD_CHARS } from "@/lib/inputLimits";
 import { useWizardStore } from "@/store/wizard";
 import { AlertCircle, CheckCircle2, Mailbox, Save } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -296,7 +297,7 @@ function Field({
   error,
   onChange,
   placeholder,
-  maxLength,
+  maxLength = MAX_ADDRESS_FIELD_CHARS,
   ocid,
 }: {
   id: string;

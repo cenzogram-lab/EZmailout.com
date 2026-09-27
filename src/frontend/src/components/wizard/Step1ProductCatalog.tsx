@@ -13,6 +13,7 @@ import {
   categoryRows,
 } from "@/lib/catalog";
 import { layoutLabel, sizeLabel } from "@/lib/format";
+import { MAX_CAMPAIGN_NAME_CHARS } from "@/lib/inputLimits";
 import {
   type CatalogMailClass,
   type PricingRowUi,
@@ -297,7 +298,7 @@ export function Step1ProductCatalog() {
                 ? suggestCampaignName(selectedLayout)
                 : "e.g. Spring open-house mailer"
             }
-            maxLength={120}
+            maxLength={MAX_CAMPAIGN_NAME_CHARS}
             className="rounded-xl bg-card"
             data-ocid="catalog.campaign_name.input"
           />

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/format";
 import { canvasDims, safeRect } from "@/lib/printSpec";
+import { normalizeRedirectUrl } from "@/lib/qr";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, WizardAudienceType } from "@/types";
 import {
@@ -268,21 +269,30 @@ export function computePreflight(input: PreflightInput): PreflightReport {
 
   // 8. Dynamic QR destination
   if (hasDynamicQr(input.canvas)) {
+    const redirect = normalizeRedirectUrl(input.qrDestinationUrl);
     items.push(
-      input.qrDestinationUrl.trim()
+      redirect
         ? {
             id: "qr",
             label: "Dynamic QR destination",
-            detail: `Campaign scans redirect to ${input.qrDestinationUrl.trim()}.`,
+            detail: `Campaign scans redirect to ${redirect}.`,
             level: "pass",
           }
-        : {
-            id: "qr",
-            label: "Dynamic QR destination",
-            detail:
-              "A tracking QR code is on the design but no destination URL is set. Go back to the designer.",
-            level: "fail",
-          },
+        : input.qrDestinationUrl.trim()
+          ? {
+              id: "qr",
+              label: "Dynamic QR destination",
+              detail:
+                "Tracked QR codes forward to web addresses only (https://…). Enter a web address, or use a static code for a phone number or email.",
+              level: "fail",
+            }
+          : {
+              id: "qr",
+              label: "Dynamic QR destination",
+              detail:
+                "A tracking QR code is on the design but no destination URL is set. Go back to the designer.",
+              level: "fail",
+            },
     );
   }
 

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBackendActor, useResolveTrackingLink } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
+import { normalizeRedirectUrl } from "@/lib/qr";
 import { Link, useParams } from "@tanstack/react-router";
 import { ExternalLink, Home, Loader2, Unlink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -30,8 +31,13 @@ export function TrackRedirectPage() {
     fired.current = true;
     resolveLink({ code, userAgent: navigator.userAgent })
       .then((result) => {
-        if (result.ok && result.destinationUrl) {
-          const destinationUrl = result.destinationUrl;
+        // The canister only stores and returns web addresses; checked again
+        // here so nothing else can ever be navigated to.
+        const destinationUrl =
+          result.ok && result.destinationUrl
+            ? normalizeRedirectUrl(result.destinationUrl)
+            : null;
+        if (destinationUrl) {
           setPhase({ kind: "redirecting", destinationUrl });
           window.location.replace(destinationUrl);
         } else {

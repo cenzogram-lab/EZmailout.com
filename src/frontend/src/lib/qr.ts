@@ -1,3 +1,4 @@
+import { MAX_REDIRECT_URL_CHARS } from "@/lib/inputLimits";
 import QRCode from "qrcode";
 
 export interface QrRenderOptions {
@@ -57,6 +58,37 @@ export async function qrToCanvas(
 }
 
 /** Basic destination URL validation for the QR tool. */
+/**
+ * A tracked QR code's redirect target, as the canister accepts it
+ * (`Inputs.redirectUrl` in `src/backend/lib/inputs.mo`): an absolute
+ * `http(s)` web address with a dotted host and no `user@` part. A bare domain
+ * gets `https://`; `tel:`, `mailto:`, `javascript:`, `data:` and relative
+ * paths give `null`. Static QR codes, which encode their target directly,
+ * use `normalizeDestinationUrl` instead.
+ */
+export function normalizeRedirectUrl(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed || trimmed.length > MAX_REDIRECT_URL_CHARS) return null;
+  // Any other scheme ("tel:", "javascript:", "data:"…) is not a web address.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:\/\//i.test(trimmed))
+    return null;
+  if (trimmed.startsWith("/") || trimmed.includes("\\")) return null;
+  const withScheme = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    if (url.username || url.password) return null;
+    if (!url.hostname.includes(".") || !/^[a-z0-9.-]+$/.test(url.hostname))
+      return null;
+    const out = url.toString();
+    return out.length <= MAX_REDIRECT_URL_CHARS ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 export function normalizeDestinationUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;

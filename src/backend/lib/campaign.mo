@@ -146,6 +146,38 @@ module {
     isDeliveryOutcome(record.status) or record.productionStatus == #Failed;
   };
 
+  /// The production moves a campaign may make. Payment opens dispatch; a run
+  /// goes through its steps to `#Submitted`, which is final, or to `#Failed`,
+  /// which only a new run leaves. Nothing goes back to the unpaid states.
+  /// A run may start from a step state left by records that predate
+  /// `#Processing`. Staying in the same state is allowed and changes nothing.
+  public func productionMoveAllowed(from : Types.ProductionStatus, to : Types.ProductionStatus) : Bool {
+    if (from == to) { return true };
+    switch (from, to) {
+      case (#Submitted, _) false;
+      case (_, #Draft or #AwaitingPayment) false;
+      case (#Draft or #AwaitingPayment, #ReadyToDispatch) true;
+      case (#ReadyToDispatch or #Failed or #DocumentUploaded or #AddressListReady or #JobCreated, #Processing) true;
+      case (#Processing, #DocumentUploaded) true;
+      case (#Processing or #DocumentUploaded, #AddressListReady) true;
+      case (#Processing or #DocumentUploaded or #AddressListReady, #JobCreated) true;
+      case (#Processing or #DocumentUploaded or #AddressListReady or #JobCreated, #Submitted or #Failed) true;
+      case _ false;
+    };
+  };
+
+  /// Moves `record` to production state `to` when `productionMoveAllowed`
+  /// says so; returns whether the move was allowed. Every production-state
+  /// write goes through here.
+  public func moveProduction(record : Types.CampaignRecord, to : Types.ProductionStatus) : Bool {
+    if (not productionMoveAllowed(record.productionStatus, to)) { return false };
+    if (record.productionStatus != to) {
+      record.productionStatus := to;
+      record.updatedAt := Time.now();
+    };
+    true;
+  };
+
   /// Advances a campaign's status monotonically. Returns true when the status changed.
   public func advanceStatus(record : Types.CampaignRecord, status : Types.CampaignStatus) : Bool {
     if (stageIndex(status) > stageIndex(record.status)) {

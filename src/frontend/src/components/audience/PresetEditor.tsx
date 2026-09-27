@@ -22,6 +22,7 @@ import {
   useUpdatePreset,
 } from "@/hooks/use-backend";
 import { formatNumber } from "@/lib/format";
+import { MAX_ADDRESS_FIELD_CHARS } from "@/lib/inputLimits";
 import {
   AlertCircle,
   ArrowLeft,
@@ -295,6 +296,7 @@ export function PresetEditor({
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
                 placeholder="Jane Rivera"
+                maxLength={MAX_ADDRESS_FIELD_CHARS}
                 data-ocid="audience.preset_editor.add.name.input"
               />
             </div>
@@ -305,6 +307,7 @@ export function PresetEditor({
                 value={form.address_line1}
                 onChange={(e) => setField("address_line1", e.target.value)}
                 placeholder="120 Harbor View Dr"
+                maxLength={MAX_ADDRESS_FIELD_CHARS}
                 data-ocid="audience.preset_editor.add.line1.input"
               />
             </div>
@@ -315,6 +318,7 @@ export function PresetEditor({
                 value={form.address_line2}
                 onChange={(e) => setField("address_line2", e.target.value)}
                 placeholder="Apt 4B (optional)"
+                maxLength={MAX_ADDRESS_FIELD_CHARS}
                 data-ocid="audience.preset_editor.add.line2.input"
               />
             </div>
@@ -325,6 +329,7 @@ export function PresetEditor({
                 value={form.city}
                 onChange={(e) => setField("city", e.target.value)}
                 placeholder="Austin"
+                maxLength={MAX_ADDRESS_FIELD_CHARS}
                 data-ocid="audience.preset_editor.add.city.input"
               />
             </div>

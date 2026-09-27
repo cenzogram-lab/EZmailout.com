@@ -26,6 +26,7 @@ import {
   getPricingRow,
   getUnitPriceCents,
 } from "@/lib/pricing";
+import { normalizeRedirectUrl } from "@/lib/qr";
 import { useWizardStore } from "@/store/wizard";
 import type { WizardAudienceType } from "@/types";
 import { Link } from "@tanstack/react-router";
@@ -235,7 +236,9 @@ export function Step4ReviewLaunch() {
               recipientCount: BigInt(state.recipientCount),
               designTemplateId: state.designTemplate?.id,
               canvasState: state.canvas,
-              qrDestinationUrl: state.qrDestinationUrl.trim() || undefined,
+              // Sent only as a web address the canister will accept.
+              qrDestinationUrl:
+                normalizeRedirectUrl(state.qrDestinationUrl) ?? undefined,
               returnAddress: state.returnAddress ?? undefined,
               sourcePresetId: state.sourcePresetId ?? undefined,
             })
