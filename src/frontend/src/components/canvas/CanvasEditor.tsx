@@ -215,28 +215,35 @@ export function AddressZoneOverlay({
 /**
  * Click2Mail guides drawn inside the artboard: the cut line at the trim edge
  * (fine dashed) and the 1/4″ safe zone (soft green). The 1/8″ bleed edge is
- * drawn outside the artboard in the stage (solid red), see `BleedFrame`.
+ * drawn outside the artboard in the stage (solid red). The safe zone's label
+ * sits in the workspace under the sheet, lined up with the safe line: inside
+ * the zone it covered whatever a design puts in its top-left corner.
  */
 const GUIDES = [
   {
     key: "cut",
     inset: "cutInsetInches",
     color: "rgba(1, 8, 10, 0.55)",
-    labelColor: "#01080a",
-    label: "Cut 0″",
     dashed: true,
-    labelClass: "bottom-0 right-0 rounded-tl",
+    label: {
+      text: "Cut 0″",
+      color: "#01080a",
+      className: "bottom-0 right-0 rounded-tl",
+    },
   },
   {
     key: "safe",
     inset: "safeInsetInches",
     color: "rgba(16, 185, 129, 0.85)",
-    labelColor: "#10b981",
-    label: "Safe ¼″",
     dashed: true,
-    labelClass: "left-0 top-0 rounded-br",
+    label: null,
   },
 ] as const;
+
+const SAFE_LABEL_COLOR = "#10b981";
+
+/** Height of a 9 px guide label at line-height 1.4 (screen px). */
+const GUIDE_LABEL_HEIGHT = 13;
 
 const BLEED_COLOR = "#ef4444";
 
@@ -514,6 +521,11 @@ export function CanvasEditor({
   const displayHeight = dims.designHeight * scale;
   const outline = 2 / scale;
   const bleedPx = dims.bleedInsetInches * DESIGN_PPI * scale;
+  const safePx = dims.safeInsetInches * DESIGN_PPI * scale;
+  // Under the bleed edge, or as low as the workspace margin allows.
+  const safeLabelTop =
+    displayHeight +
+    Math.min(bleedPx + 4, WORKSPACE_PADDING - GUIDE_LABEL_HEIGHT - 4);
   const containerWidth = containerRef.current?.clientWidth ?? 0;
   const sheetLeft = containerWidth
     ? (containerWidth - displayWidth) / 2
@@ -648,20 +660,22 @@ export function CanvasEditor({
                 }}
                 data-ocid={`canvas.editor.guide.${guide.key}`}
               >
-                <span
-                  className={cn(
-                    "absolute px-1 font-mono uppercase tracking-wide text-white",
-                    guide.labelClass,
-                  )}
-                  style={{
-                    fontSize: 9 / scale,
-                    lineHeight: 1.4,
-                    backgroundColor: guide.labelColor,
-                    opacity: 0.85,
-                  }}
-                >
-                  {guide.label}
-                </span>
+                {guide.label && (
+                  <span
+                    className={cn(
+                      "absolute px-1 font-mono uppercase tracking-wide text-white",
+                      guide.label.className,
+                    )}
+                    style={{
+                      fontSize: 9 / scale,
+                      lineHeight: 1.4,
+                      backgroundColor: guide.label.color,
+                      opacity: 0.85,
+                    }}
+                  >
+                    {guide.label.text}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -771,6 +785,19 @@ export function CanvasEditor({
             );
           })}
         </div>
+        <span
+          className="pointer-events-none absolute whitespace-nowrap rounded px-1 font-mono text-[9px] uppercase tracking-wide text-white"
+          style={{
+            left: safePx,
+            top: safeLabelTop,
+            lineHeight: 1.4,
+            backgroundColor: SAFE_LABEL_COLOR,
+            opacity: 0.85,
+          }}
+          data-ocid="canvas.editor.guide.safe_label"
+        >
+          Safe ¼″
+        </span>
       </div>
       {selectionToolbar}
     </div>
