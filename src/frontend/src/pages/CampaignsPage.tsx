@@ -32,7 +32,12 @@ import {
   useExportCampaign,
 } from "@/hooks/use-backend";
 import { downloadText } from "@/lib/download";
-import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
+import {
+  formatNumber,
+  formatTimestamp,
+  layoutLabel,
+  productTypeLabel,
+} from "@/lib/format";
 import { useWizardStore } from "@/store/wizard";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -58,7 +63,7 @@ function productSubLabel(campaign: CampaignSummary): string {
   const color = campaign.product.colorOption
     ? ` · ${campaign.product.colorOption}`
     : "";
-  return `${campaign.product.productType}${color}`;
+  return `${productTypeLabel(campaign.product.productType)}${color}`;
 }
 
 interface RowActionsProps {

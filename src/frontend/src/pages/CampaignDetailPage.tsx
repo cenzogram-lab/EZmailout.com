@@ -59,8 +59,13 @@ import {
   useUpdateCampaignStatus,
 } from "@/hooks/use-backend";
 import { downloadText } from "@/lib/download";
-import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
-import { formatCents } from "@/lib/pricing";
+import {
+  formatNumber,
+  formatTimestamp,
+  layoutLabel,
+  productTypeLabel,
+} from "@/lib/format";
+import { formatCents, mailClassLabel } from "@/lib/pricing";
 import { isShapeUrl } from "@/lib/shapes";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
@@ -455,11 +460,11 @@ export function CampaignDetailPage() {
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 {layoutLabel(campaign.product.layoutVariant)} ·{" "}
-                {campaign.product.productType}
+                {productTypeLabel(campaign.product.productType)}
                 {campaign.product.colorOption
                   ? ` · ${campaign.product.colorOption}`
                   : ""}{" "}
-                · {campaign.printSpec.mailClass} · Created{" "}
+                · {mailClassLabel(campaign.printSpec.mailClass)} · Created{" "}
                 {formatTimestamp(campaign.createdAt)}
               </p>
             </div>

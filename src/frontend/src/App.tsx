@@ -115,14 +115,14 @@ const routes = [
     path: "/ref/$code",
     component: ReferralLandingPage,
   }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: "*",
-    component: NotFoundPage,
-  }),
 ];
 
-const router = createRouter({ routeTree: rootRoute.addChildren(routes) });
+// Unknown paths: TanStack Router has no `*` route (it was matched literally,
+// so every unknown URL showed the router's bare "Not Found").
+const router = createRouter({
+  routeTree: rootRoute.addChildren(routes),
+  defaultNotFoundComponent: NotFoundPage,
+});
 
 export default function App() {
   return <RouterProvider router={router} />;
