@@ -5,6 +5,7 @@ export { StampyStep1Catalog } from "./StampyStep1Catalog";
 export { StampyStep2Audience } from "./StampyStep2Audience";
 export { StampyStep3Studio } from "./StampyStep3Studio";
 export { StampyStep4Preflight } from "./StampyStep4Preflight";
+export { StampyMark, STAMPY_HEAD_VIEWBOX } from "./StampyMark";
 export type { StampyProps } from "./stampy";
 export { StampyTip } from "./StampyTip";
 export { MascotEmptyState, type MascotPose } from "./MascotEmptyState";

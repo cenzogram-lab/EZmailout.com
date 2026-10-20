@@ -14,6 +14,7 @@ import {
 import {
   NAV_CHIPS,
   type NavKey,
+  OPEN_STAMPY_EVENT,
   STAMPY_GREETING,
   STARTER_QUESTIONS,
   parseReply,
@@ -113,6 +114,13 @@ function StampyChatbotPanel() {
   useEffect(() => {
     if (open && view === "chat") inputRef.current?.focus();
   }, [open, view]);
+
+  // The header's peeking Stampy (and anything else) opens the panel by event.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_STAMPY_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_STAMPY_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

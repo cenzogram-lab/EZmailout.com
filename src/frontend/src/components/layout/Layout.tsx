@@ -1,5 +1,7 @@
 import { CreditTopUpModal } from "@/components/billing/CreditTopUpModal";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { StampyPeek } from "@/components/layout/StampyPeek";
+import { StampyMark } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,28 +20,74 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Fingerprint,
   LayoutDashboard,
-  LayoutTemplate,
   Loader2,
   LogOut,
-  Mail,
+  Mailbox,
   Menu,
+  Palette,
   Plus,
-  Rocket,
-  Settings,
+  Send,
+  ShieldCheck,
   Sparkles,
   UserRound,
   X,
 } from "lucide-react";
 import { useState } from "react";
 
+/** Header destinations, each with a mail-themed icon in the brand indigo. */
 const NAV = [
-  { to: "/templates", label: "Templates", icon: LayoutTemplate },
-  { to: "/campaigns", label: "Campaigns", icon: LayoutDashboard },
-  { to: "/dashboard", label: "Dashboard", icon: UserRound },
-  { to: "/admin", label: "Admin", icon: Settings },
+  { to: "/templates", label: "Templates", icon: Palette },
+  { to: "/campaigns", label: "Campaigns", icon: Mailbox },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
+function useIsActive(to: string): boolean {
+  const currentPath = useRouterState().location.pathname;
+  return currentPath === to || currentPath.startsWith(`${to}/`);
+}
+
+const ocidFor = (label: string) =>
+  `nav.${label.toLowerCase().replace(/\s+/g, "_")}.link`;
+
+/**
+ * Desktop nav item: a 40 px pill with a 20 px indigo icon. From `xl` it shows
+ * its label; at `lg` the label is visually hidden (still its accessible name)
+ * so the bar fits 1024 px.
+ */
 function NavLink({
+  to,
+  label,
+  icon: Icon,
+}: {
+  to: string;
+  label: string;
+  icon: React.ElementType;
+}) {
+  const isActive = useIsActive(to);
+  return (
+    <Link
+      to={to}
+      title={label}
+      data-ocid={ocidFor(label)}
+      className={cn(
+        "inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] font-semibold transition-smooth xl:px-4",
+        isActive
+          ? "bg-primary/10 text-primary-ink"
+          : "text-muted-foreground hover:bg-primary/5 hover:text-foreground",
+      )}
+    >
+      <Icon
+        className={cn("size-5", isActive ? "text-primary" : "text-primary/75")}
+        strokeWidth={2.2}
+      />
+      <span className="sr-only xl:not-sr-only">{label}</span>
+    </Link>
+  );
+}
+
+/** Mobile menu row: a 48 px row with the icon in a tinted tile. */
+function MenuLink({
   to,
   label,
   icon: Icon,
@@ -48,23 +96,24 @@ function NavLink({
   to: string;
   label: string;
   icon: React.ElementType;
-  onClick?: () => void;
+  onClick: () => void;
 }) {
-  const currentPath = useRouterState().location.pathname;
-  const isActive = currentPath === to || currentPath.startsWith(`${to}/`);
+  const isActive = useIsActive(to);
   return (
     <Link
       to={to}
       onClick={onClick}
-      data-ocid={`nav.${label.toLowerCase().replace(/\s+/g, "_")}.link`}
+      data-ocid={ocidFor(label)}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-smooth",
+        "flex h-12 items-center gap-3 rounded-2xl px-2 text-base font-semibold transition-smooth",
         isActive
           ? "bg-primary/10 text-primary-ink"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          : "text-foreground hover:bg-muted",
       )}
     >
-      <Icon className="size-4" />
+      <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="size-5" strokeWidth={2.2} />
+      </span>
       {label}
     </Link>
   );
@@ -96,15 +145,17 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         size="sm"
         onClick={login}
         disabled={isLoggingIn}
-        className="gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+        className="size-10 gap-1.5 rounded-full bg-primary p-0 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 sm:h-10 sm:w-auto sm:px-4"
+        aria-label="Sign in"
         data-ocid="nav.sign_in.button"
       >
         {isLoggingIn ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
-          <Fingerprint className="size-4" />
+          <Fingerprint className="size-[18px]" />
         )}
-        Sign in
+        {/* On phones the button is the fingerprint alone; Account in the tab bar also signs in. */}
+        <span className="hidden sm:inline">Sign in</span>
       </Button>
     );
   }
@@ -120,18 +171,18 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         to="/dashboard"
         onClick={onNavigate}
-        className="hidden h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 text-xs font-semibold shadow-soft sm:inline-flex"
+        className="hidden h-10 items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 text-sm font-semibold shadow-soft sm:inline-flex"
         data-ocid="nav.credits.link"
         title={principal ?? undefined}
       >
-        <Sparkles className="size-3.5 text-primary" />
+        <Sparkles className="size-4 text-primary" />
         {creditBalance.toLocaleString()} credits
       </Link>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-deep text-xs font-bold text-primary-foreground shadow-soft ring-2 ring-card transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+            className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-deep text-sm font-bold text-primary-foreground shadow-soft ring-2 ring-card transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
             aria-label="Account menu"
             data-ocid="nav.account.button"
           >
@@ -195,23 +246,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background pt-[env(safe-area-inset-top,0px)]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 bg-background pt-[env(safe-area-inset-top,0px)]">
+        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
           <Link
             to="/"
             data-ocid="nav.logo.link"
-            className="flex items-center gap-2.5"
+            className="flex shrink-0 items-center gap-2.5"
           >
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-              <Mail className="size-5" />
-            </div>
-            <span className="font-display text-lg font-bold tracking-tight text-primary">
+            {/* Stampy is the brand mark: his head in an indigo-ringed disc. */}
+            <span className="flex size-10 items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30 sm:size-11">
+              <StampyMark className="h-9 w-[42px] sm:h-10 sm:w-[46px]" />
+            </span>
+            <span className="font-display text-lg font-extrabold tracking-tight text-primary sm:text-[22px]">
               {BRAND.name}
-              <span className="text-primary">.</span>
+              <span className="text-[#e5402a]">.</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav
+            aria-label="Main"
+            className="hidden flex-1 items-center justify-center gap-2 lg:flex"
+          >
             <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-card p-1 shadow-soft">
               {NAV.map((item) => (
                 <NavLink key={item.to} {...item} />
@@ -219,45 +274,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <Link to="/wizard" data-ocid="nav.launch_campaign.link">
               <Button
-                size="sm"
-                className="h-9 gap-1.5 rounded-full px-4"
+                className="h-10 gap-2 rounded-full px-5 text-[15px] font-semibold"
                 variant="default"
               >
-                <Rocket className="size-4" /> Launch campaign
+                <Send className="size-[18px]" strokeWidth={2.2} />
+                <span className="xl:hidden">Launch</span>
+                <span className="hidden xl:inline">Launch campaign</span>
               </Button>
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <AuthControls />
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="inline-flex size-9 items-center justify-center rounded-full border border-border/60 bg-card text-foreground shadow-soft lg:hidden"
-              aria-label="Toggle menu"
-              data-ocid="nav.mobile_menu.button"
-            >
-              {open ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
+          <div className="ml-auto flex items-center gap-1.5 self-stretch sm:gap-2 lg:ml-0">
+            <StampyPeek />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <AuthControls />
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 bg-card text-foreground shadow-soft lg:hidden"
+                aria-label="Toggle menu"
+                aria-expanded={open}
+                data-ocid="nav.mobile_menu.button"
+              >
+                {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              </button>
+            </div>
           </div>
         </div>
+        <div className="airmail-stripe" aria-hidden />
         {open && (
           <div
-            className="border-t border-border/60 bg-card px-4 py-3 lg:hidden"
+            className="border-b border-border/60 bg-card px-4 py-3 lg:hidden"
             data-ocid="nav.mobile.menu"
           >
             <div className="flex flex-col gap-1">
               {NAV.map((item) => (
-                <NavLink
+                <MenuLink
                   key={item.to}
                   {...item}
                   onClick={() => setOpen(false)}
                 />
               ))}
-              <NavLink
+              <MenuLink
                 to="/wizard"
                 label="Launch campaign"
-                icon={Rocket}
+                icon={Send}
                 onClick={() => setOpen(false)}
               />
             </div>

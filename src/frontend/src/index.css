@@ -345,3 +345,50 @@ html {
     animation: none;
   }
 }
+
+/* Height of the sticky header's bar (without the notch inset). Sticky bars
+ * below it pin at this offset, and anchor jumps stop below it. */
+:root {
+  --header-h: 4.5rem;
+}
+html {
+  scroll-padding-top: calc(
+    var(--header-h) +
+    0.75rem +
+    env(safe-area-inset-top, 0px)
+  );
+}
+
+/* The header's bottom edge: an airmail envelope border in Stampy's red and
+ * the brand indigo. The peeking Stampy rests his paws on it. */
+.airmail-stripe {
+  height: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #e5402a 0 9px,
+    transparent 9px 14px,
+    oklch(var(--primary)) 14px 23px,
+    transparent 23px 28px
+  );
+}
+
+/* Stampy rises from behind the header's bottom edge once per page load. */
+@keyframes stampyPeekIn {
+  0% {
+    transform: translateY(100%);
+  }
+  70% {
+    transform: translateY(-6%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.stampy-peek {
+  animation: stampyPeekIn 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.4s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stampy-peek {
+    animation: none;
+  }
+}

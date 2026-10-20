@@ -181,7 +181,7 @@ export function TemplatesPage() {
       </div>
 
       {/* Category filter chips: pinned under the sticky site header, not behind it. */}
-      <div className="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-30 border-b border-border/60 bg-background">
+      <div className="sticky top-[calc(var(--header-h)+4px+env(safe-area-inset-top,0px))] z-30 border-b border-border/60 bg-background">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {CATEGORIES.map((cat) => (

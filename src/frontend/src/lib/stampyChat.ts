@@ -323,3 +323,10 @@ export const STARTER_QUESTIONS = [
   "How do I track a campaign?",
   "How do referrals work?",
 ];
+
+/** Window event that opens the Stampy panel from anywhere (the header's peeking Stampy). */
+export const OPEN_STAMPY_EVENT = "ezmailout:open-stampy";
+
+export function openStampy(): void {
+  window.dispatchEvent(new Event(OPEN_STAMPY_EVENT));
+}
