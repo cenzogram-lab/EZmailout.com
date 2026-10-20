@@ -11,6 +11,7 @@ import {
   StatusBadge,
   isDeliveryOutcome,
 } from "@/components/campaigns/StatusBadge";
+import { MascotEmptyState } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -362,30 +363,25 @@ export function CampaignsPage() {
           Loading campaigns…
         </div>
       ) : list.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card py-20 text-center"
-          data-ocid="campaigns.empty.state"
-        >
-          <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <LayoutDashboard className="size-7" />
-          </div>
-          <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-            No campaigns yet
-          </h3>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Pick a product, build an audience and design your piece — the wizard
-            takes about five minutes.
-          </p>
-          <Button
-            asChild
-            className="mt-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-            data-ocid="campaigns.empty.cta.button"
-          >
-            <Link to="/wizard">
-              Launch your first campaign
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+        <div className="rounded-3xl border border-border/60 bg-card px-4 py-6 shadow-soft">
+          <MascotEmptyState
+            pose="mail"
+            title="No mailouts yet"
+            description="Start your first campaign: pick a mail piece, build an audience and design it. The wizard takes about five minutes."
+            data-ocid="campaigns.empty.state"
+            action={
+              <Button
+                asChild
+                className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                data-ocid="campaigns.empty.cta.button"
+              >
+                <Link to="/wizard">
+                  Start your first campaign
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            }
+          />
         </div>
       ) : (
         <>

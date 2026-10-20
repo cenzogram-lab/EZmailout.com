@@ -1,4 +1,5 @@
 import type { AddressInput } from "@/backend";
+import { MascotEmptyState } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,12 +70,14 @@ export function AddressTable({
 
   if (rows.length === 0) {
     return (
-      <p
-        className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground"
+      <MascotEmptyState
+        pose="audience"
+        size="sm"
+        title={emptyMessage}
+        description="Recipients you add or verify appear here."
+        className="rounded-2xl border border-dashed border-border bg-muted/30 px-4"
         data-ocid={`${ocidPrefix}.table.empty`}
-      >
-        {emptyMessage}
-      </p>
+      />
     );
   }
 

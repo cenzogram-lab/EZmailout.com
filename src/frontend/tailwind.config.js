@@ -16,10 +16,10 @@ export default {
     },
     extend: {
       colors: {
-        border: "oklch(var(--border))",
-        input: "oklch(var(--input))",
+        border: "oklch(var(--border) / <alpha-value>)",
+        input: "oklch(var(--input) / <alpha-value>)",
         ring: "oklch(var(--ring) / <alpha-value>)",
-        background: "oklch(var(--background))",
+        background: "oklch(var(--background) / <alpha-value>)",
         foreground: "oklch(var(--foreground))",
         primary: {
           DEFAULT: "oklch(var(--primary) / <alpha-value>)",
@@ -47,7 +47,7 @@ export default {
           foreground: "oklch(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "oklch(var(--card))",
+          DEFAULT: "oklch(var(--card) / <alpha-value>)",
           foreground: "oklch(var(--card-foreground))",
         },
         chart: {

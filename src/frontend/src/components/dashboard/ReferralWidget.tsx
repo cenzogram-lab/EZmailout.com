@@ -1,3 +1,4 @@
+import { MascotEmptyState } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -213,12 +214,13 @@ export function ReferralWidget() {
                 <Users className="size-3.5" /> Reward history
               </p>
               {rewards.length === 0 ? (
-                <p
-                  className="py-3 text-sm text-muted-foreground"
+                <MascotEmptyState
+                  pose="mail"
+                  size="sm"
+                  title="No rewards yet"
+                  description="Share your link: a friend's first payment earns you a free month."
                   data-ocid="dashboard.referral.rewards.empty"
-                >
-                  No rewards yet. Share your link to get started.
-                </p>
+                />
               ) : (
                 <Table data-ocid="dashboard.referral.rewards.table">
                   <TableHeader>

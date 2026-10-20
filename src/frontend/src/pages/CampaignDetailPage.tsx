@@ -21,6 +21,7 @@ import {
   statusLabel,
 } from "@/components/campaigns/StatusBadge";
 import { TrackingTimeline } from "@/components/campaigns/TrackingTimeline";
+import { MascotEmptyState } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -716,13 +717,14 @@ export function CampaignDetailPage() {
                         Loading scans…
                       </div>
                     ) : !qrStats || qrStats.recentScans.length === 0 ? (
-                      <p
-                        className="rounded-lg border border-dashed px-3 py-4 text-center text-sm text-muted-foreground"
+                      <MascotEmptyState
+                        pose="mail"
+                        size="sm"
+                        title="No scans yet"
+                        description="They appear here as recipients scan their mail piece."
+                        className="rounded-2xl border border-dashed px-3"
                         data-ocid="campaign_detail.qr.empty.state"
-                      >
-                        No scans yet. They appear here as recipients scan their
-                        mail piece.
-                      </p>
+                      />
                     ) : (
                       <ul
                         className="divide-y rounded-lg border"

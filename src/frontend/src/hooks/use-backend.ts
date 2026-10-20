@@ -77,12 +77,12 @@ export function usePricingLedger() {
 // ─── Campaigns ──────────────────────────────────────────────────────────────
 
 /** List rows only: the stored design comes with `useCampaign(id)`. */
-export function useCampaigns() {
+export function useCampaigns(enabled = true) {
   const { actor, ready } = useBackendActor();
   return useQuery<CampaignSummary[]>({
     queryKey: ["campaigns"],
     queryFn: async () => (actor ? actor.getCampaigns() : []),
-    enabled: ready,
+    enabled: ready && enabled,
     refetchInterval: 30_000,
   });
 }

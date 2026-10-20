@@ -77,6 +77,14 @@ function StampyChatbotPanel() {
   const showTips = useStampyTips((s) => s.setHidden);
 
   const [open, setOpen] = useState(false);
+  // Replies that land while the panel is closed (the asker minimised it
+  // mid-answer) show as a count on the launcher until it is opened again.
+  const [unread, setUnread] = useState(0);
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    if (open) setUnread(0);
+  }, [open]);
   const [view, setView] = useState<"chat" | "support">("chat");
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
@@ -90,8 +98,10 @@ function StampyChatbotPanel() {
   const live = isAuthenticated && aiConfigured;
   const thinking = ask.isPending;
 
-  const push = (m: Omit<ChatMessage, "id">) =>
+  const push = (m: Omit<ChatMessage, "id">) => {
     setMessages((prev) => [...prev, { ...m, id: nextId.current++ }]);
+    if (m.role === "assistant" && !openRef.current) setUnread((n) => n + 1);
+  };
 
   // Keep the newest message in view.
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message list or thinking state changes
@@ -203,7 +213,7 @@ function StampyChatbotPanel() {
         <section
           id="stampy-chat-panel"
           aria-label="Stampy — Postal Copilot"
-          className="fixed bottom-24 right-4 z-40 flex h-[min(560px,calc(100dvh-7.5rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-card shadow-2xl sm:right-5"
+          className="fixed bottom-[calc(6rem+var(--bottom-nav-h))] right-4 z-40 flex h-[min(560px,calc(100dvh-7.5rem-var(--bottom-nav-h)))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl sm:right-5"
           data-ocid="stampy.chat.panel"
         >
           <header className="flex items-center gap-3 border-b border-[#e5e7eb] px-4 py-3">
@@ -357,22 +367,44 @@ function StampyChatbotPanel() {
         </section>
       ) : null}
 
+      {/* Avatar pill above the tab bar: a circle on phones, "Ask Stampy" from
+          sm up. A red count replaces the green online dot while replies wait. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="group fixed bottom-5 right-4 z-40 flex size-14 items-center justify-center rounded-full border-2 border-[#6366f1] bg-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5"
-        aria-label={open ? "Minimize Stampy" : "Need help? Ask Stampy!"}
+        className="group fixed bottom-[calc(1.25rem+var(--bottom-nav-h))] right-4 z-40 flex h-14 items-center gap-2 rounded-full border border-border/60 bg-card p-1 shadow-soft transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5 sm:pr-4"
+        aria-label={
+          open
+            ? "Minimize Stampy"
+            : unread > 0
+              ? `Stampy replied (${unread} new)`
+              : "Need help? Ask Stampy!"
+        }
         aria-expanded={open}
         aria-controls="stampy-chat-panel"
         data-ocid="stampy.chat.launcher"
       >
-        <StampyChatAvatarIdle className="stampy-launcher size-12" />
-        <span
-          className="absolute right-0 top-0 flex size-3.5"
-          aria-hidden="true"
-        >
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex size-3.5 rounded-full border-2 border-white bg-emerald-500" />
+        <span className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary">
+          <StampyChatAvatarIdle className="stampy-launcher stampy-bob size-12" />
+          {unread > 0 ? (
+            <span
+              className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-destructive px-1 text-[11px] font-bold leading-none text-destructive-foreground"
+              data-ocid="stampy.chat.unread"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : (
+            <span
+              className="absolute right-0 top-0 flex size-3.5"
+              aria-hidden="true"
+            >
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex size-3.5 rounded-full border-2 border-card bg-emerald-500" />
+            </span>
+          )}
+        </span>
+        <span className="hidden text-sm font-semibold text-foreground sm:inline">
+          {open ? "Close" : "Ask Stampy"}
         </span>
         {open ? null : (
           <span

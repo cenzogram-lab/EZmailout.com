@@ -61,11 +61,13 @@
 
     /*
      * EZmailout brand system (MAIL_Command master spec):
-     *   primary  #6366f1 indigo      · surface BG/300 #F4F4F4 · ink #01080a
+     *   primary  #6366f1 indigo      · page #F6F6F6, cards #FFFFFF · ink #01080a
      *   accent   #cff3fd ice         · navy #0e2b4f (deep panels, dark buttons)
      *   emerald  success / verified  · studio swatches: sky #b5d8fc, lime #dbefad
+     * Consumer surfaces: neutral page, white cards with a hairline neutral
+     * border and soft depth (`shadow-soft`), rounded-2xl/3xl, pill controls.
      */
-    --background: 0.967 0 0;
+    --background: 0.973 0 0;
     --foreground: 0.125 0.018 211;
     --card: 1 0 0;
     --card-foreground: 0.125 0.018 211;
@@ -79,7 +81,8 @@
 
     --secondary: 0.976 0.003 264;
     --secondary-foreground: 0.289 0.074 255;
-    --muted: 0.959 0.005 275;
+    --muted: 0.962 0 0;
+    /* Darker than neutral-500 on purpose: ≥ 4.5:1 on the #F6F6F6 page. */
     --muted-foreground: 0.46 0.006 255;
 
     --accent: 0.942 0.04 216;
@@ -88,8 +91,8 @@
     --destructive: 0.605 0.248 29;
     --destructive-foreground: 0.99 0 0;
 
-    --border: 0.925 0.008 271;
-    --input: 0.925 0.008 271;
+    --border: 0.922 0 0;
+    --input: 0.922 0 0;
     --ring: 0.585 0.204 277;
 
     --navy: 0.289 0.074 255;
@@ -119,20 +122,21 @@
   }
 
   .dark {
-    --background: 0.16 0.02 240;
+    /* #0D0E12 page, #16181F cards. */
+    --background: 0.165 0.009 274;
     --foreground: 0.96 0.005 240;
-    --card: 0.21 0.025 245;
+    --card: 0.21 0.014 273;
     --card-foreground: 0.96 0.005 240;
-    --popover: 0.23 0.025 245;
+    --popover: 0.235 0.015 274;
     --popover-foreground: 0.96 0.005 240;
 
     --primary: 0.68 0.158 277;
     --primary-foreground: 0.14 0.03 277;
     --primary-ink: 0.86 0.08 277;
 
-    --secondary: 0.27 0.03 250;
+    --secondary: 0.249 0.015 274;
     --secondary-foreground: 0.94 0.01 240;
-    --muted: 0.27 0.03 250;
+    --muted: 0.249 0.015 274;
     --muted-foreground: 0.74 0.015 245;
 
     --accent: 0.289 0.074 255;
@@ -141,8 +145,8 @@
     --destructive: 0.65 0.2 27;
     --destructive-foreground: 0.99 0 0;
 
-    --border: 0.31 0.03 250;
-    --input: 0.31 0.03 250;
+    --border: 0.29 0.012 274;
+    --input: 0.29 0.012 274;
     --ring: 0.68 0.158 277;
 
     --navy: 0.289 0.074 255;
@@ -165,7 +169,7 @@
     --sidebar-primary-foreground: 0.14 0.03 277;
     --sidebar-accent: 0.27 0.03 250;
     --sidebar-accent-foreground: 0.96 0.005 240;
-    --sidebar-border: 0.31 0.03 250;
+    --sidebar-border: 0.29 0.012 274;
     --sidebar-ring: 0.68 0.158 277;
   }
 
@@ -212,6 +216,20 @@
   .surface-glow {
     box-shadow: 0 1px 2px oklch(var(--navy) / 0.06), 0 12px 40px -16px
       oklch(var(--navy) / 0.25);
+  }
+
+  /* Card depth: a hairline lift plus a wide, faint drop. */
+  .shadow-soft {
+    box-shadow: 0 1px 2px rgb(15 17 23 / 0.04), 0 10px 30px -18px
+      rgb(15 17 23 / 0.18);
+  }
+  .dark .shadow-soft {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -18px rgb(0 0 0 / 0.6);
+  }
+
+  /* The mascot's lift off a card (banners, empty states). */
+  .mascot-shadow {
+    filter: drop-shadow(0 12px 14px rgb(15 17 23 / 0.16));
   }
 
   .text-emerald-brand {
@@ -289,9 +307,41 @@
   display: none;
 }
 
-/* The Stampy launcher owns the bottom-right corner (56px + 20px margin).
- * Focus moves and scrollIntoView stop this far above the viewport bottom, so
- * a focused button is never parked underneath it. */
+/* Below lg the bottom tab bar (BottomNav) is fixed to the viewport edge, and
+ * on notched phones it grows by the home-indicator inset. Everything else that
+ * sits at the bottom (Stampy, toasts, page padding, scroll padding) is offset
+ * by this one variable, so it is 0 on desktop. */
+:root {
+  --bottom-nav-h: 0px;
+}
+@media (max-width: 1023.98px) {
+  :root {
+    --bottom-nav-h: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* The Stampy launcher owns the bottom-right corner (56px + 20px margin) above
+ * the tab bar. Focus moves and scrollIntoView stop this far above the
+ * viewport bottom, so a focused button is never parked underneath either. */
 html {
-  scroll-padding-bottom: 6rem;
+  scroll-padding-bottom: calc(6rem + var(--bottom-nav-h));
+}
+
+/* The launcher's gentle idle bob; still for reduced motion. */
+@keyframes stampyBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.stampy-bob {
+  animation: stampyBob 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stampy-bob {
+    animation: none;
+  }
 }

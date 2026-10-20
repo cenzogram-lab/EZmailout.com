@@ -3,21 +3,16 @@ import { StatusBadge } from "@/components/campaigns/StatusBadge";
 import { AccountCard } from "@/components/dashboard/AccountCard";
 import { CreditsWidget } from "@/components/dashboard/CreditsWidget";
 import { ReferralWidget } from "@/components/dashboard/ReferralWidget";
+import { RewardsBanner } from "@/components/dashboard/RewardsBanner";
 import { SubscriptionWidget } from "@/components/dashboard/SubscriptionWidget";
+import { MascotEmptyState } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { GroupedList, GroupedListRow } from "@/components/ui/grouped-list";
 import { useAccountSync } from "@/hooks/use-account";
 import { useCampaigns } from "@/hooks/use-backend";
 import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  ArrowRight,
   LayoutDashboard,
   LayoutTemplate,
   Loader2,
@@ -35,127 +30,92 @@ function RecentCampaigns() {
     .sort((a, b) => Number(b.createdAt - a.createdAt))
     .slice(0, RECENT_LIMIT);
 
-  return (
-    <Card data-ocid="dashboard.recent_campaigns.card">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Mailbox className="size-4 text-primary" />
-              Recent campaigns
-            </CardTitle>
-            <CardDescription>
-              Your latest mailings and where they are in the pipeline.
-            </CardDescription>
-          </div>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="gap-1"
-            data-ocid="dashboard.recent_campaigns.all.link"
-          >
-            <Link to="/campaigns">
-              All campaigns <ArrowRight className="size-3.5" />
-            </Link>
-          </Button>
+  if (isLoading) {
+    return (
+      <GroupedList title="Recent campaigns">
+        <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Loading campaigns…
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Loading campaigns…
-          </div>
-        ) : recent.length === 0 ? (
-          <div
-            className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-8 text-center"
-            data-ocid="dashboard.recent_campaigns.empty"
-          >
-            <p className="text-sm text-muted-foreground">
-              No campaigns yet. Launch your first mailing in minutes.
-            </p>
+      </GroupedList>
+    );
+  }
+  if (recent.length === 0) {
+    return (
+      <GroupedList
+        title="Recent campaigns"
+        data-ocid="dashboard.recent_campaigns.card"
+      >
+        <MascotEmptyState
+          pose="mail"
+          title="No mailouts yet"
+          description="Start your first campaign: it takes about five minutes."
+          data-ocid="dashboard.recent_campaigns.empty"
+          action={
             <Button
               asChild
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               data-ocid="dashboard.recent_campaigns.new.link"
             >
               <Link to="/wizard">
                 <Rocket className="size-4" /> New campaign
               </Link>
             </Button>
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {recent.map((campaign, idx) => (
-              <li
-                key={campaign.id}
-                data-ocid={`dashboard.recent_campaigns.item.${idx + 1}`}
-              >
-                <Link
-                  to="/campaigns/$campaignId"
-                  params={{ campaignId: campaign.id }}
-                  className="flex items-center justify-between gap-3 py-3 transition-smooth hover:bg-muted/40"
-                  data-ocid={`dashboard.recent_campaigns.item.${idx + 1}.link`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {campaign.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {layoutLabel(campaign.product.layoutVariant)} ·{" "}
-                      {formatNumber(campaign.recipientCount)} recipients ·{" "}
-                      {formatTimestamp(campaign.createdAt, false)}
-                    </p>
-                  </div>
-                  <StatusBadge status={campaign.status} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+          }
+        />
+      </GroupedList>
+    );
+  }
+  return (
+    <GroupedList
+      title="Recent campaigns"
+      data-ocid="dashboard.recent_campaigns.card"
+    >
+      {recent.map((campaign, idx) => (
+        <GroupedListRow
+          key={campaign.id}
+          to={`/campaigns/${campaign.id}`}
+          icon={Mailbox}
+          label={campaign.name}
+          description={`${layoutLabel(campaign.product.layoutVariant)} · ${formatNumber(campaign.recipientCount)} recipients · ${formatTimestamp(campaign.createdAt, false)}`}
+          value={<StatusBadge status={campaign.status} />}
+          data-ocid={`dashboard.recent_campaigns.item.${idx + 1}.link`}
+        />
+      ))}
+      <GroupedListRow
+        to="/campaigns"
+        icon={LayoutDashboard}
+        label="All campaigns"
+        data-ocid="dashboard.recent_campaigns.all.link"
+      />
+    </GroupedList>
   );
 }
 
 function QuickLinks() {
   return (
-    <Card data-ocid="dashboard.quick_links.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Quick links</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2 sm:grid-cols-3">
-        <Button
-          asChild
-          className="justify-start gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          data-ocid="dashboard.quick_links.wizard.link"
-        >
-          <Link to="/wizard">
-            <Plus className="size-4" /> New campaign
-          </Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="justify-start gap-2"
-          data-ocid="dashboard.quick_links.templates.link"
-        >
-          <Link to="/templates">
-            <LayoutTemplate className="size-4" /> Browse templates
-          </Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="justify-start gap-2"
-          data-ocid="dashboard.quick_links.campaigns.link"
-        >
-          <Link to="/campaigns">
-            <Mailbox className="size-4" /> Campaign tracking
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <GroupedList title="Create" data-ocid="dashboard.quick_links.card">
+      <GroupedListRow
+        to="/wizard"
+        icon={Plus}
+        label="New campaign"
+        description="Product, audience, design and checkout in four steps"
+        data-ocid="dashboard.quick_links.wizard.link"
+      />
+      <GroupedListRow
+        to="/templates"
+        icon={LayoutTemplate}
+        label="Browse templates"
+        description="Print-ready starting points for every format"
+        data-ocid="dashboard.quick_links.templates.link"
+      />
+      <GroupedListRow
+        to="/campaigns"
+        icon={Mailbox}
+        label="Campaign tracking"
+        description="Production, USPS scans and QR results"
+        data-ocid="dashboard.quick_links.campaigns.link"
+      />
+    </GroupedList>
   );
 }
 
@@ -178,18 +138,13 @@ export function DashboardPage() {
       className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
       data-ocid="dashboard.page"
     >
-      <div className="mb-8 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <LayoutDashboard className="size-5" />
-        </div>
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Membership, AI credits, referrals and your latest campaigns.
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm font-medium text-muted-foreground">
+          Membership, AI credits, referrals and your latest campaigns.
+        </p>
       </div>
 
       {isInitializing ? (
@@ -199,17 +154,20 @@ export function DashboardPage() {
       ) : !isAuthenticated ? (
         <SignInPrompt message="Sign in with Internet Identity to see your dashboard, credits and referral rewards." />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="min-w-0 space-y-6 lg:col-span-1">
-            <AccountCard />
-            <SubscriptionWidget />
-          </div>
-          <div className="min-w-0 space-y-6 lg:col-span-2">
-            <QuickLinks />
-            <RecentCampaigns />
-            <CreditsWidget />
-            <div id="referrals" className="scroll-mt-24">
-              <ReferralWidget />
+        <div className="space-y-6">
+          <RewardsBanner />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="min-w-0 space-y-6 lg:col-span-1">
+              <AccountCard />
+              <SubscriptionWidget />
+            </div>
+            <div className="min-w-0 space-y-6 lg:col-span-2">
+              <QuickLinks />
+              <RecentCampaigns />
+              <CreditsWidget />
+              <div id="referrals" className="scroll-mt-24">
+                <ReferralWidget />
+              </div>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import {
   Click2MailEnvironment,
 } from "@/backend";
 import { SignInPrompt } from "@/components/billing/SignInPrompt";
+import { MascotEmptyState } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -991,7 +992,13 @@ function SupportInboxCard() {
             <Loader2 className="size-4 animate-spin" /> Loading…
           </div>
         ) : list.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No tickets yet.</p>
+          <MascotEmptyState
+            pose="checklist"
+            size="sm"
+            title="Inbox zero"
+            description="No support tickets yet. New ones from the Contact Support form land here."
+            data-ocid="admin.support.empty"
+          />
         ) : (
           <ul className="divide-y">
             {list.map((t) => (

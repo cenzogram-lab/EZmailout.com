@@ -1,5 +1,6 @@
 import type { AudiencePresetShared } from "@/backend";
 import { SignInPrompt } from "@/components/billing/SignInPrompt";
+import { MascotEmptyState } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,19 +48,16 @@ export function PresetPicker({ selectedId, onSelect }: PresetPickerProps) {
   const list = presets.data ?? [];
   if (list.length === 0) {
     return (
-      <Card
-        className="border-dashed bg-muted/30"
-        data-ocid="audience.presets.empty"
-      >
-        <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-          <Bookmark className="size-8 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">
-            No saved audiences yet
-          </p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Verify a CSV list and choose "Save as preset", or save recipients
-            from any finished campaign to reuse them here.
-          </p>
+      <Card data-ocid="audience.presets.empty">
+        <CardContent>
+          <MascotEmptyState
+            pose="audience"
+            size="sm"
+            title="No saved audiences yet"
+            description={
+              'Verify a CSV list and choose "Save as preset", or save recipients from any finished campaign to reuse them here.'
+            }
+          />
         </CardContent>
       </Card>
     );
