@@ -154,8 +154,8 @@ mixin (
     let auth = switch (AdminLib.click2mailAuth(adminKeysState)) {
       case (?a) a;
       case null {
-        markAll("Click2Mail credentials not configured");
-        return batch(false, ?"Click2Mail credentials not configured", results.toArray(), null);
+        markAll("Address verification is not configured yet");
+        return batch(false, ?"Address verification is not configured yet", results.toArray(), null);
       };
     };
     let candidates = candidateIdx.toArray().map(func(idx : Nat) : Common.AddressInput = sanitized[idx]);
@@ -183,15 +183,15 @@ mixin (
     let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
     let resp = await Http.postText(base # "/addressLists", Click2Mail.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
     if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) {
-      let msg = if (resp.status == 0) resp.body else "Click2Mail rejected the address list: " # Click2Mail.parseDescription(resp.body);
+      let msg = if (resp.status == 0) resp.body else "The address list was rejected: " # Click2Mail.parseDescription(resp.body);
       markAll(msg);
       return batch(false, ?msg, results.toArray(), null);
     };
     let listId = switch (Click2Mail.parseId(resp.body)) {
       case (?id) id;
       case null {
-        markAll("Click2Mail response did not include an address list id");
-        return batch(false, ?"Unexpected Click2Mail response", results.toArray(), null);
+        markAll("Address verification returned no address list id");
+        return batch(false, ?"Unexpected address verification response", results.toArray(), null);
       };
     };
     let detail = await Http.get(base # "/addressLists/" # listId, Click2Mail.jsonHeaders(auth, "application/json"), opts, transformFn);

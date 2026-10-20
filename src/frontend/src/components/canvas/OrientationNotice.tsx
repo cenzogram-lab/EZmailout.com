@@ -39,11 +39,11 @@ export function OrientationNotice() {
   const copy: Record<NoticeKind, { title: string; body: string }> = {
     window: {
       title: `Rotated to ${turned} — pages sit sideways in the #10 window envelope`,
-      body: `The folds and window cuts turned with the page: keep artwork out of the outlined windows. Click2Mail prints the recipient's address on its own page, so delivery is unaffected, but your pages read sideways when the letter is unfolded. Each page exports turned back onto the ${piece} sheet.`,
+      body: `The folds and window cuts turned with the page: keep artwork out of the outlined windows. EZmailout prints the recipient's address on its own page, so delivery is unaffected, but your pages read sideways when the letter is unfolded. Each page exports turned back onto the ${piece} sheet.`,
     },
     address: {
       title: `Rotated to ${turned} — keep the USPS address zone clear`,
-      body: `Click2Mail prints the delivery address, postage and IMb barcode on the same patch of the back whatever your design's orientation, so the reserved zone turned with the artboard. Both sides export turned back onto the ${piece} piece.`,
+      body: `EZmailout prints the delivery address, postage and IMb barcode on the same patch of the back whatever your design's orientation, so the reserved zone turned with the artboard. Both sides export turned back onto the ${piece} piece.`,
     },
     envelope: {
       title: `Rotated to ${turned} — the piece goes into its envelope upright`,

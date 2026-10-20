@@ -1,20 +1,20 @@
 {
-  "overview": "EZmailout.com — direct mail campaigns without minimums. A $9/month membership unlocks wholesale Click2Mail print rates (postcards from $1.15), an AI design studio with a pay-as-you-go credit ledger, saved audience presets, dynamic QR tracking and referral rewards, all on a single Motoko canister.",
+  "overview": "EZmailout.com — direct mail campaigns without minimums. A $9/month membership unlocks wholesale EZmailout print rates (postcards from $1.15), an AI design studio with a pay-as-you-go credit ledger, saved audience presets, dynamic QR tracking and referral rewards, all on a single Motoko canister.",
   "features": [
-    "Full Click2Mail catalog — 14 product families, 29 document classes (postcards, letters, Certified Mail, EDDM®, Priority Mail, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets, card stock) — priced from the operator's cost/retail matrix with per-row margin reporting",
-    "Dual-path audience targeting: interactive Leaflet radius map with EDDM-style estimates, CSV upload with Click2Mail CASS verification, and saved audience presets (re-run, prune, save as new)",
+    "Full EZmailout catalog — 14 product families, 29 document classes (postcards, letters, Certified Mail, EDDM®, Priority Mail, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets, card stock) — priced from the operator's cost/retail matrix with per-row margin reporting",
+    "Dual-path audience targeting: interactive Leaflet radius map with EDDM-style estimates, CSV upload with EZmailout CASS verification, and saved audience presets (re-run, prune, save as new)",
     "Side-by-side design studio: 2D drag-and-drop editor with bleed/cut/safe overlays and a synchronized 3D front/back preview",
     "AI Studio: DALL·E 3 backgrounds with industry quick-prompts and a GPT-4o mini copywriter, paid with credits (Stripe top-up packs, 50 free credits per member month)",
     "Dynamic QR & link creator with per-recipient tracking redirects (ezmailout.com/t/{recipientId}) and scan analytics",
     "Stripe Elements checkout for campaign orders, credit packs and the $9/month membership; referral program granting one free month per referred first payment",
-    "Click2Mail REST fulfilment: 300 DPI PDF upload, address list intake, job dispatch with print options, IMb tracking sync and authenticated delivery webhook",
+    "EZmailout print fulfilment: 300 DPI PDF upload, address list intake, job dispatch with print options, IMb tracking sync and authenticated delivery webhook",
     "Campaign portal with a 5-stage USPS timeline, CSV export, production status and admin key management"
   ],
   "category": "productivity",
   "tags": [
     "direct-mail",
     "campaign-management",
-    "click2mail",
+    "ezmailout",
     "print-and-mail",
     "ai-design",
     "stripe",

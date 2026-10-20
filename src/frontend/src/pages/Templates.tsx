@@ -180,8 +180,8 @@ export function TemplatesPage() {
         </div>
       </div>
 
-      {/* Category filter chips */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Category filter chips: pinned under the sticky site header, not behind it. */}
+      <div className="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-30 border-b border-border/60 bg-background">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {CATEGORIES.map((cat) => (

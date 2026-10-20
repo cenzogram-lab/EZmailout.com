@@ -74,7 +74,7 @@ export function StampyTip({
       <button
         type="button"
         onClick={() => dismiss(id)}
-        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-[#575859] transition-smooth hover:bg-card hover:text-foreground"
+        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-muted-foreground transition-smooth hover:bg-card hover:text-foreground"
         aria-label="Close this tip"
         title="Close this tip"
         data-ocid={`stampy.tip.${id}.dismiss`}

@@ -126,7 +126,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
       setResult(batch);
       if (!batch.ok) {
         setVerifyError(
-          batch.error ?? "Click2Mail could not verify these addresses.",
+          batch.error ?? "EZmailout could not verify these addresses.",
         );
       } else {
         toast.success(
@@ -287,7 +287,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               ) : (
                 <ShieldCheck className="size-4" />
               )}
-              Verify with Click2Mail (CASS)
+              Verify with EZmailout (CASS)
             </Button>
           </div>
 

@@ -92,15 +92,15 @@ const RAIL_ITEMS: { icon: LucideIcon; label: string }[] = [
 function StudioMock() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-[#e5e7eb] bg-card shadow-xl shadow-navy/10"
+      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl shadow-navy/10"
       data-ocid="hero.studio_mock"
       aria-hidden="true"
     >
-      <div className="flex items-center gap-2 border-b border-[#e5e7eb] px-3 py-2">
-        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
-        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
-        <span className="size-2.5 rounded-full bg-[#f0f1f5]" />
-        <span className="ml-2 rounded-full bg-[#f0f1f5] px-2 py-0.5 text-[10px] font-medium text-[#575859]">
+      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
+        <span className="size-2.5 rounded-full bg-muted" />
+        <span className="size-2.5 rounded-full bg-muted" />
+        <span className="size-2.5 rounded-full bg-muted" />
+        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           Spring open-house · 6″ × 4.25″ Postcard
         </span>
         <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -108,24 +108,24 @@ function StudioMock() {
         </span>
       </div>
       <div className="flex">
-        <div className="flex w-14 flex-col items-center gap-2 border-r border-[#e5e7eb] bg-[#f6f7f9] py-3">
+        <div className="flex w-14 flex-col items-center gap-2 border-r border-border/60 bg-muted/60 py-3">
           {RAIL_ITEMS.map((item, i) => (
             <span
               key={item.label}
-              className={`flex size-9 items-center justify-center rounded-lg ${i === 2 ? "bg-card text-primary shadow-sm" : "text-[#575859]"}`}
+              className={`flex size-9 items-center justify-center rounded-lg ${i === 2 ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}
             >
               <item.icon className="size-4" strokeWidth={1.75} />
             </span>
           ))}
         </div>
         <div className="studio-dotgrid relative flex-1 p-6 sm:p-8">
-          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-[#e5e7eb] bg-card px-1.5 py-1 shadow-md">
-            <span className="px-1 text-[9px] font-semibold uppercase text-[#575859]">
+          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-border/60 bg-card px-1.5 py-1 shadow-md">
+            <span className="px-1 text-[9px] font-semibold uppercase text-muted-foreground">
               text
             </span>
-            <AlignStartVertical className="size-3.5 text-[#575859]" />
+            <AlignStartVertical className="size-3.5 text-muted-foreground" />
             <AlignCenterVertical className="size-3.5 text-primary" />
-            <Copy className="size-3.5 text-[#575859]" />
+            <Copy className="size-3.5 text-muted-foreground" />
             <Trash2 className="size-3.5 text-destructive" />
           </div>
           <div className="relative mx-auto mt-6 aspect-[6/4.25] w-full max-w-[360px]">
@@ -150,7 +150,7 @@ function StudioMock() {
                     />
                   ))}
                 </div>
-                <p className="mt-2 px-1 text-[10px] font-medium text-[#575859] sm:text-xs">
+                <p className="mt-2 px-1 text-[10px] font-medium text-muted-foreground sm:text-xs">
                   120 Harbor View Dr · Free valuation for every visitor
                 </p>
                 <span className="mt-2 inline-block rounded-full bg-navy px-3 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
@@ -191,7 +191,7 @@ interface TrustBadge {
 const TRUST_BADGES: TrustBadge[] = [
   { icon: ShieldCheck, label: "CASS-certified addresses" },
   { icon: Barcode, label: "USPS IMb tracking" },
-  { icon: Printer, label: "Click2Mail fulfilment" },
+  { icon: Printer, label: "EZmailout fulfilment" },
   { icon: Layers, label: "No minimums" },
 ];
 
@@ -201,7 +201,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_0%,oklch(var(--primary)/0.12),transparent_70%)]" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:px-8">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
             <span className="relative flex size-2">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-brand opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-brand" />
@@ -214,7 +214,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             <span className="block text-primary">Mail it tomorrow.</span>
           </h1>
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A Canva-style studio, {CATALOG_SIZE_COUNT} Click2Mail formats and
+            A Canva-style studio, {CATALOG_SIZE_COUNT} mail formats and
             wholesale per-piece pricing for{" "}
             {formatCents(SUBSCRIPTION_PRICE_CENTS)} a month. Upload a list or
             draw a radius, design in the browser, and USPS delivers with live
@@ -252,7 +252,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             {TRUST_BADGES.map((badge) => (
               <li
                 key={badge.label}
-                className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
               >
                 <badge.icon className="size-3.5 text-primary" />
                 {badge.label}
@@ -271,9 +271,9 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
 /* ─── Marquee ─── */
 function Marquee() {
   const text =
-    "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • Click2Mail fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
+    "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • EZmailout fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
   return (
-    <div className="relative overflow-hidden border-y border-[#e5e7eb] bg-ice py-3">
+    <div className="relative overflow-hidden border-y border-border/60 bg-ice py-3">
       <div className="flex whitespace-nowrap animate-marquee-scroll">
         <span className="px-4 text-sm font-medium text-navy">{text}</span>
         <span className="px-4 text-sm font-medium text-navy">{text}</span>
@@ -287,7 +287,7 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: LayoutTemplate,
     title: "1 · Pick a format",
-    body: `${CATALOG.length} Click2Mail families, every size on the sheet, one transparent per-piece price.`,
+    body: `${CATALOG.length} product families, every size on the sheet, one transparent per-piece price.`,
   },
   {
     icon: Users,
@@ -312,7 +312,7 @@ function HowItWorks() {
       {STEPS.map((step, i) => (
         <li
           key={step.title}
-          className="relative rounded-2xl border border-[#e5e7eb] bg-card p-6 shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
+          className="relative rounded-2xl border border-border/60 bg-card p-6 shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
         >
           <span className="inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <step.icon className="size-5" />
@@ -342,7 +342,7 @@ const STUDIO_FEATURES: {
   {
     icon: Palette,
     title: "Canva-style studio",
-    body: "A tool rail, drawers and a dotted stage — with print guides Click2Mail actually uses.",
+    body: "A tool rail, drawers and a dotted stage — with the print guides our press actually uses.",
     bullets: [
       "Round grab handles, align & depth toolbar",
       "Cut, ⅛″ bleed and ¼″ safe-zone overlays",
@@ -377,7 +377,7 @@ function StudioFeatures() {
       {STUDIO_FEATURES.map((f) => (
         <div
           key={f.title}
-          className="rounded-2xl border border-[#e5e7eb] bg-card p-6 shadow-sm"
+          className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
         >
           <span className="inline-flex size-11 items-center justify-center rounded-xl bg-ice text-navy">
             <f.icon className="size-5" />
@@ -411,11 +411,11 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Which formats can I send?",
-    a: `Every family on the Click2Mail product sheet — postcards, letters, Certified Mail™, EDDM®, Priority Mail®, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock — ${CATALOG_SIZE_COUNT} sizes in total.`,
+    a: `Every family on the EZmailout product sheet — postcards, letters, Certified Mail™, EDDM®, Priority Mail®, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock — ${CATALOG_SIZE_COUNT} sizes in total.`,
   },
   {
     q: "How do addresses get verified?",
-    a: "Uploaded lists run through Click2Mail's CASS verification, appending ZIP+4 and flagging undeliverable rows before anything is printed. Clean lists can be saved as presets.",
+    a: "Uploaded lists run through EZmailout's CASS verification, appending ZIP+4 and flagging undeliverable rows before anything is printed. Clean lists can be saved as presets.",
   },
   {
     q: "What does the AI Studio cost?",
@@ -430,7 +430,7 @@ const FAQ: { q: string; a: string }[] = [
 function Faq() {
   return (
     <div
-      className="mx-auto max-w-3xl divide-y divide-[#e5e7eb] rounded-2xl border border-[#e5e7eb] bg-card"
+      className="mx-auto max-w-3xl divide-y divide-border/60 rounded-2xl border border-border/60 bg-card"
       data-ocid="home.faq"
     >
       {FAQ.map((item, i) => (
@@ -494,13 +494,13 @@ function ValuePillars() {
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Upload a CSV of past buyers. Every row is scrubbed to USPS standards
-            through Click2Mail's CASS verification — ZIP+4 appended,
+            through EZmailout's CASS verification — ZIP+4 appended,
             undeliverable addresses flagged — before a single piece is printed.
             Save the clean list as a preset and reuse it next quarter.
           </p>
           <ul className="mt-4 space-y-2">
             {[
-              "CASS-certified scrub via Click2Mail",
+              "CASS-certified scrub via EZmailout",
               "ZIP+4 and delivery-point correction",
               "Invalid rows highlighted before you pay",
               "Saved audience presets for repeat drops",
@@ -863,7 +863,7 @@ export function StoreFront() {
       <Section
         id="products"
         eyebrow="Catalog"
-        title="Every Click2Mail format, one price list"
+        title="Every EZmailout format, one price list"
         subtitle="Pick a family to open its sizes in the wizard. Prices include print, postage and address verification."
       >
         <ProductShowcase />

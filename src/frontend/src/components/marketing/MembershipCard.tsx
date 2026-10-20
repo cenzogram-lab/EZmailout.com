@@ -54,7 +54,7 @@ const PERKS: Perk[] = [
 
 const INCLUDED = [
   "Cancel anytime",
-  "Click2Mail print & USPS delivery",
+  "EZmailout print & USPS delivery",
   "Real-time IMb tracking",
   "Dynamic QR tracking links",
 ];

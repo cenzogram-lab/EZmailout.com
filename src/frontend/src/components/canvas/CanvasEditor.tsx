@@ -573,8 +573,10 @@ export function CanvasEditor({
       // biome-ignore lint/a11y/noNoninteractiveTabindex: the canvas must take keyboard focus for arrow-key nudging and Delete
       tabIndex={0}
       aria-label={`Design canvas, ${activeSide} side`}
+      // `isolate` keeps the selection toolbar's z-index inside the stage, so it
+      // scrolls under the sticky header and the tab bar instead of over them.
       className={cn(
-        "studio-dotgrid relative w-full select-none rounded-2xl border outline-none",
+        "studio-dotgrid relative isolate w-full select-none rounded-2xl border outline-none",
         "flex justify-center",
         className,
       )}

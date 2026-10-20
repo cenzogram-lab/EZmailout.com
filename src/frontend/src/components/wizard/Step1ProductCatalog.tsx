@@ -112,7 +112,7 @@ function SizeRow({
         >
           {selected && <Check className="size-3" />}
         </span>
-        <AspectBadge row={row} className="mt-0.5" />
+        <AspectBadge row={row} className="mt-0.5 hidden sm:inline-flex" />
         <span className="min-w-0 flex-1">
           <span className="block font-medium leading-snug text-foreground">
             {row.documentClass}
@@ -124,15 +124,23 @@ function SizeRow({
             {sizeLabel(row.id)} · {row.paperType}
             {row.envelope ? ` · ${row.envelope}` : ""}
           </span>
+          {/* On phones the price sits under the name, so the name and paper
+              line keep the row's full width instead of one word per line. */}
+          <Badge
+            className="mt-1.5 bg-primary text-primary-foreground sm:hidden"
+            data-ocid={`catalog.size.${row.id}.price_inline`}
+          >
+            {formatCents(row.retailPriceCents)} / piece
+          </Badge>
         </span>
         <Badge
-          className="mt-0.5 shrink-0 bg-primary text-primary-foreground"
+          className="mt-0.5 hidden shrink-0 bg-primary text-primary-foreground sm:inline-flex"
           data-ocid={`catalog.size.${row.id}.price`}
         >
           {formatCents(row.retailPriceCents)} / piece
         </Badge>
       </button>
-      <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pl-[4.25rem]">
+      <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pl-11 sm:pl-[4.25rem]">
         {row.supportedMailClasses.map((option) => {
           const active = option === mailClass;
           return (
@@ -204,7 +212,7 @@ function CategoryCard({
           "size-10 transition-smooth",
           expanded || selected
             ? "text-primary"
-            : "text-[#575859] group-hover:text-primary",
+            : "text-muted-foreground group-hover:text-primary",
         )}
       />
       <span className="text-sm font-semibold leading-tight text-foreground">
@@ -282,7 +290,7 @@ export function Step1ProductCatalog() {
             Choose your mail piece
           </h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            {CATALOG.length} Click2Mail product families, {CATALOG_SIZE_COUNT}{" "}
+            {CATALOG.length} EZmailout product families, {CATALOG_SIZE_COUNT}{" "}
             sizes. Every price includes printing, postage and CASS address
             verification — no minimum order.
           </p>
@@ -331,7 +339,7 @@ export function Step1ProductCatalog() {
 
       {expanded ? (
         <div
-          className="rounded-2xl border border-primary/30 bg-card p-5 shadow-sm animate-fade-up sm:p-6"
+          className="rounded-2xl border border-primary/30 bg-card p-4 shadow-soft animate-fade-up sm:p-6"
           data-ocid={`catalog.sizes.${expanded.id}.panel`}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -410,7 +418,7 @@ export function Step1ProductCatalog() {
           </span>{" "}
           unlocks these wholesale rates on every size — send one piece or ten
           thousand at the same per-piece price, next-day production by
-          Click2Mail, USPS IMb tracking included.
+          EZmailout, USPS IMb tracking included.
         </p>
       </div>
 

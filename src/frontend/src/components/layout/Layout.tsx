@@ -195,7 +195,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
@@ -273,8 +273,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <span>
             &copy; {new Date().getFullYear()} {BRAND.site} · Direct mail without
-            minimums · Fulfilled by Click2Mail · Built on the Internet Computer
-            with{" "}
+            minimums · Printed and mailed by EZmailout · Built on the Internet
+            Computer with{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"

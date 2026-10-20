@@ -74,7 +74,7 @@ const STAGE_LABELS: Record<Stage, string> = {
   rendering: "Rendering print-ready PDF",
   uploading: "Uploading document",
   paying: "Awaiting payment",
-  dispatching: "Submitting to Click2Mail",
+  dispatching: "Sending to print",
   done: "Complete",
 };
 
@@ -333,8 +333,8 @@ export function Step4ReviewLaunch() {
     try {
       const res = await dispatchJob.mutateAsync(id);
       setDispatchResult(res);
-      if (res.ok) toast.success("Job submitted to Click2Mail.");
-      else toast.warning("Paid, but the Click2Mail hand-off needs a retry.");
+      if (res.ok) toast.success("Job submitted for printing.");
+      else toast.warning("Paid, but the print hand-off needs a retry.");
     } catch (error) {
       setDispatchResult({
         ok: false,
@@ -390,7 +390,7 @@ export function Step4ReviewLaunch() {
             {dispatchResult?.ok ? (
               <Alert className="border-emerald-brand/40 bg-emerald-brand/10 text-left">
                 <Truck className="size-4 text-emerald-brand" />
-                <AlertTitle>Job submitted to Click2Mail</AlertTitle>
+                <AlertTitle>Job submitted for printing</AlertTitle>
                 <AlertDescription>
                   Job ID{" "}
                   <span className="font-mono">
@@ -408,7 +408,7 @@ export function Step4ReviewLaunch() {
                 data-ocid="review.dispatch.warning"
               >
                 <AlertCircle className="size-4 text-primary" />
-                <AlertTitle>Paid, but not yet handed to Click2Mail</AlertTitle>
+                <AlertTitle>Paid, but not yet sent to print</AlertTitle>
                 <AlertDescription>
                   {dispatchResult?.error ?? "The print job was not submitted."}{" "}
                   Your payment is recorded; retry the dispatch here or from the

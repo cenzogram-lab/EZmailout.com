@@ -146,7 +146,7 @@ const INTENTS: Intent[] = [
     keywords:
       /\b(admin|api key\w*|keys|stripe|resend|openai|click2mail credential\w*|webhook\w*|settings)\b/i,
     answer: () =>
-      "Admins set the Click2Mail, Stripe, Resend and OpenAI keys in Admin settings. Secrets are stored in the canister and only ever shown masked.",
+      "Admins set the print fulfilment, Stripe, Resend and OpenAI keys in Admin settings. Secrets are stored in the canister and only ever shown masked.",
     chips: ["admin"],
   },
   {
@@ -162,7 +162,7 @@ const INTENTS: Intent[] = [
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
     priceable: true,
     answer: () =>
-      `A ${membership}/month membership unlocks Click2Mail wholesale print and USPS postage with no batch minimums — mail one piece or thousands. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
+      `A ${membership}/month membership unlocks EZmailout wholesale print and USPS postage with no batch minimums — mail one piece or thousands. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
     chips: ["catalog"],
   },
   {

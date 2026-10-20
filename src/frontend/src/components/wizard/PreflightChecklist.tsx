@@ -211,7 +211,7 @@ export function computePreflight(input: PreflightInput): PreflightReport {
     items.push({
       id: "recipients",
       label: "Recipients",
-      detail: `${formatNumber(input.verifiedCount)} verified addresses ready for Click2Mail.`,
+      detail: `${formatNumber(input.verifiedCount)} verified addresses ready to print and mail.`,
       level: "pass",
     });
   } else if (input.audienceType === "map" && input.recipientCount > 0) {

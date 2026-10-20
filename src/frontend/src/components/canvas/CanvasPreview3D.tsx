@@ -243,27 +243,31 @@ export function CanvasPreview3D({ className }: { className?: string }) {
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={() => {
             bump();
             setRotationY((r) => r - 25);
           }}
-          className="gap-1.5"
+          className="size-8"
+          aria-label="Rotate left"
+          title="Rotate left"
           data-ocid="canvas.preview_rotate_left"
         >
-          <RotateCcw className="size-3.5" /> Rotate
+          <RotateCcw className="size-3.5" />
         </Button>
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={() => {
             bump();
             setRotationY((r) => r + 25);
           }}
-          className="gap-1.5"
+          className="size-8"
+          aria-label="Rotate right"
+          title="Rotate right"
           data-ocid="canvas.preview_rotate_right"
         >
-          <RotateCw className="size-3.5" /> Rotate
+          <RotateCw className="size-3.5" />
         </Button>
         <Button
           variant={showBack ? "default" : "outline"}

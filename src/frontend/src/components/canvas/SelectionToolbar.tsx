@@ -242,7 +242,7 @@ export function SelectionToolbar({
       role="toolbar"
       aria-label="Selected element"
       className={cn(
-        "absolute z-[9500] flex w-max rounded-xl border border-[#e5e7eb] bg-card px-1 py-0.5 shadow-lg",
+        "absolute z-[9500] flex w-max rounded-xl border border-border/60 bg-card px-1 py-0.5 shadow-lg",
         compact ? "flex-col gap-0.5 py-1" : "items-center gap-0.5",
       )}
       style={{ left, top }}

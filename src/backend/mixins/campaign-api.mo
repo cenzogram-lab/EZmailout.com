@@ -375,7 +375,7 @@ mixin (
       case null { return { ok = false; error = ?CampaignLib.accessDenied } };
     };
     if (record.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } };
-    if (record.c2mDocumentId != null) { return { ok = false; error = ?"This draft's document is already with Click2Mail" } };
+    if (record.c2mDocumentId != null) { return { ok = false; error = ?"This draft's document is already in production" } };
     let now = Time.now();
     for ((_, p) in payments.entries()) {
       if (p.reference == ?campaignId and p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {

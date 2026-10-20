@@ -216,7 +216,7 @@ function StampyChatbotPanel() {
           className="fixed bottom-[calc(6rem+var(--bottom-nav-h))] right-4 z-40 flex h-[min(560px,calc(100dvh-7.5rem-var(--bottom-nav-h)))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl sm:right-5"
           data-ocid="stampy.chat.panel"
         >
-          <header className="flex items-center gap-3 border-b border-[#e5e7eb] px-4 py-3">
+          <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
             {thinking ? (
               <StampyChatAvatarThinking
                 className="size-11 shrink-0"
@@ -243,7 +243,7 @@ function StampyChatbotPanel() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex size-8 items-center justify-center rounded-full text-[#575859] transition-smooth hover:bg-muted hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground"
               aria-label="Minimize Stampy"
               title="Minimize"
               data-ocid="stampy.chat.minimize"
@@ -254,7 +254,7 @@ function StampyChatbotPanel() {
 
           <nav
             aria-label="Stampy menu"
-            className="flex flex-wrap items-center gap-1.5 border-b border-[#e5e7eb] bg-[#f6f7f9] px-3 py-2"
+            className="flex flex-wrap items-center gap-1.5 border-b border-border/60 bg-muted/60 px-3 py-2"
           >
             <MenuButton
               onClick={() => setView("support")}
@@ -325,7 +325,7 @@ function StampyChatbotPanel() {
                 ) : null}
               </div>
               {!isAuthenticated ? (
-                <p className="border-t border-[#e5e7eb] px-4 py-1.5 text-[11px] text-muted-foreground">
+                <p className="border-t border-border/60 px-4 py-1.5 text-[11px] text-muted-foreground">
                   Quick answers work signed out.{" "}
                   <button
                     type="button"
@@ -339,7 +339,7 @@ function StampyChatbotPanel() {
               ) : null}
               <form
                 onSubmit={handleSubmit}
-                className="flex items-center gap-2 border-t border-[#e5e7eb] p-3"
+                className="flex items-center gap-2 border-t border-border/60 p-3"
               >
                 <Input
                   ref={inputRef}
@@ -439,7 +439,7 @@ function MenuButton({
         "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-smooth",
         active
           ? "bg-primary text-primary-foreground"
-          : "text-[#575859] hover:bg-card hover:text-foreground",
+          : "text-muted-foreground hover:bg-card hover:text-foreground",
       )}
       data-ocid={ocid}
     >

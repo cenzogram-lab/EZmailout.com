@@ -194,7 +194,7 @@ export function PaymentStatusBadge({
       data-ocid={`campaigns.payment.${status.toLowerCase()}.badge`}
       title={
         status === PaymentStatus.Waived
-          ? "Paid through test-mode checkout: the Click2Mail job goes to Staging and never prints."
+          ? "Paid through test-mode checkout: the print job goes to the staging environment and never prints."
           : undefined
       }
     >

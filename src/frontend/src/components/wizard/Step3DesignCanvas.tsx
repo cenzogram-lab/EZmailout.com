@@ -131,7 +131,7 @@ export function Step3DesignCanvas() {
           <p className="text-sm text-muted-foreground">
             {selectedProduct?.productType ?? "Postcard"} ·{" "}
             {layoutLabel(layoutVariant)} · {dims.widthInches}″ ×{" "}
-            {dims.heightInches}″ · exported at 300 DPI for Click2Mail
+            {dims.heightInches}″ · exported at 300 DPI for print
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
@@ -185,13 +185,13 @@ export function Step3DesignCanvas() {
           />
           {drawerOpen ? (
             <div
-              className="relative min-w-0 flex-1 rounded-2xl border border-[#e5e7eb] bg-card p-4 shadow-xs lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
+              className="relative min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-soft lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
               data-ocid={`canvas.drawer.${tool}`}
             >
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                className="absolute right-2 top-2 hidden size-7 items-center justify-center rounded-lg text-[#575859] transition-smooth hover:bg-muted hover:text-foreground lg:flex"
+                className="absolute right-2 top-2 hidden size-7 items-center justify-center rounded-lg text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground lg:flex"
                 title="Collapse panel"
                 aria-label="Collapse panel"
                 data-ocid="canvas.panel.collapse"

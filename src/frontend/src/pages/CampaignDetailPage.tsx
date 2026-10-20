@@ -304,8 +304,8 @@ export function CampaignDetailPage() {
       if (result.ok) {
         toast.success(
           result.jobId
-            ? `Submitted to Click2Mail — job ${result.jobId}.`
-            : "Dispatched to Click2Mail.",
+            ? `Submitted for printing — job ${result.jobId}.`
+            : "Sent to print.",
         );
       } else {
         toast.error(result.error ?? "Dispatch failed.");
@@ -359,7 +359,7 @@ export function CampaignDetailPage() {
         setOverrideStatus("");
       } else {
         toast.error(
-          "The canister refused this move: the timeline only moves forward, once Click2Mail has the job.",
+          "The canister refused this move: the timeline only moves forward, once the print job is submitted.",
         );
       }
     } catch (error) {
@@ -496,8 +496,8 @@ export function CampaignDetailPage() {
               </CardTitle>
               <CardDescription data-ocid="campaign_detail.tracking.summary">
                 {isDeliveryException(campaign.status)
-                  ? `Outcome: ${statusLabel(campaign.status)} · tracking lookups have stopped; later USPS updates still arrive through Click2Mail webhooks.`
-                  : `Stage ${stageIndex(campaign.status) + 1} of ${CAMPAIGN_STAGES.length} · updates arrive from USPS via Click2Mail webhooks and polling.`}
+                  ? `Outcome: ${statusLabel(campaign.status)} · tracking lookups have stopped; later USPS updates still arrive through EZmailout tracking webhooks.`
+                  : `Stage ${stageIndex(campaign.status) + 1} of ${CAMPAIGN_STAGES.length} · updates arrive from USPS via EZmailout tracking webhooks and polling.`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -519,7 +519,7 @@ export function CampaignDetailPage() {
                     Production
                   </CardTitle>
                   <CardDescription>
-                    Payment, print job and Click2Mail identifiers.
+                    Payment, print job and fulfilment identifiers.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -538,14 +538,14 @@ export function CampaignDetailPage() {
 
                   <div className="space-y-2 rounded-lg border px-3 py-2">
                     <IdRow
-                      label="Click2Mail document"
+                      label="Print document"
                       value={campaign.c2mDocumentId}
                     />
                     <IdRow
-                      label="Click2Mail address list"
+                      label="Address list"
                       value={campaign.c2mAddressListId}
                     />
-                    <IdRow label="Click2Mail job" value={campaign.c2mJobId} />
+                    <IdRow label="Print job" value={campaign.c2mJobId} />
                     <IdRow
                       label="Payment intent"
                       value={campaign.paymentIntentId}
@@ -619,7 +619,7 @@ export function CampaignDetailPage() {
                       ) : (
                         <Send className="size-4" />
                       )}
-                      Dispatch to Click2Mail
+                      Send to print
                     </Button>
                     <Button
                       type="button"
@@ -854,7 +854,7 @@ export function CampaignDetailPage() {
                       >
                         {campaign.productionStatus !==
                         ProductionStatus.Submitted
-                          ? "Stages can be set once Click2Mail has accepted the job."
+                          ? "Stages can be set once the print job has been accepted."
                           : "This campaign has reached its last stage."}
                       </p>
                     ) : (

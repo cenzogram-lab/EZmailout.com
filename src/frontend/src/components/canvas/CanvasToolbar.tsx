@@ -25,11 +25,11 @@ export function CanvasToolbar() {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-card px-2 py-1.5 shadow-xs"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-card px-2 py-1.5 shadow-xs"
       data-ocid="canvas.toolbar"
     >
       <div
-        className="inline-flex rounded-full border border-[#e5e7eb] bg-[#f6f7f9] p-0.5"
+        className="inline-flex rounded-full border border-border/60 bg-muted/60 p-0.5"
         role="tablist"
         aria-label="Card side"
       >
@@ -44,7 +44,7 @@ export function CanvasToolbar() {
               "rounded-full px-3 py-1 text-xs font-semibold capitalize transition-smooth",
               activeSide === s
                 ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-[#575859] hover:text-foreground",
+                : "text-muted-foreground hover:text-foreground",
             )}
             data-ocid={`canvas.side.${s}`}
           >
@@ -64,7 +64,7 @@ export function CanvasToolbar() {
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-smooth disabled:opacity-50",
               dims.rotated
                 ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-[#e5e7eb] text-[#575859] hover:text-foreground",
+                : "border-border/60 text-muted-foreground hover:text-foreground",
             )}
             data-ocid="canvas.rotate"
             data-orientation={dims.rotated ? "rotated" : "native"}

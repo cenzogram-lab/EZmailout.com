@@ -483,7 +483,7 @@ export function AdminPage() {
             Admin control panel
           </h1>
           <p className="text-sm text-muted-foreground">
-            Secure credentials for Click2Mail, Stripe, Resend and OpenAI.
+            Secure credentials for print fulfilment, Stripe, Resend and OpenAI.
             Secrets are stored in the canister and never returned in full.
           </p>
         </div>
@@ -583,10 +583,10 @@ export function AdminPage() {
                 <>
                   <div className="space-y-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Click2Mail
+                      Print fulfilment
                     </p>
                     <SecretField
-                      label="Click2Mail Username"
+                      label="Fulfilment API username"
                       field="click2mailUsername"
                       draft={draft}
                       setDraft={setDraft}
@@ -594,7 +594,7 @@ export function AdminPage() {
                       secret={false}
                     />
                     <SecretField
-                      label="Click2Mail Password"
+                      label="Fulfilment API password"
                       field="click2mailPassword"
                       draft={draft}
                       setDraft={setDraft}
@@ -602,7 +602,7 @@ export function AdminPage() {
                     />
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">
-                        Click2Mail environment
+                        Fulfilment environment
                       </Label>
                       <Select
                         value={currentEnvironment}
@@ -626,7 +626,7 @@ export function AdminPage() {
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Staging uses Click2Mail's sandbox REST endpoints; no
+                        Staging uses the fulfilment sandbox REST endpoints; no
                         mail is printed.
                       </p>
                     </div>
@@ -704,7 +704,7 @@ export function AdminPage() {
                       draft={draft}
                       setDraft={setDraft}
                       masked={view?.webhookSecretMasked}
-                      helper={`Shared secret that Click2Mail (or your relay) sends in the ${WEBHOOK_HEADER} header.`}
+                      helper={`Shared secret that the fulfilment service (or your relay) sends in the ${WEBHOOK_HEADER} header.`}
                       extra={
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -813,7 +813,7 @@ export function AdminPage() {
                 <Webhook className="size-4 text-primary" /> Delivery webhook
               </CardTitle>
               <CardDescription>
-                Point Click2Mail tracking (or any relay) at this endpoint.
+                Point fulfilment tracking (or any relay) at this endpoint.
                 Events are matched by{" "}
                 <code className="font-mono">campaignId</code> or{" "}
                 <code className="font-mono">jobId</code> and mapped onto the
@@ -877,7 +877,7 @@ export function AdminPage() {
                 <p className="text-xs text-muted-foreground">
                   <code className="font-mono">event</code> accepts any stage
                   name (Created, InProduction, InTransit, SortedAtLocalHub,
-                  Delivered) or Click2Mail scan wording;{" "}
+                  Delivered) or USPS scan wording;{" "}
                   <code className="font-mono">timestamp</code> may be seconds,
                   milliseconds or nanoseconds.
                 </p>
@@ -921,7 +921,7 @@ export function AdminPage() {
                     detail={config.stripePublishableKey}
                   />
                   <ConfigFlag
-                    label="Click2Mail configured"
+                    label="Fulfilment configured"
                     on={config.click2mailConfigured}
                     detail={config.click2mailEnvironment}
                   />

@@ -37,7 +37,7 @@ export function WizardLayout({
     >
       <nav
         aria-label="Wizard progress"
-        className="mb-6 rounded-2xl border border-[#e5e7eb] bg-card px-4 py-4 shadow-xs sm:px-8"
+        className="mb-6 rounded-2xl border border-border/60 bg-card px-4 py-4 shadow-soft sm:px-8"
       >
         <ol className="flex items-center justify-between">
           {STEPS.map((step, index) => {
@@ -62,7 +62,7 @@ export function WizardLayout({
                         "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15",
                       !isCompleted &&
                         !isActive &&
-                        "border-[#e5e7eb] bg-[#f6f7f9] text-[#575859]",
+                        "border-border bg-muted text-muted-foreground",
                     )}
                   >
                     {isCompleted ? <Check className="size-4" /> : step.id}
@@ -95,7 +95,7 @@ export function WizardLayout({
           </p>
         )}
       </nav>
-      <div className="rounded-2xl border border-[#e5e7eb] bg-card p-4 shadow-sm sm:p-6 lg:p-8">
+      <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft sm:p-6 lg:p-8">
         {children}
       </div>
     </div>

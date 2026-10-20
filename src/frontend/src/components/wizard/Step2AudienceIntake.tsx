@@ -111,7 +111,7 @@ export function Step2AudienceIntake() {
       </div>
 
       <StampyTip id="step2" mascot={StampyStep2Audience}>
-        Upload your CSV or select a saved preset. Click2Mail runs automated USPS
+        Upload your CSV or select a saved preset. EZmailout runs automated USPS
         CASS certification on upload so no postage is wasted on invalid routes.
       </StampyTip>
 

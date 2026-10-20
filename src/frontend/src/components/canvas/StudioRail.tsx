@@ -27,8 +27,9 @@ export const STUDIO_TOOLS: {
 ];
 
 /**
- * Canva-style vertical tool rail (#f6f7f9, monochrome #575859 icons); a
- * horizontal strip below `lg`. Clicking the active tool collapses its drawer.
+ * Canva-style vertical tool rail; a horizontal strip from `sm` to `lg` and a
+ * 4 × 2 grid on phones, so no tool is cut off at the edge. Clicking the active
+ * tool collapses its drawer.
  */
 export function StudioRail({
   active,
@@ -49,10 +50,10 @@ export function StudioRail({
         onClick={() => onSelect(tool.id)}
         aria-pressed={isActive}
         className={cn(
-          "flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-smooth",
+          "flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-smooth sm:min-w-[64px] sm:flex-1 sm:px-2 lg:flex-none",
           isActive
             ? "bg-card text-primary shadow-sm"
-            : "text-[#575859] hover:bg-card/70 hover:text-foreground",
+            : "text-muted-foreground hover:bg-card/70 hover:text-foreground",
         )}
         data-ocid={`canvas.rail.${tool.id}`}
       >
@@ -64,11 +65,11 @@ export function StudioRail({
   return (
     <nav
       aria-label="Studio tools"
-      className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-[#e5e7eb] bg-[#f6f7f9] p-1.5 scrollbar-hide lg:w-[76px] lg:flex-col lg:overflow-visible lg:py-3"
+      className="grid shrink-0 grid-cols-4 gap-1 rounded-2xl border border-border/60 bg-muted/60 p-1.5 sm:flex lg:w-[76px] lg:flex-col lg:py-3"
       data-ocid="canvas.rail"
     >
       {STUDIO_TOOLS.map(item)}
-      <div className="my-1 hidden border-t border-[#e5e7eb] lg:block" />
+      <div className="my-1 hidden border-t border-border/60 lg:block" />
       {item({ id: "layers", label: "Layers", icon: Layers })}
     </nav>
   );

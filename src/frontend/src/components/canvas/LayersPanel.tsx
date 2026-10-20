@@ -79,7 +79,7 @@ export function LayersPanel() {
             <li
               key={el.id}
               className={cn(
-                "flex items-center gap-2 px-2 py-1.5 text-sm",
+                "flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1.5 text-sm",
                 selected && "bg-primary/10",
               )}
               data-ocid={`canvas.layers.item.${el.id}`}
@@ -87,7 +87,7 @@ export function LayersPanel() {
               <button
                 type="button"
                 onClick={() => setSelectedElementId(el.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                className="flex min-w-0 basis-full items-center gap-2 py-0.5 text-left"
                 data-ocid={`canvas.layers.select.${el.id}`}
               >
                 <Icon className="size-4 shrink-0 text-muted-foreground" />
@@ -96,56 +96,58 @@ export function LayersPanel() {
                   z{el.z}
                 </span>
               </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => bringForward(activeSide, el.id)}
-                title="Bring forward"
-                data-ocid={`canvas.layers.forward.${el.id}`}
-              >
-                <ArrowUp className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => sendBackward(activeSide, el.id)}
-                title="Send backward"
-                data-ocid={`canvas.layers.backward.${el.id}`}
-              >
-                <ArrowDown className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => bringToFront(activeSide, el.id)}
-                title="Bring to front"
-                data-ocid={`canvas.layers.front.${el.id}`}
-              >
-                <ArrowUpToLine className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => sendToBack(activeSide, el.id)}
-                title="Send to back"
-                data-ocid={`canvas.layers.back.${el.id}`}
-              >
-                <ArrowDownToLine className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-destructive"
-                onClick={() => removeElement(activeSide, el.id)}
-                title="Delete"
-                data-ocid={`canvas.layers.delete.${el.id}`}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              <div className="ml-6 flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => bringForward(activeSide, el.id)}
+                  title="Bring forward"
+                  data-ocid={`canvas.layers.forward.${el.id}`}
+                >
+                  <ArrowUp className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => sendBackward(activeSide, el.id)}
+                  title="Send backward"
+                  data-ocid={`canvas.layers.backward.${el.id}`}
+                >
+                  <ArrowDown className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => bringToFront(activeSide, el.id)}
+                  title="Bring to front"
+                  data-ocid={`canvas.layers.front.${el.id}`}
+                >
+                  <ArrowUpToLine className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => sendToBack(activeSide, el.id)}
+                  title="Send to back"
+                  data-ocid={`canvas.layers.back.${el.id}`}
+                >
+                  <ArrowDownToLine className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-destructive"
+                  onClick={() => removeElement(activeSide, el.id)}
+                  title="Delete"
+                  data-ocid={`canvas.layers.delete.${el.id}`}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
             </li>
           );
         })}

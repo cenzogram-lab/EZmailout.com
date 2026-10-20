@@ -98,7 +98,7 @@ mixin (
     // Once Click2Mail holds the document (the campaign was dispatched, or a
     // dispatch failed after that step) a new upload could never be used.
     if (record.c2mDocumentId != null or record.productionStatus == #Submitted) {
-      return { ok = false; error = ?"This campaign's print file is already with Click2Mail and can no longer be replaced" };
+      return { ok = false; error = ?"This campaign's print file is already in production and can no longer be replaced" };
     };
     if (not allowedMimeTypes.any(func(m : Text) : Bool { m == mimeType })) { return { ok = false; error = ?"The print file must be a PDF, PNG or JPEG" } };
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
@@ -111,7 +111,7 @@ mixin (
     // The staged file with this chunk in place must still fit one outcall.
     let staged = switch (existing) { case (?u) Limits.stagedBytes(u.chunks, chunkIndex, data.size()); case null data.size() };
     if (staged > maxDocumentBytes) {
-      return { ok = false; error = ?"The print file must be 1.9 MB or smaller so it can be sent to Click2Mail. Export it at a lower image quality and upload again." };
+      return { ok = false; error = ?"The print file must be 1.9 MB or smaller so it can be sent to print. Export it at a lower image quality and upload again." };
     };
     let upload : Types.DocumentUpload = switch (existing) {
       case (?u) u;
@@ -180,7 +180,7 @@ mixin (
     // Checked and taken in the same message as the checks above, before the
     // first await, so no interleaving call can get past it.
     if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Click2Mail credentials not configured (Admin → Click2Mail)") } };
+    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Print fulfilment credentials not configured (Admin → Print fulfilment)") } };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
     let returnAddress = switch (record.returnAddress) { case (?r) r; case null { return dispatchResult(record, false, ?"A return address is required") } };
@@ -190,7 +190,7 @@ mixin (
         case (?u) {
           if (u.receivedChunks != u.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") };
           // Files staged before the upload limit existed may still be too big.
-          if (Limits.stagedBytes(u.chunks, u.totalChunks, 0) > maxDocumentBytes) { return dispatchResult(record, false, ?"The print file is larger than 1.9 MB and cannot be sent to Click2Mail; upload a smaller export") };
+          if (Limits.stagedBytes(u.chunks, u.totalChunks, 0) > maxDocumentBytes) { return dispatchResult(record, false, ?"The print file is larger than 1.9 MB and cannot be sent to print; upload a smaller export") };
         };
       };
     };
@@ -219,7 +219,7 @@ mixin (
         case (#Submitted or #Failed) {};
         case (_) {
           ignore CampaignLib.moveProduction(record, #Failed);
-          record.lastError := ?"Dispatch was interrupted before Click2Mail confirmed it; completed steps are kept and it is safe to retry";
+          record.lastError := ?"Dispatch was interrupted before the print job was confirmed; completed steps are kept and it is safe to retry";
           record.updatedAt := Time.now();
         };
       };
@@ -289,17 +289,17 @@ mixin (
     if (jobFromEarlierRun) {
       let probe = await Http.get(base # "/jobs/" # jobId, Click2Mail.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
       if (Http.isSuccess(probe) and Click2Mail.jobSubmitted(probe.body) == ?true) {
-        return markSubmitted(record, campaignId, jobId, "Click2Mail already had this job submitted; it was not submitted again");
+        return markSubmitted(record, campaignId, jobId, "This print job was already submitted; it was not submitted again");
       };
     };
     let submit = await Http.postText(base # "/jobs/" # jobId # "/submit", Click2Mail.jsonHeaders(auth, "application/x-www-form-urlencoded"), Click2Mail.formEncode([("billingType", "User Credit")]), opts, transformFn);
     if (not Http.isSuccess(submit) or Click2Mail.reportedFailure(submit.body)) {
       if (jobFromEarlierRun and Click2Mail.submittedAlready(submit.body)) {
-        return markSubmitted(record, campaignId, jobId, "Click2Mail reports this job was already submitted");
+        return markSubmitted(record, campaignId, jobId, "The print service reports this job was already submitted");
       };
       return markFailed(record, responseError("Job submission failed", submit));
     };
-    markSubmitted(record, campaignId, jobId, "Click2Mail job submitted for production");
+    markSubmitted(record, campaignId, jobId, "Print job submitted for production");
   };
 
   private func markSubmitted(record : Types.CampaignRecord, campaignId : Text, jobId : Text, detail : Text) : Types.DispatchResult {
@@ -316,7 +316,7 @@ mixin (
 
   private func syncOne(record : Types.CampaignRecord) : async Types.SyncResult {
     let jobId = switch (record.c2mJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Click2Mail credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
+    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Print fulfilment credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
     let base = Click2Mail.baseUrl(environmentFor(record));
     let headers = Click2Mail.jsonHeaders(auth, "application/json");
     let jobResp = await Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
@@ -442,7 +442,7 @@ mixin (
       };
     };
     // Nothing at Click2Mail can report on a campaign it never received.
-    if (record.c2mJobId == null) { return { ok = false; error = ?"Campaign has not been dispatched to Click2Mail"; campaignId = ?record.id; status = ?record.status } };
+    if (record.c2mJobId == null) { return { ok = false; error = ?"Campaign has not been sent to print"; campaignId = ?record.id; status = ?record.status } };
     var eventText = "";
     for (k in ["event", "status", "scanEvent", "scanDescription", "eventType"].vals()) {
       if (eventText == "") {

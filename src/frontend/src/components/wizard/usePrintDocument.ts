@@ -157,7 +157,7 @@ export async function buildPrintPdf(
   }
   const mb = (bytes: number) => (bytes / 1_000_000).toFixed(1);
   throw new Error(
-    `The print file is ${mb(smallest)} MB even at reduced image quality, and Click2Mail uploads are limited to ${mb(MAX_PRINT_FILE_BYTES)} MB. Use a simpler background image and try again.`,
+    `The print file is ${mb(smallest)} MB even at reduced image quality, and print uploads are limited to ${mb(MAX_PRINT_FILE_BYTES)} MB. Use a simpler background image and try again.`,
   );
 }
 

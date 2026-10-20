@@ -42,7 +42,13 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] lg:hidden"
       data-ocid="bottom_nav"
     >
-      <div className="mx-auto flex h-14 max-w-md items-stretch gap-1 rounded-full border border-border/60 bg-card/90 p-1 shadow-soft backdrop-blur-xl">
+      {/* Fades the page out under the floating bar, so content never peeks
+          through the gap between the pill and the screen edge. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-4 bottom-0 -z-10 bg-gradient-to-t from-background from-60% to-transparent"
+      />
+      <div className="mx-auto flex h-14 max-w-md items-stretch gap-1 rounded-full border border-border/60 bg-card p-1 shadow-soft">
         {TABS.map(({ to, label, icon: Icon, ocid }) => {
           const active = isActive(path, to);
           const badge = to === "/campaigns" ? drafts : 0;

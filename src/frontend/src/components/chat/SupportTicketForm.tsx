@@ -120,7 +120,7 @@ export function SupportTicketForm({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex w-fit items-center gap-1 text-xs font-medium text-[#575859] hover:text-foreground"
+        className="inline-flex w-fit items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         data-ocid="stampy.support.back"
       >
         <ArrowLeft className="size-3.5" /> Back to chat

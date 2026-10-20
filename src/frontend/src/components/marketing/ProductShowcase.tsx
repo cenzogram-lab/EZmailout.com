@@ -38,7 +38,7 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
     >
       <CatalogIcon
         id={category.icon}
-        className="size-11 text-[#575859] transition-smooth group-hover:text-primary"
+        className="size-11 text-muted-foreground transition-smooth group-hover:text-primary"
       />
       <span className="text-sm font-semibold text-foreground">
         {category.name}
@@ -68,7 +68,7 @@ export function ProductShowcase() {
       </div>
       <p className="text-center text-xs text-muted-foreground">
         {CATALOG.length} product families · {CATALOG_SIZE_COUNT} sizes ·
-        printed, addressed and mailed by Click2Mail. Prices include print,
+        printed, addressed and mailed by EZmailout. Prices include print,
         postage and CASS verification.
       </p>
     </div>
