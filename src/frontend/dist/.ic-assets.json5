@@ -20,7 +20,7 @@
     // with <script src>, and nothing uses inline scripts, on* attributes or
     // javascript: URLs) and no 'unsafe-eval' (nothing evaluates strings).
     // Styles keep 'unsafe-inline' for React style attributes and Leaflet.
-    // Hosts only canister outcalls talk to (OpenAI, Resend, Click2Mail) are
+    // Hosts only canister outcalls talk to (OpenAI, Resend, the print partner) are
     // not listed.
     //   'self'                    the bundle, Geist fonts, env.json
     //   icp0.io, icp-api.io,      the agent's API host: env.json's

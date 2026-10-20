@@ -23,7 +23,7 @@ module {
   };
 
   /// Paid through sandbox checkout (the only way a campaign becomes
-  /// `#Waived`): its Click2Mail job always goes to Staging.
+  /// `#Waived`): its print job always goes to Staging.
   public func isTestMode(record : Types.CampaignRecord) : Bool {
     record.paymentStatus == #Waived;
   };
@@ -48,9 +48,9 @@ module {
       paymentStatus = self.paymentStatus;
       paymentIntentId = self.paymentIntentId;
       productionStatus = self.productionStatus;
-      c2mDocumentId = self.c2mDocumentId;
-      c2mAddressListId = self.c2mAddressListId;
-      c2mJobId = self.c2mJobId;
+      printDocumentId = self.printDocumentId;
+      printAddressListId = self.printAddressListId;
+      printJobId = self.printJobId;
       lastError = self.lastError;
       qrDestinationUrl = self.qrDestinationUrl;
       qrScanCount = self.qrScanCount;
@@ -89,9 +89,9 @@ module {
   public let maxUnpaidDraftsGlobal : Nat = 500;
 
   /// A campaign that may expire: never paid (or waived) and never sent to
-  /// Click2Mail. Anything else is an order and is never removed.
+  /// the print partner. Anything else is an order and is never removed.
   public func isExpirableDraft(r : Types.CampaignRecord) : Bool {
-    r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment) and r.c2mDocumentId == null and r.c2mJobId == null;
+    r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment) and r.printDocumentId == null and r.printJobId == null;
   };
 
   /// When a campaign was last touched: the later of its own last update and
@@ -167,9 +167,9 @@ module {
       var paymentStatus = #Unpaid;
       var paymentIntentId = null;
       var productionStatus = #AwaitingPayment;
-      var c2mDocumentId = null;
-      var c2mAddressListId = null;
-      var c2mJobId = null;
+      var printDocumentId = null;
+      var printAddressListId = null;
+      var printJobId = null;
       var lastError = null;
       var qrDestinationUrl = input.qrDestinationUrl;
       var qrScanCount = 0;
@@ -218,7 +218,7 @@ module {
   };
 
   /// No more tracking outcalls: the mail reached an outcome, or the dispatch
-  /// failed (a retried dispatch checks Click2Mail itself, see `runDispatch`).
+  /// failed (a retried dispatch checks the print partner itself, see `runDispatch`).
   /// Webhooks still record anything that arrives later.
   public func trackingFinished(record : Types.CampaignRecord) : Bool {
     isDeliveryOutcome(record.status) or record.productionStatus == #Failed;
@@ -257,7 +257,7 @@ module {
   };
 
   /// The delivery moves a campaign may make: forward only (`stageIndex`, so
-  /// an outcome never goes back to the mail stream), and only once Click2Mail
+  /// an outcome never goes back to the mail stream), and only once the print partner
   /// has accepted the job. An unpaid draft or a failed dispatch has no mail
   /// for USPS to scan, whatever a webhook, a poll or an override says.
   public func deliveryMoveAllowed(

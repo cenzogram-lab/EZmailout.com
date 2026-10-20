@@ -266,7 +266,7 @@ export function CampaignsPage() {
   }
 
   const list = campaigns ?? [];
-  // Only campaigns handed to Click2Mail count as mailed; drafts and
+  // Only campaigns handed to the print partner count as mailed; drafts and
   // campaigns still dispatching do not.
   const totalPieces = list
     .filter(

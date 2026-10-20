@@ -206,7 +206,7 @@ export async function rasterizeSide(
 }
 
 /**
- * Turns a side rendered in its design orientation onto the page Click2Mail
+ * Turns a side rendered in its design orientation onto the page the print partner
  * prints. Native designs pass through; a rotated design (the sheet viewed a
  * quarter turn counter-clockwise, see `rotateRect`) is turned back a quarter
  * turn clockwise, so every page keeps the product's own size and the USPS

@@ -34,6 +34,19 @@ module {
     };
   };
 
+  /// Rate maps are swept of finished windows once they hold this many keys.
+  /// Identities are free to mint, so a map keyed by caller would otherwise
+  /// grow for as long as the canister runs between upgrades.
+  public let sweepAbove : Nat = 2_000;
+
+  /// Drops every key whose window ended and whose last call is older than the
+  /// window (so no minimum gap still applies to it).
+  public func sweep(windows : Map.Map<Text, Window>, now : Int, windowNs : Int) {
+    for ((k, u) in windows.entries().toArray().vals()) {
+      if (now - u.windowStart > windowNs and now - u.lastCall > windowNs) { windows.remove(k) };
+    };
+  };
+
   /// Records one call for `key`, starting a fresh window when the old one ended.
   public func commit(windows : Map.Map<Text, Window>, key : Text, now : Int, windowNs : Int) {
     switch (windows.get(key)) {
@@ -54,6 +67,7 @@ module {
   /// Nothing is charged when any one refuses, so a caller over their own
   /// limit never uses up the canister-wide one. Returns the first refusal.
   public func admit(windows : Map.Map<Text, Window>, budgets : [Budget], now : Int, windowNs : Int) : Check {
+    if (windows.size() > sweepAbove) { sweep(windows, now, windowNs) };
     for (b in budgets.vals()) {
       switch (check(windows.get(b.key), now, windowNs, b.limit, b.minGapNs)) {
         case (#ok) {};

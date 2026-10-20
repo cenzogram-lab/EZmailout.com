@@ -44,7 +44,7 @@ export function Step2AudienceIntake() {
     useState<AudiencePresetShared | null>(null);
 
   function applyMapAudience(target: MapTarget) {
-    // The radius tool sizes and prices a drop, but Click2Mail mails the address
+    // The radius tool sizes and prices a drop, but the print partner mails the address
     // list we store, so the estimate is kept and the user attaches real
     // recipients before the campaign can be created or paid for.
     setGeoTarget(target);

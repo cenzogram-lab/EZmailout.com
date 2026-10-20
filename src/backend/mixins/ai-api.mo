@@ -49,7 +49,7 @@ mixin (
     // If the reply's handling traps instead, `finally` refunds the charge.
     var settled = false;
     try {
-      let resp = await Http.postText(OpenAi.imagesUrl, OpenAi.headers(apiKey), OpenAi.imageRequestBody(cleanPrompt, size), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      let resp = await* Http.postText(OpenAi.imagesUrl, OpenAi.headers(apiKey), OpenAi.imageRequestBody(cleanPrompt, size), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
       if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
         settled := true;
@@ -92,7 +92,7 @@ mixin (
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_copy", null);
     var settled = false;
     try {
-      let resp = await Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), OpenAi.chatRequestBody(clean), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      let resp = await* Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), OpenAi.chatRequestBody(clean), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
       if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
         settled := true;

@@ -18,7 +18,7 @@ export const MIN_PRINT_DPI = 150;
 export const PRINT_JPEG_QUALITY = 0.92;
 
 /**
- * Largest print file the canister accepts. Dispatch posts it to Click2Mail in
+ * Largest print file the canister accepts. Dispatch posts it to the print partner in
  * one HTTPS outcall, whose request may not exceed 2 MB. Mirrors
  * `maxDocumentBytes` in `src/backend/mixins/production-api.mo`; change both.
  */
@@ -114,7 +114,7 @@ function downscaleToDataUrl(source: HTMLCanvasElement, maxWidth = 720): string {
  * face when it carries any content, each rasterized at 300 DPI and embedded
  * as a JPEG page sized to the physical mail piece. A rotated design is
  * rasterized as laid out, then turned back onto the product's own page, so
- * Click2Mail always receives pages of the size it prints. Pages are encoded
+ * Print always receives pages of the size it prints. Pages are encoded
  * at the best JPEG quality that keeps the file within `MAX_PRINT_FILE_BYTES`;
  * a design that does not fit even at the lowest quality is rejected here,
  * before the campaign is paid for.

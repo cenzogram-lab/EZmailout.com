@@ -32,7 +32,7 @@ module {
     errorMessage : ?Text;
   };
 
-  /// Result of a Click2Mail address-list verification batch.
+  /// Result of a print address-list verification batch.
   public type VerificationBatchResult = {
     ok : Bool;
     error : ?Text;
@@ -42,7 +42,7 @@ module {
     invalidCount : Nat;
   };
 
-  /// Sender / return address printed on every piece (required by Click2Mail jobs).
+  /// Sender / return address printed on every piece (required by every print job).
   public type ReturnAddress = {
     name : Text;
     organization : ?Text;
@@ -55,13 +55,13 @@ module {
 
   // ─── Admin configuration ─────────────────────────────────────────────────
 
-  public type Click2MailEnvironment = { #Production; #Staging };
+  public type FulfilmentEnvironment = { #Production; #Staging };
 
   /// Mutable stable admin credential state (owned by main.mo).
   public type AdminState = {
-    var click2mailUsername : ?Text;
-    var click2mailPassword : ?Text;
-    var click2mailEnvironment : Click2MailEnvironment;
+    var fulfilmentUsername : ?Text;
+    var fulfilmentPassword : ?Text;
+    var fulfilmentEnvironment : FulfilmentEnvironment;
     var stripeSecretKey : ?Text;
     var stripePublishableKey : ?Text;
     var resendKey : ?Text;
@@ -76,9 +76,9 @@ module {
 
   /// Input for `saveAdminKeys`. Per field: `null` = leave unchanged, `?""` = clear, `?value` = set.
   public type AdminKeysInput = {
-    click2mailUsername : ?Text;
-    click2mailPassword : ?Text;
-    click2mailEnvironment : ?Click2MailEnvironment;
+    fulfilmentUsername : ?Text;
+    fulfilmentPassword : ?Text;
+    fulfilmentEnvironment : ?FulfilmentEnvironment;
     stripeSecretKey : ?Text;
     stripePublishableKey : ?Text;
     resendKey : ?Text;
@@ -91,9 +91,9 @@ module {
 
   /// Masked view returned by `getAdminKeys` (secrets expose only their last 4 characters).
   public type AdminKeysView = {
-    click2mailUsername : ?Text;
-    click2mailPasswordMasked : ?Text;
-    click2mailEnvironment : Click2MailEnvironment;
+    fulfilmentUsername : ?Text;
+    fulfilmentPasswordMasked : ?Text;
+    fulfilmentEnvironment : FulfilmentEnvironment;
     stripeSecretKeyMasked : ?Text;
     stripePublishableKey : ?Text;
     resendKeyMasked : ?Text;
@@ -112,8 +112,8 @@ module {
   public type PublicConfig = {
     stripePublishableKey : ?Text;
     stripeConfigured : Bool;
-    click2mailConfigured : Bool;
-    click2mailEnvironment : Click2MailEnvironment;
+    fulfilmentConfigured : Bool;
+    fulfilmentEnvironment : FulfilmentEnvironment;
     openAiConfigured : Bool;
     resendConfigured : Bool;
     sandboxCheckout : Bool;

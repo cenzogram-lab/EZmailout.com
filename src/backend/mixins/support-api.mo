@@ -16,9 +16,12 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Timer "mo:core/Timer";
+import Int "mo:core/Int";
+import Order "mo:core/Order";
 
 mixin (
   supportTickets : List.List<Support.SupportTicket>,
+  supportEmailOutbox : Map.Map<Text, Support.EmailDelivery>,
   adminKeysState : Common.AdminState,
   transformFn : Http.TransformFn,
 ) {
@@ -47,21 +50,32 @@ mixin (
 
   // Every emailed ticket is an HTTPS outcall plus a Resend send. Signed-out
   // visitors can file tickets and Internet Identity principals are free, so
-  // this is a global cap; tickets past it are still stored, just not emailed.
+  // this is a global cap; tickets past it wait in the outbox for the next hour.
   transient let emailsPerHour : Nat = 60;
+  /// A send that failed in a way that may pass (no answer, 429, 5xx) is tried
+  /// again after these delays; the last attempt's failure is final.
+  transient let emailRetryDelaysNs : [Int] = [60_000_000_000, 300_000_000_000, 1_800_000_000_000, 7_200_000_000_000, 21_600_000_000_000];
+  /// Sends per drain. Sends run one after another, so a drain stays short and
+  /// the next one (a minute later) carries on with the rest.
+  transient let maxSendsPerDrain : Nat = 20;
+  /// Set while a drain runs, so the minute timer and a new ticket's immediate
+  /// drain never send the same entry twice.
+  transient var drainRunning : Bool = false;
 
   /// Rolling one-hour usage per principal. Transient: it only rate-limits.
   transient let ticketUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
   transient let chatWindows = Map.empty<Text, Limits.Window>();
   transient let emailUsage = Map.empty<Text, { var windowStart : Int; var count : Nat }>();
 
-  /// How each ticket's email notification went, by ticket id. Transient: the
-  /// ticket itself is stable; losing a status on upgrade loses no ticket.
-  transient let emailStatus = Map.empty<Text, Text>();
   transient let emailQueued : Text = "Queued for email";
+  transient let emailNotConfigured : Text = "Not emailed: Resend key or support email not configured";
 
   private func charge(usage : Map.Map<Text, { var windowStart : Int; var count : Nat }>, key : Text, limit : Nat) : Bool {
     let now = Time.now();
+    // Identities are free, so drop windows that ended before the map grows large.
+    if (usage.size() > Limits.sweepAbove) {
+      for ((k, u) in usage.entries().toArray().vals()) { if (now - u.windowStart > hourNs) { usage.remove(k) } };
+    };
     switch (usage.get(key)) {
       case (?u) {
         if (now - u.windowStart > hourNs) { u.windowStart := now; u.count := 0 };
@@ -110,41 +124,97 @@ mixin (
       createdAt = Time.now();
     };
     supportTickets.add(ticket);
-    // The email goes out from a one-shot timer, in its own message: the caller
-    // gets their reply without waiting on Resend, and nothing that happens to
-    // the email can roll back the ticket stored here.
+    // The email goes through the stable outbox, sent from a timer in its own
+    // message: the caller gets their reply without waiting on Resend, nothing
+    // that happens to the email can roll back the ticket stored here, and a
+    // queued email survives an upgrade (the minute timer picks it up).
     if (AdminLib.canEmailSupport(adminKeysState)) {
-      emailStatus.add(id, emailQueued);
-      ignore Timer.setTimer<system>(#seconds 0, func() : async () { await forwardTicket(ticket) });
+      supportEmailOutbox.add(id, { ticketId = id; var state = #Queued; var attempts = 0; var nextAttemptAt = Time.now(); var lastStatus = emailQueued } : Support.EmailDelivery);
+      ignore Timer.setTimer<system>(#seconds 0, func() : async () { ignore await* drainEmailOutbox() });
     } else {
-      emailStatus.add(id, "Not emailed: Resend key or support email not configured");
+      supportEmailOutbox.add(id, { ticketId = id; var state = #Failed; var attempts = 0; var nextAttemptAt = 0; var lastStatus = emailNotConfigured } : Support.EmailDelivery);
     };
     { ok = true; error = null; ticketId = ?id };
   };
 
-  /// Emails one stored ticket to the support address through Resend.
-  private func forwardTicket(t : Support.SupportTicket) : async () {
+  /// The stored ticket for an id (`tkt_N` is the N-th ticket; tickets are
+  /// append-only), with a scan as a fallback.
+  private func ticketById(id : Text) : ?Support.SupportTicket {
+    switch (id.stripStart(#text "tkt_")) {
+      case (?n) {
+        switch (Nat.fromText(n)) {
+          case (?i) { if (i >= 1 and i <= supportTickets.size()) { let t = supportTickets.at(Int.abs((i : Int) - 1)); if (t.id == id) { return ?t } } };
+          case null {};
+        };
+      };
+      case null {};
+    };
+    supportTickets.find(func(t : Support.SupportTicket) : Bool { t.id == id });
+  };
+
+  /// Sends the outbox's due emails, oldest first, at most `maxSendsPerDrain`
+  /// per run and `emailsPerHour` per hour. A send held back by the hourly cap
+  /// stays queued for the next hour; one that failed in a way that may pass is
+  /// retried after `emailRetryDelaysNs`; Resend's `Idempotency-Key` (the
+  /// ticket id) makes a retry of a send that did go through deliver nothing
+  /// new. Returns how many were sent. Called by the minute timer in `main.mo`
+  /// and right after a ticket is filed.
+  private func drainEmailOutbox() : async* Nat {
+    if (drainRunning) { return 0 };
+    let now = Time.now();
+    let due = supportEmailOutbox.values().filter(func(e : Support.EmailDelivery) : Bool { e.state == #Queued and e.nextAttemptAt <= now }).toArray();
+    if (due.size() == 0) { return 0 };
     let (apiKey, to) = switch (adminKeysState.resendKey, adminKeysState.supportEmailAddress) {
       case (?k, ?e) (k, e);
       case _ {
-        emailStatus.add(t.id, "Not emailed: Resend key or support email not configured");
-        return;
+        // The keys were removed after the ticket was queued: it waits for them.
+        for (e in due.vals()) { e.lastStatus := "Waiting: Resend key or support email not configured" };
+        return 0;
       };
     };
-    if (not charge(emailUsage, "all", emailsPerHour)) {
-      emailStatus.add(t.id, "Not emailed: hourly email limit reached");
-      return;
-    };
-    let opts = { AdminLib.outcallOptions(adminKeysState, 4_000) with transformContext = Http.maskSuccessBody };
+    let ordered = due.sort(func(a : Support.EmailDelivery, b : Support.EmailDelivery) : Order.Order = Int.compare(a.nextAttemptAt, b.nextAttemptAt));
+    drainRunning := true;
+    var sent = 0;
+    var tried = 0;
     try {
-      let resp = await Http.postText(Resend.emailsUrl, Resend.headers(apiKey, "ezmailout-ticket-" # t.id), Resend.ticketEmailBody(t, to), opts, transformFn);
-      emailStatus.add(t.id, if (Http.isSuccess(resp)) { "Emailed to " # to } else { "Email failed: " # Resend.errorMessage(resp.status, resp.body) });
-    } finally {
-      // Runs even if the continuation traps: never leave a ticket "queued".
-      if (emailStatus.get(t.id) == ?emailQueued) {
-        emailStatus.add(t.id, "Email failed: the send was interrupted");
+      label sending for (e in ordered.vals()) {
+        if (tried >= maxSendsPerDrain) { break sending };
+        switch (ticketById(e.ticketId)) {
+          case null { e.state := #Failed; e.lastStatus := "Email failed: ticket not found" };
+          case (?t) {
+            if (not charge(emailUsage, "all", emailsPerHour)) {
+              // Held back, not dropped: the rest wait for the next hour's budget.
+              for (w in ordered.vals()) {
+                if (w.state == #Queued and w.attempts == 0) { w.lastStatus := "Waiting: hourly email limit reached; it goes out when the next hour opens" };
+              };
+              break sending;
+            };
+            tried += 1;
+            e.attempts += 1;
+            let opts = { AdminLib.outcallOptions(adminKeysState, 4_000) with transformContext = Http.maskSuccessBody };
+            let resp = await* Http.postText(Resend.emailsUrl, Resend.headers(apiKey, "ezmailout-ticket-" # t.id), Resend.ticketEmailBody(t, to), opts, transformFn);
+            if (Http.isSuccess(resp)) {
+              e.state := #Sent;
+              e.lastStatus := "Emailed to " # to;
+              sent += 1;
+            } else {
+              let reason = Resend.errorMessage(resp.status, resp.body);
+              let retryable = resp.status == 0 or resp.status == 429 or resp.status >= 500;
+              if (retryable and e.attempts <= emailRetryDelaysNs.size()) {
+                e.nextAttemptAt := Time.now() + emailRetryDelaysNs[e.attempts - 1];
+                e.lastStatus := "Retrying: attempt " # e.attempts.toText() # " of " # (emailRetryDelaysNs.size() + 1).toText() # " failed (" # reason # ")";
+              } else {
+                e.state := #Failed;
+                e.lastStatus := "Email failed: " # reason;
+              };
+            };
+          };
+        };
       };
+    } finally {
+      drainRunning := false;
     };
+    sent;
   };
 
   /// Newest tickets first, at most 200, with their email status. Controllers
@@ -163,7 +233,7 @@ mixin (
           message = t.message;
           pagePath = t.pagePath;
           createdAt = t.createdAt;
-          emailStatus = emailStatus.get(t.id);
+          emailStatus = switch (supportEmailOutbox.get(t.id)) { case (?e) ?e.lastStatus; case null null };
         });
       };
     };
@@ -200,7 +270,7 @@ mixin (
     let recent = turns.sliceToArray(start, turns.size()).map(
       func(t : Support.StampyTurn) : Support.StampyTurn = { role = t.role; content = clipSupport(t.content, maxTurnChars) }
     );
-    let resp = await Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), Stampy.requestBody(recent), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+    let resp = await* Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), Stampy.requestBody(recent), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
     if (not Http.isSuccess(resp)) { return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body)) };
     switch (Stampy.parseReply(resp.body)) {
       case (?reply) { { ok = true; error = null; reply = ?clipSupport(reply, maxReplyChars) } };

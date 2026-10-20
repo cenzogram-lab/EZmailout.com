@@ -1,4 +1,4 @@
-/// Retail pricing ledger: Click2Mail base cost vs EZmailout retail price
+/// Retail pricing ledger: print base cost vs EZmailout retail price
 /// (100%–140% margin spread). Mirrored by src/frontend/src/lib/pricing.ts.
 import Types "../types/campaign";
 import Array "mo:core/Array";
@@ -44,8 +44,8 @@ module {
     };
   };
 
-  /// The authoritative Click2Mail price matrix: 14 product families, 29
-  /// document classes. `documentClass` is the exact Click2Mail product name and
+  /// The authoritative print price matrix: 14 product families, 29
+  /// document classes. `documentClass` is the exact print product name and
   /// `widthInches` / `heightInches` follow it (a "Postcard 4 x 9" is 4" wide by
   /// 9" tall). Costs and retail prices are the operator's rates.
   /// Mirrored by src/frontend/src/lib/pricing.ts — change both.
@@ -83,7 +83,7 @@ module {
     ];
   };
 
-  /// Layout keys that shipped before the Click2Mail catalog audit map onto the
+  /// Layout keys that shipped before the print catalog audit map onto the
   /// current rows so older drafts and templates keep resolving.
   public func normalizeVariant(layoutVariant : Text) : Text {
     switch (layoutVariant) {
@@ -101,7 +101,7 @@ module {
     rows().find(func(r : Types.PricingRow) : Bool { r.layoutVariant == key });
   };
 
-  /// Letter-style products that Click2Mail prints in black and white on request.
+  /// Letter-style products that the print partner prints in black and white on request.
   public func supportsBlackAndWhite(productType : Types.ProductType) : Bool {
     switch (productType) {
       case (#Letter or #CertifiedMail or #PriorityMail or #PriorityMailExpress or #ReplyMail) true;

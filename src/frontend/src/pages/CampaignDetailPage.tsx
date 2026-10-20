@@ -52,10 +52,10 @@ import {
   useAdminKeys,
   useCampaign,
   useDeleteCampaignDraft,
-  useDispatchClick2MailJob,
+  useDispatchPrintJob,
   useExportCampaign,
   useQrScanStats,
-  useSyncClick2MailTracking,
+  useSyncPrintTracking,
   useTrackingEvents,
   useUpdateCampaignStatus,
 } from "@/hooks/use-backend";
@@ -257,11 +257,11 @@ export function CampaignDetailPage() {
   const qrStatsQuery = useQrScanStats(campaignId);
   const adminKeysQuery = useAdminKeys();
   const exportMutation = useExportCampaign();
-  const dispatchMutation = useDispatchClick2MailJob();
+  const dispatchMutation = useDispatchPrintJob();
   const deleteDraft = useDeleteCampaignDraft();
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const syncMutation = useSyncClick2MailTracking();
+  const syncMutation = useSyncPrintTracking();
   const overrideMutation = useUpdateCampaignStatus();
 
   const [payOpen, setPayOpen] = useState(false);
@@ -539,13 +539,13 @@ export function CampaignDetailPage() {
                   <div className="space-y-2 rounded-lg border px-3 py-2">
                     <IdRow
                       label="Print document"
-                      value={campaign.c2mDocumentId}
+                      value={campaign.printDocumentId}
                     />
                     <IdRow
                       label="Address list"
-                      value={campaign.c2mAddressListId}
+                      value={campaign.printAddressListId}
                     />
-                    <IdRow label="Print job" value={campaign.c2mJobId} />
+                    <IdRow label="Print job" value={campaign.printJobId} />
                     <IdRow
                       label="Payment intent"
                       value={campaign.paymentIntentId}

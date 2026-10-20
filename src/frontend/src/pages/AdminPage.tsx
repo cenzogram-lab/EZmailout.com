@@ -1,7 +1,7 @@
 import {
   type AdminKeysInput,
   type AdminKeysView,
-  Click2MailEnvironment,
+  FulfilmentEnvironment,
 } from "@/backend";
 import { SignInPrompt } from "@/components/billing/SignInPrompt";
 import { MascotEmptyState } from "@/components/stampy";
@@ -63,8 +63,8 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type TextField =
-  | "click2mailUsername"
-  | "click2mailPassword"
+  | "fulfilmentUsername"
+  | "fulfilmentPassword"
   | "stripeSecretKey"
   | "stripePublishableKey"
   | "resendKey"
@@ -381,7 +381,7 @@ export function AdminPage() {
 
   const [draft, setDraftState] = useState<Draft>({});
   const [environment, setEnvironment] = useState<
-    Click2MailEnvironment | undefined
+    FulfilmentEnvironment | undefined
   >(undefined);
   const [sandbox, setSandbox] = useState<boolean | undefined>(undefined);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -418,15 +418,15 @@ export function AdminPage() {
   const view: AdminKeysView | null = keysQuery.data ?? null;
   const config = configQuery.data ?? null;
   const currentEnvironment =
-    environment ?? view?.click2mailEnvironment ?? Click2MailEnvironment.Staging;
+    environment ?? view?.fulfilmentEnvironment ?? FulfilmentEnvironment.Staging;
   const currentSandbox = sandbox ?? view?.sandboxCheckout ?? false;
   const dirty =
     Object.keys(draft).length > 0 ||
     (environment !== undefined &&
-      environment !== view?.click2mailEnvironment) ||
+      environment !== view?.fulfilmentEnvironment) ||
     (sandbox !== undefined && sandbox !== view?.sandboxCheckout);
 
-  const webhookPath = view?.webhookPath ?? "/webhooks/click2mail";
+  const webhookPath = view?.webhookPath ?? "/webhooks/fulfilment";
   const webhookUrl = `https://${canisterId ?? "<backend-canister-id>"}.icp0.io${webhookPath}`;
   const curlExample = `curl -X POST '${webhookUrl}' \\\n  -H 'content-type: application/json' \\\n  -H '${WEBHOOK_HEADER}: <your-webhook-secret>' \\\n  -d '${JSON.stringify(JSON.parse(WEBHOOK_EXAMPLE))}'`;
 
@@ -442,9 +442,9 @@ export function AdminPage() {
     const payload: AdminKeysInput = { ...draft };
     if (
       environment !== undefined &&
-      environment !== view?.click2mailEnvironment
+      environment !== view?.fulfilmentEnvironment
     )
-      payload.click2mailEnvironment = environment;
+      payload.fulfilmentEnvironment = environment;
     if (sandbox !== undefined && sandbox !== view?.sandboxCheckout)
       payload.sandboxCheckout = sandbox;
     if (Object.keys(payload).length === 0) {
@@ -587,18 +587,18 @@ export function AdminPage() {
                     </p>
                     <SecretField
                       label="Fulfilment API username"
-                      field="click2mailUsername"
+                      field="fulfilmentUsername"
                       draft={draft}
                       setDraft={setDraft}
-                      masked={view?.click2mailUsername}
+                      masked={view?.fulfilmentUsername}
                       secret={false}
                     />
                     <SecretField
                       label="Fulfilment API password"
-                      field="click2mailPassword"
+                      field="fulfilmentPassword"
                       draft={draft}
                       setDraft={setDraft}
-                      masked={view?.click2mailPasswordMasked}
+                      masked={view?.fulfilmentPasswordMasked}
                     />
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">
@@ -607,20 +607,20 @@ export function AdminPage() {
                       <Select
                         value={currentEnvironment}
                         onValueChange={(v) =>
-                          setEnvironment(v as Click2MailEnvironment)
+                          setEnvironment(v as FulfilmentEnvironment)
                         }
                       >
                         <SelectTrigger
                           className="w-full sm:w-64"
-                          data-ocid="admin.click2mail_environment.select"
+                          data-ocid="admin.fulfilment_environment.select"
                         >
                           <SelectValue placeholder="Select environment" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={Click2MailEnvironment.Production}>
+                          <SelectItem value={FulfilmentEnvironment.Production}>
                             Production
                           </SelectItem>
-                          <SelectItem value={Click2MailEnvironment.Staging}>
+                          <SelectItem value={FulfilmentEnvironment.Staging}>
                             Staging
                           </SelectItem>
                         </SelectContent>
@@ -922,8 +922,8 @@ export function AdminPage() {
                   />
                   <ConfigFlag
                     label="Fulfilment configured"
-                    on={config.click2mailConfigured}
-                    detail={config.click2mailEnvironment}
+                    on={config.fulfilmentConfigured}
+                    detail={config.fulfilmentEnvironment}
                   />
                   <ConfigFlag
                     label="OpenAI configured"

@@ -52,7 +52,7 @@ tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. 
 
 ## Catalog (Step 1 and homepage)
 - 14 product families drawn as monochrome line-art icons (`components/catalog/CatalogIcon.tsx`) in a 7-column grid.
-- Clicking a family expands an accordion listing every size with an aspect badge, the exact Click2Mail document class,
+- Clicking a family expands an accordion listing every size with an aspect badge, the exact print document class,
   trim size, envelope, mail class and per-piece price.
 
 ## Motion

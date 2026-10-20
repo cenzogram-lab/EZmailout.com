@@ -1,4 +1,4 @@
-/// Click2Mail Developer REST API request builders and response parsers.
+/// Print fulfilment REST API request builders and response parsers.
 import Types "../types/campaign";
 import Common "../types/common";
 import Json "json";
@@ -17,7 +17,7 @@ import List "mo:core/List";
 module {
   public let addressMappingId : Text = "1";
 
-  public func baseUrl(env : Common.Click2MailEnvironment) : Text {
+  public func baseUrl(env : Common.FulfilmentEnvironment) : Text {
     switch (env) {
       case (#Production) "https://rest.click2mail.com/molpro";
       case (#Staging) "https://stage-rest.click2mail.com/molpro";
@@ -152,7 +152,7 @@ module {
     };
   };
 
-  /// Description/status text of a Click2Mail response (for error messages).
+  /// Description/status text of a print response (for error messages).
   public func parseDescription(body : Text) : Text {
     switch (Json.getString(body, "description")) {
       case (?d) d;
@@ -229,7 +229,7 @@ module {
   /// top-level fields are read (a nested document or address list has a
   /// `status` of its own), and only unambiguous words count: a wrong "yes"
   /// would mark a job that never printed as submitted, while a wrong "no"
-  /// only re-submits, which Click2Mail refuses (`submittedAlready`).
+  /// only re-submits, which the print partner refuses (`submittedAlready`).
   public func jobSubmitted(body : Text) : ?Bool {
     let texts = List.empty<Text>();
     for (k in ["jobStatus", "job_status", "statusDescription", "status", "description", "state"].vals()) {
@@ -248,7 +248,7 @@ module {
     if (editing) ?false else null;
   };
 
-  /// Click2Mail refused a submit because the job was submitted already.
+  /// The print partner refused a submit because the job was submitted already.
   public func submittedAlready(body : Text) : Bool {
     let t = parseDescription(body).toLower();
     t.contains(#text "already") and (t.contains(#text "submit") or t.contains(#text "process"));

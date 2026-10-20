@@ -29,7 +29,7 @@ module {
   /// Every image URL on both sides together. Leaves room for 5,000
   /// recipients in the same `createCampaign` message (2 MB ingress cap).
   public let maxCanvasImageChars : Nat = 1_000_000;
-  /// The largest Click2Mail sheet is 17 in; anything past 24 in is not a design.
+  /// The largest print sheet is 17 in; anything past 24 in is not a design.
   public let maxCanvasInches : Float = 24.0;
 
   /// Admin credentials and usernames. Every one is sent with its outcalls.

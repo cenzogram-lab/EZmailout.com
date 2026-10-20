@@ -51,7 +51,7 @@ function collectVerified(result: VerificationBatchResult): VerifiedAddress[] {
   return out;
 }
 
-/** CSV drop zone, parser, Click2Mail CASS verification and preset saving. */
+/** CSV drop zone, parser, print CASS verification and preset saving. */
 export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
   const { isAuthenticated } = useAccountSync();
   const verify = useVerifyAddresses();

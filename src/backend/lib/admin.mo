@@ -1,13 +1,19 @@
 /// Admin authorization and credential helpers shared by the mixins.
 import Common "../types/common";
 import Http "http";
-import Click2Mail "click2mail";
+import Fulfilment "fulfilment";
 import Principal "mo:core/Principal";
 import Text "mo:core/Text";
 import Array "mo:core/Array";
 
 module {
-  public let webhookPath : Text = "/webhooks/click2mail";
+  public let webhookPath : Text = "/webhooks/fulfilment";
+  /// The path delivery webhooks were first configured with at the print
+  /// partner. Still accepted, so an existing webhook keeps working until it is
+  /// re-pointed at `webhookPath`.
+  public let legacyWebhookPath : Text = "/webhooks/click2mail";
+
+  public func isWebhookPath(p : Text) : Bool { p == webhookPath or p == legacyWebhookPath };
   public let trackingBaseUrl : Text = "https://ezmailout.com/t/";
   public let referralBaseUrl : Text = "https://ezmailout.com/ref/";
 
@@ -64,13 +70,13 @@ module {
     state.resendKey != null and state.supportEmailAddress != null;
   };
 
-  public func hasClick2Mail(state : Common.AdminState) : Bool {
-    state.click2mailUsername != null and state.click2mailPassword != null;
+  public func hasFulfilment(state : Common.AdminState) : Bool {
+    state.fulfilmentUsername != null and state.fulfilmentPassword != null;
   };
 
-  public func click2mailAuth(state : Common.AdminState) : ?Text {
-    switch (state.click2mailUsername, state.click2mailPassword) {
-      case (?u, ?p) { ?Click2Mail.basicAuth(u, p) };
+  public func fulfilmentAuth(state : Common.AdminState) : ?Text {
+    switch (state.fulfilmentUsername, state.fulfilmentPassword) {
+      case (?u, ?p) { ?Fulfilment.basicAuth(u, p) };
       case _ { null };
     };
   };
@@ -83,8 +89,8 @@ module {
     {
       stripePublishableKey = state.stripePublishableKey;
       stripeConfigured = state.stripeSecretKey != null;
-      click2mailConfigured = hasClick2Mail(state);
-      click2mailEnvironment = state.click2mailEnvironment;
+      fulfilmentConfigured = hasFulfilment(state);
+      fulfilmentEnvironment = state.fulfilmentEnvironment;
       openAiConfigured = state.openAiKey != null;
       resendConfigured = state.resendKey != null;
       sandboxCheckout = state.sandboxCheckout;

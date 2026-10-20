@@ -275,7 +275,7 @@ export const AiImageResult = IDL.Record({
   'creditBalance' : IDL.Opt(IDL.Nat),
   'revisedPrompt' : IDL.Opt(IDL.Text),
 });
-export const Click2MailEnvironment = IDL.Variant({
+export const FulfilmentEnvironment = IDL.Variant({
   'Production' : IDL.Null,
   'Staging' : IDL.Null,
 });
@@ -283,8 +283,8 @@ export const AdminKeysView = IDL.Record({
   'openAiKeyMasked' : IDL.Opt(IDL.Text),
   'callerIsController' : IDL.Bool,
   'adminPrincipal' : IDL.Opt(IDL.Text),
-  'click2mailUsername' : IDL.Opt(IDL.Text),
-  'click2mailEnvironment' : Click2MailEnvironment,
+  'fulfilmentUsername' : IDL.Opt(IDL.Text),
+  'fulfilmentEnvironment' : FulfilmentEnvironment,
   'sandboxCheckout' : IDL.Bool,
   'supportEmailAddress' : IDL.Opt(IDL.Text),
   'callerIsAdmin' : IDL.Bool,
@@ -293,7 +293,7 @@ export const AdminKeysView = IDL.Record({
   'stripeSecretKeyMasked' : IDL.Opt(IDL.Text),
   'outcallProxyUrl' : IDL.Opt(IDL.Text),
   'resendKeyMasked' : IDL.Opt(IDL.Text),
-  'click2mailPasswordMasked' : IDL.Opt(IDL.Text),
+  'fulfilmentPasswordMasked' : IDL.Opt(IDL.Text),
   'webhookPath' : IDL.Text,
 });
 export const CreditPackInfo = IDL.Record({
@@ -343,7 +343,7 @@ export const CampaignRecordShared = IDL.Record({
   'status' : CampaignStatus,
   'paymentStatus' : PaymentStatus,
   'unitPriceCents' : IDL.Nat,
-  'c2mAddressListId' : IDL.Opt(IDL.Text),
+  'printAddressListId' : IDL.Opt(IDL.Text),
   'returnAddress' : IDL.Opt(ReturnAddress),
   'ownerId' : IDL.Text,
   'draftExpiresAt' : IDL.Opt(IDL.Int),
@@ -351,14 +351,14 @@ export const CampaignRecordShared = IDL.Record({
   'name' : IDL.Text,
   'createdAt' : IDL.Int,
   'testMode' : IDL.Bool,
-  'c2mDocumentId' : IDL.Opt(IDL.Text),
+  'printDocumentId' : IDL.Opt(IDL.Text),
   'updatedAt' : IDL.Int,
   'canvasState' : IDL.Opt(CanvasState),
   'productionStatus' : ProductionStatus,
   'qrScanCount' : IDL.Nat,
   'qrDestinationUrl' : IDL.Opt(IDL.Text),
   'designTemplateId' : IDL.Opt(IDL.Text),
-  'c2mJobId' : IDL.Opt(IDL.Text),
+  'printJobId' : IDL.Opt(IDL.Text),
   'lastError' : IDL.Opt(IDL.Text),
   'printSpec' : PrintSpec,
   'recipientCount' : IDL.Nat,
@@ -414,11 +414,11 @@ export const PricingRow = IDL.Record({
   'printSpec' : PrintSpec,
 });
 export const PublicConfig = IDL.Record({
-  'click2mailEnvironment' : Click2MailEnvironment,
+  'fulfilmentEnvironment' : FulfilmentEnvironment,
   'openAiConfigured' : IDL.Bool,
   'trackingBaseUrl' : IDL.Text,
   'stripeConfigured' : IDL.Bool,
-  'click2mailConfigured' : IDL.Bool,
+  'fulfilmentConfigured' : IDL.Bool,
   'sandboxCheckout' : IDL.Bool,
   'resendConfigured' : IDL.Bool,
   'stripePublishableKey' : IDL.Opt(IDL.Text),
@@ -517,10 +517,10 @@ export const TrackingResolveResult = IDL.Record({
 export const AdminKeysInput = IDL.Record({
   'webhookSecret' : IDL.Opt(IDL.Text),
   'resendKey' : IDL.Opt(IDL.Text),
-  'click2mailUsername' : IDL.Opt(IDL.Text),
-  'click2mailEnvironment' : IDL.Opt(Click2MailEnvironment),
+  'fulfilmentUsername' : IDL.Opt(IDL.Text),
+  'fulfilmentEnvironment' : IDL.Opt(FulfilmentEnvironment),
   'sandboxCheckout' : IDL.Opt(IDL.Bool),
-  'click2mailPassword' : IDL.Opt(IDL.Text),
+  'fulfilmentPassword' : IDL.Opt(IDL.Text),
   'stripeSecretKey' : IDL.Opt(IDL.Text),
   'supportEmailAddress' : IDL.Opt(IDL.Text),
   'openAiKey' : IDL.Opt(IDL.Text),
@@ -592,13 +592,13 @@ export const idlService = IDL.Service({
   'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
   'deleteCampaignDraft' : IDL.Func([IDL.Text], [ApiResult], []),
   'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
-  'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
+  'dispatchPrintJob' : IDL.Func([IDL.Text], [DispatchResult], []),
   'ensureAccount' : IDL.Func(
       [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
       [AccountResult],
       [],
     ),
-  'executeClick2MailVerification' : IDL.Func(
+  'verifyAddresses' : IDL.Func(
       [IDL.Vec(AddressInput)],
       [VerificationBatchResult],
       [],
@@ -676,7 +676,7 @@ export const idlService = IDL.Service({
       [SupportTicketResult],
       [],
     ),
-  'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),
+  'syncPrintTracking' : IDL.Func([IDL.Text], [SyncResult], []),
   'transform' : IDL.Func(
       [TransformationInput],
       [TransformationOutput],
@@ -970,7 +970,7 @@ export const idlFactory = ({ IDL }) => {
     'creditBalance' : IDL.Opt(IDL.Nat),
     'revisedPrompt' : IDL.Opt(IDL.Text),
   });
-  const Click2MailEnvironment = IDL.Variant({
+  const FulfilmentEnvironment = IDL.Variant({
     'Production' : IDL.Null,
     'Staging' : IDL.Null,
   });
@@ -978,8 +978,8 @@ export const idlFactory = ({ IDL }) => {
     'openAiKeyMasked' : IDL.Opt(IDL.Text),
     'callerIsController' : IDL.Bool,
     'adminPrincipal' : IDL.Opt(IDL.Text),
-    'click2mailUsername' : IDL.Opt(IDL.Text),
-    'click2mailEnvironment' : Click2MailEnvironment,
+    'fulfilmentUsername' : IDL.Opt(IDL.Text),
+    'fulfilmentEnvironment' : FulfilmentEnvironment,
     'sandboxCheckout' : IDL.Bool,
     'supportEmailAddress' : IDL.Opt(IDL.Text),
     'callerIsAdmin' : IDL.Bool,
@@ -988,7 +988,7 @@ export const idlFactory = ({ IDL }) => {
     'stripeSecretKeyMasked' : IDL.Opt(IDL.Text),
     'outcallProxyUrl' : IDL.Opt(IDL.Text),
     'resendKeyMasked' : IDL.Opt(IDL.Text),
-    'click2mailPasswordMasked' : IDL.Opt(IDL.Text),
+    'fulfilmentPasswordMasked' : IDL.Opt(IDL.Text),
     'webhookPath' : IDL.Text,
   });
   const CreditPackInfo = IDL.Record({
@@ -1038,7 +1038,7 @@ export const idlFactory = ({ IDL }) => {
     'status' : CampaignStatus,
     'paymentStatus' : PaymentStatus,
     'unitPriceCents' : IDL.Nat,
-    'c2mAddressListId' : IDL.Opt(IDL.Text),
+    'printAddressListId' : IDL.Opt(IDL.Text),
     'returnAddress' : IDL.Opt(ReturnAddress),
     'ownerId' : IDL.Text,
     'draftExpiresAt' : IDL.Opt(IDL.Int),
@@ -1046,14 +1046,14 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'createdAt' : IDL.Int,
     'testMode' : IDL.Bool,
-    'c2mDocumentId' : IDL.Opt(IDL.Text),
+    'printDocumentId' : IDL.Opt(IDL.Text),
     'updatedAt' : IDL.Int,
     'canvasState' : IDL.Opt(CanvasState),
     'productionStatus' : ProductionStatus,
     'qrScanCount' : IDL.Nat,
     'qrDestinationUrl' : IDL.Opt(IDL.Text),
     'designTemplateId' : IDL.Opt(IDL.Text),
-    'c2mJobId' : IDL.Opt(IDL.Text),
+    'printJobId' : IDL.Opt(IDL.Text),
     'lastError' : IDL.Opt(IDL.Text),
     'printSpec' : PrintSpec,
     'recipientCount' : IDL.Nat,
@@ -1109,11 +1109,11 @@ export const idlFactory = ({ IDL }) => {
     'printSpec' : PrintSpec,
   });
   const PublicConfig = IDL.Record({
-    'click2mailEnvironment' : Click2MailEnvironment,
+    'fulfilmentEnvironment' : FulfilmentEnvironment,
     'openAiConfigured' : IDL.Bool,
     'trackingBaseUrl' : IDL.Text,
     'stripeConfigured' : IDL.Bool,
-    'click2mailConfigured' : IDL.Bool,
+    'fulfilmentConfigured' : IDL.Bool,
     'sandboxCheckout' : IDL.Bool,
     'resendConfigured' : IDL.Bool,
     'stripePublishableKey' : IDL.Opt(IDL.Text),
@@ -1212,10 +1212,10 @@ export const idlFactory = ({ IDL }) => {
   const AdminKeysInput = IDL.Record({
     'webhookSecret' : IDL.Opt(IDL.Text),
     'resendKey' : IDL.Opt(IDL.Text),
-    'click2mailUsername' : IDL.Opt(IDL.Text),
-    'click2mailEnvironment' : IDL.Opt(Click2MailEnvironment),
+    'fulfilmentUsername' : IDL.Opt(IDL.Text),
+    'fulfilmentEnvironment' : IDL.Opt(FulfilmentEnvironment),
     'sandboxCheckout' : IDL.Opt(IDL.Bool),
-    'click2mailPassword' : IDL.Opt(IDL.Text),
+    'fulfilmentPassword' : IDL.Opt(IDL.Text),
     'stripeSecretKey' : IDL.Opt(IDL.Text),
     'supportEmailAddress' : IDL.Opt(IDL.Text),
     'openAiKey' : IDL.Opt(IDL.Text),
@@ -1286,13 +1286,13 @@ export const idlFactory = ({ IDL }) => {
     'deductAiCredits' : IDL.Func([IDL.Nat, IDL.Text], [CreditResult], []),
     'deleteCampaignDraft' : IDL.Func([IDL.Text], [ApiResult], []),
     'deletePreset' : IDL.Func([IDL.Text], [ApiResult], []),
-    'dispatchClick2MailJob' : IDL.Func([IDL.Text], [DispatchResult], []),
+    'dispatchPrintJob' : IDL.Func([IDL.Text], [DispatchResult], []),
     'ensureAccount' : IDL.Func(
         [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
         [AccountResult],
         [],
       ),
-    'executeClick2MailVerification' : IDL.Func(
+    'verifyAddresses' : IDL.Func(
         [IDL.Vec(AddressInput)],
         [VerificationBatchResult],
         [],
@@ -1370,7 +1370,7 @@ export const idlFactory = ({ IDL }) => {
         [SupportTicketResult],
         [],
       ),
-    'syncClick2MailTracking' : IDL.Func([IDL.Text], [SyncResult], []),
+    'syncPrintTracking' : IDL.Func([IDL.Text], [SyncResult], []),
     'transform' : IDL.Func(
         [TransformationInput],
         [TransformationOutput],

@@ -2,7 +2,7 @@ import type { CatalogIconId } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
 /**
- * Monochrome line-art icons matching the Click2Mail product sheet
+ * Monochrome line-art icons matching the print product sheet
  * (1.5px strokes, round joins, 24×24 grid).
  */
 const PATHS: Record<CatalogIconId, React.ReactNode> = {

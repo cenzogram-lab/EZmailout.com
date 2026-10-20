@@ -10,11 +10,11 @@ import {
 /** Design-canvas resolution: canvas coordinates are stored at 100 px per inch. */
 export const DESIGN_PPI = 100;
 
-/** Print-ready raster resolution used when exporting the PDF for Click2Mail. */
+/** Print-ready raster resolution used when exporting the PDF for the print partner. */
 export const RASTER_DPI = 300;
 
 /**
- * Click2Mail print guides. The canvas is the finished document size, so:
+ * Print print guides. The canvas is the finished document size, so:
  *  - cut line   = the canvas edge (0″) — where the press trims;
  *  - bleed zone = the outer 1/8″ — backgrounds must run through it to the
  *    edge, anything else inside it may be trimmed off;
@@ -51,14 +51,14 @@ export interface LayoutDims {
   addressZone?: AddressZone;
   /** True when the design is turned 90° from the product's own orientation. */
   rotated: boolean;
-  /** The printed piece as Click2Mail produces it, whatever the design's orientation. */
+  /** The printed piece as print produces it, whatever the design's orientation. */
   nativeWidthInches: number;
   nativeHeightInches: number;
 }
 
 /**
  * How the design sits on the piece. `native` follows the product (its
- * width × height in the Click2Mail name order); `rotated` turns the view of
+ * width × height in the print name order); `rotated` turns the view of
  * the whole sheet a quarter turn counter-clockwise, so width and height swap.
  * The printed piece never changes: the export turns rotated pages back onto
  * the native page (see `toNativePage` in `lib/rasterize.ts`).
@@ -110,7 +110,7 @@ export function getLayoutDims(
   };
   if (row?.hasAddressBlock) {
     // USPS reserves the lower-right area of the native address side for the
-    // delivery address, postage indicia and IMb barcode. Click2Mail prints
+    // delivery address, postage indicia and IMb barcode. The print partner prints
     // there whatever the design's orientation, so a rotated view shows the
     // same patch of the sheet in its turned position.
     const nativeW = Math.round(nativeWidthInches * DESIGN_PPI);
@@ -176,7 +176,7 @@ export function safeRect(dims: LayoutDims): {
 }
 
 /**
- * Click2Mail print specification for a layout variant, mirroring what the
+ * Print print specification for a layout variant, mirroring what the
  * backend derives in `createCampaign`. `colorOption === "bw"` switches letters
  * to black and white.
  */

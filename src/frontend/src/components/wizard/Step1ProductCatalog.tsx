@@ -232,7 +232,7 @@ function CategoryCard({
   );
 }
 
-/** Step 1: browse the Click2Mail catalog, expand a category and pick a size. */
+/** Step 1: browse the print catalog, expand a category and pick a size. */
 export function Step1ProductCatalog() {
   const campaignName = useWizardStore((s) => s.campaignName);
   const setCampaignName = useWizardStore((s) => s.setCampaignName);

@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAccountSync } from "@/hooks/use-account";
 import {
   useCreateCampaign,
-  useDispatchClick2MailJob,
+  useDispatchPrintJob,
   useUploadDocumentChunk,
 } from "@/hooks/use-backend";
 import { formatNumber, layoutLabel } from "@/lib/format";
@@ -124,7 +124,7 @@ class StageError extends Error {
   }
 }
 
-/** Step 4: preflight, invoice, payment and Click2Mail dispatch. */
+/** Step 4: preflight, invoice, payment and print dispatch. */
 export function Step4ReviewLaunch() {
   const campaignName = useWizardStore((s) => s.campaignName);
   const selectedProduct = useWizardStore((s) => s.selectedProduct);
@@ -144,7 +144,7 @@ export function Step4ReviewLaunch() {
 
   const createCampaign = useCreateCampaign();
   const uploadChunk = useUploadDocumentChunk();
-  const dispatchJob = useDispatchClick2MailJob();
+  const dispatchJob = useDispatchPrintJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
   const { isAuthenticated, login, isLoggingIn } = useAccountSync();
 
@@ -322,7 +322,7 @@ export function Step4ReviewLaunch() {
     [buildPdf, createCampaign, uploadChunk, setCampaignId, fail],
   );
 
-  /** Runs the Click2Mail dispatch after payment succeeded. */
+  /** Runs the print dispatch after payment succeeded. */
   const runDispatch = useCallback(async () => {
     const id = useWizardStore.getState().campaignId;
     if (!id) {

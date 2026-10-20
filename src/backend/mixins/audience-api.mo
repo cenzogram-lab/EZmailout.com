@@ -1,9 +1,9 @@
-/// Address verification via Click2Mail address lists and saved audience presets.
+/// Address verification via print address lists and saved audience presets.
 import Types "../types/campaign";
 import Common "../types/common";
 import AddressLib "../lib/address";
 import AdminLib "../lib/admin";
-import Click2Mail "../lib/click2mail";
+import Fulfilment "../lib/fulfilment";
 import Http "../lib/http";
 import Json "../lib/json";
 import Limits "../lib/limits";
@@ -36,7 +36,7 @@ mixin (
   transient let verifyAddressesPerWindow : Nat = 25_000;
   transient let verifyUsage = Map.empty<Text, { var windowStart : Int; var addresses : Nat }>();
 
-  // Every verification is two Click2Mail outcalls whatever the batch size, so
+  // Every verification is two print outcalls whatever the batch size, so
   // calls are budgeted as well as addresses: per identity (identities are
   // free to mint), for the whole canister, and with a gap between one
   // identity's calls so one-address batches cannot be streamed.
@@ -128,8 +128,8 @@ mixin (
     null;
   };
 
-  /// CASS-scrubs a batch through Click2Mail's address-list API (fail-closed).
-  public shared ({ caller }) func executeClick2MailVerification(addresses : [Common.AddressInput]) : async Common.VerificationBatchResult {
+  /// CASS-scrubs a batch through the print partner's address-list API (fail-closed).
+  public shared ({ caller }) func verifyAddresses(addresses : [Common.AddressInput]) : async Common.VerificationBatchResult {
     if (caller.isAnonymous()) { return batch(false, ?"Sign in with Internet Identity to verify addresses", [], null) };
     if (addresses.size() == 0) { return batch(false, ?"No addresses supplied", [], null) };
     if (addresses.size() > maxAddresses) { return batch(false, ?"Verify at most 5,000 addresses per batch", [], null) };
@@ -151,7 +151,7 @@ mixin (
       for (idx in candidateIdx.values()) { results[idx] := invalidResult(sanitized[idx], msg) };
     };
     if (candidateIdx.size() == 0) { return batch(true, null, results.toArray(), null) };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) {
+    let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) {
       case (?a) a;
       case null {
         markAll("Address verification is not configured yet");
@@ -160,7 +160,7 @@ mixin (
     };
     let candidates = candidateIdx.toArray().map(func(idx : Nat) : Common.AddressInput = sanitized[idx]);
     // Budgets are checked and charged together, in this message, before the
-    // first await: only a batch that will reach Click2Mail counts.
+    // first await: only a batch that will reach the print partner counts.
     let userId = caller.toText();
     let now = Time.now();
     switch (verifyCallBlocked(userId, now)) {
@@ -177,25 +177,33 @@ mixin (
     };
     Limits.commit(verifyCalls, userId, now, verifyWindowNs);
     Limits.commit(verifyCalls, verifyGlobalKey, now, verifyWindowNs);
-    let base = Click2Mail.baseUrl(adminKeysState.click2mailEnvironment);
+    let base = Fulfilment.baseUrl(adminKeysState.fulfilmentEnvironment);
     let listName = "EZmailout verify " # Time.now().toText();
-    let xml = Click2Mail.buildVerificationXml(listName, candidates);
+    let xml = Fulfilment.buildVerificationXml(listName, candidates);
     let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
-    let resp = await Http.postText(base # "/addressLists", Click2Mail.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-    if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) {
-      let msg = if (resp.status == 0) resp.body else "The address list was rejected: " # Click2Mail.parseDescription(resp.body);
+    let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
+    if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) {
+      let msg = if (resp.status == 0) resp.body else "The address list was rejected: " # Fulfilment.parseDescription(resp.body);
       markAll(msg);
       return batch(false, ?msg, results.toArray(), null);
     };
-    let listId = switch (Click2Mail.parseId(resp.body)) {
+    let listId = switch (Fulfilment.parseId(resp.body)) {
       case (?id) id;
       case null {
         markAll("Address verification returned no address list id");
         return batch(false, ?"Unexpected address verification response", results.toArray(), null);
       };
     };
-    let detail = await Http.get(base # "/addressLists/" # listId, Click2Mail.jsonHeaders(auth, "application/json"), opts, transformFn);
-    let objects = if (Http.isSuccess(detail)) addressDetailRecords(detail.body) else [];
+    let detail = await* Http.get(base # "/addressLists/" # listId, Fulfilment.jsonHeaders(auth, "application/json"), opts, transformFn);
+    // Fail-closed: without the verification result nothing counts as checked.
+    // (A result that lists no per-address detail is the list accepted as a
+    // whole, handled below; an error or no answer is not.)
+    if (not Http.isSuccess(detail) or Fulfilment.reportedFailure(detail.body)) {
+      let msg = "Address verification did not finish; try again in a few minutes";
+      markAll(msg);
+      return batch(false, ?msg, results.toArray(), ?listId);
+    };
+    let objects = addressDetailRecords(detail.body);
     var k = 0;
     for (idx in candidateIdx.values()) {
       let a = sanitized[idx];

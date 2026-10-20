@@ -248,8 +248,8 @@ export interface QrCodeState {
     zIndex: bigint;
 }
 export interface PublicConfig {
-    click2mailConfigured: boolean;
-    click2mailEnvironment: Click2MailEnvironment;
+    fulfilmentConfigured: boolean;
+    fulfilmentEnvironment: FulfilmentEnvironment;
     openAiConfigured: boolean;
     referralBaseUrl: string;
     resendConfigured: boolean;
@@ -446,7 +446,7 @@ export interface ConfirmPaymentResult {
     state?: PaymentState;
     subscriptionActive?: boolean;
 }
-export enum Click2MailEnvironment {
+export enum FulfilmentEnvironment {
     Production = "Production",
     Staging = "Staging"
 }
@@ -491,9 +491,9 @@ export enum CampaignStatus {
 export interface CampaignRecordShared {
     audienceType: AudienceType;
     baseCostCents: bigint;
-    c2mAddressListId?: string;
-    c2mDocumentId?: string;
-    c2mJobId?: string;
+    printAddressListId?: string;
+    printDocumentId?: string;
+    printJobId?: string;
     canvasState?: CanvasState;
     createdAt: bigint;
     designTemplateId?: string;
@@ -578,9 +578,9 @@ export interface AdminKeysView {
     adminPrincipal?: string;
     callerIsAdmin: boolean;
     callerIsController: boolean;
-    click2mailEnvironment: Click2MailEnvironment;
-    click2mailPasswordMasked?: string;
-    click2mailUsername?: string;
+    fulfilmentEnvironment: FulfilmentEnvironment;
+    fulfilmentPasswordMasked?: string;
+    fulfilmentUsername?: string;
     openAiKeyMasked?: string;
     outcallProxyUrl?: string;
     resendKeyMasked?: string;
@@ -592,9 +592,9 @@ export interface AdminKeysView {
     webhookSecretMasked?: string;
 }
 export interface AdminKeysInput {
-    click2mailEnvironment?: Click2MailEnvironment;
-    click2mailPassword?: string;
-    click2mailUsername?: string;
+    fulfilmentEnvironment?: FulfilmentEnvironment;
+    fulfilmentPassword?: string;
+    fulfilmentUsername?: string;
     openAiKey?: string;
     outcallProxyUrl?: string;
     resendKey?: string;
@@ -636,9 +636,9 @@ export interface backendInterface {
     deductAiCredits(arg0: bigint, arg1: string): Promise<CreditResult>;
     deleteCampaignDraft(arg0: string): Promise<ApiResult>;
     deletePreset(arg0: string): Promise<ApiResult>;
-    dispatchClick2MailJob(arg0: string): Promise<DispatchResult>;
+    dispatchPrintJob(arg0: string): Promise<DispatchResult>;
     ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult>;
-    executeClick2MailVerification(arg0: Array<AddressInput>): Promise<VerificationBatchResult>;
+    verifyAddresses(arg0: Array<AddressInput>): Promise<VerificationBatchResult>;
     exportCampaignRecipients(arg0: string): Promise<string | null>;
     generateAiCopy(arg0: AiCopyInput): Promise<AiCopyResult>;
     generateAiImage(arg0: string, arg1: AiImageSize): Promise<AiImageResult>;
@@ -668,7 +668,7 @@ export interface backendInterface {
     saveCanvasState(arg0: string, arg1: CanvasState): Promise<boolean>;
     savePreset(arg0: string, arg1: Array<VerifiedAddress>, arg2: string | null): Promise<PresetResult>;
     submitSupportTicket(arg0: SupportTicketInput): Promise<SupportTicketResult>;
-    syncClick2MailTracking(arg0: string): Promise<SyncResult>;
+    syncPrintTracking(arg0: string): Promise<SyncResult>;
     transform(arg0: TransformationInput): Promise<TransformationOutput>;
     updateAccountEmail(arg0: string): Promise<ApiResult>;
     updateCampaignStatus(arg0: string, arg1: CampaignStatus, arg2: string, arg3: bigint): Promise<boolean>;
@@ -815,14 +815,14 @@ export class Backend implements backendInterface {
     async deletePreset(arg0: string): Promise<ApiResult> {
         return this._call("deletePreset", [arg0]) as Promise<ApiResult>;
     }
-    async dispatchClick2MailJob(arg0: string): Promise<DispatchResult> {
-        return this._call("dispatchClick2MailJob", [arg0]) as Promise<DispatchResult>;
+    async dispatchPrintJob(arg0: string): Promise<DispatchResult> {
+        return this._call("dispatchPrintJob", [arg0]) as Promise<DispatchResult>;
     }
     async ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult> {
         return this._call("ensureAccount", [arg0, arg1]) as Promise<AccountResult>;
     }
-    async executeClick2MailVerification(arg0: Array<AddressInput>): Promise<VerificationBatchResult> {
-        return this._call("executeClick2MailVerification", [arg0]) as Promise<VerificationBatchResult>;
+    async verifyAddresses(arg0: Array<AddressInput>): Promise<VerificationBatchResult> {
+        return this._call("verifyAddresses", [arg0]) as Promise<VerificationBatchResult>;
     }
     async exportCampaignRecipients(arg0: string): Promise<string | null> {
         return this._call("exportCampaignRecipients", [arg0]) as Promise<string | null>;
@@ -911,8 +911,8 @@ export class Backend implements backendInterface {
     async submitSupportTicket(arg0: SupportTicketInput): Promise<SupportTicketResult> {
         return this._call("submitSupportTicket", [arg0]) as Promise<SupportTicketResult>;
     }
-    async syncClick2MailTracking(arg0: string): Promise<SyncResult> {
-        return this._call("syncClick2MailTracking", [arg0]) as Promise<SyncResult>;
+    async syncPrintTracking(arg0: string): Promise<SyncResult> {
+        return this._call("syncPrintTracking", [arg0]) as Promise<SyncResult>;
     }
     async transform(arg0: TransformationInput): Promise<TransformationOutput> {
         return this._call("transform", [arg0]) as Promise<TransformationOutput>;

@@ -31,6 +31,28 @@ mixin (
 ) {
   private func signedIn(caller : Principal) : Bool { not caller.isAnonymous() };
 
+  // Checkout and confirmation each make a Stripe outcall (confirmation a
+  // replicated one, paid by every node), and identities are free to mint, so
+  // both are budgeted per identity and for the whole canister. Real checkout
+  // makes one intent and one confirmation, so the limits never touch it.
+  transient let stripeWindowNs : Int = 3_600_000_000_000;
+  transient let stripeWindows = Map.empty<Text, Limits.Window>();
+  transient let intentsPerHour : Nat = 10;
+  transient let intentsPerHourGlobal : Nat = 1_000;
+  transient let intentGapNs : Int = 2_000_000_000;
+  transient let confirmsPerHour : Nat = 30;
+  transient let confirmsPerHourGlobal : Nat = 2_000;
+  /// Between two live lookups of one payment.
+  transient let confirmGapNs : Int = 5_000_000_000;
+
+  private func stripeRefusal(check : Limits.Check, what : Text) : ?Text {
+    switch (check) {
+      case (#ok) null;
+      case (#wait secs) ?("Please wait " # secs.toText() # " seconds before " # what # " again");
+      case (#full) ?("Too many payment requests right now; please try again in a few minutes");
+    };
+  };
+
   private func account(caller : Principal) : Account.UserAccount {
     AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), null, null);
   };
@@ -177,8 +199,8 @@ mixin (
         refText := "subscription";
       };
     };
-    // Test mode covers campaign orders only, and those print on Click2Mail
-    // Staging. Credit packs and memberships would hand out real value
+    // Test mode covers campaign orders only, and those print on the print
+    // partner's Staging. Credit packs and memberships would hand out real value
     // (OpenAI spend, monthly allowances), so they need live checkout.
     if (adminKeysState.sandboxCheckout and purpose != #CampaignOrder) {
       return intentFail("Test-mode checkout covers campaign orders only; credit packs and memberships need live Stripe checkout");
@@ -192,9 +214,17 @@ mixin (
       return { ok = true; error = null; paymentIntentId = ?id; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = true };
     };
     let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return intentFail("Stripe secret key not configured (Admin → Stripe Secret Key)") } };
+    // Charged only now, once the call will reach Stripe.
+    switch (stripeRefusal(Limits.admit(stripeWindows, [
+      { key = "intent:*"; limit = intentsPerHourGlobal; minGapNs = 0 },
+      { key = "intent:" # a.id; limit = intentsPerHour; minGapNs = intentGapNs },
+    ], Time.now(), stripeWindowNs), "starting checkout")) {
+      case (?msg) { return intentFail(msg) };
+      case null {};
+    };
     let idem = "ez-" # purposeText(purpose) # "-" # refText # "-" # seq.toText();
     let body = Stripe.createPaymentIntentBody(amount, description, purposeText(purpose), refText, a.id);
-    let resp = await Http.postText(Stripe.apiBase # "/payment_intents", Stripe.headers(secret, ?idem), body, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+    let resp = await* Http.postText(Stripe.apiBase # "/payment_intents", Stripe.headers(secret, ?idem), body, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
     if (not Http.isSuccess(resp)) {
       return intentFail(if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body));
     };
@@ -303,6 +333,16 @@ mixin (
       if (record.purpose != #CampaignOrder) { return fail("Test-mode checkout covers campaign orders only") };
     } else {
       let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Stripe secret key not configured") } };
+      // Every live lookup is a replicated outcall: budgeted per payment (a
+      // short gap), per identity and for the canister, before the await.
+      switch (stripeRefusal(Limits.admit(stripeWindows, [
+        { key = "confirm:*"; limit = confirmsPerHourGlobal; minGapNs = 0 },
+        { key = "confirm:" # callerId; limit = confirmsPerHour; minGapNs = 0 },
+        { key = "confirm:" # record.paymentIntentId; limit = confirmsPerHour; minGapNs = confirmGapNs },
+      ], Time.now(), stripeWindowNs), "checking this payment")) {
+        case (?msg) { return fail(msg) };
+        case null {};
+      };
       // Replicated: every replica fetches the intent and they must agree on
       // the reduced response before any credit or paid status is granted, so
       // one faulty node cannot report a payment that did not happen. GET is
@@ -312,7 +352,7 @@ mixin (
         isReplicated = true;
         transformContext = Http.jsonSummary(Stripe.intentSummaryKeys);
       };
-      let resp = await Http.get(Stripe.apiBase # "/payment_intents/" # record.paymentIntentId, Stripe.headers(secret, null), opts, transformFn);
+      let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # record.paymentIntentId, Stripe.headers(secret, null), opts, transformFn);
       if (not Http.isSuccess(resp)) { return fail(if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body)) };
       switch (Stripe.parseIntent(resp.body)) {
         case null { return fail("Unexpected Stripe response") };

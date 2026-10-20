@@ -217,8 +217,8 @@ type QrCodeState =
  };
 type PublicConfig = 
  record {
-   click2mailConfigured: bool;
-   click2mailEnvironment: Click2MailEnvironment;
+   fulfilmentConfigured: bool;
+   fulfilmentEnvironment: FulfilmentEnvironment;
    openAiConfigured: bool;
    referralBaseUrl: text;
    resendConfigured: bool;
@@ -361,6 +361,11 @@ type HeaderField =
    text;
    text;
  };
+type FulfilmentEnvironment = 
+ variant {
+   Production;
+   Staging;
+ };
 type DocumentUploadStatus = 
  record {
    campaignId: text;
@@ -442,11 +447,6 @@ type ConfirmPaymentResult =
    state: opt PaymentState;
    subscriptionActive: opt bool;
  };
-type Click2MailEnvironment = 
- variant {
-   Production;
-   Staging;
- };
 type CanvasState = 
  record {
    back: CanvasSide;
@@ -493,9 +493,6 @@ type CampaignRecordShared =
  record {
    audienceType: AudienceType;
    baseCostCents: nat;
-   c2mAddressListId: opt text;
-   c2mDocumentId: opt text;
-   c2mJobId: opt text;
    canvasState: opt CanvasState;
    createdAt: int;
    designTemplateId: opt text;
@@ -506,6 +503,9 @@ type CampaignRecordShared =
    ownerId: text;
    paymentIntentId: opt text;
    paymentStatus: PaymentStatus;
+   printAddressListId: opt text;
+   printDocumentId: opt text;
+   printJobId: opt text;
    printSpec: PrintSpec;
    product: ProductSelection;
    productionStatus: ProductionStatus;
@@ -589,9 +589,9 @@ type AdminKeysView =
    adminPrincipal: opt text;
    callerIsAdmin: bool;
    callerIsController: bool;
-   click2mailEnvironment: Click2MailEnvironment;
-   click2mailPasswordMasked: opt text;
-   click2mailUsername: opt text;
+   fulfilmentEnvironment: FulfilmentEnvironment;
+   fulfilmentPasswordMasked: opt text;
+   fulfilmentUsername: opt text;
    openAiKeyMasked: opt text;
    outcallProxyUrl: opt text;
    resendKeyMasked: opt text;
@@ -604,9 +604,9 @@ type AdminKeysView =
  };
 type AdminKeysInput = 
  record {
-   click2mailEnvironment: opt Click2MailEnvironment;
-   click2mailPassword: opt text;
-   click2mailUsername: opt text;
+   fulfilmentEnvironment: opt FulfilmentEnvironment;
+   fulfilmentPassword: opt text;
+   fulfilmentUsername: opt text;
    openAiKey: opt text;
    outcallProxyUrl: opt text;
    resendKey: opt text;
@@ -639,7 +639,7 @@ type AccountResult =
    ok: bool;
  };
 /// EZmailout backend canister: direct mail campaigns fulfilled through the
-/// Click2Mail REST API, AI credit ledger, Stripe billing and referral rewards.
+/// print partner's REST API, AI credit ledger, Stripe billing and referral rewards.
 service : {
   _initialize_access_control: () -> ();
   _internet_identity_sign_in_finish: () -> (variant {
@@ -657,10 +657,8 @@ service : {
   deductAiCredits: (costCredits: nat, reason: text) -> (CreditResult);
   deleteCampaignDraft: (campaignId: text) -> (ApiResult);
   deletePreset: (presetId: text) -> (ApiResult);
-  dispatchClick2MailJob: (campaignId: text) -> (DispatchResult);
+  dispatchPrintJob: (campaignId: text) -> (DispatchResult);
   ensureAccount: (referralCode: opt text, email: opt text) -> (AccountResult);
-  executeClick2MailVerification: (addresses: vec AddressInput) ->
-   (VerificationBatchResult);
   exportCampaignRecipients: (campaignId: text) -> (opt text) query;
   generateAiCopy: (input: AiCopyInput) -> (AiCopyResult);
   generateAiImage: (prompt: text, size: AiImageSize) -> (AiImageResult);
@@ -693,7 +691,7 @@ service : {
   savePreset: (name: text, addresses: vec VerifiedAddress, sourceCampaignId:
    opt text) -> (PresetResult);
   submitSupportTicket: (input: SupportTicketInput) -> (SupportTicketResult);
-  syncClick2MailTracking: (campaignId: text) -> (SyncResult);
+  syncPrintTracking: (campaignId: text) -> (SyncResult);
   /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   transform: (input: TransformationInput) -> (TransformationOutput) query;
   updateAccountEmail: (email: text) -> (ApiResult);
@@ -703,4 +701,5 @@ service : {
    vec VerifiedAddress) -> (ApiResult);
   uploadDocumentChunk: (campaignId: text, chunkIndex: nat, totalChunks: 
    nat, mimeType: text, fileName: text, data: blob) -> (ApiResult);
+  verifyAddresses: (addresses: vec AddressInput) -> (VerificationBatchResult);
 }

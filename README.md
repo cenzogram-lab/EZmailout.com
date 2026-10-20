@@ -1,8 +1,8 @@
 # EZmailout.com
 
 Direct mail campaigns without minimums. A $9/month platform membership unlocks wholesale per-piece print rates,
-an AI design studio, saved audience presets and referral rewards. Fulfilment runs through the
-**Click2Mail Developer REST API**; the whole backend is a single Motoko canister on the Internet Computer.
+an AI design studio, saved audience presets and referral rewards. Printing and mailing run through our
+print partner's REST API; the whole backend is a single Motoko canister on the Internet Computer.
 
 ## Stack
 
@@ -10,14 +10,14 @@ an AI design studio, saved audience presets and referral rewards. Fulfilment run
 | --- | --- |
 | Backend | Motoko 1.8 persistent actor (`src/backend`), mo:core 2.5, enhanced-migration chain, IC HTTPS outcalls |
 | Frontend | React 19 + TypeScript + Tailwind + shadcn/ui + Zustand + TanStack Router/Query + Vite (`src/frontend`) |
-| Integrations | Click2Mail (documents, address lists, jobs, IMb tracking), Stripe PaymentIntents + Elements, OpenAI (DALL·E 3, GPT-4o mini), Resend key slot |
+| Integrations | Print fulfilment (documents, address lists, jobs, IMb tracking), Stripe PaymentIntents + Elements, OpenAI (DALL·E 3, GPT-4o mini), Resend key slot |
 
-## Product ledger — the Click2Mail catalog
+## Product ledger — the print catalog
 
-14 product families, 29 document classes. `documentClass` is the exact Click2Mail product name and the trim size
+14 product families, 29 document classes. `documentClass` is the exact print product name and the trim size
 follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 
-| Family | Click2Mail document class | Trim | Cost | Retail | Margin | Mail class |
+| Family | Print document class | Trim | Cost | Retail | Margin | Mail class |
 | --- | --- | --- | ---: | ---: | ---: | --- |
 | Postcards | `Postcard 3.5 x 5` | 3.5″ × 5″ | $0.53 | **$1.10** | 108% | First-Class |
 | Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$1.15** | 109% | First-Class |
@@ -74,17 +74,19 @@ as long as the referrer's membership is active.
 ## Campaign flow
 
 1. **Product** – pick a format (all prices from the ledger).
-2. **Audience** – radius map (EDDM-style estimate), CSV upload with Click2Mail CASS verification, or a saved preset (re-run / prune / save as new).
+2. **Audience** – radius map (EDDM-style estimate), CSV upload with CASS verification, or a saved preset (re-run / prune / save as new).
 3. **Design** – Canva-style studio: tool rail (Templates · Elements · Text · Uploads · Brand · QR · AI Studio · Layers), true-to-scale artboard with cut / ⅛″ bleed / ¼″ safe guides and the USPS IMb zone, floating align/depth toolbar, live 3D proof, dynamic QR codes (`https://ezmailout.com/t/{recipientId}`).
-4. **Review & Pay** – pre-flight checks, Stripe Elements checkout, then `dispatchClick2MailJob` uploads the 300 DPI PDF, submits the address list and job. Tracking is polled every 6 hours and can be pushed via the webhook.
+4. **Review & Pay** – pre-flight checks, Stripe Elements checkout, then `dispatchPrintJob` uploads the 300 DPI PDF, submits the address list and job. Tracking is polled every 6 hours and can be pushed via the webhook.
 
 ## Admin
 
-`/admin` (first signed-in caller claims the admin slot; canister controllers are always admins):
-Click2Mail username/password + environment, Stripe secret + publishable key, Resend key, OpenAI key,
-webhook secret, optional IPv6 outcall proxy, sandbox checkout toggle.
+`/admin` (canister controllers are always admins and assign the one admin principal):
+print fulfilment API username/password + environment, Stripe secret + publishable key, Resend key, OpenAI key,
+webhook secret, optional https outcall proxy, sandbox checkout toggle. Keys are stored in the canister and only
+ever shown masked (last 4 characters) to the admin and controllers.
 
-Webhook: `POST https://<backend-canister>.icp0.io/webhooks/click2mail` with header `x-ezmailout-secret`.
+Webhook: `POST https://<backend-canister>.icp0.io/webhooks/fulfilment` with header `x-ezmailout-secret`
+(the original `/webhooks/click2mail` path is still accepted for webhooks configured before the rename).
 Payload JSON: `{ "campaignId" | "jobId", "event" | "status", "eventId"?, "timestamp"? }`.
 
 ## Development
@@ -96,6 +98,8 @@ cd src/frontend && pnpm install --prefer-offline && pnpm typecheck && pnpm check
 cd src/backend && mops install && mops check && mops build
 # bindings (root)
 pnpm bindgen
+# backend integration tests in PocketIC: keys, every HTTPS outcall, queues, load, upgrade (root)
+scripts/test-backend.sh            # or: scripts/test-backend.sh keys dispatch upgrade
 ```
 
 Generated files (`src/frontend/src/backend.ts`, `backend.d.ts`, `declarations/`) are regenerated from the compiled

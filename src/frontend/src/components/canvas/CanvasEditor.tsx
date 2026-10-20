@@ -213,7 +213,7 @@ export function AddressZoneOverlay({
 // ─── Editor ─────────────────────────────────────────────────────────────────
 
 /**
- * Click2Mail guides drawn inside the artboard: the cut line at the trim edge
+ * Print guides drawn inside the artboard: the cut line at the trim edge
  * (fine dashed) and the 1/4″ safe zone (soft green). The 1/8″ bleed edge is
  * drawn outside the artboard in the stage (solid red). The bleed and safe
  * labels sit in the workspace, above the bleed frame's right edge and under

@@ -66,6 +66,13 @@ module {
 
   /// Performs an HTTPS outcall. Never traps: failures are reported as
   /// `{ status = 0; body = "outcall failed: ..." }`.
+  ///
+  /// `async*` (awaited with `await*`) on purpose, like the helpers below: a
+  /// plain `async` function is a message the canister sends itself, so every
+  /// outcall would take extra slots in the canister's own queue and a burst
+  /// of a few hundred concurrent requests failed with "could not perform self
+  /// call" before any outcall was made. Now the only message is the call to
+  /// the management canister, whose failure is caught below.
   public func request(
     method : Method,
     url : Text,
@@ -73,7 +80,7 @@ module {
     body : ?Blob,
     options : RequestOptions,
     transformFn : TransformFn,
-  ) : async Response {
+  ) : async* Response {
     let (targetUrl, allHeaders) = switch (options.proxyUrl) {
       case (?proxy) {
         if (proxy == "") { (url, headers) } else {
@@ -110,16 +117,16 @@ module {
     };
   };
 
-  public func get(url : Text, headers : [Header], options : RequestOptions, transformFn : TransformFn) : async Response {
-    await request(#get, url, headers, null, options, transformFn);
+  public func get(url : Text, headers : [Header], options : RequestOptions, transformFn : TransformFn) : async* Response {
+    await* request(#get, url, headers, null, options, transformFn);
   };
 
-  public func postText(url : Text, headers : [Header], body : Text, options : RequestOptions, transformFn : TransformFn) : async Response {
-    await request(#post, url, headers, ?body.encodeUtf8(), options, transformFn);
+  public func postText(url : Text, headers : [Header], body : Text, options : RequestOptions, transformFn : TransformFn) : async* Response {
+    await* request(#post, url, headers, ?body.encodeUtf8(), options, transformFn);
   };
 
-  public func postBlob(url : Text, headers : [Header], body : Blob, options : RequestOptions, transformFn : TransformFn) : async Response {
-    await request(#post, url, headers, ?body, options, transformFn);
+  public func postBlob(url : Text, headers : [Header], body : Blob, options : RequestOptions, transformFn : TransformFn) : async* Response {
+    await* request(#post, url, headers, ?body, options, transformFn);
   };
 
   public func isSuccess(r : Response) : Bool {

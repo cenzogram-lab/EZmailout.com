@@ -144,7 +144,7 @@ const INTENTS: Intent[] = [
   },
   {
     keywords:
-      /\b(admin|api key\w*|keys|stripe|resend|openai|click2mail credential\w*|webhook\w*|settings)\b/i,
+      /\b(admin|api key\w*|keys|stripe|resend|openai|(?:fulfil{1,2}ment|print) credential\w*|webhook\w*|settings)\b/i,
     answer: () =>
       "Admins set the print fulfilment, Stripe, Resend and OpenAI keys in Admin settings. Secrets are stored in the canister and only ever shown masked.",
     chips: ["admin"],

@@ -25,14 +25,14 @@ export interface CatalogCategory {
   /** One-line description shown on the category card. */
   blurb: string;
   icon: CatalogIconId;
-  /** Ledger variants in Click2Mail sheet order. */
+  /** Ledger variants in print sheet order. */
   variants: string[];
   /** Operational note surfaced in the size dropdown. */
   note?: string;
 }
 
 /**
- * The 14 Click2Mail product families, in the order of the Click2Mail
+ * The 14 print product families, in the order of the print partner's
  * product sheet, with every size the sheet lists.
  */
 export const CATALOG: CatalogCategory[] = [

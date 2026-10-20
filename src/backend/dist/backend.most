@@ -85,7 +85,32 @@ type AdminState__583769283 =
     var supportEmailAddress : ?Text;
     var webhookSecret : ?Text
   };
+type AdminState__95327012 =
+  {
+    var adminPrincipal : ?Text;
+    var fulfilmentEnvironment : Environment__978232544;
+    var fulfilmentPassword : ?Text;
+    var fulfilmentUsername : ?Text;
+    var openAiKey : ?Text;
+    var outcallProxyUrl : ?Text;
+    var resendKey : ?Text;
+    var sandboxCheckout : Bool;
+    var stripePublishableKey : ?Text;
+    var stripeSecretKey : ?Text;
+    var supportEmailAddress : ?Text;
+    var webhookSecret : ?Text
+  };
 type AudiencePreset__1036808036 =
+  {
+    createdAt : Int;
+    id : Text;
+    name : Text;
+    ownerId : Text;
+    recipientCount : Nat;
+    sourceCampaignId : ?Text;
+    var updatedAt : Int
+  };
+type AudiencePreset__240348265 =
   {
     createdAt : Int;
     id : Text;
@@ -155,6 +180,7 @@ type AudiencePreset__991566103 =
     sourceCampaignId : ?Text;
     var updatedAt : Int
   };
+type AudienceType__1022976390 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type AudienceType__133062118 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type AudienceType__160421050 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type AudienceType__215496195 = {#CsvUpload; #GeoRadius; #SavedPreset};
@@ -164,6 +190,35 @@ type AudienceType__675991603 = {#CSV; #Map};
 type AudienceType__764144161 = {#CSV; #Map};
 type AudienceType__842848238 = {#CsvUpload; #GeoRadius; #SavedPreset};
 type AudienceType__906633304 = {#CsvUpload; #GeoRadius; #SavedPreset};
+type CampaignRecord__101252403 =
+  {
+    audienceType : AudienceType__1022976390;
+    baseCostCents : Nat;
+    var canvasState : ?CanvasState__1032011143;
+    createdAt : Int;
+    designTemplateId : ?Text;
+    id : Text;
+    var lastError : ?Text;
+    name : Text;
+    ownerId : Text;
+    var paymentIntentId : ?Text;
+    var paymentStatus : PaymentStatus__487647023;
+    var printAddressListId : ?Text;
+    var printDocumentId : ?Text;
+    var printJobId : ?Text;
+    printSpec : PrintSpec__902702912;
+    product : ProductSelection__1009894454;
+    var productionStatus : ProductionStatus__624193442;
+    var qrDestinationUrl : ?Text;
+    var qrScanCount : Nat;
+    recipientCount : Nat;
+    var returnAddress : ?ReturnAddress__450326061;
+    sourcePresetId : ?Text;
+    var status : CampaignStatus__418923436;
+    var totalAmountChargedCents : Nat;
+    unitPriceCents : Nat;
+    var updatedAt : Int
+  };
 type CampaignRecord__195285828 =
   {
     audienceType : AudienceType__468147676;
@@ -266,9 +321,6 @@ type CampaignRecord__748290426 =
   {
     audienceType : AudienceType__397578867;
     baseCostCents : Nat;
-    var c2mAddressListId : ?Text;
-    var c2mDocumentId : ?Text;
-    var c2mJobId : ?Text;
     var canvasState : ?CanvasState__291765340;
     createdAt : Int;
     designTemplateId : ?Text;
@@ -278,6 +330,9 @@ type CampaignRecord__748290426 =
     ownerId : Text;
     var paymentIntentId : ?Text;
     var paymentStatus : PaymentStatus__71296514;
+    var printAddressListId : ?Text;
+    var printDocumentId : ?Text;
+    var printJobId : ?Text;
     printSpec : PrintSpec__214838956;
     product : ProductSelection__392936132;
     var productionStatus : ProductionStatus__240898271;
@@ -384,6 +439,16 @@ type CampaignStatus__295533605 =
   {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
 type CampaignStatus__397441306 =
   {#Created; #Delivered; #InProduction; #InTransit; #SortedAtLocalHub};
+type CampaignStatus__418923436 =
+  {
+    #Created;
+    #Delivered;
+    #InProduction;
+    #InTransit;
+    #Returned;
+    #SortedAtLocalHub;
+    #Undeliverable
+  };
 type CampaignStatus__509244991 =
   {
     #Created;
@@ -444,6 +509,14 @@ type CanvasSide__385635921 =
     qrCodes : [QrCodeState__981781634];
     textBlocks : [TextBlockState__752808546]
   };
+type CanvasSide__415617659 =
+  {
+    backgroundColor : Text;
+    backgroundImageUrl : ?Text;
+    logos : [LogoState__378572702];
+    qrCodes : [QrCodeState__374278274];
+    textBlocks : [TextBlockState__102498676]
+  };
 type CanvasSide__63799821 =
   {
     backgroundColor : Text;
@@ -467,6 +540,14 @@ type CanvasSide__816641700 =
     logos : [LogoState__58899064];
     qrCodes : [QrCodeState__632971446];
     textBlocks : [TextBlockState__704808323]
+  };
+type CanvasState__1032011143 =
+  {
+    back : CanvasSide__415617659;
+    designPpi : Nat;
+    front : CanvasSide__415617659;
+    heightInches : Float;
+    widthInches : Float
   };
 type CanvasState__129174551 =
   {
@@ -536,7 +617,6 @@ type Click2MailEnvironment__269608540 = {#Production; #Staging};
 type Click2MailEnvironment__406938542 = {#Production; #Staging};
 type Click2MailEnvironment__531090230 = {#Production; #Staging};
 type Click2MailEnvironment__621357594 = {#Production; #Staging};
-type Click2MailEnvironment__697158736 = {#Production; #Staging};
 type Click2MailEnvironment__710301626 = {#Production; #Staging};
 type Counters__165946592 =
   {
@@ -584,6 +664,15 @@ type Counters__476969562 =
     var nextRewardId : Nat
   };
 type Counters__690227085 =
+  {
+    var nextCampaignId : Nat;
+    var nextEventId : Nat;
+    var nextLedgerId : Nat;
+    var nextPaymentId : Nat;
+    var nextPresetId : Nat;
+    var nextRewardId : Nat
+  };
+type Counters__860859144 =
   {
     var nextCampaignId : Nat;
     var nextEventId : Nat;
@@ -652,6 +741,16 @@ type CreditLedgerEntry__72746892 =
     timestamp : Int;
     userId : Text
   };
+type CreditLedgerEntry__838411166 =
+  {
+    balanceAfter : Nat;
+    delta : Int;
+    id : Nat;
+    reason : Text;
+    reference : ?Text;
+    timestamp : Int;
+    userId : Text
+  };
 type CreditLedgerEntry__912107386 =
   {
     balanceAfter : Nat;
@@ -663,14 +762,25 @@ type CreditLedgerEntry__912107386 =
     userId : Text
   };
 type CreditPack__132941266 = {#Agency; #Growth; #Starter};
+type CreditPack__186663690 = {#Agency; #Growth; #Starter};
 type CreditPack__258658905 = {#Agency; #Growth; #Starter};
 type CreditPack__259775564 = {#Agency; #Growth; #Starter};
 type CreditPack__590267947 = {#Agency; #Growth; #Starter};
 type CreditPack__89129323 = {#Agency; #Growth; #Starter};
 type CreditPack__906527661 = {#Agency; #Growth; #Starter};
 type CreditPack__929098466 = {#Agency; #Growth; #Starter};
-type Data__402283183<K, V> =
-  {var count : Nat__290648668; kvs : [var ?(K, V)]};
+type Data__712079535<K, V> =
+  {var count : Nat__677858269; kvs : [var ?(K, V)]};
+type DocumentUpload__373930697 =
+  {
+    campaignId : Text;
+    var chunks : [Blob];
+    createdAt : Int;
+    fileName : Text;
+    mimeType : Text;
+    var receivedChunks : Nat;
+    totalChunks : Nat
+  };
 type DocumentUpload__399390950 =
   {
     campaignId : Text;
@@ -741,16 +851,36 @@ type DocumentUpload__974961311 =
     var receivedChunks : Nat;
     totalChunks : Nat
   };
-type Internal__1009030202<K, V> =
-  {children : [var ?Node__410026902<K, V>]; data : Data__402283183<K, V>};
-type Leaf__668810236<K, V> = {data : Data__402283183<K, V>};
-type List__540857550<T> =
+type EmailDelivery__190600431 =
   {
-    var blockIndex : Nat__290648668;
-    var blocks : [var [var ?T]];
-    var elementIndex : Nat__290648668
+    var attempts : Nat;
+    var lastStatus : Text;
+    var nextAttemptAt : Int;
+    var state : EmailState__511702563;
+    ticketId : Text
   };
-type List__970266387<T> = List__540857550<T>;
+type EmailDelivery__64481158 =
+  {
+    var attempts : Nat;
+    var lastStatus : Text;
+    var nextAttemptAt : Int;
+    var state : EmailState__327464745;
+    ticketId : Text
+  };
+type EmailState__327464745 = {#Failed; #Queued; #Sent};
+type EmailState__511702563 = {#Failed; #Queued; #Sent};
+type Environment__978232544 = {#Production; #Staging};
+type FulfilmentEnvironment__836962874 = {#Production; #Staging};
+type Internal__911059824<K, V> =
+  {children : [var ?Node__809479745<K, V>]; data : Data__712079535<K, V>};
+type Leaf__795376433<K, V> = {data : Data__712079535<K, V>};
+type List__924405645<T> = List__954546555<T>;
+type List__954546555<T> =
+  {
+    var blockIndex : Nat__677858269;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__677858269
+  };
 type LogoState__323048930 =
   {
     height : Float;
@@ -762,6 +892,16 @@ type LogoState__323048930 =
     zIndex : Nat
   };
 type LogoState__348136686 =
+  {
+    height : Float;
+    id : Text;
+    url : Text;
+    width : Float;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
+type LogoState__378572702 =
   {
     height : Float;
     id : Text;
@@ -830,6 +970,8 @@ type LogoState__99347877 =
     y : Float;
     zIndex : Nat
   };
+type MailClass__188865960 =
+  {#FirstClass; #MarketingMail; #Priority; #PriorityExpress};
 type MailClass__374367456 = {#FirstClass; #MarketingMail};
 type MailClass__536824682 =
   {#FirstClass; #MarketingMail; #Priority; #PriorityExpress};
@@ -843,135 +985,154 @@ type MailClass__909099929 =
   {#FirstClass; #MarketingMail; #Priority; #PriorityExpress};
 type MailClass__976885162 =
   {#FirstClass; #MarketingMail; #Priority; #PriorityExpress};
-type Map__1008872669<K, V> =
-  {var root : Node__410026902<K, V>; var size : Nat__290648668};
-type Map__493350506<K, V> = Map__1008872669<K, V>;
-type Map__904312358<K, V> = Map__493350506<K, V>;
-type Nat__290648668 = Nat__920180692;
+type Map__1002237491<K, V> = Map__738087781<K, V>;
+type Map__521176851<K, V> = Map__1002237491<K, V>;
+type Map__738087781<K, V> =
+  {var root : Node__809479745<K, V>; var size : Nat__677858269};
+type Nat__677858269 = Nat__920180692;
 type Nat__920180692 = Nat;
 type NewActor__1020670674 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__349001753]>;
-    campaigns : Map__904312358<Text, NewCampaignRecord__773509469>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__349001753]>;
+    campaigns : Map__521176851<Text, NewCampaignRecord__773509469>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__970266387<TrackingEvent__791218366>
+    trackingEvents : List__924405645<TrackingEvent__791218366>
   };
 type NewActor__39224525 =
   {
-    accounts : Map__904312358<Text, UserAccount__156377376>;
+    accounts : Map__521176851<Text, UserAccount__156377376>;
     adminKeysState : AdminState__216013609;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__269416760]>;
-    campaigns : Map__904312358<Text, CampaignRecord__243393846>;
-    creditLedger : List__970266387<CreditLedgerEntry__1073016774>;
-    documentUploads : Map__904312358<Text, DocumentUpload__598020718>;
-    payments : Map__904312358<Text, PaymentRecord__752448895>;
-    presetMeta : Map__904312358<Text, AudiencePreset__915401058>;
-    qrScans : List__970266387<QrScanEvent__55685159>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__806583719>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__269416760]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__269416760]>;
+    campaigns : Map__521176851<Text, CampaignRecord__243393846>;
+    creditLedger : List__924405645<CreditLedgerEntry__1073016774>;
+    documentUploads : Map__521176851<Text, DocumentUpload__598020718>;
+    payments : Map__521176851<Text, PaymentRecord__752448895>;
+    presetMeta : Map__521176851<Text, AudiencePreset__915401058>;
+    qrScans : List__924405645<QrScanEvent__55685159>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__806583719>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__269416760]>;
     state : Counters__476969562;
-    trackingEvents : List__970266387<TrackingEvent__740639201>
+    trackingEvents : List__924405645<TrackingEvent__740639201>
   };
 type NewActor__468495 =
   {
-    accounts : Map__904312358<Text, UserAccount__805250609>;
+    accounts : Map__521176851<Text, UserAccount__805250609>;
     adminKeysState : AdminState__583769283;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__696758378]>;
-    campaigns : Map__904312358<Text, CampaignRecord__528531777>;
-    creditLedger : List__970266387<CreditLedgerEntry__469813863>;
-    documentUploads : Map__904312358<Text, DocumentUpload__559675238>;
-    payments : Map__904312358<Text, PaymentRecord__545070525>;
-    presetMeta : Map__904312358<Text, AudiencePreset__38538203>;
-    qrScans : List__970266387<QrScanEvent__803263007>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__409352977>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__696758378]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__696758378]>;
+    campaigns : Map__521176851<Text, CampaignRecord__528531777>;
+    creditLedger : List__924405645<CreditLedgerEntry__469813863>;
+    documentUploads : Map__521176851<Text, DocumentUpload__559675238>;
+    payments : Map__521176851<Text, PaymentRecord__545070525>;
+    presetMeta : Map__521176851<Text, AudiencePreset__38538203>;
+    qrScans : List__924405645<QrScanEvent__803263007>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__409352977>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__696758378]>;
     state : Counters__457257725;
-    supportTickets : List__970266387<SupportTicket__557617033>;
-    trackingEvents : List__970266387<TrackingEvent__643178870>
+    supportTickets : List__924405645<SupportTicket__557617033>;
+    trackingEvents : List__924405645<TrackingEvent__643178870>
   };
 type NewActor__515961458 =
   {
-    accounts : Map__904312358<Text, UserAccount__843964924>;
+    accounts : Map__521176851<Text, UserAccount__843964924>;
     adminKeysState : AdminState__542284524;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__112051349]>;
-    campaigns : Map__904312358<Text, CampaignRecord__974282667>;
-    creditLedger : List__970266387<CreditLedgerEntry__489297990>;
-    documentUploads : Map__904312358<Text, DocumentUpload__662607668>;
-    payments : Map__904312358<Text, PaymentRecord__1050070475>;
-    presetMeta : Map__904312358<Text, AudiencePreset__540346492>;
-    qrScans : List__970266387<QrScanEvent__205857800>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__120987050>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__112051349]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__112051349]>;
+    campaigns : Map__521176851<Text, CampaignRecord__974282667>;
+    creditLedger : List__924405645<CreditLedgerEntry__489297990>;
+    documentUploads : Map__521176851<Text, DocumentUpload__662607668>;
+    payments : Map__521176851<Text, PaymentRecord__1050070475>;
+    presetMeta : Map__521176851<Text, AudiencePreset__540346492>;
+    qrScans : List__924405645<QrScanEvent__205857800>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__120987050>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__112051349]>;
     state : Counters__355208772;
-    trackingEvents : List__970266387<TrackingEvent__464851599>
+    trackingEvents : List__924405645<TrackingEvent__464851599>
   };
 type NewActor__58440520 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__30019136]>;
-    campaigns : Map__904312358<Text, CampaignRecord__588274483>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__30019136]>;
+    campaigns : Map__521176851<Text, CampaignRecord__588274483>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__970266387<TrackingEvent__319664258>
+    trackingEvents : List__924405645<TrackingEvent__319664258>
   };
 type NewActor__676788853 =
   {
-    accounts : Map__904312358<Text, UserAccount__213246083>;
+    accounts : Map__521176851<Text, UserAccount__213246083>;
     adminKeysState : AdminState__567923207;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__924635918]>;
-    campaigns : Map__904312358<Text, CampaignRecord__195285828>;
-    creditLedger : List__970266387<CreditLedgerEntry__912107386>;
-    documentUploads : Map__904312358<Text, DocumentUpload__813917987>;
-    payments : Map__904312358<Text, PaymentRecord__80757506>;
-    presetMeta : Map__904312358<Text, AudiencePreset__1036808036>;
-    qrScans : List__970266387<QrScanEvent__597822503>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__1002128746>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__924635918]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__924635918]>;
+    campaigns : Map__521176851<Text, CampaignRecord__195285828>;
+    creditLedger : List__924405645<CreditLedgerEntry__912107386>;
+    documentUploads : Map__521176851<Text, DocumentUpload__813917987>;
+    payments : Map__521176851<Text, PaymentRecord__80757506>;
+    presetMeta : Map__521176851<Text, AudiencePreset__1036808036>;
+    qrScans : List__924405645<QrScanEvent__597822503>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__1002128746>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__924635918]>;
     state : Counters__690227085;
-    supportTickets : List__970266387<SupportTicket__437236672>;
-    trackingEvents : List__970266387<TrackingEvent__973728631>
+    supportTickets : List__924405645<SupportTicket__437236672>;
+    trackingEvents : List__924405645<TrackingEvent__973728631>
   };
 type NewActor__719932295 =
   {
-    accounts : Map__904312358<Text, UserAccount__903942205>;
+    accounts : Map__521176851<Text, UserAccount__903942205>;
     adminKeysState : AdminState__1038038658;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__571390244]>;
-    campaigns : Map__904312358<Text, CampaignRecord__782720287>;
-    creditLedger : List__970266387<CreditLedgerEntry__456659155>;
-    documentUploads : Map__904312358<Text, DocumentUpload__744872442>;
-    payments : Map__904312358<Text, PaymentRecord__665548128>;
-    presetMeta : Map__904312358<Text, AudiencePreset__792852577>;
-    qrScans : List__970266387<QrScanEvent__580786575>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__830043764>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__571390244]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__571390244]>;
+    campaigns : Map__521176851<Text, CampaignRecord__782720287>;
+    creditLedger : List__924405645<CreditLedgerEntry__456659155>;
+    documentUploads : Map__521176851<Text, DocumentUpload__744872442>;
+    payments : Map__521176851<Text, PaymentRecord__665548128>;
+    presetMeta : Map__521176851<Text, AudiencePreset__792852577>;
+    qrScans : List__924405645<QrScanEvent__580786575>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__830043764>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__571390244]>;
     state : Counters__44439623;
-    supportTickets : List__970266387<SupportTicket__749425579>;
-    trackingEvents : List__970266387<TrackingEvent__745945524>
+    supportTickets : List__924405645<SupportTicket__749425579>;
+    trackingEvents : List__924405645<TrackingEvent__745945524>
+  };
+type NewActor__754755005 =
+  {
+    accounts : Map__521176851<Text, UserAccount__925849660>;
+    adminKeysState : AdminState__95327012;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__377633136]>;
+    campaigns : Map__521176851<Text, CampaignRecord__101252403>;
+    creditLedger : List__924405645<CreditLedgerEntry__838411166>;
+    documentUploads : Map__521176851<Text, DocumentUpload__373930697>;
+    payments : Map__521176851<Text, PaymentRecord__579885110>;
+    presetMeta : Map__521176851<Text, AudiencePreset__240348265>;
+    qrScans : List__924405645<QrScanEvent__263992644>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__608929419>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__377633136]>;
+    state : Counters__860859144;
+    supportEmailOutbox : Map__521176851<Text, EmailDelivery__190600431>;
+    supportTickets : List__924405645<SupportTicket__385875422>;
+    trackingEvents : List__924405645<TrackingEvent__362738537>
   };
 type NewActor__968363411 =
   {
-    accounts : Map__904312358<Text, UserAccount__959023368>;
+    accounts : Map__521176851<Text, UserAccount__959023368>;
     adminKeysState : AdminState__319352985;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__1014458774]>;
-    campaigns : Map__904312358<Text, CampaignRecord__863052090>;
-    creditLedger : List__970266387<CreditLedgerEntry__264040338>;
-    documentUploads : Map__904312358<Text, DocumentUpload__399390950>;
-    payments : Map__904312358<Text, PaymentRecord__678617239>;
-    presetMeta : Map__904312358<Text, AudiencePreset__67799743>;
-    qrScans : List__970266387<QrScanEvent__240606668>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__243959847>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__1014458774]>;
+    campaigns : Map__521176851<Text, CampaignRecord__863052090>;
+    creditLedger : List__924405645<CreditLedgerEntry__264040338>;
+    documentUploads : Map__521176851<Text, DocumentUpload__399390950>;
+    payments : Map__521176851<Text, PaymentRecord__678617239>;
+    presetMeta : Map__521176851<Text, AudiencePreset__67799743>;
+    qrScans : List__924405645<QrScanEvent__240606668>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__243959847>;
     savedAudiencePresets :
-      Map__904312358<Text, [VerifiedAddress__1014458774]>;
+      Map__521176851<Text, [VerifiedAddress__1014458774]>;
     state : Counters__165946592;
-    trackingEvents : List__970266387<TrackingEvent__488472890>
+    trackingEvents : List__924405645<TrackingEvent__488472890>
   };
 type NewCampaignRecord__773509469 =
   {
@@ -985,114 +1146,132 @@ type NewCampaignRecord__773509469 =
     var status : CampaignStatus__670227347;
     trackingId : ?Text
   };
-type Node__410026902<K, V> =
-  {#internal : Internal__1009030202<K, V>; #leaf : Leaf__668810236<K, V>};
+type Node__809479745<K, V> =
+  {#internal : Internal__911059824<K, V>; #leaf : Leaf__795376433<K, V>};
 type OldActor__166002484 = {};
 type OldActor__268853423 =
   {
-    accounts : Map__904312358<Text, UserAccount__903942205>;
+    accounts : Map__521176851<Text, UserAccount__903942205>;
     adminKeysState : AdminState__1038038658;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__571390244]>;
-    campaigns : Map__904312358<Text, CampaignRecord__782720287>;
-    creditLedger : List__970266387<CreditLedgerEntry__456659155>;
-    documentUploads : Map__904312358<Text, DocumentUpload__744872442>;
-    payments : Map__904312358<Text, PaymentRecord__665548128>;
-    presetMeta : Map__904312358<Text, AudiencePreset__792852577>;
-    qrScans : List__970266387<QrScanEvent__580786575>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__830043764>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__571390244]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__571390244]>;
+    campaigns : Map__521176851<Text, CampaignRecord__782720287>;
+    creditLedger : List__924405645<CreditLedgerEntry__456659155>;
+    documentUploads : Map__521176851<Text, DocumentUpload__744872442>;
+    payments : Map__521176851<Text, PaymentRecord__665548128>;
+    presetMeta : Map__521176851<Text, AudiencePreset__792852577>;
+    qrScans : List__924405645<QrScanEvent__580786575>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__830043764>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__571390244]>;
     state : Counters__44439623;
-    trackingEvents : List__970266387<TrackingEvent__745945524>
+    trackingEvents : List__924405645<TrackingEvent__745945524>
   };
 type OldActor__356247688 =
   {
-    accounts : Map__904312358<Text, UserAccount__213246083>;
+    accounts : Map__521176851<Text, UserAccount__213246083>;
     adminKeysState : OldAdminState__17420391;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__924635918]>;
-    campaigns : Map__904312358<Text, CampaignRecord__195285828>;
-    creditLedger : List__970266387<CreditLedgerEntry__912107386>;
-    documentUploads : Map__904312358<Text, DocumentUpload__813917987>;
-    payments : Map__904312358<Text, PaymentRecord__80757506>;
-    presetMeta : Map__904312358<Text, AudiencePreset__1036808036>;
-    qrScans : List__970266387<QrScanEvent__597822503>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__1002128746>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__924635918]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__924635918]>;
+    campaigns : Map__521176851<Text, CampaignRecord__195285828>;
+    creditLedger : List__924405645<CreditLedgerEntry__912107386>;
+    documentUploads : Map__521176851<Text, DocumentUpload__813917987>;
+    payments : Map__521176851<Text, PaymentRecord__80757506>;
+    presetMeta : Map__521176851<Text, AudiencePreset__1036808036>;
+    qrScans : List__924405645<QrScanEvent__597822503>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__1002128746>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__924635918]>;
     state : Counters__690227085;
-    supportTickets : List__970266387<SupportTicket__437236672>;
-    trackingEvents : List__970266387<TrackingEvent__973728631>
+    supportTickets : List__924405645<SupportTicket__437236672>;
+    trackingEvents : List__924405645<TrackingEvent__973728631>
   };
 type OldActor__36808326 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__349001753]>;
-    campaigns : Map__904312358<Text, OldCampaignRecord__563143060>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__349001753]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__563143060>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__970266387<TrackingEvent__791218366>
+    trackingEvents : List__924405645<TrackingEvent__791218366>
   };
 type OldActor__44764964 =
   {
-    accounts : Map__904312358<Text, UserAccount__805250609>;
+    accounts : Map__521176851<Text, UserAccount__805250609>;
     adminKeysState : AdminState__583769283;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__696758378]>;
-    campaigns : Map__904312358<Text, OldCampaignRecord__215752643>;
-    creditLedger : List__970266387<CreditLedgerEntry__469813863>;
-    documentUploads : Map__904312358<Text, DocumentUpload__559675238>;
-    payments : Map__904312358<Text, PaymentRecord__545070525>;
-    presetMeta : Map__904312358<Text, AudiencePreset__38538203>;
-    qrScans : List__970266387<QrScanEvent__803263007>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__409352977>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__696758378]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__696758378]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__215752643>;
+    creditLedger : List__924405645<CreditLedgerEntry__469813863>;
+    documentUploads : Map__521176851<Text, DocumentUpload__559675238>;
+    payments : Map__521176851<Text, PaymentRecord__545070525>;
+    presetMeta : Map__521176851<Text, AudiencePreset__38538203>;
+    qrScans : List__924405645<QrScanEvent__803263007>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__409352977>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__696758378]>;
     state : Counters__457257725;
-    supportTickets : List__970266387<SupportTicket__557617033>;
-    trackingEvents : List__970266387<OldTrackingEvent__673594524>
+    supportTickets : List__924405645<SupportTicket__557617033>;
+    trackingEvents : List__924405645<OldTrackingEvent__673594524>
   };
 type OldActor__642824405 =
   {
-    accounts : Map__904312358<Text, UserAccount__156377376>;
+    accounts : Map__521176851<Text, UserAccount__156377376>;
     adminKeysState : AdminState__216013609;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__269416760]>;
-    campaigns : Map__904312358<Text, OldCampaignRecord__726640888>;
-    creditLedger : List__970266387<CreditLedgerEntry__1073016774>;
-    documentUploads : Map__904312358<Text, DocumentUpload__598020718>;
-    payments : Map__904312358<Text, PaymentRecord__752448895>;
-    presetMeta : Map__904312358<Text, AudiencePreset__915401058>;
-    qrScans : List__970266387<QrScanEvent__55685159>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__806583719>;
-    savedAudiencePresets : Map__904312358<Text, [VerifiedAddress__269416760]>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__269416760]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__726640888>;
+    creditLedger : List__924405645<CreditLedgerEntry__1073016774>;
+    documentUploads : Map__521176851<Text, DocumentUpload__598020718>;
+    payments : Map__521176851<Text, PaymentRecord__752448895>;
+    presetMeta : Map__521176851<Text, AudiencePreset__915401058>;
+    qrScans : List__924405645<QrScanEvent__55685159>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__806583719>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__269416760]>;
     state : Counters__476969562;
-    trackingEvents : List__970266387<TrackingEvent__740639201>
+    trackingEvents : List__924405645<TrackingEvent__740639201>
   };
 type OldActor__765607141 =
   {
     adminKeysState :
       {var lobKey : ?Text; var resendKey : ?Text; var stripeKey : ?Text};
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__112051349]>;
-    campaigns : Map__904312358<Text, OldCampaignRecord__771780174>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__112051349]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__771780174>;
     state : {var nextCampaignId : Nat};
-    trackingEvents : List__970266387<OldTrackingEvent__584112003>
+    trackingEvents : List__924405645<OldTrackingEvent__584112003>
+  };
+type OldActor__905065025 =
+  {
+    accounts : Map__521176851<Text, UserAccount__925849660>;
+    adminKeysState : OldAdminState__462948735;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__377633136]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__249027866>;
+    creditLedger : List__924405645<CreditLedgerEntry__838411166>;
+    documentUploads : Map__521176851<Text, DocumentUpload__373930697>;
+    payments : Map__521176851<Text, PaymentRecord__579885110>;
+    presetMeta : Map__521176851<Text, AudiencePreset__240348265>;
+    qrScans : List__924405645<QrScanEvent__263992644>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__608929419>;
+    savedAudiencePresets : Map__521176851<Text, [VerifiedAddress__377633136]>;
+    state : Counters__860859144;
+    supportTickets : List__924405645<SupportTicket__385875422>;
+    trackingEvents : List__924405645<TrackingEvent__362738537>
   };
 type OldActor__975228722 =
   {
-    accounts : Map__904312358<Text, UserAccount__959023368>;
+    accounts : Map__521176851<Text, UserAccount__959023368>;
     adminKeysState : AdminState__319352985;
-    campaignRecipients : Map__904312358<Text, [VerifiedAddress__1014458774]>;
-    campaigns : Map__904312358<Text, OldCampaignRecord__423307179>;
-    creditLedger : List__970266387<CreditLedgerEntry__264040338>;
-    documentUploads : Map__904312358<Text, DocumentUpload__399390950>;
-    payments : Map__904312358<Text, PaymentRecord__678617239>;
-    presetMeta : Map__904312358<Text, AudiencePreset__67799743>;
-    qrScans : List__970266387<QrScanEvent__240606668>;
-    referralCodes : Map__904312358<Text, Text>;
-    referralRewards : List__970266387<ReferralReward__243959847>;
+    campaignRecipients : Map__521176851<Text, [VerifiedAddress__1014458774]>;
+    campaigns : Map__521176851<Text, OldCampaignRecord__423307179>;
+    creditLedger : List__924405645<CreditLedgerEntry__264040338>;
+    documentUploads : Map__521176851<Text, DocumentUpload__399390950>;
+    payments : Map__521176851<Text, PaymentRecord__678617239>;
+    presetMeta : Map__521176851<Text, AudiencePreset__67799743>;
+    qrScans : List__924405645<QrScanEvent__240606668>;
+    referralCodes : Map__521176851<Text, Text>;
+    referralRewards : List__924405645<ReferralReward__243959847>;
     savedAudiencePresets :
-      Map__904312358<Text, [VerifiedAddress__1014458774]>;
+      Map__521176851<Text, [VerifiedAddress__1014458774]>;
     state : Counters__165946592;
-    trackingEvents : List__970266387<TrackingEvent__488472890>
+    trackingEvents : List__924405645<TrackingEvent__488472890>
   };
 type OldAdminState__17420391 =
   {
@@ -1106,6 +1285,21 @@ type OldAdminState__17420391 =
     var sandboxCheckout : Bool;
     var stripePublishableKey : ?Text;
     var stripeSecretKey : ?Text;
+    var webhookSecret : ?Text
+  };
+type OldAdminState__462948735 =
+  {
+    var adminPrincipal : ?Text;
+    var click2mailEnvironment : Environment__978232544;
+    var click2mailPassword : ?Text;
+    var click2mailUsername : ?Text;
+    var openAiKey : ?Text;
+    var outcallProxyUrl : ?Text;
+    var resendKey : ?Text;
+    var sandboxCheckout : Bool;
+    var stripePublishableKey : ?Text;
+    var stripeSecretKey : ?Text;
+    var supportEmailAddress : ?Text;
     var webhookSecret : ?Text
   };
 type OldAudienceType__742654545 = {#CSV; #Map};
@@ -1134,6 +1328,35 @@ type OldCampaignRecord__215752643 =
     var returnAddress : ?ReturnAddress__412458324;
     sourcePresetId : ?Text;
     var status : OldCampaignStatus__6750858;
+    var totalAmountChargedCents : Nat;
+    unitPriceCents : Nat;
+    var updatedAt : Int
+  };
+type OldCampaignRecord__249027866 =
+  {
+    audienceType : AudienceType__1022976390;
+    baseCostCents : Nat;
+    var c2mAddressListId : ?Text;
+    var c2mDocumentId : ?Text;
+    var c2mJobId : ?Text;
+    var canvasState : ?CanvasState__1032011143;
+    createdAt : Int;
+    designTemplateId : ?Text;
+    id : Text;
+    var lastError : ?Text;
+    name : Text;
+    ownerId : Text;
+    var paymentIntentId : ?Text;
+    var paymentStatus : PaymentStatus__487647023;
+    printSpec : PrintSpec__902702912;
+    product : ProductSelection__1009894454;
+    var productionStatus : ProductionStatus__624193442;
+    var qrDestinationUrl : ?Text;
+    var qrScanCount : Nat;
+    recipientCount : Nat;
+    var returnAddress : ?ReturnAddress__450326061;
+    sourcePresetId : ?Text;
+    var status : CampaignStatus__418923436;
     var totalAmountChargedCents : Nat;
     unitPriceCents : Nat;
     var updatedAt : Int
@@ -1298,6 +1521,7 @@ type PaymentPurpose__270822926 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__273801835 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__341929009 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__405022687 = {#CampaignOrder; #CreditPack; #Subscription};
+type PaymentPurpose__625991683 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__68900410 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__761006661 = {#CampaignOrder; #CreditPack; #Subscription};
 type PaymentPurpose__805896016 = {#CampaignOrder; #CreditPack; #Subscription};
@@ -1325,6 +1549,19 @@ type PaymentRecord__545070525 =
     reference : ?Text;
     sandbox : Bool;
     var state : PaymentState__308053758;
+    userId : Text
+  };
+type PaymentRecord__579885110 =
+  {
+    amountCents : Nat;
+    var confirmedAt : ?Int;
+    createdAt : Int;
+    creditPack : ?CreditPack__186663690;
+    paymentIntentId : Text;
+    purpose : PaymentPurpose__625991683;
+    reference : ?Text;
+    sandbox : Bool;
+    var state : PaymentState__508599439;
     userId : Text
   };
 type PaymentRecord__665548128 =
@@ -1397,6 +1634,7 @@ type PaymentState__1045767933 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentState__308053758 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentState__348030658 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentState__487637176 = {#Created; #Failed; #Succeeded; #Waived};
+type PaymentState__508599439 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentState__898489416 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentState__954604037 = {#Created; #Failed; #Succeeded; #Waived};
 type PaymentStatus__1009151203 =
@@ -1404,6 +1642,8 @@ type PaymentStatus__1009151203 =
 type PaymentStatus__205583270 =
   {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
 type PaymentStatus__310837193 =
+  {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
+type PaymentStatus__487647023 =
   {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
 type PaymentStatus__594605032 =
   {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
@@ -1489,6 +1729,23 @@ type PrintSpec__692151401 =
     printOption : Text;
     productionTime : Text
   };
+type PrintSpec__902702912 =
+  {
+    color : Text;
+    documentClass : Text;
+    envelope : ?Text;
+    layout : Text;
+    mailClass : MailClass__188865960;
+    paperType : Text;
+    printOption : Text;
+    productionTime : Text
+  };
+type ProductSelection__1009894454 =
+  {
+    colorOption : ?Text;
+    layoutVariant : Text;
+    productType : ProductType__352784599
+  };
 type ProductSelection__123924381 =
   {
     colorOption : ?Text;
@@ -1544,6 +1801,24 @@ type ProductSelection__950129056 =
     productType : ProductType__755013799
   };
 type ProductType__192838555 =
+  {
+    #Booklet;
+    #Brochure;
+    #CardStock;
+    #CertifiedMail;
+    #Eddm;
+    #Flyer;
+    #Letter;
+    #Notecard;
+    #Postcard;
+    #PriorityMail;
+    #PriorityMailExpress;
+    #RackCard;
+    #ReplyMail;
+    #SelfMailer;
+    #SnapPack
+  };
+type ProductType__352784599 =
   {
     #Booklet;
     #Brochure;
@@ -1704,6 +1979,18 @@ type ProductionStatus__461975036 =
     #ReadyToDispatch;
     #Submitted
   };
+type ProductionStatus__624193442 =
+  {
+    #AddressListReady;
+    #AwaitingPayment;
+    #DocumentUploaded;
+    #Draft;
+    #Failed;
+    #JobCreated;
+    #Processing;
+    #ReadyToDispatch;
+    #Submitted
+  };
 type ProductionStatus__732628109 =
   {
     #AddressListReady;
@@ -1759,6 +2046,19 @@ type QrCodeState__303415750 =
     foreground : Text;
     id : Text;
     mode : QrMode__49966223;
+    size : Float;
+    url : Text;
+    x : Float;
+    y : Float;
+    zIndex : Nat
+  };
+type QrCodeState__374278274 =
+  {
+    background : Text;
+    caption : ?Text;
+    foreground : Text;
+    id : Text;
+    mode : QrMode__897397063;
     size : Float;
     url : Text;
     x : Float;
@@ -1838,12 +2138,15 @@ type QrMode__491291571 = {#DynamicTracking; #StaticUrl};
 type QrMode__49966223 = {#DynamicTracking; #StaticUrl};
 type QrMode__66943053 = {#DynamicTracking; #StaticUrl};
 type QrMode__770187389 = {#DynamicTracking; #StaticUrl};
+type QrMode__897397063 = {#DynamicTracking; #StaticUrl};
 type QrMode__942755098 = {#DynamicTracking; #StaticUrl};
 type QrScanEvent__175856408 =
   {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
 type QrScanEvent__205857800 =
   {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
 type QrScanEvent__240606668 =
+  {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
+type QrScanEvent__263992644 =
   {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
 type QrScanEvent__55685159 =
   {campaignId : Text; recipientId : Text; timestamp : Int; userAgent : ?Text};
@@ -1881,6 +2184,15 @@ type ReferralReward__243959847 =
     timestamp : Int
   };
 type ReferralReward__409352977 =
+  {
+    amountCents : Nat;
+    id : Nat;
+    paymentIntentId : Text;
+    refereeId : Text;
+    referrerId : Text;
+    timestamp : Int
+  };
+type ReferralReward__608929419 =
   {
     amountCents : Nat;
     id : Nat;
@@ -1956,6 +2268,16 @@ type ReturnAddress__412458324 =
     state : Text;
     zip_code : Text
   };
+type ReturnAddress__450326061 =
+  {
+    address_line1 : Text;
+    address_line2 : ?Text;
+    city : Text;
+    name : Text;
+    organization : ?Text;
+    state : Text;
+    zip_code : Text
+  };
 type ReturnAddress__544337124 =
   {
     address_line1 : Text;
@@ -1985,6 +2307,17 @@ type ReturnAddress__99434169 =
     organization : ?Text;
     state : Text;
     zip_code : Text
+  };
+type SupportTicket__385875422 =
+  {
+    createdAt : Int;
+    email : Text;
+    id : Text;
+    message : Text;
+    name : Text;
+    pagePath : Text;
+    subject : Text;
+    userId : ?Text
   };
 type SupportTicket__437236672 =
   {
@@ -2029,6 +2362,21 @@ type SupportTicket__749425579 =
     pagePath : Text;
     subject : Text;
     userId : ?Text
+  };
+type TextBlockState__102498676 =
+  {
+    align : Text;
+    color : Text;
+    fontFamily : Text;
+    fontSize : Float;
+    fontWeight : Nat;
+    height : Float;
+    id : Text;
+    text : Text;
+    width : Float;
+    x : Float;
+    y : Float;
+    zIndex : Nat
   };
 type TextBlockState__197637459 =
   {
@@ -2148,6 +2496,17 @@ type TextBlockState__964234570 =
   };
 type TrackingEvent__319664258 =
   {campaignId : Text; eventType : Text; lobEventId : Text; timestamp : Int};
+type TrackingEvent__362738537 =
+  {
+    campaignId : Text;
+    detail : ?Text;
+    eventType : Text;
+    id : Nat;
+    providerEventId : Text;
+    source : TrackingSource__747837914;
+    status : CampaignStatus__418923436;
+    timestamp : Int
+  };
 type TrackingEvent__464851599 =
   {
     campaignId : Text;
@@ -2233,6 +2592,7 @@ type TrackingSource__377601132 = {#Manual; #Poll; #System; #Webhook};
 type TrackingSource__380607621 = {#Manual; #Poll; #System; #Webhook};
 type TrackingSource__638600774 = {#Manual; #Poll; #System; #Webhook};
 type TrackingSource__717050023 = {#Manual; #Poll; #System; #Webhook};
+type TrackingSource__747837914 = {#Manual; #Poll; #System; #Webhook};
 type TrackingSource__851924138 = {#Manual; #Poll; #System; #Webhook};
 type UserAccount__156377376 =
   {
@@ -2336,6 +2696,23 @@ type UserAccount__903942205 =
     var subscriptionRenewsAt : Int;
     var updatedAt : Int
   };
+type UserAccount__925849660 =
+  {
+    createdAt : Int;
+    var creditBalance : Nat;
+    var email : Text;
+    var firstPaymentAt : ?Int;
+    id : Text;
+    var lastMonthlyGrantAt : Int;
+    var referralCode : Text;
+    var referralCount : Nat;
+    var referralCreditsEarned : Nat;
+    var referralCreditsRedeemed : Nat;
+    var referredBy : ?Text;
+    var subscriptionActive : Bool;
+    var subscriptionRenewsAt : Int;
+    var updatedAt : Int
+  };
 type UserAccount__959023368 =
   {
     createdAt : Int;
@@ -2403,6 +2780,16 @@ type VerifiedAddress__349001753 =
     zip_code : Text;
     zip_plus4 : ?Text
   };
+type VerifiedAddress__377633136 =
+  {
+    address_line1 : Text;
+    address_line2 : ?Text;
+    city : Text;
+    name : Text;
+    state : Text;
+    zip_code : Text;
+    zip_plus4 : ?Text
+  };
 type VerifiedAddress__571390244 =
   {
     address_line1 : Text;
@@ -2458,20 +2845,22 @@ type VerifiedAddress__924635918 =
   "20260925_000000_SupportEmail" :
     (old : OldActor__356247688) -> NewActor__676788853;
   "20260927_000000_ReturnedMail" :
-    (old : OldActor__44764964) -> NewActor__468495
+    (old : OldActor__44764964) -> NewActor__468495;
+  "20261020_000000_FulfilmentNames" :
+    (old : OldActor__905065025) -> NewActor__754755005
 }
 actor  {
   stable accounts :
     {
-      var root : Node__410026902<Text, UserAccount__868819829>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, UserAccount__868819829>;
+      var size : Nat__677858269
     };
   stable adminKeysState :
     {
       var adminPrincipal : ?Text;
-      var click2mailEnvironment : Click2MailEnvironment__697158736;
-      var click2mailPassword : ?Text;
-      var click2mailUsername : ?Text;
+      var fulfilmentEnvironment : FulfilmentEnvironment__836962874;
+      var fulfilmentPassword : ?Text;
+      var fulfilmentUsername : ?Text;
       var openAiKey : ?Text;
       var outcallProxyUrl : ?Text;
       var resendKey : ?Text;
@@ -2483,53 +2872,53 @@ actor  {
     };
   stable campaignRecipients :
     {
-      var root : Node__410026902<Text, [VerifiedAddress__70652957]>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, [VerifiedAddress__70652957]>;
+      var size : Nat__677858269
     };
   stable campaigns :
     {
-      var root : Node__410026902<Text, CampaignRecord__748290426>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, CampaignRecord__748290426>;
+      var size : Nat__677858269
     };
   stable creditLedger :
     {
-      var blockIndex : Nat__290648668;
+      var blockIndex : Nat__677858269;
       var blocks : [var [var ?CreditLedgerEntry__72746892]];
-      var elementIndex : Nat__290648668
+      var elementIndex : Nat__677858269
     };
   stable documentUploads :
     {
-      var root : Node__410026902<Text, DocumentUpload__974961311>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, DocumentUpload__974961311>;
+      var size : Nat__677858269
     };
   stable payments :
     {
-      var root : Node__410026902<Text, PaymentRecord__75058045>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, PaymentRecord__75058045>;
+      var size : Nat__677858269
     };
   stable presetMeta :
     {
-      var root : Node__410026902<Text, AudiencePreset__991566103>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, AudiencePreset__991566103>;
+      var size : Nat__677858269
     };
   stable qrScans :
     {
-      var blockIndex : Nat__290648668;
+      var blockIndex : Nat__677858269;
       var blocks : [var [var ?QrScanEvent__175856408]];
-      var elementIndex : Nat__290648668
+      var elementIndex : Nat__677858269
     };
   stable referralCodes :
-    {var root : Node__410026902<Text, Text>; var size : Nat__290648668};
+    {var root : Node__809479745<Text, Text>; var size : Nat__677858269};
   stable referralRewards :
     {
-      var blockIndex : Nat__290648668;
+      var blockIndex : Nat__677858269;
       var blocks : [var [var ?ReferralReward__924831799]];
-      var elementIndex : Nat__290648668
+      var elementIndex : Nat__677858269
     };
   stable savedAudiencePresets :
     {
-      var root : Node__410026902<Text, [VerifiedAddress__70652957]>;
-      var size : Nat__290648668
+      var root : Node__809479745<Text, [VerifiedAddress__70652957]>;
+      var size : Nat__677858269
     };
   stable state :
     {
@@ -2540,16 +2929,21 @@ actor  {
       var nextPresetId : Nat;
       var nextRewardId : Nat
     };
+  stable supportEmailOutbox :
+    {
+      var root : Node__809479745<Text, EmailDelivery__64481158>;
+      var size : Nat__677858269
+    };
   stable supportTickets :
     {
-      var blockIndex : Nat__290648668;
+      var blockIndex : Nat__677858269;
       var blocks : [var [var ?SupportTicket__460240397]];
-      var elementIndex : Nat__290648668
+      var elementIndex : Nat__677858269
     };
   stable trackingEvents :
     {
-      var blockIndex : Nat__290648668;
+      var blockIndex : Nat__677858269;
       var blocks : [var [var ?TrackingEvent__608626749]];
-      var elementIndex : Nat__290648668
+      var elementIndex : Nat__677858269
     }
 };

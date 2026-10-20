@@ -1,11 +1,11 @@
-/// Click2Mail production: document upload, address list, job dispatch, IMb tracking,
+/// Print production: document upload, address list, job dispatch, IMb tracking,
 /// delivery webhooks (HTTP gateway) and the polling job.
 import Types "../types/campaign";
 import Common "../types/common";
 import AddressLib "../lib/address";
 import AdminLib "../lib/admin";
 import CampaignLib "../lib/campaign";
-import Click2Mail "../lib/click2mail";
+import Fulfilment "../lib/fulfilment";
 import Http "../lib/http";
 import Json "../lib/json";
 import Limits "../lib/limits";
@@ -22,6 +22,7 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Set "mo:core/Set";
+import Order "mo:core/Order";
 
 mixin (
   campaigns : Map.Map<Text, Types.CampaignRecord>,
@@ -34,7 +35,7 @@ mixin (
 ) {
   transient let maxChunkBytes : Nat = 1_900_000;
   transient let maxChunks : Nat = 8;
-  /// The whole print file, not just a chunk: dispatch posts it to Click2Mail
+  /// The whole print file, not just a chunk: dispatch posts it to the print partner
   /// in one HTTPS outcall, and an outcall request (URL, headers, multipart
   /// framing and body) may not exceed 2 MB. Checked at upload, before the
   /// customer pays, so a file that cannot be sent is never charged for.
@@ -42,7 +43,7 @@ mixin (
   transient let allowedMimeTypes : [Text] = ["application/pdf", "image/png", "image/jpeg"];
   transient let maxPollPerTick : Nat = 10;
 
-  /// Campaigns with a Click2Mail dispatch running. Taken before the first
+  /// Campaigns with a print dispatch running. Taken before the first
   /// outcall and released in `finally`, so it survives a trap in any
   /// continuation. Deliberately transient: a canister cannot be upgraded with
   /// calls in flight, so the set is always empty across an upgrade and can
@@ -66,7 +67,7 @@ mixin (
   transient let dispatchWindowNs : Int = 24 * 3_600 * 1_000_000_000;
   transient let dispatchRuns = Map.empty<Text, Limits.Window>();
 
-  /// Time of the last live Click2Mail lookup per campaign, from any path
+  /// Time of the last live print lookup per campaign, from any path
   /// (owner, admin or the timer). Transient: it only rate-limits, so losing it
   /// on upgrade costs at most one extra lookup per campaign.
   transient let syncCooldowns = Map.empty<Text, Int>();
@@ -76,11 +77,11 @@ mixin (
     CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
   };
 
-  /// Where a campaign's Click2Mail job lives. A test-mode campaign (paid
+  /// Where a campaign's print job lives. A test-mode campaign (paid
   /// through sandbox checkout) always goes to Staging, whatever the admin's
   /// environment setting, so it can never print or bill on Production.
-  private func environmentFor(record : Types.CampaignRecord) : Common.Click2MailEnvironment {
-    if (CampaignLib.isTestMode(record)) #Staging else adminKeysState.click2mailEnvironment;
+  private func environmentFor(record : Types.CampaignRecord) : Common.FulfilmentEnvironment {
+    if (CampaignLib.isTestMode(record)) #Staging else adminKeysState.fulfilmentEnvironment;
   };
 
   /// A file name that cannot break out of its multipart header.
@@ -95,9 +96,9 @@ mixin (
     let record = switch (campaigns.get(campaignId)) { case (?r) r; case null { return { ok = false; error = ?"Campaign not found" } } };
     if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized" } };
     if (dispatchInFlight.contains(campaignId)) { return { ok = false; error = ?"A dispatch is running for this campaign; upload again once it finishes" } };
-    // Once Click2Mail holds the document (the campaign was dispatched, or a
+    // Once the print partner holds the document (the campaign was dispatched, or a
     // dispatch failed after that step) a new upload could never be used.
-    if (record.c2mDocumentId != null or record.productionStatus == #Submitted) {
+    if (record.printDocumentId != null or record.productionStatus == #Submitted) {
       return { ok = false; error = ?"This campaign's print file is already in production and can no longer be replaced" };
     };
     if (not allowedMimeTypes.any(func(m : Text) : Bool { m == mimeType })) { return { ok = false; error = ?"The print file must be a PDF, PNG or JPEG" } };
@@ -145,7 +146,7 @@ mixin (
   // ─── Dispatch ────────────────────────────────────────────────────────────
 
   private func dispatchResult(record : Types.CampaignRecord, ok : Bool, error : ?Text) : Types.DispatchResult {
-    { ok; error; documentId = record.c2mDocumentId; addressListId = record.c2mAddressListId; jobId = record.c2mJobId; productionStatus = ?record.productionStatus };
+    { ok; error; documentId = record.printDocumentId; addressListId = record.printAddressListId; jobId = record.printJobId; productionStatus = ?record.productionStatus };
   };
 
   private func markFailed(record : Types.CampaignRecord, msg : Text) : Types.DispatchResult {
@@ -156,12 +157,12 @@ mixin (
   };
 
   private func responseError(prefix : Text, resp : Http.Response) : Text {
-    if (resp.status == 0) { prefix # ": " # resp.body } else { prefix # " (HTTP " # resp.status.toText() # "): " # Click2Mail.parseDescription(resp.body) };
+    if (resp.status == 0) { prefix # ": " # resp.body } else { prefix # " (HTTP " # resp.status.toText() # "): " # Fulfilment.parseDescription(resp.body) };
   };
 
-  /// Uploads the document, submits the address list, creates and submits the Click2Mail job.
+  /// Uploads the document, submits the address list, creates and submits the print job.
   /// Safe to re-run: completed steps are skipped.
-  public shared ({ caller }) func dispatchClick2MailJob(campaignId : Text) : async Types.DispatchResult {
+  public shared ({ caller }) func dispatchPrintJob(campaignId : Text) : async Types.DispatchResult {
     let record = switch (campaigns.get(campaignId)) {
       case (?r) r;
       case null { return { ok = false; error = ?"Campaign not found"; documentId = null; addressListId = null; jobId = null; productionStatus = null } };
@@ -180,11 +181,11 @@ mixin (
     // Checked and taken in the same message as the checks above, before the
     // first await, so no interleaving call can get past it.
     if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Print fulfilment credentials not configured (Admin → Print fulfilment)") } };
+    let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Print fulfilment credentials not configured (Admin → Print fulfilment)") } };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
     let returnAddress = switch (record.returnAddress) { case (?r) r; case null { return dispatchResult(record, false, ?"A return address is required") } };
-    if (record.c2mDocumentId == null) {
+    if (record.printDocumentId == null) {
       switch (documentUploads.get(campaignId)) {
         case null { return dispatchResult(record, false, ?"Print document has not been uploaded") };
         case (?u) {
@@ -195,7 +196,7 @@ mixin (
       };
     };
 
-    // Charged only now, once the run will reach Click2Mail.
+    // Charged only now, once the run will reach the print partner.
     if (not AdminLib.isAdmin(adminKeysState, caller)) {
       switch (Limits.admit(dispatchRuns, [{ key = campaignId; limit = dispatchRunsPerDay; minGapNs = dispatchGapNs }], Time.now(), dispatchWindowNs)) {
         case (#ok) {};
@@ -226,7 +227,7 @@ mixin (
     };
   };
 
-  /// The four Click2Mail steps. Runs under `dispatchInFlight`; every return is
+  /// The four print steps. Runs under `dispatchInFlight`; every return is
   /// `markFailed` or the final `#Submitted` result.
   private func runDispatch(
     record : Types.CampaignRecord,
@@ -235,66 +236,66 @@ mixin (
     recipients : [Common.VerifiedAddress],
     returnAddress : Common.ReturnAddress,
   ) : async* Types.DispatchResult {
-    let base = Click2Mail.baseUrl(environmentFor(record));
+    let base = Fulfilment.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
     // A job from an earlier run may have been submitted even though that run
     // never heard back (a timed-out submit), so it is checked before step 4.
-    let jobFromEarlierRun = record.c2mJobId != null;
+    let jobFromEarlierRun = record.printJobId != null;
 
     // 1. Document
-    if (record.c2mDocumentId == null) {
+    if (record.printDocumentId == null) {
       let upload = switch (documentUploads.get(campaignId)) { case (?u) u; case null { return markFailed(record, "Print document has not been uploaded") } };
       let bytes = Blob.fromArray(upload.chunks.map(func(b : Blob) : [Nat8] = b.toArray()).flatten());
       let boundary = "----EZmailoutBoundary" # Time.now().toText();
       let fileName = if (upload.fileName == "") { campaignId # ".pdf" } else { upload.fileName };
-      let body = Click2Mail.buildDocumentMultipart(boundary, [
+      let body = Fulfilment.buildDocumentMultipart(boundary, [
         ("documentName", record.name # " (" # campaignId # ")"),
         ("documentClass", record.printSpec.documentClass),
-        ("documentFormat", Click2Mail.documentFormat(upload.mimeType)),
+        ("documentFormat", Fulfilment.documentFormat(upload.mimeType)),
       ], fileName, upload.mimeType, bytes);
-      let resp = await Http.postBlob(base # "/documents", Click2Mail.jsonHeaders(auth, "multipart/form-data; boundary=" # boundary), body, opts, transformFn);
-      if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Document upload failed", resp)) };
-      switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mDocumentId := ?id; ignore CampaignLib.moveProduction(record, #DocumentUploaded); record.updatedAt := Time.now(); documentUploads.remove(campaignId) };
+      let resp = await* Http.postBlob(base # "/documents", Fulfilment.jsonHeaders(auth, "multipart/form-data; boundary=" # boundary), body, opts, transformFn);
+      if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Document upload failed", resp)) };
+      switch (Fulfilment.parseId(resp.body)) {
+        case (?id) { record.printDocumentId := ?id; ignore CampaignLib.moveProduction(record, #DocumentUploaded); record.updatedAt := Time.now(); documentUploads.remove(campaignId) };
         case null { return markFailed(record, "Document upload returned no id") };
       };
     };
 
     // 2. Address list
-    if (record.c2mAddressListId == null) {
-      let xml = Click2Mail.buildAddressListXml(record.name # " " # campaignId, recipients);
-      let resp = await Http.postText(base # "/addressLists", Click2Mail.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-      if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed", resp)) };
-      switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mAddressListId := ?id; ignore CampaignLib.moveProduction(record, #AddressListReady); record.updatedAt := Time.now() };
+    if (record.printAddressListId == null) {
+      let xml = Fulfilment.buildAddressListXml(record.name # " " # campaignId, recipients);
+      let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
+      if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed", resp)) };
+      switch (Fulfilment.parseId(resp.body)) {
+        case (?id) { record.printAddressListId := ?id; ignore CampaignLib.moveProduction(record, #AddressListReady); record.updatedAt := Time.now() };
         case null { return markFailed(record, "Address list returned no id") };
       };
     };
 
     // 3. Job
-    if (record.c2mJobId == null) {
-      let documentId = switch (record.c2mDocumentId) { case (?d) d; case null "" };
-      let addressListId = switch (record.c2mAddressListId) { case (?a) a; case null "" };
-      let form = Click2Mail.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
-      let resp = await Http.postText(base # "/jobs", Click2Mail.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
-      if (not Http.isSuccess(resp) or Click2Mail.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed", resp)) };
-      switch (Click2Mail.parseId(resp.body)) {
-        case (?id) { record.c2mJobId := ?id; ignore CampaignLib.moveProduction(record, #JobCreated); record.updatedAt := Time.now() };
+    if (record.printJobId == null) {
+      let documentId = switch (record.printDocumentId) { case (?d) d; case null "" };
+      let addressListId = switch (record.printAddressListId) { case (?a) a; case null "" };
+      let form = Fulfilment.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
+      let resp = await* Http.postText(base # "/jobs", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
+      if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed", resp)) };
+      switch (Fulfilment.parseId(resp.body)) {
+        case (?id) { record.printJobId := ?id; ignore CampaignLib.moveProduction(record, #JobCreated); record.updatedAt := Time.now() };
         case null { return markFailed(record, "Job creation returned no id") };
       };
     };
 
     // 4. Submit, unless an earlier run's submit already went through.
-    let jobId = switch (record.c2mJobId) { case (?j) j; case null "" };
+    let jobId = switch (record.printJobId) { case (?j) j; case null "" };
     if (jobFromEarlierRun) {
-      let probe = await Http.get(base # "/jobs/" # jobId, Click2Mail.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-      if (Http.isSuccess(probe) and Click2Mail.jobSubmitted(probe.body) == ?true) {
+      let probe = await* Http.get(base # "/jobs/" # jobId, Fulfilment.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      if (Http.isSuccess(probe) and Fulfilment.jobSubmitted(probe.body) == ?true) {
         return markSubmitted(record, campaignId, jobId, "This print job was already submitted; it was not submitted again");
       };
     };
-    let submit = await Http.postText(base # "/jobs/" # jobId # "/submit", Click2Mail.jsonHeaders(auth, "application/x-www-form-urlencoded"), Click2Mail.formEncode([("billingType", "User Credit")]), opts, transformFn);
-    if (not Http.isSuccess(submit) or Click2Mail.reportedFailure(submit.body)) {
-      if (jobFromEarlierRun and Click2Mail.submittedAlready(submit.body)) {
+    let submit = await* Http.postText(base # "/jobs/" # jobId # "/submit", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), Fulfilment.formEncode([("billingType", "User Credit")]), opts, transformFn);
+    if (not Http.isSuccess(submit) or Fulfilment.reportedFailure(submit.body)) {
+      if (jobFromEarlierRun and Fulfilment.submittedAlready(submit.body)) {
         return markSubmitted(record, campaignId, jobId, "The print service reports this job was already submitted");
       };
       return markFailed(record, responseError("Job submission failed", submit));
@@ -314,13 +315,13 @@ mixin (
 
   // ─── Tracking ────────────────────────────────────────────────────────────
 
-  private func syncOne(record : Types.CampaignRecord) : async Types.SyncResult {
-    let jobId = switch (record.c2mJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
-    let auth = switch (AdminLib.click2mailAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Print fulfilment credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
-    let base = Click2Mail.baseUrl(environmentFor(record));
-    let headers = Click2Mail.jsonHeaders(auth, "application/json");
-    let jobResp = await Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-    let trackResp = await Http.get(base # "/jobs/" # jobId # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
+  private func syncOne(record : Types.CampaignRecord) : async* Types.SyncResult {
+    let jobId = switch (record.printJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
+    let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Print fulfilment credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
+    let base = Fulfilment.baseUrl(environmentFor(record));
+    let headers = Fulfilment.jsonHeaders(auth, "application/json");
+    let jobResp = await* Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+    let trackResp = await* Http.get(base # "/jobs/" # jobId # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
     if (not Http.isSuccess(jobResp) and not Http.isSuccess(trackResp)) {
       return { ok = false; error = ?responseError("Tracking lookup failed", jobResp); status = ?record.status; newEvents = 0; cached = false };
     };
@@ -328,13 +329,13 @@ mixin (
     if (Http.isSuccess(jobResp)) {
       switch (Json.getString(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
       switch (Json.xmlTag(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
-      statuses.add(Click2Mail.parseDescription(jobResp.body));
+      statuses.add(Fulfilment.parseDescription(jobResp.body));
     };
-    let pieceStatuses = if (Http.isSuccess(trackResp)) Click2Mail.parseTrackingStatuses(trackResp.body) else [];
+    let pieceStatuses = if (Http.isSuccess(trackResp)) Fulfilment.parseTrackingStatuses(trackResp.body) else [];
     let stage = if (pieceStatuses.size() > 0) {
-      Click2Mail.aggregateStage(pieceStatuses);
+      Fulfilment.aggregateStage(pieceStatuses);
     } else {
-      Click2Mail.aggregateStage(statuses.toArray());
+      Fulfilment.aggregateStage(statuses.toArray());
     };
     var newEvents = 0;
     switch (stage) {
@@ -349,19 +350,19 @@ mixin (
     { ok = true; error = null; status = ?record.status; newEvents; cached = false };
   };
 
-  /// Polls Click2Mail for IMb scan events and advances the timeline.
+  /// Polls the print partner for IMb scan events and advances the timeline.
   /// Owners get the stored state instead of a new lookup once tracking is
   /// finished (`CampaignLib.trackingFinished`) or within 6 hours of the last
   /// lookup; controllers and the admin can still force one.
-  public shared ({ caller }) func syncClick2MailTracking(campaignId : Text) : async Types.SyncResult {
+  public shared ({ caller }) func syncPrintTracking(campaignId : Text) : async Types.SyncResult {
     switch (campaigns.get(campaignId)) {
       case null { { ok = false; error = ?"Campaign not found"; status = null; newEvents = 0; cached = false } };
       case (?record) {
         if (not isOwner(record, caller)) { return { ok = false; error = ?"Unauthorized"; status = null; newEvents = 0; cached = false } };
-        // Only a call that will reach Click2Mail is rate-limited; the early
+        // Only a call that will reach the print partner is rate-limited; the early
         // returns in `syncOne` cost nothing. Checked and stamped before the
         // first await, so concurrent calls cannot both get through.
-        if (record.c2mJobId != null and AdminLib.hasClick2Mail(adminKeysState)) {
+        if (record.printJobId != null and AdminLib.hasFulfilment(adminKeysState)) {
           let now = Time.now();
           if (not AdminLib.isAdmin(adminKeysState, caller)) {
             if (CampaignLib.trackingFinished(record)) {
@@ -378,27 +379,35 @@ mixin (
           };
           syncCooldowns.add(campaignId, now);
         };
-        await syncOne(record);
+        await* syncOne(record);
       };
     };
   };
 
-  /// Syncs up to 10 in-flight campaigns and returns how many were synced.
+  /// Syncs up to 10 in-flight campaigns and returns how many were synced:
+  /// the ones whose last lookup is oldest (never looked up first), so with
+  /// more than 10 in flight every campaign is reached in turn instead of the
+  /// same first 10 by id on every run.
   /// Private: the 6-hourly timer in `main.mo` calls it directly, so it is not
   /// reachable as a canister method.
-  private func pollActiveCampaigns() : async Nat {
-    if (pollRunning or not AdminLib.hasClick2Mail(adminKeysState)) { return 0 };
-    let pending = List.empty<Types.CampaignRecord>();
+  private func pollActiveCampaigns() : async* Nat {
+    if (pollRunning or not AdminLib.hasFulfilment(adminKeysState)) { return 0 };
+    let inFlight = List.empty<(Int, Types.CampaignRecord)>();
     for ((_, r) in campaigns.entries()) {
-      if (r.c2mJobId != null and not CampaignLib.trackingFinished(r) and pending.size() < maxPollPerTick) { pending.add(r) };
+      if (r.printJobId != null and not CampaignLib.trackingFinished(r)) {
+        inFlight.add((switch (syncCooldowns.get(r.id)) { case (?t) t; case null 0 }, r));
+      };
     };
+    let pending = inFlight.toArray().sort(func(a : (Int, Types.CampaignRecord), b : (Int, Types.CampaignRecord)) : Order.Order = Int.compare(a.0, b.0));
     pollRunning := true;
     var synced = 0;
     try {
-      for (r in pending.values()) {
-        syncCooldowns.add(r.id, Time.now());
-        ignore await syncOne(r);
-        synced += 1;
+      for ((_, r) in pending.vals()) {
+        if (synced < maxPollPerTick) {
+          syncCooldowns.add(r.id, Time.now());
+          ignore await* syncOne(r);
+          synced += 1;
+        };
       };
     } finally {
       pollRunning := false;
@@ -411,16 +420,31 @@ mixin (
   /// endpoint would let anyone drain the canister.
   public shared ({ caller }) func pollActiveTracking() : async Nat {
     if (not AdminLib.isAdmin(adminKeysState, caller)) { Runtime.trap("Only a controller or the admin can trigger a tracking poll") };
-    await pollActiveCampaigns();
+    await* pollActiveCampaigns();
   };
 
   // ─── Webhooks ────────────────────────────────────────────────────────────
 
   private func findByJobId(jobId : Text) : ?Types.CampaignRecord {
     for ((_, r) in campaigns.entries()) {
-      if (r.c2mJobId == ?jobId) { return ?r };
+      if (r.printJobId == ?jobId) { return ?r };
     };
     null;
+  };
+
+  /// How far back a redelivered webhook is looked for. Redeliveries come
+  /// within hours, so the newest events are enough, and the check stays a
+  /// bounded scan however long the log grows.
+  transient let webhookDedupWindow : Nat = 5_000;
+
+  private func recentEventRecorded(campaignId : Text, providerEventId : Text) : Bool {
+    var seen = 0;
+    for (e in trackingEvents.reverseValues()) {
+      if (seen >= webhookDedupWindow) { return false };
+      if (e.campaignId == campaignId and e.providerEventId == providerEventId) { return true };
+      seen += 1;
+    };
+    false;
   };
 
   private func processWebhook(secret : Text, payload : Text) : Types.WebhookResult {
@@ -441,8 +465,8 @@ mixin (
         };
       };
     };
-    // Nothing at Click2Mail can report on a campaign it never received.
-    if (record.c2mJobId == null) { return { ok = false; error = ?"Campaign has not been sent to print"; campaignId = ?record.id; status = ?record.status } };
+    // Nothing at the print partner can report on a campaign it never received.
+    if (record.printJobId == null) { return { ok = false; error = ?"Campaign has not been sent to print"; campaignId = ?record.id; status = ?record.status } };
     var eventText = "";
     for (k in ["event", "status", "scanEvent", "scanDescription", "eventType"].vals()) {
       if (eventText == "") {
@@ -453,13 +477,22 @@ mixin (
       case (?s) s;
       case null { return { ok = false; error = ?("Unrecognized event: " # eventText); campaignId = ?record.id; status = ?record.status } };
     };
-    let providerEventId = Limits.clip(
-      switch (Json.getString(payload, "eventId")) {
-        case (?e) e;
-        case null { switch (Json.getString(payload, "id")) { case (?e) e; case null ("webhook:" # Time.now().toText()) } };
-      },
-      Inputs.maxEventIdChars,
-    );
+    let givenEventId : ?Text = switch (Json.getString(payload, "eventId")) {
+      case (?e) ?Limits.clip(e, Inputs.maxEventIdChars);
+      case null { switch (Json.getString(payload, "id")) { case (?e) ?Limits.clip(e, Inputs.maxEventIdChars); case null null } };
+    };
+    // Webhook senders retry until they get a 2xx, so one event can arrive
+    // several times: an event id already recorded for this campaign among the
+    // recent events is acknowledged without being recorded again.
+    switch (givenEventId) {
+      case (?eid) {
+        if (recentEventRecorded(record.id, eid)) {
+          return { ok = true; error = null; campaignId = ?record.id; status = ?record.status };
+        };
+      };
+      case null {};
+    };
+    let providerEventId = switch (givenEventId) { case (?e) e; case null ("webhook:" # Time.now().toText()) };
     let ts : Int = switch (Json.getNumber(payload, "timestamp")) {
       case (?t) { if (t > 100_000_000_000_000) t else if (t > 100_000_000_000) t * 1_000_000 else if (t > 0) t * 1_000_000_000 else Time.now() };
       case null Time.now();
@@ -486,7 +519,7 @@ mixin (
     if (req.method == "GET" and (p == "/health" or p == "/")) {
       return Http.textResponse(200, "application/json", "{\"service\":\"ezmailout\",\"status\":\"ok\"}");
     };
-    if (req.method == "POST" and p == AdminLib.webhookPath) {
+    if (req.method == "POST" and AdminLib.isWebhookPath(p)) {
       return { status_code = 200; headers = []; body = Blob.empty(); upgrade = ?true };
     };
     Http.textResponse(404, "application/json", "{\"error\":\"not found\"}");
@@ -494,7 +527,7 @@ mixin (
 
   public shared func http_request_update(req : Http.HttpRequest) : async Http.HttpResponse {
     let p = Http.path(req.url);
-    if (req.method != "POST" or p != AdminLib.webhookPath) {
+    if (req.method != "POST" or not AdminLib.isWebhookPath(p)) {
       return Http.textResponse(404, "application/json", "{\"error\":\"not found\"}");
     };
     let secret = switch (Http.headerValue(req, "x-ezmailout-secret")) {

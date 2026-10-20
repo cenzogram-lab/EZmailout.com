@@ -35,7 +35,7 @@ import { create } from "zustand";
 const DEFAULT_LAYOUT = "6x9";
 
 /**
- * Snapshot of the chosen Click2Mail document class, taken when the format is
+ * Snapshot of the chosen print document class, taken when the format is
  * picked so the rest of the wizard and the invoice work from one source.
  */
 export interface SelectedSpec {

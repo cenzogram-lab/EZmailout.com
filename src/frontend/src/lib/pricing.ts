@@ -1,7 +1,7 @@
 import { MailClass, ProductType } from "@/backend";
 
 /**
- * Click2Mail catalog mail classes. `StandardMarketing` is the catalog name for
+ * Print catalog mail classes. `StandardMarketing` is the catalog name for
  * USPS Marketing Mail; `catalogMailClassToWire` maps it onto the canister's
  * `MailClass.MarketingMail`.
  */
@@ -11,18 +11,18 @@ export type CatalogMailClass =
   | "Priority"
   | "PriorityExpress";
 
-/** One Click2Mail document class: its trim size, cost, retail price and print options. */
+/** One print document class: its trim size, cost, retail price and print options. */
 export interface ProductSpec {
   /** Layout-variant key persisted on campaign records. */
   id: string;
   /** Catalog category id (see `lib/catalog.ts`). */
   category: string;
   name: string;
-  /** Exact Click2Mail product name sent as `documentClass`. */
+  /** Exact print product name sent as `documentClass`. */
   documentClass: string;
   widthInches: number;
   heightInches: number;
-  /** Click2Mail wholesale cost per piece, in dollars. */
+  /** print wholesale cost per piece, in dollars. */
   cogsBase: number;
   /** EZmailout member price per piece, in dollars. */
   retailPrice: number;
@@ -31,7 +31,7 @@ export interface ProductSpec {
   /**
    * True when the piece carries the USPS address block and IMb on the artwork
    * the customer designs, so the studio reserves the lower-right clear zone.
-   * False for envelope-inserted formats, where Click2Mail generates the
+   * False for envelope-inserted formats, where the print partner generates the
    * address page or envelope instead.
    */
   hasAddressBlock: boolean;
@@ -117,7 +117,7 @@ function spec(input: SpecInput): ProductSpec {
 }
 
 /**
- * The authoritative Click2Mail price matrix: 14 product families, 29 document
+ * The authoritative print price matrix: 14 product families, 29 document
  * classes. Costs and retail prices are the operator's rates and are final —
  * the spread is deliberate retail positioning (standardised letter pricing,
  * carrier cost absorbed on Priority Express to stay competitive, higher margin
@@ -613,7 +613,7 @@ export const COLOR_BW = "Black and White";
 export const PRINT_SHOP_MULTIPLIER = 1.3;
 
 /**
- * Layout variants that shipped before the Click2Mail catalog audit. Campaign
+ * Layout variants that shipped before the print catalog audit. Campaign
  * records and templates created with these keys resolve to the current row
  * (`src/backend/lib/pricing.mo` keeps the same table).
  */
@@ -626,7 +626,7 @@ export const LEGACY_LAYOUT_VARIANTS: Record<string, string> = {
 };
 
 /**
- * Click2Mail renamed these product strings; stored campaign records created
+ * The print partner renamed these product strings; stored campaign records created
  * before the rename keep the old value in their `printSpec`. Kept for auditing
  * that history only — live selections always send the current
  * `ProductSpec.documentClass`.
@@ -679,7 +679,7 @@ export function marginCents(row: ProductSpec): number {
 
 // ─── Product capabilities ───────────────────────────────────────────────────
 
-/** Letter-style products Click2Mail prints in black and white on request. */
+/** Letter-style products the print partner prints in black and white on request. */
 export function supportsBlackAndWhite(productType: ProductType): boolean {
   return (
     productType === ProductType.Letter ||

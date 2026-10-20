@@ -15,8 +15,22 @@ module {
     createdAt : Int;
   };
 
+  /// Where a ticket's notification email stands in the outbox.
+  public type EmailState = { #Queued; #Sent; #Failed };
+
+  /// One ticket's notification email (stable outbox, keyed by ticket id).
+  /// Queued entries are sent by `drainEmailOutbox` when `nextAttemptAt` has
+  /// passed; a failed send that may succeed later is retried with backoff.
+  public type EmailDelivery = {
+    ticketId : Text;
+    var state : EmailState;
+    var attempts : Nat;
+    var nextAttemptAt : Int;
+    var lastStatus : Text;
+  };
+
   /// A ticket as the admin inbox shows it, with how its email notification
-  /// went. `emailStatus` is null for tickets filed before the last upgrade.
+  /// went. `emailStatus` is null for tickets filed before the outbox existed.
   public type SupportTicketView = {
     id : Text;
     userId : ?Text;

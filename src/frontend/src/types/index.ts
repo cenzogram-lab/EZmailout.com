@@ -13,7 +13,7 @@ export {
   AiImageSize,
   AudienceType,
   CampaignStatus,
-  Click2MailEnvironment,
+  FulfilmentEnvironment,
   CreditPack,
   MailClass,
   PaymentPurpose,

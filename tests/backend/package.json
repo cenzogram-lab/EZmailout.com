@@ -1,0 +1,13 @@
+{
+  "name": "ezmailout-backend-tests",
+  "private": true,
+  "type": "module",
+  "description": "PocketIC integration tests for the backend canister: keys, HTTPS outcalls, queues and upgrades.",
+  "scripts": {
+    "test": "node audit.mjs"
+  },
+  "devDependencies": {
+    "@dfinity/pic": "0.25.0",
+    "@icp-sdk/core": "^6.0.0"
+  }
+}

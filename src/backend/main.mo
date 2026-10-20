@@ -1,5 +1,5 @@
 /// EZmailout backend canister: direct mail campaigns fulfilled through the
-/// Click2Mail REST API, AI credit ledger, Stripe billing and referral rewards.
+/// print partner's REST API, AI credit ledger, Stripe billing and referral rewards.
 import Types "types/campaign";
 import Common "types/common";
 import Account "types/account";
@@ -35,6 +35,7 @@ actor {
   let referralRewards : List.List<Account.ReferralReward>;
   let documentUploads : Map.Map<Text, Types.DocumentUpload>;
   let supportTickets : List.List<Support.SupportTicket>;
+  let supportEmailOutbox : Map.Map<Text, Support.EmailDelivery>;
 
   /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   public query func transform(input : Http.TransformationInput) : async Http.TransformationOutput {
@@ -48,12 +49,18 @@ actor {
   include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, trackingEvents, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
   include ProductionApi(campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
-  include SupportApi(supportTickets, adminKeysState, transform);
+  include SupportApi(supportTickets, supportEmailOutbox, adminKeysState, transform);
   include AuthApi();
 
-  // Non-blocking tracking poll every 6 hours (Click2Mail IMb scans → timeline).
+  // Non-blocking tracking poll every 6 hours (print IMb scans → timeline).
   // Calls the mixin's private poll directly, so the job has no public entry point.
-  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore await pollActiveCampaigns() });
+  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore await* pollActiveCampaigns() });
+
+  // Support-ticket emails: sends whatever is due in the stable outbox (new
+  // tickets, retries after a failure, sends held back by the hourly cap).
+  // Timers do not survive an upgrade, so this one also picks up anything that
+  // was queued when the canister was upgraded.
+  ignore Timer.recurringTimer<system>(#seconds 60, func() : async () { ignore await* drainEmailOutbox() });
 
   // Unpaid drafts expire 14 days after their last activity; swept on the same
   // 6-hour cadence, on its own timer so a slow poll never delays it.

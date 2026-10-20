@@ -91,7 +91,7 @@ if [[ -n "$BACKEND" ]]; then
   echo "── Backend (${RAW})"
   health=$(curl -sS -w '\n%{http_code}' "${RAW}/health") || true
   [[ "${health##*$'\n'}" == "200" && "$health" == *ezmailout* ]] && pass "/health → 200" || fail "/health → ${health##*$'\n'}"
-  hook=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"probe":true}' "${RAW}/webhooks/click2mail") || true
+  hook=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"probe":true}' "${RAW}/webhooks/fulfilment") || true
   [[ "$hook" == "401" ]] && pass "webhook without secret → 401 (fail-closed)" || fail "webhook without secret → HTTP $hook (expected 401)"
 fi
 

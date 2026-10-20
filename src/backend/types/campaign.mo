@@ -2,7 +2,7 @@
 import Common "common";
 
 module {
-  /// Click2Mail product families. `#SelfMailer` is kept for records created
+  /// Print product families. `#SelfMailer` is kept for records created
   /// before flyers and brochures became their own categories; `#SnapPack` is
   /// the Secure Mailer family.
   public type ProductType = {
@@ -56,7 +56,7 @@ module {
     #PriorityExpress;
   };
 
-  /// Physical print options bound to a Click2Mail job.
+  /// Physical print options bound to a print job.
   public type PrintSpec = {
     documentClass : Text;
     layout : Text;
@@ -94,7 +94,7 @@ module {
     #Draft;
     #AwaitingPayment;
     #ReadyToDispatch;
-    /// A Click2Mail dispatch is running; set before its first outcall.
+    /// A print dispatch is running; set before its first outcall.
     #Processing;
     #DocumentUploaded;
     #AddressListReady;
@@ -186,9 +186,9 @@ module {
     var paymentStatus : PaymentStatus;
     var paymentIntentId : ?Text;
     var productionStatus : ProductionStatus;
-    var c2mDocumentId : ?Text;
-    var c2mAddressListId : ?Text;
-    var c2mJobId : ?Text;
+    var printDocumentId : ?Text;
+    var printAddressListId : ?Text;
+    var printJobId : ?Text;
     var lastError : ?Text;
     var qrDestinationUrl : ?Text;
     var qrScanCount : Nat;
@@ -215,18 +215,18 @@ module {
     paymentStatus : PaymentStatus;
     paymentIntentId : ?Text;
     productionStatus : ProductionStatus;
-    c2mDocumentId : ?Text;
-    c2mAddressListId : ?Text;
-    c2mJobId : ?Text;
+    printDocumentId : ?Text;
+    printAddressListId : ?Text;
+    printJobId : ?Text;
     lastError : ?Text;
     qrDestinationUrl : ?Text;
     qrScanCount : Nat;
     returnAddress : ?Common.ReturnAddress;
     sourcePresetId : ?Text;
-    /// Paid through sandbox checkout; its Click2Mail job goes to Staging.
+    /// Paid through sandbox checkout; its print job goes to Staging.
     testMode : Bool;
     /// When this unpaid draft is removed (`CampaignLib.draftTtlNs` after its
-    /// last activity); null for anything paid or sent to Click2Mail.
+    /// last activity); null for anything paid or sent to the print partner.
     draftExpiresAt : ?Int;
   };
 
@@ -307,7 +307,7 @@ module {
     status : ?CampaignStatus;
     newEvents : Nat;
     /// True when the call was inside the sync cooldown: `status` is the stored
-    /// state and no Click2Mail lookup was made.
+    /// state and no print lookup was made.
     cached : Bool;
   };
 

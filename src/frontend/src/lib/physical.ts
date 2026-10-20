@@ -2,9 +2,9 @@ import { getPricingRow } from "@/lib/pricing";
 import { type Orientation, rotateRect } from "@/lib/printSpec";
 
 /**
- * How each Click2Mail layout behaves as a physical piece of mail.
+ * How each print layout behaves as a physical piece of mail.
  *
- * Keyed off `ProductSpec.layout` — the production layout Click2Mail actually
+ * Keyed off `ProductSpec.layout` — the production layout the print partner actually
  * runs — rather than the marketing category, so a format only picks up creases,
  * perforations or a spine if the press really puts them there. Everything is
  * expressed as a fraction of the finished trim or in inches from its top-left
@@ -54,7 +54,7 @@ export interface PhysicalTraits {
 
 /**
  * Where the #10 double-window cuts fall on the outward panel of a letter
- * C-folded into thirds. Click2Mail prints the address itself for these
+ * C-folded into thirds. The print partner prints the address itself for these
  * formats, so these are alignment guides for the designer, not a print spec.
  */
 const RETURN_WINDOW = {

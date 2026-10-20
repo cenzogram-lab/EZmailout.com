@@ -167,7 +167,7 @@ mixin (
   };
 
   /// Removes every unpaid draft whose `draftExpiry` has passed and returns
-  /// how many. Orders (paid, waived, or sent to Click2Mail) never expire.
+  /// how many. Orders (paid, waived, or sent to the print partner) never expire.
   /// Runs from the 6-hourly timer in `main.mo`, and from `createCampaign`
   /// before a draft cap refuses.
   private func pruneExpiredDrafts(now : Int) : Nat {
@@ -232,7 +232,7 @@ mixin (
     };
     switch (refusal) { case (?msg) { return fail(msg) }; case null {} };
     let recipients = input.recipients.map(AddressLib.sanitizeVerified);
-    // Billing and Click2Mail dispatch both key off the stored list, so a campaign
+    // Billing and print dispatch both key off the stored list, so a campaign
     // is priced for exactly the addresses supplied — never an estimated count.
     let count : Nat = recipients.size();
     if (count == 0) { return fail("Add at least one verified recipient address before creating a campaign") };
@@ -331,7 +331,7 @@ mixin (
   };
 
   /// Admin-only manual status override. Follows `CampaignLib.deliveryMoveAllowed`
-  /// like every other delivery update: forward only, and only once Click2Mail
+  /// like every other delivery update: forward only, and only once the print partner
   /// has the job. Returns whether the campaign moved.
   public shared ({ caller }) func updateCampaignStatus(id : Text, status : Types.CampaignStatus, providerEventId : Text, timestamp : Int) : async Bool {
     if (not AdminLib.isAdmin(adminKeysState, caller)) { return false };
@@ -368,14 +368,14 @@ mixin (
   /// Deletes one of the caller's unpaid drafts with its recipients and staged
   /// print file. Refused once the campaign is paid, while a checkout opened
   /// in the last 24 hours could still complete, or after its document reached
-  /// Click2Mail.
+  /// the print partner.
   public shared ({ caller }) func deleteCampaignDraft(campaignId : Text) : async Common.ApiResult {
     let record = switch (campaigns.get(campaignId)) {
       case (?r) { if (canAccess(r, caller)) r else { return { ok = false; error = ?CampaignLib.accessDenied } } };
       case null { return { ok = false; error = ?CampaignLib.accessDenied } };
     };
     if (record.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } };
-    if (record.c2mDocumentId != null) { return { ok = false; error = ?"This draft's document is already in production" } };
+    if (record.printDocumentId != null) { return { ok = false; error = ?"This draft's document is already in production" } };
     let now = Time.now();
     for ((_, p) in payments.entries()) {
       if (p.reference == ?campaignId and p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {

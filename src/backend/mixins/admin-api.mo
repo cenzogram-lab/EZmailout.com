@@ -1,4 +1,4 @@
-/// Admin credential management (Click2Mail, Stripe, Resend, OpenAI, webhook secret).
+/// Admin credential management (print fulfilment, Stripe, Resend, OpenAI, webhook secret).
 import Common "../types/common";
 import AdminLib "../lib/admin";
 import Inputs "../lib/inputs";
@@ -21,7 +21,7 @@ mixin (adminKeysState : Common.AdminState) {
     };
     // Validated before anything is written, so a bad value saves nothing.
     // Every key is sent with its outcalls, so each one is bounded.
-    let values = [keys.click2mailUsername, keys.click2mailPassword, keys.stripeSecretKey, keys.stripePublishableKey, keys.resendKey, keys.openAiKey, keys.webhookSecret, keys.outcallProxyUrl, keys.supportEmailAddress];
+    let values = [keys.fulfilmentUsername, keys.fulfilmentPassword, keys.stripeSecretKey, keys.stripePublishableKey, keys.resendKey, keys.openAiKey, keys.webhookSecret, keys.outcallProxyUrl, keys.supportEmailAddress];
     for (v in values.vals()) {
       switch (v) {
         case (?t) {
@@ -56,16 +56,16 @@ mixin (adminKeysState : Common.AdminState) {
         };
       };
     };
-    adminKeysState.click2mailUsername := applyText(adminKeysState.click2mailUsername, keys.click2mailUsername);
-    adminKeysState.click2mailPassword := applyText(adminKeysState.click2mailPassword, keys.click2mailPassword);
+    adminKeysState.fulfilmentUsername := applyText(adminKeysState.fulfilmentUsername, keys.fulfilmentUsername);
+    adminKeysState.fulfilmentPassword := applyText(adminKeysState.fulfilmentPassword, keys.fulfilmentPassword);
     adminKeysState.stripeSecretKey := applyText(adminKeysState.stripeSecretKey, keys.stripeSecretKey);
     adminKeysState.stripePublishableKey := applyText(adminKeysState.stripePublishableKey, keys.stripePublishableKey);
     adminKeysState.resendKey := applyText(adminKeysState.resendKey, keys.resendKey);
     adminKeysState.openAiKey := applyText(adminKeysState.openAiKey, keys.openAiKey);
     adminKeysState.webhookSecret := applyText(adminKeysState.webhookSecret, keys.webhookSecret);
     adminKeysState.outcallProxyUrl := applyText(adminKeysState.outcallProxyUrl, keys.outcallProxyUrl);
-    switch (keys.click2mailEnvironment) {
-      case (?env) { adminKeysState.click2mailEnvironment := env };
+    switch (keys.fulfilmentEnvironment) {
+      case (?env) { adminKeysState.fulfilmentEnvironment := env };
       case null {};
     };
     switch (keys.sandboxCheckout) {
@@ -91,9 +91,9 @@ mixin (adminKeysState : Common.AdminState) {
     let isAdmin = AdminLib.isAdmin(adminKeysState, caller);
     let visible = isAdmin;
     {
-      click2mailUsername = if (visible) adminKeysState.click2mailUsername else null;
-      click2mailPasswordMasked = if (visible) AdminLib.maskKey(adminKeysState.click2mailPassword) else null;
-      click2mailEnvironment = adminKeysState.click2mailEnvironment;
+      fulfilmentUsername = if (visible) adminKeysState.fulfilmentUsername else null;
+      fulfilmentPasswordMasked = if (visible) AdminLib.maskKey(adminKeysState.fulfilmentPassword) else null;
+      fulfilmentEnvironment = adminKeysState.fulfilmentEnvironment;
       stripeSecretKeyMasked = if (visible) AdminLib.maskKey(adminKeysState.stripeSecretKey) else null;
       stripePublishableKey = adminKeysState.stripePublishableKey;
       resendKeyMasked = if (visible) AdminLib.maskKey(adminKeysState.resendKey) else null;

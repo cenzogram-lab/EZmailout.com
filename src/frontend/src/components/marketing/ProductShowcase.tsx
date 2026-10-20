@@ -54,7 +54,7 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
   );
 }
 
-/** Landing-page catalog: the 14 Click2Mail product families as an icon grid. */
+/** Landing-page catalog: the 14 print product families as an icon grid. */
 export function ProductShowcase() {
   return (
     <div className="space-y-6">

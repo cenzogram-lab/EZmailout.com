@@ -115,7 +115,7 @@ const STATUS_RANK: Record<CampaignStatus, number> = {
 /**
  * Mirrors `CampaignLib.deliveryMoveAllowed`: the timeline only moves forward
  * (a return overrides a delivery, never the reverse), and only once
- * Click2Mail has accepted the job.
+ * The print partner has accepted the job.
  */
 export function deliveryMoveAllowed(
   production: ProductionStatus,

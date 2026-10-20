@@ -214,7 +214,7 @@ export function useVerifyAddresses() {
   return useMutation<VerificationBatchResult, Error, AddressInput[]>({
     mutationFn: async (addresses) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.executeClick2MailVerification(addresses);
+      return actor.verifyAddresses(addresses);
     },
   });
 }
@@ -503,13 +503,13 @@ export function useDocumentUploadStatus(campaignId: string | null) {
   });
 }
 
-export function useDispatchClick2MailJob() {
+export function useDispatchPrintJob() {
   const queryClient = useQueryClient();
   const { actor } = useBackendActor();
   return useMutation<DispatchResult, Error, string>({
     mutationFn: async (campaignId) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.dispatchClick2MailJob(campaignId);
+      return actor.dispatchPrintJob(campaignId);
     },
     onSettled: (_, __, campaignId) => {
       queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
@@ -538,13 +538,13 @@ export function useDeleteCampaignDraft() {
   });
 }
 
-export function useSyncClick2MailTracking() {
+export function useSyncPrintTracking() {
   const queryClient = useQueryClient();
   const { actor } = useBackendActor();
   return useMutation<SyncResult, Error, string>({
     mutationFn: async (campaignId) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.syncClick2MailTracking(campaignId);
+      return actor.syncPrintTracking(campaignId);
     },
     onSettled: (_, __, campaignId) => {
       queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });

@@ -37,7 +37,7 @@ export interface PreflightInput {
   preflight: PreflightRaster;
   audienceType: WizardAudienceType | null;
   recipientCount: number;
-  /** Verified addresses actually stored with the campaign and sent to Click2Mail. */
+  /** Verified addresses actually stored with the campaign and sent to the print partner. */
   verifiedCount: number;
   isAuthenticated: boolean;
   returnAddress: ReturnAddress | null;
@@ -205,7 +205,7 @@ export function computePreflight(input: PreflightInput): PreflightReport {
         },
   );
 
-  // 5. Recipients — Click2Mail mails the stored address list, so an estimate
+  // 5. Recipients — the print partner mails the stored address list, so an estimate
   // alone can never be dispatched and must never reach checkout.
   if (input.verifiedCount > 0) {
     items.push({

@@ -1,5 +1,5 @@
 /// Stripe PaymentIntents request builders and parsers (form-encoded API).
-import Click2Mail "click2mail";
+import Fulfilment "fulfilment";
 import Json "json";
 import Nat "mo:core/Nat";
 
@@ -25,7 +25,7 @@ module {
     reference : Text,
     userId : Text,
   ) : Text {
-    Click2Mail.formEncode([
+    Fulfilment.formEncode([
       ("amount", amountCents.toText()),
       ("currency", "usd"),
       ("automatic_payment_methods[enabled]", "true"),

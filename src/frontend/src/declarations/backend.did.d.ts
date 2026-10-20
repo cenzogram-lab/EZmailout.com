@@ -32,10 +32,10 @@ export interface AddressVerificationResult {
 export interface AdminKeysInput {
   'webhookSecret' : [] | [string],
   'resendKey' : [] | [string],
-  'click2mailUsername' : [] | [string],
-  'click2mailEnvironment' : [] | [Click2MailEnvironment],
+  'fulfilmentUsername' : [] | [string],
+  'fulfilmentEnvironment' : [] | [FulfilmentEnvironment],
   'sandboxCheckout' : [] | [boolean],
-  'click2mailPassword' : [] | [string],
+  'fulfilmentPassword' : [] | [string],
   'stripeSecretKey' : [] | [string],
   'supportEmailAddress' : [] | [string],
   'openAiKey' : [] | [string],
@@ -46,8 +46,8 @@ export interface AdminKeysView {
   'openAiKeyMasked' : [] | [string],
   'callerIsController' : boolean,
   'adminPrincipal' : [] | [string],
-  'click2mailUsername' : [] | [string],
-  'click2mailEnvironment' : Click2MailEnvironment,
+  'fulfilmentUsername' : [] | [string],
+  'fulfilmentEnvironment' : FulfilmentEnvironment,
   'sandboxCheckout' : boolean,
   'supportEmailAddress' : [] | [string],
   'callerIsAdmin' : boolean,
@@ -56,7 +56,7 @@ export interface AdminKeysView {
   'stripeSecretKeyMasked' : [] | [string],
   'outcallProxyUrl' : [] | [string],
   'resendKeyMasked' : [] | [string],
-  'click2mailPasswordMasked' : [] | [string],
+  'fulfilmentPasswordMasked' : [] | [string],
   'webhookPath' : string,
 }
 export interface AiCopyInput {
@@ -113,7 +113,7 @@ export interface CampaignRecordShared {
   'status' : CampaignStatus,
   'paymentStatus' : PaymentStatus,
   'unitPriceCents' : bigint,
-  'c2mAddressListId' : [] | [string],
+  'printAddressListId' : [] | [string],
   'returnAddress' : [] | [ReturnAddress],
   'ownerId' : string,
   'draftExpiresAt' : [] | [bigint],
@@ -121,14 +121,14 @@ export interface CampaignRecordShared {
   'name' : string,
   'createdAt' : bigint,
   'testMode' : boolean,
-  'c2mDocumentId' : [] | [string],
+  'printDocumentId' : [] | [string],
   'updatedAt' : bigint,
   'canvasState' : [] | [CanvasState],
   'productionStatus' : ProductionStatus,
   'qrScanCount' : bigint,
   'qrDestinationUrl' : [] | [string],
   'designTemplateId' : [] | [string],
-  'c2mJobId' : [] | [string],
+  'printJobId' : [] | [string],
   'lastError' : [] | [string],
   'printSpec' : PrintSpec,
   'recipientCount' : bigint,
@@ -174,7 +174,7 @@ export interface CanvasState {
   'back' : CanvasSide,
   'widthInches' : number,
 }
-export type Click2MailEnvironment = { 'Production' : null } |
+export type FulfilmentEnvironment = { 'Production' : null } |
   { 'Staging' : null };
 export interface ConfirmPaymentResult {
   'ok' : boolean,
@@ -351,11 +351,11 @@ export type ProductionStatus = { 'ReadyToDispatch' : null } |
   { 'Processing' : null } |
   { 'JobCreated' : null };
 export interface PublicConfig {
-  'click2mailEnvironment' : Click2MailEnvironment,
+  'fulfilmentEnvironment' : FulfilmentEnvironment,
   'openAiConfigured' : boolean,
   'trackingBaseUrl' : string,
   'stripeConfigured' : boolean,
-  'click2mailConfigured' : boolean,
+  'fulfilmentConfigured' : boolean,
   'sandboxCheckout' : boolean,
   'resendConfigured' : boolean,
   'stripePublishableKey' : [] | [string],
@@ -560,9 +560,9 @@ export interface _SERVICE {
   'deductAiCredits' : ActorMethod<[bigint, string], CreditResult>,
   'deleteCampaignDraft' : ActorMethod<[string], ApiResult>,
   'deletePreset' : ActorMethod<[string], ApiResult>,
-  'dispatchClick2MailJob' : ActorMethod<[string], DispatchResult>,
+  'dispatchPrintJob' : ActorMethod<[string], DispatchResult>,
   'ensureAccount' : ActorMethod<[[] | [string], [] | [string]], AccountResult>,
-  'executeClick2MailVerification' : ActorMethod<
+  'verifyAddresses' : ActorMethod<
     [Array<AddressInput>],
     VerificationBatchResult
   >,
@@ -607,7 +607,7 @@ export interface _SERVICE {
     [SupportTicketInput],
     SupportTicketResult
   >,
-  'syncClick2MailTracking' : ActorMethod<[string], SyncResult>,
+  'syncPrintTracking' : ActorMethod<[string], SyncResult>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateAccountEmail' : ActorMethod<[string], ApiResult>,
   'updateCampaignStatus' : ActorMethod<
