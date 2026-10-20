@@ -210,7 +210,7 @@ function StampyChatbotPanel() {
   }
 
   const status = live
-    ? { label: "Caffeine AI Active", dot: "bg-emerald-500" }
+    ? { label: "AI answers on", dot: "bg-emerald-500" }
     : !isAuthenticated
       ? { label: "Quick answers · sign in for AI", dot: "bg-amber-400" }
       : { label: "Quick answers · AI not configured", dot: "bg-amber-400" };

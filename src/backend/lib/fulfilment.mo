@@ -152,9 +152,20 @@ module {
     };
   };
 
+  /// The print partner's own name, taken out of text it sent back (error
+  /// descriptions, outcall failures naming its host) before that text is
+  /// stored or shown, so customers never see who prints for EZmailout.
+  public func scrub(t : Text) : Text {
+    var out = t;
+    for (name in ["click2mail", "Click2Mail", "Click2mail", "CLICK2MAIL", "click2Mail"].vals()) {
+      out := out.replace(#text name, "print-partner");
+    };
+    out;
+  };
+
   /// Description/status text of a print response (for error messages).
   public func parseDescription(body : Text) : Text {
-    switch (Json.getString(body, "description")) {
+    scrub(switch (Json.getString(body, "description")) {
       case (?d) d;
       case null {
         switch (Json.xmlTag(body, "description")) {
@@ -165,7 +176,7 @@ module {
           };
         };
       };
-    };
+    });
   };
 
   /// Whether the API reported success (status 0 / description "Success" / HTTP 2xx handled by caller).

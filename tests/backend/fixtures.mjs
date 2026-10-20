@@ -43,7 +43,7 @@ export function fakePrintPartner(plan = {}) {
   const fail = (step) => plan[step] && plan[step]-- > 0;
   return [
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/documents"), () => fail("documents") ? { status: 500, body: { description: "doc storage down" } } : { body: { id: `doc${++ids}`, status: 0 } }],
-    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => fail("addressLists") ? { reject: "connection reset" } : { body: { id: `list${++ids}`, status: 0 } }],
+    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => fail("addressLists") ? { reject: "connection reset" } : fail("addressListsRefused") ? { status: 402, body: { status: 9, description: "Click2Mail account balance too low" } } : { body: { id: `list${++ids}`, status: 0 } }],
     [(r) => isPrint(r) && r.method === "GET" && /\/addressLists\/[^/]+$/.test(r.url), (r) => fail("addressListDetail") ? { status: 503, body: { description: "busy" } } : { body: (plan.detail ?? []) }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/jobs"), () => fail("jobs") ? { status: 400, body: { description: "bad job" } } : { body: { id: `job${++ids}`, status: 0 } }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/submit"), (r) => {
@@ -64,6 +64,7 @@ export function fakeStripe(state = {}) {
   let n = 0;
   const intents = state.intents ?? new Map();
   return [
+    [(r) => r.url === "https://api.stripe.com/v1/payment_intents" && r.method === "POST" && state.failCreate, () => ({ status: 401, body: { error: { message: "Invalid API Key provided: sk_live_****3XYZ" } } })],
     [(r) => r.url === "https://api.stripe.com/v1/payment_intents" && r.method === "POST", (r) => {
       const amount = Number(new URLSearchParams(r.body).get("amount"));
       const id = `pi_${++n}`;
@@ -80,7 +81,7 @@ export function fakeStripe(state = {}) {
 }
 
 export const fakeOpenAi = (opts = {}) => [
-  [(r) => r.url.includes("/images/generations"), () => opts.imageFail ? { status: 500, body: { error: { message: "image model overloaded" } } } : { body: { data: [{ url: "https://oaidalle.example/img.png", revised_prompt: "a bakery" }] } }],
+  [(r) => r.url.includes("/images/generations"), () => opts.imageFail ? { status: 401, body: { error: { message: "Incorrect API key provided: sk-proj-****_789. You can find your API key at https://platform.openai.com/account/api-keys." } } } : { body: { data: [{ url: "https://oaidalle.example/img.png", revised_prompt: "a bakery" }] } }],
   [(r) => r.url.includes("/chat/completions"), (r) => opts.chatFail ? { reject: "timeout" } : { body: { choices: [{ message: { content: r.body.includes("json_object") ? JSON.stringify({ headlines: ["Fresh bread"], bullets: ["Baked daily"], ctas: ["Visit today"] }) : "Stampy says hi" } }] } }],
 ];
 

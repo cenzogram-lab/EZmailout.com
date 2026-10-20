@@ -157,7 +157,7 @@ mixin (
   };
 
   private func responseError(prefix : Text, resp : Http.Response) : Text {
-    if (resp.status == 0) { prefix # ": " # resp.body } else { prefix # " (HTTP " # resp.status.toText() # "): " # Fulfilment.parseDescription(resp.body) };
+    if (resp.status == 0) { prefix # ": " # Fulfilment.scrub(resp.body) } else { prefix # " (HTTP " # resp.status.toText() # "): " # Fulfilment.parseDescription(resp.body) };
   };
 
   /// Uploads the document, submits the address list, creates and submits the print job.
@@ -470,7 +470,7 @@ mixin (
     var eventText = "";
     for (k in ["event", "status", "scanEvent", "scanDescription", "eventType"].vals()) {
       if (eventText == "") {
-        switch (Json.getString(payload, k)) { case (?v) { eventText := Limits.clip(AddressLib.sanitizeText(v), Inputs.maxEventTextChars) }; case null {} };
+        switch (Json.getString(payload, k)) { case (?v) { eventText := Limits.clip(Fulfilment.scrub(AddressLib.sanitizeText(v)), Inputs.maxEventTextChars) }; case null {} };
       };
     };
     let status = switch (CampaignLib.statusFromText(eventText)) {

@@ -121,7 +121,7 @@ function PaymentForm({
       )}
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Lock className="size-3.5" /> Secured by Stripe
+          <Lock className="size-3.5" /> Secure, encrypted checkout
         </span>
         <div className="flex gap-2">
           {onCancel && (
@@ -248,8 +248,7 @@ export function StripeCheckout({
       if (!intent.publishableKey) {
         setPhase({
           kind: "error",
-          message:
-            "Stripe publishable key is not configured (Admin → Stripe Publishable Key).",
+          message: "Checkout isn't set up yet; please try again later.",
         });
         return;
       }

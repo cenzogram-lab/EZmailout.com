@@ -203,7 +203,7 @@ mixin (
     // partner's Staging. Credit packs and memberships would hand out real value
     // (OpenAI spend, monthly allowances), so they need live checkout.
     if (adminKeysState.sandboxCheckout and purpose != #CampaignOrder) {
-      return intentFail("Test-mode checkout covers campaign orders only; credit packs and memberships need live Stripe checkout");
+      return intentFail("Test-mode checkout covers campaign orders only; credit packs and memberships need live checkout");
     };
     let seq = state.nextPaymentId;
     state.nextPaymentId += 1;
@@ -213,7 +213,7 @@ mixin (
       payments.add(id, sandboxRecord);
       return { ok = true; error = null; paymentIntentId = ?id; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = true };
     };
-    let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return intentFail("Stripe secret key not configured (Admin → Stripe Secret Key)") } };
+    let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return intentFail("Checkout isn't set up yet; please try again later") } };
     // Charged only now, once the call will reach Stripe.
     switch (stripeRefusal(Limits.admit(stripeWindows, [
       { key = "intent:*"; limit = intentsPerHourGlobal; minGapNs = 0 },
@@ -226,10 +226,10 @@ mixin (
     let body = Stripe.createPaymentIntentBody(amount, description, purposeText(purpose), refText, a.id);
     let resp = await* Http.postText(Stripe.apiBase # "/payment_intents", Stripe.headers(secret, ?idem), body, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
     if (not Http.isSuccess(resp)) {
-      return intentFail(if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body));
+      return intentFail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body), "Checkout is unavailable right now; please try again in a few minutes"));
     };
     switch (Stripe.parseIntent(resp.body)) {
-      case null { intentFail("Unexpected Stripe response") };
+      case null { intentFail("Unexpected response from the payment processor; please try again") };
       case (?intent) {
         let stripeRecord : Account.PaymentRecord = { paymentIntentId = intent.id; userId = a.id; purpose; amountCents = amount; reference = ?refText; creditPack = pack; var state = #Created; createdAt = Time.now(); var confirmedAt = null; sandbox = false };
         payments.add(intent.id, stripeRecord);
@@ -294,7 +294,7 @@ mixin (
               c.updatedAt := Time.now();
               CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.confirmed", record.paymentIntentId, #System, ?"Payment confirmed; ready for print dispatch");
             } else {
-              CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.duplicate", record.paymentIntentId, #System, ?"A second payment for an already paid campaign; refund it in Stripe");
+              CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.duplicate", record.paymentIntentId, #System, ?"A second payment for an already paid campaign; flagged for a refund");
             };
           };
           case null {};
@@ -332,7 +332,7 @@ mixin (
       if (not adminKeysState.sandboxCheckout) { return fail("Test-mode checkout is off; this test payment can no longer be confirmed") };
       if (record.purpose != #CampaignOrder) { return fail("Test-mode checkout covers campaign orders only") };
     } else {
-      let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Stripe secret key not configured") } };
+      let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Payments aren't set up yet; please try again later") } };
       // Every live lookup is a replicated outcall: budgeted per payment (a
       // short gap), per identity and for the canister, before the await.
       switch (stripeRefusal(Limits.admit(stripeWindows, [
@@ -353,11 +353,13 @@ mixin (
         transformContext = Http.jsonSummary(Stripe.intentSummaryKeys);
       };
       let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # record.paymentIntentId, Stripe.headers(secret, null), opts, transformFn);
-      if (not Http.isSuccess(resp)) { return fail(if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body)) };
+      if (not Http.isSuccess(resp)) {
+        return fail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body), "We couldn't reach the payment processor to confirm this payment; please try again shortly"));
+      };
       switch (Stripe.parseIntent(resp.body)) {
-        case null { return fail("Unexpected Stripe response") };
+        case null { return fail("Unexpected response from the payment processor; please try again") };
         case (?intent) {
-          if (intent.id != record.paymentIntentId) { return fail("Stripe returned a different payment") };
+          if (intent.id != record.paymentIntentId) { return fail("The payment processor returned a different payment") };
           if (intent.status != "succeeded") { return fail("Payment not completed yet (status: " # intent.status # ")") };
           if (intent.amount != record.amountCents or intent.currency != "usd") { return fail("Payment amount mismatch") };
         };

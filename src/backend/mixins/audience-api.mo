@@ -183,7 +183,7 @@ mixin (
     let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
     let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
     if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) {
-      let msg = if (resp.status == 0) resp.body else "The address list was rejected: " # Fulfilment.parseDescription(resp.body);
+      let msg = if (resp.status == 0) Fulfilment.scrub(resp.body) else "The address list was rejected: " # Fulfilment.parseDescription(resp.body);
       markAll(msg);
       return batch(false, ?msg, results.toArray(), null);
     };

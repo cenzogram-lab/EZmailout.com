@@ -271,7 +271,9 @@ mixin (
       func(t : Support.StampyTurn) : Support.StampyTurn = { role = t.role; content = clipSupport(t.content, maxTurnChars) }
     );
     let resp = await* Http.postText(OpenAi.chatUrl, OpenAi.headers(apiKey), Stampy.requestBody(recent), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
-    if (not Http.isSuccess(resp)) { return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body)) };
+    if (not Http.isSuccess(resp)) {
+      return fail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), "Stampy's AI answers are unavailable right now; please try again shortly"));
+    };
     switch (Stampy.parseReply(resp.body)) {
       case (?reply) { { ok = true; error = null; reply = ?clipSupport(reply, maxReplyChars) } };
       case null { fail("Stampy could not read the AI response") };

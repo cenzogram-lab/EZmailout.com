@@ -41,7 +41,7 @@ mixin (
     if (caller.isAnonymous()) { return fail("Sign in to use the AI Studio", null) };
     let cleanPrompt = clip(prompt, maxPromptChars);
     if (cleanPrompt == "") { return fail("Describe the image you want", null) };
-    let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("OpenAI API key not configured (Admin → OpenAI API Key)", null) } };
+    let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("The AI studio isn't set up yet; please try again later", null) } };
     let a = aiAccount(caller);
     if (a.creditBalance < cost) { return fail("Insufficient credits: this generation costs " # debug_show(cost) # " credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_image", null);
@@ -53,13 +53,13 @@ mixin (
       if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
         settled := true;
-        return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
+        return fail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), "The AI service is unavailable right now, and your credits were refunded. Please try again shortly."), ?balance);
       };
       switch (OpenAi.parseImage(resp.body)) {
         case null {
           let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
           settled := true;
-          fail("OpenAI returned no image", ?balance);
+          fail("No image came back, and your credits were refunded. Please try again.", ?balance);
         };
         case (?img) {
           settled := true;
@@ -86,7 +86,7 @@ mixin (
       tone = switch (input.tone) { case (?t) ?clip(t, 60); case null null };
     };
     if (clean.businessName == "" and clean.industry == "") { return fail("Tell us the business name or industry", null) };
-    let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("OpenAI API key not configured (Admin → OpenAI API Key)", null) } };
+    let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("The AI copywriter isn't set up yet; please try again later", null) } };
     let a = aiAccount(caller);
     if (a.creditBalance < cost) { return fail("Insufficient credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_copy", null);
@@ -96,7 +96,7 @@ mixin (
       if (not Http.isSuccess(resp)) {
         let balance = AccountLib.applyCredits(creditLedger, state, a, cost, "ai_refund", null);
         settled := true;
-        return fail(if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), ?balance);
+        return fail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else OpenAi.errorMessage(resp.body), "The AI service is unavailable right now, and your credits were refunded. Please try again shortly."), ?balance);
       };
       switch (OpenAi.parseCopy(resp.body)) {
         case null {

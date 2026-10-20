@@ -557,6 +557,23 @@ export function useSyncPrintTracking() {
 
 // ─── Admin ──────────────────────────────────────────────────────────────────
 
+/**
+ * Whether the signed-in caller is the admin (or a controller). Gates the
+ * Admin link in the header, so customers never see it; the page itself
+ * checks again and shows provider settings to the admin only.
+ */
+export function useIsAdmin(principal: string | null): boolean {
+  const { actor, ready } = useBackendActor();
+  const query = useQuery<boolean>({
+    queryKey: ["isAdmin", principal],
+    queryFn: async () =>
+      actor ? (await actor.getAdminKeys()).callerIsAdmin : false,
+    enabled: ready && !!principal,
+    staleTime: 5 * 60_000,
+  });
+  return query.data === true;
+}
+
 export function useAdminKeys() {
   const { actor, ready } = useBackendActor();
   return useQuery<AdminKeysView | null>({

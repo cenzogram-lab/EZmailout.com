@@ -146,6 +146,11 @@ const sections = {
     const r2 = await call(env.pic, down, env.deferred(user).verifyAddresses([rawAddr(1)]));
     check(!r2.ok && r2.validCount === 0n, "a failed address-list upload marks nothing valid (fail-closed)", r2);
 
+    const refusedList = upstream(fakePrintPartner({ addressListsRefused: 1 }));
+    await env.pic.advanceTime(20_000); await env.pic.tick();
+    const rr = await call(env.pic, refusedList, env.deferred(user).verifyAddresses([rawAddr(1)]));
+    check(!rr.ok && !/click2mail/i.test(ser(rr)), "the print partner's name is scrubbed from its error text", rr.error);
+
     const detailDown = upstream(fakePrintPartner({ addressListDetail: 1 }));
     await env.pic.advanceTime(20_000); await env.pic.tick();
     const r3 = await call(env.pic, detailDown, env.deferred(user).verifyAddresses([rawAddr(1), rawAddr(2)]));
@@ -275,6 +280,13 @@ const sections = {
     const someoneElse = await call(env.pic, up, env.deferred(ident(102)).confirmPayment(intent.paymentIntentId[0]));
     check(!someoneElse.ok, "another account cannot confirm someone's payment");
 
+    state.failCreate = true;
+    const refused = await call(env.pic, up, env.deferred(ident(105)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+    check(!refused.ok && !/stripe|sk_|api key/i.test(refused.error[0] ?? ""), "a customer's checkout error names no provider and quotes no key", refused.error);
+    const adminRefused = await call(env.pic, up, env.deferred(env.controller).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+    check((adminRefused.error[0] ?? "").includes("Invalid API Key"), "the admin sees Stripe's own error", adminRefused.error);
+    state.failCreate = false;
+
     // Abuse: one identity hammering checkout / confirmation.
     const spammer = ident(103);
     const before = up.log.length;
@@ -308,6 +320,14 @@ const sections = {
     const b0 = await bal();
     const bad = await call(env.pic, failing, env.deferred(user).generateAiImage("x", { Square1024: null }));
     check(!bad.ok && (await bal()) === b0, "a failed image generation is refunded in full", { bad: bad.error, after: await bal(), b0 });
+    const shown = bad.error[0] ?? "";
+    check(!/openai|sk-|api key/i.test(shown), "a customer's AI error names no provider and quotes no key", shown);
+    // Stampy costs no credits, so it shows both audiences the same failure.
+    const keyError = upstream([[(r) => r.url.includes("/chat/completions"), () => ({ status: 401, body: { error: { message: "Incorrect API key provided: sk-proj-****_789." } } })]]);
+    const customerChat = await call(env.pic, keyError, env.deferred(user).askStampy([{ role: { User: null }, content: "hi" }]));
+    const adminChat = await call(env.pic, keyError, env.deferred(env.controller).askStampy([{ role: { User: null }, content: "hi" }]));
+    check(!/openai|sk-|api key/i.test(customerChat.error[0] ?? "") && (adminChat.error[0] ?? "").includes("Incorrect API key"),
+      "Stampy errors: the customer gets a neutral message, the admin the provider's own", { customer: customerChat.error, admin: adminChat.error });
     const badCopy = await call(env.pic, failing, env.deferred(user).generateAiCopy({ businessName: "Bakery", industry: "Food", offer: "10% off", callToAction: "Visit", tone: [] }));
     check(!badCopy.ok && (await bal()) === b0, "a timed-out copy request is refunded in full");
     // Concurrent generations cannot overspend: 30 at once with a small balance.
@@ -372,6 +392,9 @@ const sections = {
     const events = await env.as(user).getTrackingEvents(cid);
     const dup = events.filter((e) => e.providerEventId === "evt-1").length;
     check(dup === 1, "a redelivered webhook (same event id) is recorded once", dup);
+    await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Out for delivery (Click2Mail scan)", eventId: "evt-vendor" });
+    const vendorEvent = (await env.as(user).getTrackingEvents(cid)).find((e) => e.providerEventId === "evt-vendor");
+    check(vendorEvent && !/click2mail/i.test(vendorEvent.detail[0] ?? ""), "webhook scan text naming the print partner is scrubbed on the timeline", vendorEvent?.detail);
     r = await hook(SECRETS.webhookSecret, { jobId: "nope", event: "Delivered" });
     check(r.status_code === 400, "an unknown job is refused");
     r = await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Delivered", eventId: "evt-2" }, false, "/webhooks/click2mail");

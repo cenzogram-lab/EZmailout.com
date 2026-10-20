@@ -19,6 +19,14 @@ module {
 
   public func callerText(caller : Principal) : Text { caller.toText() };
 
+  /// What a failed provider call tells its caller. Provider messages name the
+  /// provider and can quote part of a key ("Invalid API key provided:
+  /// sk_live_****1234"), so only the admin and controllers get the detail;
+  /// everyone else gets `generic`, which names no provider.
+  public func providerError(state : Common.AdminState, caller : Principal, detail : Text, generic : Text) : Text {
+    if (isAdmin(state, caller)) detail else generic;
+  };
+
   public func isAdmin(state : Common.AdminState, caller : Principal) : Bool {
     if (caller.isController()) { return true };
     switch (state.adminPrincipal) {

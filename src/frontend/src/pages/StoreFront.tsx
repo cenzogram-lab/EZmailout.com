@@ -362,7 +362,7 @@ const STUDIO_FEATURES: {
   {
     icon: Sparkles,
     title: "AI Studio",
-    body: `DALL·E 3 backgrounds and GPT-4o mini copy, paid in credits (${MONTHLY_ALLOWANCE} included monthly).`,
+    body: `AI backgrounds and AI copywriting, paid in credits (${MONTHLY_ALLOWANCE} included monthly).`,
     bullets: [
       `Backgrounds from ${AI_COSTS.squareImage} credits`,
       `Copywriter at ${AI_COSTS.copy} credit per round`,
@@ -569,16 +569,16 @@ function AiStudioTeaser() {
             Backgrounds and copy, generated inside the canvas
           </h3>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
-            Describe the vibe and drop a DALL·E 3 background straight onto your
-            postcard. Ask GPT-4o mini for headlines, bullets and calls to action
-            tuned to your offer. Every member gets {MONTHLY_ALLOWANCE} credits a
-            month — one credit is one cent.
+            Describe the vibe and drop an AI background straight onto your
+            postcard. Ask the AI copywriter for headlines, bullets and calls to
+            action tuned to your offer. Every member gets {MONTHLY_ALLOWANCE}{" "}
+            credits a month — one credit is one cent.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <ImageIcon className="size-4 text-primary" />
-                DALL·E 3 backgrounds
+                AI backgrounds
               </div>
               <div className="mt-1 text-xs text-primary-foreground/70">
                 From {AI_COSTS.squareImage} credits (square) ·{" "}
@@ -588,7 +588,7 @@ function AiStudioTeaser() {
             <div className="rounded-xl border border-white/15 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Type className="size-4 text-primary" />
-                GPT-4o mini copy
+                AI copywriting
               </div>
               <div className="mt-1 text-xs text-primary-foreground/70">
                 {AI_COSTS.copy} credit per generation — headlines, bullets and

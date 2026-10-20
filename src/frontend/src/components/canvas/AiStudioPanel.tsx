@@ -202,8 +202,8 @@ export function AiStudioPanel() {
     <div className="space-y-4" data-ocid="canvas.ai_studio">
       {config.data && !config.data.openAiConfigured && (
         <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs">
-          The OpenAI API key isn't configured yet (Admin → OpenAI API Key).
-          Generations will fail until it is set.
+          The AI studio isn't set up yet, so generations are not available right
+          now.
         </p>
       )}
       <div className="space-y-1.5">

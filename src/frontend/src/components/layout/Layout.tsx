@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Toaster } from "@/components/ui/sonner";
 import { useAccountSync } from "@/hooks/use-account";
+import { useIsAdmin } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { useAccountStore } from "@/store/account";
@@ -244,6 +245,10 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, principal } = useAccountSync();
+  // The Admin link is for the founder only; customers never see it.
+  const isAdmin = useIsAdmin(isAuthenticated ? principal : null);
+  const navItems = NAV.filter((item) => item.to !== "/admin" || isAdmin);
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 bg-background pt-[env(safe-area-inset-top,0px)]">
@@ -268,7 +273,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className="hidden flex-1 items-center justify-center gap-2 lg:flex"
           >
             <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-card p-1 shadow-soft">
-              {NAV.map((item) => (
+              {navItems.map((item) => (
                 <NavLink key={item.to} {...item} />
               ))}
             </div>
@@ -308,7 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             data-ocid="nav.mobile.menu"
           >
             <div className="flex flex-col gap-1">
-              {NAV.map((item) => (
+              {navItems.map((item) => (
                 <MenuLink
                   key={item.to}
                   {...item}

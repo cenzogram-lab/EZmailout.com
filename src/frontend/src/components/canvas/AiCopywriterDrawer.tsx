@@ -165,8 +165,8 @@ export function AiCopywriterDrawer({
             <PenLine className="size-5 text-primary" /> AI Copywriter
           </SheetTitle>
           <SheetDescription>
-            GPT-4o mini writes 3 converting headlines, benefit bullets and CTA
-            offers for your mail piece. 1 credit per prompt.
+            Our AI copywriter writes 3 converting headlines, benefit bullets and
+            CTA offers for your mail piece. 1 credit per prompt.
           </SheetDescription>
         </SheetHeader>
         {!isAuthenticated ? (

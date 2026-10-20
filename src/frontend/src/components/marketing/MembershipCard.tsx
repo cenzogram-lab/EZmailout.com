@@ -135,9 +135,9 @@ export function MembershipCard() {
             ))}
           </ul>
           <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-            Membership billing and per-piece charges are handled through Stripe.
-            Sign in with Internet Identity to activate — no card is needed until
-            you launch.
+            Membership billing and per-piece charges go through our secure
+            payment processor. Sign in with Internet Identity to activate — no
+            card is needed until you launch.
           </p>
         </div>
       </div>
