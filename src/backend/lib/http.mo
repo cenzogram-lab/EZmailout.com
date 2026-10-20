@@ -151,19 +151,6 @@ module {
     null;
   };
 
-  /// Extracts a query-string parameter from a request URL.
-  public func queryParam(url : Text, name : Text) : ?Text {
-    let parts = url.split(#char '?').toArray();
-    if (parts.size() < 2) { return null };
-    for (pair in parts[1].split(#char '&')) {
-      let kv = pair.split(#char '=').toArray();
-      if (kv.size() >= 1 and kv[0] == name) {
-        return ?(if (kv.size() >= 2) kv[1] else "");
-      };
-    };
-    null;
-  };
-
   /// Path portion of a request URL (without query string).
   public func path(url : Text) : Text {
     let parts = url.split(#char '?').toArray();

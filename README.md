@@ -86,6 +86,7 @@ webhook secret, optional https outcall proxy, sandbox checkout toggle. Keys are 
 ever shown masked (last 4 characters) to the admin and controllers.
 
 Webhook: `POST https://<backend-canister>.icp0.io/webhooks/fulfilment` with header `x-ezmailout-secret`
+(header only: a `?secret=` in the URL is refused, since URLs end up in proxy and gateway logs)
 (the original `/webhooks/click2mail` path is still accepted for webhooks configured before the rename).
 Payload JSON: `{ "campaignId" | "jobId", "event" | "status", "eventId"?, "timestamp"? }`.
 

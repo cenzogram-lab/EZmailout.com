@@ -365,6 +365,9 @@ const sections = {
     check(r.status_code === 401, "a wrong webhook secret is refused with 401", r.status_code);
     r = await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Out for delivery", eventId: "evt-1" });
     check(r.status_code === 200, "a signed webhook is accepted", Buffer.from(r.body).toString());
+    r = await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Delivered", eventId: "evt-url" }, true);
+    check(r.status_code === 401, "the right secret in the URL (?secret=) is refused: header only", r.status_code);
+    check(!(await env.as(user).getTrackingEvents(cid)).some((e) => e.providerEventId === "evt-url"), "a refused webhook records nothing");
     for (let i = 0; i < 5; i++) await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Out for delivery", eventId: "evt-1" });
     const events = await env.as(user).getTrackingEvents(cid);
     const dup = events.filter((e) => e.providerEventId === "evt-1").length;

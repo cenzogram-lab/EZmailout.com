@@ -530,10 +530,10 @@ mixin (
     if (req.method != "POST" or not AdminLib.isWebhookPath(p)) {
       return Http.textResponse(404, "application/json", "{\"error\":\"not found\"}");
     };
-    let secret = switch (Http.headerValue(req, "x-ezmailout-secret")) {
-      case (?s) s;
-      case null { switch (Http.queryParam(req.url, "secret")) { case (?s) s; case null "" } };
-    };
+    // Header only: a secret in the URL (`?secret=`) would be written to the
+    // access logs of every proxy and gateway on the way, so it is ignored and
+    // such a request is refused like one without a secret.
+    let secret = switch (Http.headerValue(req, "x-ezmailout-secret")) { case (?s) s; case null "" };
     let payload = switch (req.body.decodeUtf8()) { case (?t) t; case null "" };
     let result = processWebhook(secret, payload);
     let body = "{\"ok\":" # (if (result.ok) "true" else "false") # ",\"error\":" # (switch (result.error) { case (?e) Json.str(e); case null "null" }) # ",\"campaignId\":" # (switch (result.campaignId) { case (?c) Json.str(c); case null "null" }) # "}";
