@@ -347,9 +347,37 @@ html {
 }
 
 /* Height of the sticky header's bar (without the notch inset). Sticky bars
- * below it pin at this offset, and anchor jumps stop below it. */
+ * below it pin at this offset, and anchor jumps stop below it. It grows
+ * smoothly with the viewport (72 px on phones and tablets, about 80 px on a
+ * 1440 px laptop, 84 px from about 1800 px) so the peeking Stampy can grow
+ * with it without his cap being clipped.
+ *
+ * --peek-w is the peeking Stampy's width: 64 px on phones, growing with the
+ * viewport to 112 px on large desktops (about 85 px on a 1024 px iPad or
+ * laptop, 103 px at 1440 px). Everything in the peek is sized from it, so
+ * there are no breakpoint jumps. At rest he shows 0.6 × --peek-w of his head
+ * and 0.69 × on hover, always less than --header-h. */
 :root {
-  --header-h: 4.5rem;
+  --header-h: clamp(4.5rem, 3.9rem + 1.2vw, 5.25rem);
+  --peek-w: clamp(4rem, 2.5rem + 4.4vw, 7rem);
+}
+.stampy-peek-button {
+  width: var(--peek-w);
+}
+.stampy-peek-mark {
+  width: calc(var(--peek-w) * 0.87);
+  height: calc(var(--peek-w) * 0.767);
+}
+.stampy-peek-paw {
+  width: calc(var(--peek-w) * 0.31);
+  height: auto;
+  bottom: 0;
+}
+.stampy-peek-paw[data-side="left"] {
+  left: calc(var(--peek-w) * 0.03);
+}
+.stampy-peek-paw[data-side="right"] {
+  right: calc(var(--peek-w) * 0.03);
 }
 html {
   scroll-padding-top: calc(

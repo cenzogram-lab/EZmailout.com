@@ -72,7 +72,7 @@ function NavLink({
       title={label}
       data-ocid={ocidFor(label)}
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] font-semibold transition-smooth xl:px-4",
+        "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-[15px] font-semibold transition-smooth xl:px-4",
         isActive
           ? "bg-primary/10 text-primary-ink"
           : "text-muted-foreground hover:bg-primary/5 hover:text-foreground",
@@ -146,7 +146,7 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         size="sm"
         onClick={login}
         disabled={isLoggingIn}
-        className="size-10 gap-1.5 rounded-full bg-primary p-0 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 sm:h-10 sm:w-auto sm:px-4"
+        className="size-10 shrink-0 gap-1.5 whitespace-nowrap rounded-full bg-primary p-0 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 sm:h-10 sm:w-auto sm:px-4"
         aria-label="Sign in"
         data-ocid="nav.sign_in.button"
       >
@@ -172,7 +172,7 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         to="/dashboard"
         onClick={onNavigate}
-        className="hidden h-10 items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 text-sm font-semibold shadow-soft sm:inline-flex"
+        className="hidden h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 bg-card px-4 text-sm font-semibold shadow-soft sm:inline-flex"
         data-ocid="nav.credits.link"
         title={principal ?? undefined}
       >
@@ -252,17 +252,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 bg-background pt-[env(safe-area-inset-top,0px)]">
-        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
+        {/* From 2xl the bar may use up to 100rem: the logo and the peeking Stampy keep growing with the viewport, and the page content (max-w-7xl) stays centred under it. */}
+        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8 2xl:max-w-[100rem]">
           <Link
             to="/"
             data-ocid="nav.logo.link"
             className="flex shrink-0 items-center gap-2.5"
           >
             {/* Stampy is the brand mark: his head in an indigo-ringed disc. */}
-            <span className="flex size-10 items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30 sm:size-11">
-              <StampyMark className="h-9 w-[42px] sm:h-10 sm:w-[46px]" />
+            <span className="flex size-[clamp(2.5rem,2.1rem+0.9vw,3.25rem)] items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30">
+              <StampyMark className="h-[88%] w-[104%]" />
             </span>
-            <span className="font-display text-lg font-extrabold tracking-tight text-primary sm:text-[22px]">
+            <span className="font-display text-[clamp(1.125rem,0.95rem+0.55vw,1.5rem)] font-extrabold whitespace-nowrap tracking-tight text-primary">
               {BRAND.name}
               <span className="text-[#e5402a]">.</span>
             </span>
@@ -279,7 +280,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <Link to="/wizard" data-ocid="nav.launch_campaign.link">
               <Button
-                className="h-10 gap-2 rounded-full px-5 text-[15px] font-semibold"
+                className="h-10 shrink-0 gap-2 whitespace-nowrap rounded-full px-5 text-[15px] font-semibold"
                 variant="default"
               >
                 <Send className="size-[18px]" strokeWidth={2.2} />
