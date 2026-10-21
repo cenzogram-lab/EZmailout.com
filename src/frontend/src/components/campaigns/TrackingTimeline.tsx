@@ -86,7 +86,7 @@ function StageMarker({
           "animate-pipeline-pulse border-primary bg-primary text-primary-foreground ring-4 ring-primary/20",
         state === "pending" && "border-border bg-card text-muted-foreground",
         state === "exception" &&
-          "border-amber-500 bg-amber-500 text-white ring-4 ring-amber-500/20",
+          "border-amber-700 bg-amber-700 text-white ring-4 ring-amber-500/20",
       )}
       aria-current={state === "current" ? "step" : undefined}
     >

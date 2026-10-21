@@ -348,7 +348,7 @@ export function PreflightChecklist({ report }: { report: PreflightReport }) {
           ) : report.warnings > 0 ? (
             <Badge
               variant="outline"
-              className="border-primary/40 bg-primary/10 text-primary"
+              className="border-primary/40 bg-primary/10 text-primary-ink"
             >
               {report.warnings} warning{report.warnings === 1 ? "" : "s"}
             </Badge>

@@ -241,7 +241,7 @@ export function PresetEditor({
           {dirty && (
             <Badge
               variant="outline"
-              className="border-primary/40 bg-primary/10 text-primary"
+              className="border-primary/40 bg-primary/10 text-primary-ink"
             >
               Unsaved changes
             </Badge>

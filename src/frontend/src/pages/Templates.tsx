@@ -15,7 +15,6 @@ type Category = (typeof CATEGORIES)[number];
 function TemplateCard({ template }: { template: DesignTemplate }) {
   const navigate = useNavigate();
   const store = useWizardStore();
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleUseTemplate = () => {
     store.setProduct({
@@ -31,8 +30,6 @@ function TemplateCard({ template }: { template: DesignTemplate }) {
   return (
     <div
       className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-smooth hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       data-ocid={`template.card.${template.id}`}
     >
       {/* Visual preview */}
@@ -91,14 +88,10 @@ function TemplateCard({ template }: { template: DesignTemplate }) {
           {template.sizeLabel}
         </div>
 
-        {/* Hover overlay with CTA */}
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-          style={{
-            opacity: isHovered ? 1 : 0,
-            pointerEvents: isHovered ? "auto" : "none",
-          }}
-        >
+        {/* Hover overlay with CTA, for pointers that hover. It sits above the
+            preview text (z-20 over its z-10) and also opens for keyboard focus;
+            touch screens of any width get the button under the card instead. */}
+        <div className="absolute inset-0 z-20 hidden items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:hover)]:flex">
           <Button
             onClick={handleUseTemplate}
             data-ocid={`template.use.${template.id}.button`}
@@ -134,12 +127,12 @@ function TemplateCard({ template }: { template: DesignTemplate }) {
             {template.sizeLabel}
           </span>
         </div>
-        {/* Always-visible CTA for touch devices */}
+        {/* Always-visible CTA where nothing can hover (phones and tablets) */}
         <Button
           type="button"
           variant="outline"
           size="sm"
-          className="mt-3 w-full gap-1.5 sm:hidden"
+          className="mt-3 w-full gap-1.5 [@media(hover:hover)]:hidden"
           onClick={handleUseTemplate}
           data-ocid={`template.use_mobile.${template.id}.button`}
         >

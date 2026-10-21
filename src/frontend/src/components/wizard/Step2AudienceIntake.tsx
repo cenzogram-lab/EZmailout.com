@@ -2,7 +2,6 @@ import type { AudiencePresetShared, VerifiedAddress } from "@/backend";
 import { CsvUploader } from "@/components/audience/CsvUploader";
 import { PresetEditor } from "@/components/audience/PresetEditor";
 import { PresetPicker } from "@/components/audience/PresetPicker";
-import { RadiusMap } from "@/components/audience/RadiusMap";
 import { StampyStep2Audience, StampyTip } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +15,56 @@ import {
   ArrowRight,
   Bookmark,
   FileSpreadsheet,
+  Loader2,
   MapPin,
 } from "lucide-react";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { toast } from "sonner";
+
+// The map library is the largest dependency in the app and only this tab uses
+// it, so the radius map ships in its own chunk, fetched when Step 2 opens.
+// If that fetch fails (offline, or a deploy replaced the chunk) the tab says
+// so and the CSV and saved-audience tabs keep working.
+const RadiusMap = lazy(() =>
+  import("@/components/audience/RadiusMap")
+    .then((m) => ({ default: m.RadiusMap }))
+    .catch(() => ({ default: RadiusMapUnavailable })),
+);
+
+function RadiusMapLoading() {
+  return (
+    <div
+      className="flex h-[436px] items-center justify-center rounded-xl bg-muted/60 text-sm text-muted-foreground"
+      role="status"
+      data-ocid="audience.map.loading"
+    >
+      <Loader2 className="mr-2 size-4 animate-spin" /> Loading the map…
+    </div>
+  );
+}
+
+function RadiusMapUnavailable() {
+  return (
+    <div
+      className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl bg-muted/60 px-4 py-8 text-center"
+      role="alert"
+      data-ocid="audience.map.unavailable"
+    >
+      <p className="max-w-sm text-sm text-muted-foreground">
+        The map didn't load. Check your connection and reload, or use CSV Upload
+        or Saved Presets instead.
+      </p>
+      <Button
+        variant="outline"
+        className="rounded-full"
+        onClick={() => window.location.reload()}
+        data-ocid="audience.map.reload.button"
+      >
+        Reload page
+      </Button>
+    </div>
+  );
+}
 
 const TAB_VALUES: WizardAudienceType[] = ["map", "csv", "preset"];
 
@@ -137,10 +182,12 @@ export function Step2AudienceIntake() {
         <TabsContent value="map" className="pt-3">
           <Card className="bg-card">
             <CardContent className="py-5">
-              <RadiusMap
-                initialTarget={geoTarget}
-                onUseAudience={applyMapAudience}
-              />
+              <Suspense fallback={<RadiusMapLoading />}>
+                <RadiusMap
+                  initialTarget={geoTarget}
+                  onUseAudience={applyMapAudience}
+                />
+              </Suspense>
             </CardContent>
           </Card>
         </TabsContent>

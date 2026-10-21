@@ -76,6 +76,9 @@ export function useAccountSync() {
 
   return {
     account,
+    // False until the canister's account record arrives: show a placeholder,
+    // not the store's default 0 credits.
+    accountReady: account !== null,
     creditBalance,
     subscriptionActive,
     isAuthenticated,

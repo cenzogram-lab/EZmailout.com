@@ -60,7 +60,7 @@ function Section({
     >
       <div className="mb-10 text-center">
         {eyebrow && (
-          <div className="mb-3 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+          <div className="mb-3 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-ink">
             {eyebrow}
           </div>
         )}
@@ -561,36 +561,36 @@ function AiStudioTeaser() {
         <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/25 blur-3xl" />
         <div className="absolute -bottom-24 -left-16 size-64 rounded-full bg-white/10 blur-3xl" />
         <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
-            <Sparkles className="size-3.5 text-primary" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <Sparkles className="size-3.5 text-primary-foreground" />
             AI Studio
           </div>
           <h3 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
             Backgrounds and copy, generated inside the canvas
           </h3>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/80">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground">
             Describe the vibe and drop an AI background straight onto your
             postcard. Ask the AI copywriter for headlines, bullets and calls to
             action tuned to your offer. Every member gets {MONTHLY_ALLOWANCE}{" "}
             credits a month — one credit is one cent.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+            <div className="rounded-xl border border-white/15 bg-black/10 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <ImageIcon className="size-4 text-primary" />
+                <ImageIcon className="size-4 text-primary-foreground" />
                 AI backgrounds
               </div>
-              <div className="mt-1 text-xs text-primary-foreground/70">
+              <div className="mt-1 text-xs text-primary-foreground">
                 From {AI_COSTS.squareImage} credits (square) ·{" "}
                 {AI_COSTS.wideImage} wide · {AI_COSTS.hdImage} HD
               </div>
             </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+            <div className="rounded-xl border border-white/15 bg-black/10 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Type className="size-4 text-primary" />
+                <Type className="size-4 text-primary-foreground" />
                 AI copywriting
               </div>
-              <div className="mt-1 text-xs text-primary-foreground/70">
+              <div className="mt-1 text-xs text-primary-foreground">
                 {AI_COSTS.copy} credit per generation — headlines, bullets and
                 CTAs
               </div>

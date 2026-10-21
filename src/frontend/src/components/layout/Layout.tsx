@@ -33,7 +33,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** Header destinations, each with a mail-themed icon in the brand indigo. */
 const NAV = [
@@ -125,6 +125,20 @@ function initials(principal: string | null): string {
   return principal ? principal.slice(0, 2).toUpperCase() : "";
 }
 
+/**
+ * Whether the last visit ended signed in, so the placeholder shown while
+ * Internet Identity restores the session has the width of what replaces it
+ * (credits chip + avatar, or the Sign in button) and the header does not shift.
+ */
+const SIGNED_IN_HINT = "ezmailout_signed_in";
+function readSignedInHint(): boolean {
+  try {
+    return localStorage.getItem(SIGNED_IN_HINT) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const setTopUpOpen = useAccountStore((s) => s.setTopUpOpen);
@@ -136,9 +150,38 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
     logout,
     principal,
     creditBalance,
+    accountReady,
   } = useAccountSync();
+  useEffect(() => {
+    if (isInitializing) return;
+    try {
+      if (isAuthenticated) localStorage.setItem(SIGNED_IN_HINT, "1");
+      else localStorage.removeItem(SIGNED_IN_HINT);
+    } catch {
+      // Storage unavailable: the placeholder falls back to the Sign in width.
+    }
+  }, [isInitializing, isAuthenticated]);
   if (isInitializing) {
-    return <Loader2 className="size-4 animate-spin text-muted-foreground" />;
+    // Holds the controls' place, so nothing (the nav pill and the peeking
+    // Stampy included) jumps sideways when the session check ends.
+    return readSignedInHint() ? (
+      <div
+        className="flex items-center gap-2"
+        role="status"
+        aria-label="Checking your session"
+        data-ocid="nav.auth.loading"
+      >
+        <div className="hidden h-10 w-32 animate-pulse rounded-full bg-muted sm:block" />
+        <div className="size-10 animate-pulse rounded-full bg-muted" />
+      </div>
+    ) : (
+      <div
+        className="h-10 w-10 animate-pulse rounded-full bg-muted sm:w-[5.75rem]"
+        role="status"
+        aria-label="Checking your session"
+        data-ocid="nav.auth.loading"
+      />
+    );
   }
   if (!isAuthenticated) {
     return (
@@ -177,7 +220,12 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         title={principal ?? undefined}
       >
         <Sparkles className="size-4 text-primary" />
-        {creditBalance.toLocaleString()} credits
+        {accountReady ? (
+          creditBalance.toLocaleString()
+        ) : (
+          <span className="inline-block h-3.5 w-7 animate-pulse rounded bg-muted" />
+        )}{" "}
+        credits
       </Link>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -204,7 +252,12 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
             </span>
             <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
-              {creditBalance.toLocaleString()} credits
+              {accountReady ? (
+                creditBalance.toLocaleString()
+              ) : (
+                <span className="inline-block h-3.5 w-7 animate-pulse rounded bg-muted" />
+              )}{" "}
+              credits
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -245,7 +298,22 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isAuthenticated, principal } = useAccountSync();
+  // The phone menu closes on any navigation (the tab bar, Back, a link in the
+  // page), not only through its own links, and on Escape.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: closes on path change by design
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   // The Admin link is for the founder only; customers never see it.
   const isAdmin = useIsAdmin(isAuthenticated ? principal : null);
   const navItems = NAV.filter((item) => item.to !== "/admin" || isAdmin);
@@ -309,8 +377,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="airmail-stripe" aria-hidden />
         {open && (
+          // Capped to the space between the header and the tab bar, so on a
+          // landscape phone the last rows scroll instead of hiding under it.
           <div
-            className="border-b border-border/60 bg-card px-4 py-3 lg:hidden"
+            className="max-h-[calc(100dvh-var(--header-h)-4px-env(safe-area-inset-top,0px)-var(--bottom-nav-h))] overflow-y-auto overscroll-contain border-b border-border/60 bg-card px-4 py-3 lg:hidden"
             data-ocid="nav.mobile.menu"
           >
             <div className="flex flex-col gap-1">
@@ -332,7 +402,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="flex-1">{children}</main>
+      {/* At least one screen tall, so the footer starts below the fold: while
+          a page is loading its content is short, and a footer resting on screen
+          jumped down when the data arrived (layout shift up to 0.88). */}
+      <main className="min-h-[calc(100dvh-var(--header-h)-4px-env(safe-area-inset-top,0px))] flex-1">
+        {children}
+      </main>
 
       {/* Extra bottom padding lets the end of every page scroll clear of the
           Stampy launcher in the bottom-right corner and, below lg, the tab bar. */}

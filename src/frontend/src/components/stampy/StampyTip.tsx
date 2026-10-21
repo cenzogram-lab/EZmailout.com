@@ -65,7 +65,7 @@ export function StampyTip({
           />
           <label
             htmlFor={checkboxId}
-            className="cursor-pointer select-none text-xs text-muted-foreground"
+            className="cursor-pointer select-none py-2 pr-2 text-xs text-muted-foreground"
           >
             Don't show tips
           </label>

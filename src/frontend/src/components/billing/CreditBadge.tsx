@@ -40,7 +40,7 @@ export function CreditBadge({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => setTopUpOpen(true)}
-        className="inline-flex items-center gap-0.5 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/25"
+        className="inline-flex min-h-7 items-center gap-0.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary-ink hover:bg-primary/25"
         data-ocid="credits.badge.topup"
       >
         <Plus className="size-3" /> Top up

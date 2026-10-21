@@ -8,7 +8,7 @@ delivered states. Source of truth: the MAIL_Command master specification (swatch
 ## Palette (OKLCH tokens in `src/frontend/src/index.css`)
 | Token | Hex | Light OKLCH | Purpose |
 | --- | --- | --- | --- |
-| `--primary` | `#6366f1` | 0.585 0.204 277 | Brand indigo: CTAs, links, active states, focus ring, selection handles |
+| `--primary` | `#5c5ee8` | 0.56 0.204 277 | Brand indigo: CTAs, links, active states, focus ring, selection handles. Darkened from `#6366f1` (0.585) so white text on it (4.84:1) and indigo text on the page (4.61:1) pass WCAG AA |
 | `--indigo-deep` | `#4d32a6` | 0.423 0.175 287 | Pressed / gradient end of the brand colour |
 | `--background` | `#f4f4f4` (BG/300) | 0.967 0 0 | Page background |
 | `--card` | `#ffffff` | 1 0 0 | Cards, panels, studio canvas |

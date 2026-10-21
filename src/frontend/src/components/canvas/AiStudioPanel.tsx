@@ -248,7 +248,7 @@ export function AiStudioPanel() {
           >
             <div className="flex items-center justify-between">
               <span className="font-semibold text-foreground">{s.label}</span>
-              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary-ink">
                 {s.credits} cr
               </span>
             </div>

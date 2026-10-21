@@ -200,7 +200,7 @@ export function ReferralLandingPage() {
           <ul className="space-y-3">
             {PERKS.map((perk) => (
               <li key={perk.text} className="flex items-start gap-3 text-sm">
-                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-ink">
                   <perk.icon className="size-3.5" />
                 </span>
                 <span className="text-foreground">{perk.text}</span>

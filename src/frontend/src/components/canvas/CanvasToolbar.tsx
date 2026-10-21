@@ -63,7 +63,7 @@ export function CanvasToolbar() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-smooth disabled:opacity-50",
               dims.rotated
-                ? "border-primary/40 bg-primary/10 text-primary"
+                ? "border-primary/40 bg-primary/10 text-primary-ink"
                 : "border-border/60 text-muted-foreground hover:text-foreground",
             )}
             data-ocid="canvas.rotate"

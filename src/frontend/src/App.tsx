@@ -11,6 +11,7 @@ import { CampaignsPage } from "@/pages/CampaignsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ReferralLandingPage } from "@/pages/ReferralLandingPage";
+import { RouteErrorPage } from "@/pages/RouteErrorPage";
 import { StoreFront } from "@/pages/StoreFront";
 import { TemplatesPage } from "@/pages/Templates";
 import { TrackRedirectPage } from "@/pages/TrackRedirectPage";
@@ -118,10 +119,12 @@ const routes = [
 ];
 
 // Unknown paths: TanStack Router has no `*` route (it was matched literally,
-// so every unknown URL showed the router's bare "Not Found").
+// so every unknown URL showed the router's bare "Not Found"). A page that
+// throws while rendering gets the branded error page, never a blank screen.
 const router = createRouter({
   routeTree: rootRoute.addChildren(routes),
   defaultNotFoundComponent: NotFoundPage,
+  defaultErrorComponent: RouteErrorPage,
 });
 
 export default function App() {

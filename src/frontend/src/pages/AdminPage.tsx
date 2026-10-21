@@ -485,19 +485,9 @@ export function AdminPage() {
             Admin control panel
           </h1>
           <p className="text-sm text-muted-foreground">
-            {showProviders
-              ? "Secure credentials for Click2Mail, Stripe, Resend and OpenAI. Secrets are stored in the canister and never returned in full."
-              : "Team settings for EZmailout. Only the admin can open them."}
+            Team settings for EZmailout. Only the admin can open them.
           </p>
         </div>
-        {view?.callerIsAdmin && (
-          <Badge
-            className="gap-1 bg-emerald-brand text-white"
-            data-ocid="admin.you_are_admin.badge"
-          >
-            <ShieldCheck className="size-3" /> You are admin
-          </Badge>
-        )}
       </div>
 
       {isInitializing ? (
@@ -572,6 +562,21 @@ export function AdminPage() {
               controllers see them; anyone else gets the identity card only. */}
           {showProviders ? (
             <>
+              {/* Here rather than in the page header, which is the same for
+                  everyone: the header no longer shifts when the caller's admin
+                  status arrives, and this appears with the cards below it. */}
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-brand/30 bg-emerald-brand/10 px-4 py-3">
+                <Badge
+                  className="gap-1 bg-emerald-brand text-white"
+                  data-ocid="admin.you_are_admin.badge"
+                >
+                  <ShieldCheck className="size-3" /> You are admin
+                </Badge>
+                <p className="min-w-0 flex-1 text-sm text-foreground">
+                  Secure credentials for Click2Mail, Stripe, Resend and OpenAI.
+                  Secrets are stored in the canister and never returned in full.
+                </p>
+              </div>
               <Card data-ocid="admin.keys.card">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">

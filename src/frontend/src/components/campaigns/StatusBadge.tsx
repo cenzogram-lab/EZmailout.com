@@ -144,7 +144,7 @@ const STATUS_STYLES: Record<CampaignStatus, string> = {
   [CampaignStatus.Delivered]:
     "border-emerald-brand bg-emerald-brand text-white",
   [CampaignStatus.Undeliverable]: "border-amber-300 bg-amber-50 text-amber-900",
-  [CampaignStatus.Returned]: "border-amber-500 bg-amber-500 text-white",
+  [CampaignStatus.Returned]: "border-amber-700 bg-amber-700 text-white",
 };
 
 export function StatusBadge({
@@ -222,7 +222,7 @@ const PRODUCTION_STYLES: Record<ProductionStatus, string> = {
   [ProductionStatus.ReadyToDispatch]:
     "border-primary/20 bg-primary/10 text-primary-ink",
   [ProductionStatus.Processing]:
-    "border-primary/30 bg-primary/10 text-primary-ink animate-pulse",
+    "border-primary/30 bg-primary/10 text-primary-ink motion-safe:animate-pulse",
   [ProductionStatus.DocumentUploaded]:
     "border-primary/20 bg-primary/10 text-primary-ink",
   [ProductionStatus.AddressListReady]:

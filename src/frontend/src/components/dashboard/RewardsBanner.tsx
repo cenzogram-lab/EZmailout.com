@@ -36,7 +36,14 @@ export function RewardsBanner() {
             className="text-4xl sm:text-5xl"
             data-ocid="dashboard.rewards.credits"
           >
-            {formatNumber(creditBalance)}
+            {account ? (
+              formatNumber(creditBalance)
+            ) : (
+              <span
+                className="inline-block h-9 w-16 animate-pulse rounded-lg bg-muted align-bottom sm:h-11"
+                aria-label="Loading credits"
+              />
+            )}
           </span>
           <span className="text-base font-semibold text-muted-foreground">
             credits
@@ -48,8 +55,10 @@ export function RewardsBanner() {
           className="mt-1.5 inline-flex items-center gap-0.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           data-ocid="dashboard.rewards.earn.link"
         >
-          {freeMonths} free {freeMonths === 1 ? "month" : "months"} · See how
-          you earn
+          {account
+            ? `${freeMonths} free ${freeMonths === 1 ? "month" : "months"} · `
+            : ""}
+          See how you earn
           <ChevronRight className="size-4" />
         </Link>
         <div className="mt-4">

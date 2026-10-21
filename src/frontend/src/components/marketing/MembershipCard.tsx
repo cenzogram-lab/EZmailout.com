@@ -73,18 +73,18 @@ export function MembershipCard() {
           <div className="absolute -right-16 -top-16 size-48 rounded-full bg-primary/20 blur-3xl" />
           <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-white/10 blur-3xl" />
           <div className="relative">
-            <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <span className="inline-flex items-center rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
               Platform membership
             </span>
             <div className="mt-6 flex items-end gap-2">
               <span className="font-display text-6xl font-extrabold leading-none tracking-tight">
                 {formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}
               </span>
-              <span className="pb-1 text-base text-primary-foreground/70">
+              <span className="pb-1 text-base text-primary-foreground">
                 / month
               </span>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-primary-foreground/80">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-primary-foreground">
               One flat fee unlocks wholesale print rates on every format. Pay
               per piece only for what you actually mail.
             </p>
@@ -92,9 +92,9 @@ export function MembershipCard() {
               {INCLUDED.map((item) => (
                 <li
                   key={item}
-                  className="flex items-center gap-2 text-sm text-primary-foreground/90"
+                  className="flex items-center gap-2 text-sm text-primary-foreground"
                 >
-                  <Check className="size-4 shrink-0 text-primary" />
+                  <Check className="size-4 shrink-0 text-primary-foreground" />
                   {item}
                 </li>
               ))}

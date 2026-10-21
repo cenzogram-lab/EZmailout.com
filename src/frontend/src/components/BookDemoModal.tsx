@@ -271,7 +271,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                     <Clock className="mr-1 inline size-3" />
                     Available Times
                     {selectedDate.isWeekend && (
-                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary-ink">
                         Weekend hours
                       </span>
                     )}

@@ -101,7 +101,7 @@ export function BrandPanel() {
             >
               {font}
               {font === "Geist" && (
-                <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 font-body text-[10px] font-medium text-primary">
+                <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 font-body text-[10px] font-medium text-primary-ink">
                   brand
                 </span>
               )}

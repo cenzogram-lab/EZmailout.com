@@ -221,7 +221,12 @@ function StampyChatbotPanel() {
         <section
           id="stampy-chat-panel"
           aria-label="Stampy — Postal Copilot"
-          className="fixed bottom-[calc(6rem+var(--bottom-nav-h))] right-4 z-40 flex h-[min(560px,calc(100dvh-7.5rem-var(--bottom-nav-h)))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl sm:right-5"
+          // Above the launcher, at most 560 px tall, and never under the
+          // sticky header (its top stops 0.75rem below the header). On short
+          // screens (landscape phones) that would leave no room for messages,
+          // so there it fills the height down to the tab bar, over the
+          // launcher and the header; its own minimize button stays in view.
+          className="fixed bottom-[calc(6rem+var(--bottom-nav-h))] right-4 top-[max(calc(var(--header-h)+4px+env(safe-area-inset-top,0px)+0.75rem),calc(100dvh-6rem-var(--bottom-nav-h)-560px))] z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl sm:right-5 [@media(max-height:500px)]:bottom-[calc(0.75rem+var(--bottom-nav-h))] [@media(max-height:500px)]:top-[calc(0.5rem+env(safe-area-inset-top,0px))] [@media(max-height:500px)]:z-[60]"
           data-ocid="stampy.chat.panel"
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">

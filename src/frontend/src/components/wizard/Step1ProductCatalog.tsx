@@ -159,9 +159,9 @@ function SizeRow({
                   : catalogMailClassLabel(option)
               }
               className={cn(
-                "rounded-full border px-2 py-0.5 text-[11px] font-medium transition-smooth",
+                "inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 text-[11px] font-medium transition-smooth",
                 active
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-primary-ink"
                   : "border-border bg-muted/60 text-muted-foreground",
                 multiClass && !active && "hover:border-primary/50",
                 !multiClass && "cursor-default",

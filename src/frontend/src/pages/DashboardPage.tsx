@@ -32,10 +32,25 @@ function RecentCampaigns() {
 
   if (isLoading) {
     return (
+      // Rows shaped like the real ones, so the cards below do not jump when
+      // the list arrives.
       <GroupedList title="Recent campaigns">
-        <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> Loading campaigns…
-        </div>
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="flex min-h-14 items-center gap-3 px-4 py-2.5"
+            aria-hidden="true"
+          >
+            <span className="size-9 shrink-0 animate-pulse rounded-xl bg-muted" />
+            <span className="min-w-0 flex-1 space-y-1.5">
+              <span className="block h-4 w-2/5 animate-pulse rounded bg-muted" />
+              <span className="block h-3 w-3/5 animate-pulse rounded bg-muted/70" />
+            </span>
+          </div>
+        ))}
+        <p className="sr-only" role="status">
+          Loading campaigns…
+        </p>
       </GroupedList>
     );
   }

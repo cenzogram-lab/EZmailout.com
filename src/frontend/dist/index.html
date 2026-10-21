@@ -11,12 +11,70 @@
     <meta property="og:url" content="https://ezmailout.com" />
     <meta property="og:site_name" content="EZmailout" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#6366f1" />
+    <meta name="theme-color" content="#5c5ee8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <script type="module" crossorigin src="/assets/index-BBP4EJtx.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-t6BM4JPr.css">
+    <link rel="preload" href="/assets/fonts/Geist-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      /* Boot screen: plain HTML and CSS inside #root, so it paints as soon as
+         this file and the stylesheet arrive, long before the script bundle;
+         React's first render replaces it. No script (the CSP allows none
+         inline). Sizes are clamp()s, so it fits every screen; it fades in
+         after 150 ms, so a cached load never flashes it, and after 15 s it
+         offers a reload link (href="" reloads the current deep link). */
+      html { background: #f6f6f6; }
+      .boot {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: clamp(0.875rem, 0.7rem + 0.8vw, 1.375rem);
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        background: #f6f6f6; color: #0f1d24; text-align: center;
+        font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        opacity: 0; animation: boot-in 0.3s ease-out 0.15s forwards;
+      }
+      .boot-disc {
+        display: grid; place-items: center; overflow: hidden; border-radius: 9999px;
+        width: clamp(5.5rem, 4.6rem + 3vw, 7.5rem); aspect-ratio: 1;
+        background: #fff; box-shadow: 0 0 0 3px #5c5ee8, 0 12px 32px -18px rgb(15 23 42 / 0.45);
+        animation: boot-bob 1.6s ease-in-out infinite;
+      }
+      .boot-mark { width: 104%; height: 88%; margin-top: 8%; }
+      .boot-word { margin: 0; font-size: clamp(1.5rem, 1.25rem + 1vw, 2.125rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+      .boot-word span { color: #e5402a; }
+      .boot-bar {
+        position: relative; overflow: hidden;
+        width: clamp(9rem, 7rem + 8vw, 14rem); height: 6px; border-radius: 9999px; background: #e8e8ee;
+      }
+      /* One stripe period across is 28px / sin 45° = 39.6px, so sliding the
+         pattern by exactly that loops without a seam. */
+      .boot-bar::before {
+        content: ""; position: absolute; inset: 0 0 0 -39.6px;
+        background: repeating-linear-gradient(-45deg, #e5402a 0 9px, transparent 9px 14px, #5c5ee8 14px 23px, transparent 23px 28px);
+        animation: boot-slide 0.9s linear infinite;
+      }
+      .boot-note { margin: 0; font-size: 0.9375rem; color: #5f636b; }
+      .boot-slow { margin: 0; max-width: 22rem; font-size: 0.875rem; color: #5f636b; visibility: hidden; animation: boot-reveal 0s linear 15s forwards; }
+      .boot-slow a { display: inline-block; margin-top: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 9999px; background: #5c5ee8; color: #fff; font-weight: 600; text-decoration: none; }
+      .boot-slow a:focus-visible { outline: 3px solid #0f1d24; outline-offset: 2px; }
+      @keyframes boot-in { to { opacity: 1; } }
+      @keyframes boot-bob { 50% { transform: translateY(-6px); } }
+      @keyframes boot-slide { to { transform: translateX(39.6px); } }
+      @keyframes boot-reveal { to { visibility: visible; } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot { animation-duration: 0s; }
+        .boot-disc, .boot-bar::before { animation: none; }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-BYXOI_gk.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BZ4DggbP.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot" role="status" aria-live="polite">
+        <div class="boot-disc"><svg class="boot-mark" viewBox="40 24 102 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><defs><clipPath id="boot-step-4-bodyClip"><path d="M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z"></path></clipPath></defs><g transform="scale(0.45)"><g><g stroke="#16204A" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><path d="M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" fill="#FFFFFF"></path><path d="M136 272 L160 262 L290 380 L262 396 Z" fill="#9C6B38" clip-path="url(#boot-step-4-bodyClip)"></path><path d="M124 390 C118 300 150 256 200 256 C250 256 282 300 276 390 Q200 404 124 390 Z" fill="none"></path><path d="M146 258 Q200 280 254 258 L236 300 Q200 334 164 300 Z" fill="#E5402A"></path><rect x="187" y="290" width="26" height="30" fill="#FBF6EC" stroke="none"></rect><rect x="187" y="290" width="26" height="30" fill="none" stroke="#E5402A" stroke-width="5" stroke-dasharray="0 6.5"></rect><path d="M200 312 C192 306 191 300 196 298 C198 297 200 299 200 300 C200 299 202 297 204 298 C209 300 208 306 200 312 Z" fill="#E5402A" stroke="none"></path><g transform="translate(252 304) rotate(-12)"><g stroke="#16204A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><rect x="0" y="0" width="46" height="30" rx="3" fill="#FBF6EC"></rect><path d="M2 2 L23 17 L44 2" fill="none" stroke-width="3.5"></path><rect x="33" y="19" width="9" height="8" fill="#E5402A" stroke="none"></rect></g></g><g transform="translate(276 298) rotate(10)"><g stroke="#16204A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><rect x="0" y="0" width="46" height="30" rx="3" fill="#FBF6EC"></rect><path d="M2 2 L23 17 L44 2" fill="none" stroke-width="3.5"></path><rect x="33" y="19" width="9" height="8" fill="#E5402A" stroke="none"></rect></g></g><rect x="248" y="318" width="72" height="54" rx="10" fill="#C89A63"></rect><path d="M248 330 Q248 318 260 318 L308 318 Q320 318 320 330 L320 342 Q284 354 248 342 Z" fill="#9C6B38"></path><circle cx="284" cy="346" r="5" fill="#E5402A" stroke-width="4"></circle></g></g><g><g stroke="#16204A" stroke-width="6" stroke-linejoin="round"><path d="M146 128 C120 112 96 116 90 128 C86 146 100 172 124 178 C132 160 140 144 150 138 Z" fill="#D9924A"></path><path d="M254 128 C280 112 304 116 310 128 C314 146 300 172 276 178 C268 160 260 144 250 138 Z" fill="#D9924A"></path></g></g><g><g stroke="#16204A" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><path d="M200 96 C246 96 270 124 272 166 C274 214 250 258 200 258 C150 258 126 214 128 166 C130 124 154 96 200 96 Z" fill="#FFFFFF"></path><path d="M212 150 C230 136 258 140 266 160 C270 182 260 200 242 202 C224 204 208 190 206 174 Z" fill="#D9924A" stroke="none"></path><ellipse cx="158" cy="210" rx="11" ry="7" fill="#F4A38E" stroke="none" opacity="0.8"></ellipse><ellipse cx="244" cy="210" rx="11" ry="7" fill="#F4A38E" stroke="none" opacity="0.8"></ellipse><path d="M162 156 Q174 149 186 155" fill="none" stroke-width="5"></path><path d="M216 155 Q228 149 240 156" fill="none" stroke-width="5"></path><circle cx="174" cy="178" r="10" fill="#16204A" stroke="none"></circle><circle cx="228" cy="178" r="10" fill="#16204A" stroke="none"></circle><circle cx="177.5" cy="174" r="3.5" fill="#FFFFFF" stroke="none"></circle><circle cx="231.5" cy="174" r="3.5" fill="#FFFFFF" stroke="none"></circle></g></g><g><g stroke="#16204A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="200" cy="216" rx="36" ry="25" fill="#FBF6EC"></ellipse><path d="M200 214 L200 222"></path><path d="M182 222 Q200 226 218 222 Q214 242 200 242 Q186 242 182 222 Z" fill="#8E2A22" stroke-width="4.5"></path><ellipse cx="200" cy="236" rx="8" ry="5" fill="#F48C7E" stroke="none"></ellipse><path d="M187 200 Q200 195 213 200 Q215 208 200 214 Q185 208 187 200 Z" fill="#16204A"></path><ellipse cx="195" cy="201" rx="4" ry="2" fill="#FFFFFF" stroke="none"></ellipse></g></g><g><g stroke="#16204A" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><path d="M150 118 C146 78 176 62 204 62 C236 62 258 82 254 118 Z" fill="#6366f1"></path><path d="M149 104 L255 104 L254 120 L150 120 Z" fill="#E5402A"></path><path d="M140 120 Q200 108 262 120 Q268 132 254 137 Q200 126 146 137 Q134 132 140 120 Z" fill="#16204A"></path><rect x="189" y="76" width="28" height="19" rx="3" fill="#C89A63" stroke-width="4"></rect><path d="M191 79 L203 88 L215 79" fill="none" stroke-width="3"></path><path d="M172 72 Q182 66 192 66" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.5"></path></g></g><g stroke="#16204A" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><rect x="116" y="270" width="168" height="126" rx="12" fill="#9C6B38"></rect><rect x="130" y="288" width="140" height="102" rx="4" fill="#F4F4F4" stroke-width="4"></rect><rect x="170" y="260" width="60" height="22" rx="6" fill="#C7CAD8"></rect><g stroke-width="4"><rect x="144" y="302" width="14" height="14" rx="2" fill="#FFFFFF"></rect><rect x="144" y="326" width="14" height="14" rx="2" fill="#FFFFFF"></rect><rect x="144" y="350" width="14" height="14" rx="2" fill="#FFFFFF"></rect><path d="M146 309 L150 313 L157 304 M146 333 L150 337 L157 328 M146 357 L150 361 L157 352" fill="none" stroke="#6366f1"></path><path d="M168 309 L204 309 M168 333 L196 333 M168 357 L200 357" fill="none" opacity="0.45"></path></g><g transform="rotate(-14 238 350)"><circle cx="238" cy="350" r="26" fill="none" stroke="#22A06B" stroke-width="4.5"></circle><path d="M226 350 L235 359 L251 341" fill="none" stroke="#22A06B" stroke-width="7"></path></g><ellipse cx="120" cy="330" rx="18" ry="22" fill="#FFFFFF"></ellipse><ellipse cx="280" cy="330" rx="18" ry="22" fill="#FFFFFF"></ellipse><path d="M110 322 L118 322 M110 334 L118 334 M282 322 L290 322 M282 334 L290 334" fill="none" stroke-width="4"></path></g></g></svg></div>
+        <p class="boot-word">EZmailout<span>.</span></p>
+        <div class="boot-bar" aria-hidden="true"></div>
+        <p class="boot-note">Loading EZmailout…</p>
+        <noscript><p class="boot-note">EZmailout needs JavaScript. Turn it on in your browser settings and reload.</p></noscript>
+        <p class="boot-slow">Taking longer than usual — a slow connection or an update in progress.<br /><a href="">Reload</a></p>
+      </div></div>
   </body>
 </html>

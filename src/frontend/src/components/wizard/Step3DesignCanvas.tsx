@@ -137,7 +137,7 @@ export function Step3DesignCanvas() {
         <div className="flex flex-wrap gap-2 text-xs">
           {resolutionWarning ? (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-primary"
+              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-primary-ink"
               data-ocid="canvas.warning.resolution"
             >
               <AlertTriangle className="size-3.5" /> {resolutionWarning}

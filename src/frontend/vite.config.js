@@ -20,6 +20,14 @@ export default defineConfig({
     // Vite's esbuild minifier for JS and CSS: this ships to the asset canister,
     // so every byte is stable memory and per-request egress.
     minify: "esbuild",
+    // Lazy chunks (the Step 2 radius map) are named index-<name>-<hash> so
+    // .ic-assets.json5's `assets/index-*` rules cache them like the entry:
+    // content-hashed, immutable.
+    rollupOptions: {
+      output: {
+        chunkFileNames: "assets/index-[name]-[hash].js",
+      },
+    },
   },
   css: {
     postcss: "./postcss.config.js",

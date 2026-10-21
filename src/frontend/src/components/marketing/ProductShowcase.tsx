@@ -46,7 +46,7 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
       <span className="text-[11px] text-muted-foreground">
         {rows.length} size{rows.length === 1 ? "" : "s"}
       </span>
-      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary-ink">
         from {formatCents(categoryFromCents(category))}
         <ArrowRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
       </span>
