@@ -52,9 +52,11 @@ const ocidFor = (label: string) =>
   `nav.${label.toLowerCase().replace(/\s+/g, "_")}.link`;
 
 /**
- * Desktop nav item: a 40 px pill with a 20 px indigo icon. From `xl` it shows
- * its label; at `lg` the label is visually hidden (still its accessible name)
- * so the bar fits 1024 px.
+ * Desktop nav item, after a news-site section bar: a full-height cell of the
+ * header with hairline dividers between cells, a 20 px indigo icon and a bold
+ * label, and a 3 px indigo underline on the active section (sitting on the
+ * airmail stripe). From `xl` it shows its label; at `lg` the label is visually
+ * hidden (still its accessible name) so the bar fits 1024 px.
  */
 function NavLink({
   to,
@@ -71,11 +73,12 @@ function NavLink({
       to={to}
       title={label}
       data-ocid={ocidFor(label)}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-[15px] font-semibold transition-smooth xl:px-4",
+        "relative flex h-full shrink-0 items-center gap-2 whitespace-nowrap px-4 text-[15px] font-bold tracking-tight transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 xl:px-5",
         isActive
-          ? "bg-primary/10 text-primary-ink"
-          : "text-muted-foreground hover:bg-primary/5 hover:text-foreground",
+          ? "bg-primary/[0.06] text-primary-ink after:bg-primary"
+          : "text-foreground/75 after:bg-transparent hover:bg-muted/70 hover:text-foreground hover:after:bg-border",
       )}
     >
       <Icon
@@ -337,14 +340,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <nav
             aria-label="Main"
-            className="hidden flex-1 items-center justify-center gap-2 lg:flex"
+            className="hidden flex-1 items-stretch justify-center gap-4 self-stretch lg:flex"
           >
-            <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-card p-1 shadow-soft">
+            <ul className="flex items-stretch divide-x divide-border/70 border-x border-border/70">
               {navItems.map((item) => (
-                <NavLink key={item.to} {...item} />
+                <li key={item.to} className="flex">
+                  <NavLink {...item} />
+                </li>
               ))}
-            </div>
-            <Link to="/wizard" data-ocid="nav.launch_campaign.link">
+            </ul>
+            <Link
+              to="/wizard"
+              className="self-center"
+              data-ocid="nav.launch_campaign.link"
+            >
               <Button
                 className="h-10 shrink-0 gap-2 whitespace-nowrap rounded-full px-5 text-[15px] font-semibold"
                 variant="default"

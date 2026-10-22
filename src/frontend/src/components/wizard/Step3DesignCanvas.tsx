@@ -172,7 +172,9 @@ export function Step3DesignCanvas() {
       <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-start min-[1400px]:flex-nowrap">
         <div
           className={cn(
-            "flex flex-col gap-3 lg:sticky lg:top-24 lg:flex-row lg:items-start",
+            // Pinned only while the proof is a side column: when the row wraps
+            // (lg–1399 px) a pinned drawer slid over the full-width proof.
+            "flex flex-col gap-3 lg:flex-row lg:items-start min-[1400px]:sticky min-[1400px]:top-24",
             drawerOpen ? "lg:w-[380px]" : "lg:w-[76px]",
           )}
         >
