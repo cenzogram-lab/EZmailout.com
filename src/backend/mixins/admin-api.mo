@@ -85,26 +85,27 @@ mixin (adminKeysState : Common.AdminState) {
     AdminLib.assignAdmin(adminKeysState, caller, newAdmin);
   };
 
-  /// Masked view of the stored credentials (last 4 characters only), shown to
-  /// the admin and controllers only.
+  /// Masked view of the stored credentials (last 4 characters only) for the
+  /// admin and controllers. Anyone else gets only `callerIsAdmin = false`:
+  /// not who the admin is, not the environment, the sandbox switch, the
+  /// webhook path or the publishable key.
   public shared query ({ caller }) func getAdminKeys() : async Common.AdminKeysView {
-    let isAdmin = AdminLib.isAdmin(adminKeysState, caller);
-    let visible = isAdmin;
+    let visible = AdminLib.isAdmin(adminKeysState, caller);
     {
       fulfilmentUsername = if (visible) adminKeysState.fulfilmentUsername else null;
       fulfilmentPasswordMasked = if (visible) AdminLib.maskKey(adminKeysState.fulfilmentPassword) else null;
-      fulfilmentEnvironment = adminKeysState.fulfilmentEnvironment;
+      fulfilmentEnvironment = if (visible) adminKeysState.fulfilmentEnvironment else #Staging;
       stripeSecretKeyMasked = if (visible) AdminLib.maskKey(adminKeysState.stripeSecretKey) else null;
-      stripePublishableKey = adminKeysState.stripePublishableKey;
+      stripePublishableKey = if (visible) adminKeysState.stripePublishableKey else null;
       resendKeyMasked = if (visible) AdminLib.maskKey(adminKeysState.resendKey) else null;
       openAiKeyMasked = if (visible) AdminLib.maskKey(adminKeysState.openAiKey) else null;
       webhookSecretMasked = if (visible) AdminLib.maskKey(adminKeysState.webhookSecret) else null;
       outcallProxyUrl = if (visible) adminKeysState.outcallProxyUrl else null;
-      sandboxCheckout = adminKeysState.sandboxCheckout;
-      adminPrincipal = adminKeysState.adminPrincipal;
-      callerIsAdmin = isAdmin;
+      sandboxCheckout = visible and adminKeysState.sandboxCheckout;
+      adminPrincipal = if (visible) adminKeysState.adminPrincipal else null;
+      callerIsAdmin = visible;
       callerIsController = caller.isController();
-      webhookPath = AdminLib.webhookPath;
+      webhookPath = if (visible) AdminLib.webhookPath else "";
       supportEmailAddress = if (visible) adminKeysState.supportEmailAddress else null;
     };
   };

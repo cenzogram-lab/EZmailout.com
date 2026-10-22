@@ -23,7 +23,6 @@ export type NavKey =
   | "studio"
   | "tracking"
   | "referrals"
-  | "admin"
   | "support";
 
 export interface NavChip {
@@ -52,7 +51,6 @@ export const NAV_CHIPS: Record<NavKey, NavChip> = {
     to: "/dashboard",
     hash: "referrals",
   },
-  admin: { key: "admin", label: "Admin Settings", to: "/admin" },
   support: { key: "support", label: "Contact Support", to: null },
 };
 
@@ -143,11 +141,12 @@ const INTENTS: Intent[] = [
     chips: ["studio"],
   },
   {
-    keywords:
-      /\b(admin|api key\w*|keys|stripe|resend|openai|(?:fulfil{1,2}ment|print) credential\w*|webhook\w*|settings)\b/i,
+    // Account questions go to the Dashboard. The Admin page is the founder's
+    // alone, so Stampy never mentions or links it.
+    keywords: /\b(settings|account|profile)\b/i,
     answer: () =>
-      "Admins manage the integration keys in Admin settings. Secrets are stored in the canister and only ever shown masked.",
-    chips: ["admin"],
+      "Your account lives on the Dashboard: your principal, credits, membership and referral link.",
+    chips: ["referrals"],
   },
   {
     keywords:

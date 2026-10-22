@@ -67,6 +67,9 @@ const sections = {
     const pub = ser(await nobody.getPublicConfig());
     check([strangerView, anonView, pub].every((t) => RAW_SECRETS.every((s) => !t.includes(s)) && !t.includes("***")), "non-admins see no secret, not even masked");
     check(!strangerView.includes(SECRETS.fulfilmentUsername) && !strangerView.includes(SECRETS.supportEmailAddress), "non-admins do not see the print-partner username or support email");
+    const [sv, av] = [await stranger.getAdminKeys(), await nobody.getAdminKeys()];
+    check([sv, av].every((x) => !x.callerIsAdmin && x.adminPrincipal.length === 0 && x.stripePublishableKey.length === 0 && x.webhookPath === "" && !x.sandboxCheckout), "non-admins are not told who the admin is, nor any setting", [sv, av]);
+    check(view.adminPrincipal[0] === assignedAdmin.getPrincipal().toText() && view.webhookPath !== "", "the admin still sees the admin principal and webhook path", view);
     const cfg = await nobody.getPublicConfig();
     check(cfg.fulfilmentConfigured && cfg.stripeConfigured && cfg.openAiConfigured && cfg.resendConfigured, "public config reports every integration configured");
 

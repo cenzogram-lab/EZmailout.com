@@ -165,19 +165,17 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
     // Holds the controls' place, so nothing (the nav pill and the peeking
     // Stampy included) jumps sideways when the session check ends.
     return readSignedInHint() ? (
-      <div
+      <output
         className="flex items-center gap-2"
-        role="status"
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       >
-        <div className="hidden h-10 w-32 animate-pulse rounded-full bg-muted sm:block" />
-        <div className="size-10 animate-pulse rounded-full bg-muted" />
-      </div>
+        <span className="hidden h-10 w-32 animate-pulse rounded-full bg-muted sm:block" />
+        <span className="block size-10 animate-pulse rounded-full bg-muted" />
+      </output>
     ) : (
-      <div
-        className="h-10 w-10 animate-pulse rounded-full bg-muted sm:w-[5.75rem]"
-        role="status"
+      <output
+        className="block h-10 w-10 animate-pulse rounded-full bg-muted sm:w-[5.75rem]"
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       />

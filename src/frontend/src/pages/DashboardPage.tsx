@@ -48,9 +48,7 @@ function RecentCampaigns() {
             </span>
           </div>
         ))}
-        <p className="sr-only" role="status">
-          Loading campaigns…
-        </p>
+        <output className="sr-only">Loading campaigns…</output>
       </GroupedList>
     );
   }

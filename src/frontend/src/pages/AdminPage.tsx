@@ -3,7 +3,6 @@ import {
   type AdminKeysView,
   FulfilmentEnvironment,
 } from "@/backend";
-import { SignInPrompt } from "@/components/billing/SignInPrompt";
 import { MascotEmptyState } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +40,7 @@ import {
 } from "@/hooks/use-backend";
 import { copyText } from "@/lib/download";
 import { formatTimestamp } from "@/lib/format";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 import { loadConfig } from "@caffeineai/core-infrastructure";
 import {
   AlertCircle,
@@ -471,6 +471,23 @@ export function AdminPage() {
     }
   }
 
+  // The page is for the admin (the founder) and canister controllers only.
+  // Anyone else, signed in or not, gets the same 404 as an unknown address,
+  // so the page does not even reveal that it exists; the canister refuses
+  // them every setting anyway (getAdminKeys answers only callerIsAdmin).
+  if (isInitializing || (isAuthenticated && keysQuery.isLoading)) {
+    return (
+      <output
+        className="flex min-h-[60vh] items-center justify-center"
+        aria-label="Loading"
+        data-ocid="admin.loading"
+      >
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </output>
+    );
+  }
+  if (!showProviders) return <NotFoundPage />;
+
   return (
     <div
       className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8"
@@ -485,510 +502,486 @@ export function AdminPage() {
             Admin control panel
           </h1>
           <p className="text-sm text-muted-foreground">
-            Team settings for EZmailout. Only the admin can open them.
+            Team settings for EZmailout. Only you can open this page.
           </p>
         </div>
       </div>
 
-      {isInitializing ? (
-        <div className="flex items-center gap-2 py-12 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> Checking your session…
-        </div>
-      ) : !isAuthenticated ? (
-        <SignInPrompt message="Sign in with Internet Identity to manage admin settings. Only the admin a canister controller assigned, or a controller, can change them." />
-      ) : (
-        <div className="space-y-6">
-          <Card data-ocid="admin.identity.card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Admin identity</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Admin principal</span>
-                {view?.adminPrincipal ? (
-                  <span className="flex items-center gap-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <code
-                          className="rounded-md bg-muted px-2 py-1 font-mono text-xs"
-                          data-ocid="admin.principal.text"
-                        >
-                          {principalShort(view.adminPrincipal)}
-                        </code>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs break-all font-mono text-xs">
-                        {view.adminPrincipal}
-                      </TooltipContent>
-                    </Tooltip>
-                    <CopyButton
-                      value={view.adminPrincipal}
-                      ocid="admin.principal.copy"
-                    />
-                  </span>
-                ) : (
-                  <span
-                    className="text-xs text-muted-foreground"
-                    data-ocid="admin.principal.unclaimed"
-                  >
-                    {keysQuery.isLoading
-                      ? "Loading…"
-                      : "Not assigned — a canister controller assigns the admin."}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Your principal</span>
-                <code className="rounded-md bg-muted px-2 py-1 font-mono text-xs">
-                  {principal ? principalShort(principal) : "—"}
-                </code>
-              </div>
-              {view && !view.callerIsAdmin && (
-                <Alert variant="destructive" data-ocid="admin.not_admin.alert">
-                  <AlertCircle className="size-4" />
-                  <AlertTitle>Read-only</AlertTitle>
-                  <AlertDescription>
-                    {view.adminPrincipal
-                      ? "Another principal holds the admin role. Saving will be rejected by the canister."
-                      : "No admin is assigned. Ask a canister controller to assign your principal; until then saving is rejected."}
-                  </AlertDescription>
-                </Alert>
+      <div className="space-y-6">
+        <Card data-ocid="admin.identity.card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Admin identity</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Admin principal</span>
+              {view?.adminPrincipal ? (
+                <span className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <code
+                        className="rounded-md bg-muted px-2 py-1 font-mono text-xs"
+                        data-ocid="admin.principal.text"
+                      >
+                        {principalShort(view.adminPrincipal)}
+                      </code>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs break-all font-mono text-xs">
+                      {view.adminPrincipal}
+                    </TooltipContent>
+                  </Tooltip>
+                  <CopyButton
+                    value={view.adminPrincipal}
+                    ocid="admin.principal.copy"
+                  />
+                </span>
+              ) : (
+                <span
+                  className="text-xs text-muted-foreground"
+                  data-ocid="admin.principal.unclaimed"
+                >
+                  {keysQuery.isLoading
+                    ? "Loading…"
+                    : "Not assigned — a canister controller assigns the admin."}
+                </span>
               )}
-              {view?.callerIsController ? <AssignAdminForm /> : null}
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Your principal</span>
+              <code className="rounded-md bg-muted px-2 py-1 font-mono text-xs">
+                {principal ? principalShort(principal) : "—"}
+              </code>
+            </div>
+            {view?.callerIsController ? <AssignAdminForm /> : null}
+          </CardContent>
+        </Card>
 
-          {/* Integration keys, the webhook and the public configuration name the
+        {/* Integration keys, the webhook and the public configuration name the
               providers behind EZmailout, so only the admin (the founder) and
               controllers see them; anyone else gets the identity card only. */}
-          {showProviders ? (
-            <>
-              {/* Here rather than in the page header, which is the same for
+        {showProviders ? (
+          <>
+            {/* Here rather than in the page header, which is the same for
                   everyone: the header no longer shifts when the caller's admin
                   status arrives, and this appears with the cards below it. */}
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-brand/30 bg-emerald-brand/10 px-4 py-3">
-                <Badge
-                  className="gap-1 bg-emerald-brand text-white"
-                  data-ocid="admin.you_are_admin.badge"
-                >
-                  <ShieldCheck className="size-3" /> You are admin
-                </Badge>
-                <p className="min-w-0 flex-1 text-sm text-foreground">
-                  Secure credentials for Click2Mail, Stripe, Resend and OpenAI.
-                  Secrets are stored in the canister and never returned in full.
-                </p>
-              </div>
-              <Card data-ocid="admin.keys.card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <KeyRound className="size-4 text-primary" /> Integration
-                    keys
-                  </CardTitle>
-                  <CardDescription>
-                    Leave a field empty to keep the stored value. Type a new
-                    value to replace it, or use the × button to clear it.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {keysQuery.isLoading && !view ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> Loading
-                      settings…
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Click2Mail · print fulfilment
-                        </p>
-                        <SecretField
-                          label="Click2Mail username"
-                          field="fulfilmentUsername"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.fulfilmentUsername}
-                          secret={false}
-                        />
-                        <SecretField
-                          label="Click2Mail password"
-                          field="fulfilmentPassword"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.fulfilmentPasswordMasked}
-                        />
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium">
-                            Click2Mail environment
-                          </Label>
-                          <Select
-                            value={currentEnvironment}
-                            onValueChange={(v) =>
-                              setEnvironment(v as FulfilmentEnvironment)
-                            }
-                          >
-                            <SelectTrigger
-                              className="w-full sm:w-64"
-                              data-ocid="admin.fulfilment_environment.select"
-                            >
-                              <SelectValue placeholder="Select environment" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                value={FulfilmentEnvironment.Production}
-                              >
-                                Production
-                              </SelectItem>
-                              <SelectItem value={FulfilmentEnvironment.Staging}>
-                                Staging
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">
-                            Staging uses Click2Mail's sandbox REST endpoints; no
-                            mail is printed.
-                          </p>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Stripe
-                        </p>
-                        <SecretField
-                          label="Stripe Secret Key"
-                          field="stripeSecretKey"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.stripeSecretKeyMasked}
-                          placeholder="sk_live_…"
-                        />
-                        <SecretField
-                          label="Stripe Publishable Key"
-                          field="stripePublishableKey"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.stripePublishableKey}
-                          secret={false}
-                          placeholder="pk_live_…"
-                        />
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Email &amp; AI
-                        </p>
-                        <SecretField
-                          label="Resend API Key"
-                          field="resendKey"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.resendKeyMasked}
-                          placeholder="re_…"
-                        />
-                        <SecretField
-                          label="Support Notification Email"
-                          field="supportEmailAddress"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.supportEmailAddress}
-                          secret={false}
-                          optional
-                          placeholder="support@yourdomain.com"
-                          helper="New support tickets are emailed here through Resend, with the customer as reply-to. Sent from notifications@ezmailout.com, so verify that domain in Resend."
-                        />
-                        <SecretField
-                          label="OpenAI API Key"
-                          field="openAiKey"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.openAiKeyMasked}
-                          placeholder="sk-…"
-                        />
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Webhooks &amp; networking
-                        </p>
-                        <SecretField
-                          label="Webhook Secret"
-                          field="webhookSecret"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.webhookSecretMasked}
-                          helper={`Shared secret that Click2Mail (or your relay) sends in the ${WEBHOOK_HEADER} header.`}
-                          extra={
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setDraft(
-                                      "webhookSecret",
-                                      generateWebhookSecret(),
-                                    )
-                                  }
-                                  className="gap-1.5"
-                                  data-ocid="admin.webhook_secret.generate"
-                                >
-                                  <RefreshCw className="size-4" /> Generate
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Generate a random 32-character secret
-                              </TooltipContent>
-                            </Tooltip>
-                          }
-                        />
-                        <SecretField
-                          label="Outcall proxy URL"
-                          field="outcallProxyUrl"
-                          draft={draft}
-                          setDraft={setDraft}
-                          masked={view?.outcallProxyUrl}
-                          secret={false}
-                          optional
-                          placeholder="https://relay.example.com/"
-                          helper="Optional https:// relay (IPv6-capable) for Internet Computer outcalls; requests and their credentials are sent here with an x-target-url header"
-                        />
-                      </div>
-
-                      <Separator />
-
-                      <div
-                        className="flex items-start justify-between gap-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3"
-                        data-ocid="admin.sandbox_checkout.field"
-                      >
-                        <div className="space-y-1">
-                          <Label
-                            htmlFor="admin-sandbox"
-                            className="flex items-center gap-2 text-sm font-medium"
-                          >
-                            <FlaskConical className="size-4 text-primary" />
-                            Sandbox checkout
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Launch campaigns without Stripe for testing — never
-                            enable in production
-                          </p>
-                        </div>
-                        <Switch
-                          id="admin-sandbox"
-                          checked={currentSandbox}
-                          onCheckedChange={(checked) => setSandbox(checked)}
-                          data-ocid="admin.sandbox_checkout.switch"
-                        />
-                      </div>
-
-                      {saveError && (
-                        <Alert
-                          variant="destructive"
-                          data-ocid="admin.save.error"
-                        >
-                          <AlertCircle className="size-4" />
-                          <AlertTitle>Save failed</AlertTitle>
-                          <AlertDescription>{saveError}</AlertDescription>
-                        </Alert>
-                      )}
-
-                      <div className="flex items-center justify-end gap-2 pt-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={resetDraft}
-                          disabled={!dirty || saveKeys.isPending}
-                          data-ocid="admin.discard.button"
-                        >
-                          Discard
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={handleSave}
-                          disabled={!dirty || saveKeys.isPending}
-                          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                          data-ocid="admin.save_keys.button"
-                        >
-                          {saveKeys.isPending ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <Save className="size-4" />
-                          )}
-                          {saveKeys.isPending ? "Saving…" : "Save settings"}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card data-ocid="admin.webhook.card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Webhook className="size-4 text-primary" /> Delivery webhook
-                  </CardTitle>
-                  <CardDescription>
-                    Point Click2Mail tracking (or any relay) at this endpoint.
-                    Events are matched by{" "}
-                    <code className="font-mono">campaignId</code> or{" "}
-                    <code className="font-mono">jobId</code> and mapped onto the
-                    delivery timeline.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">
-                      Endpoint (POST)
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <code
-                        className="flex-1 truncate rounded-md bg-muted px-2 py-1.5 font-mono text-xs"
-                        data-ocid="admin.webhook.url.text"
-                      >
-                        {webhookUrl}
-                      </code>
-                      <CopyButton
-                        value={webhookUrl}
-                        ocid="admin.webhook.url.copy"
-                      />
-                    </div>
-                    {!canisterId && (
-                      <p className="text-xs text-muted-foreground">
-                        Backend canister id unavailable in this build;
-                        substitute your deployed canister id.
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-brand/30 bg-emerald-brand/10 px-4 py-3">
+              <Badge
+                className="gap-1 bg-emerald-brand text-white"
+                data-ocid="admin.you_are_admin.badge"
+              >
+                <ShieldCheck className="size-3" /> You are admin
+              </Badge>
+              <p className="min-w-0 flex-1 text-sm text-foreground">
+                Secure credentials for Click2Mail, Stripe, Resend and OpenAI.
+                Secrets are stored in the canister and never returned in full.
+              </p>
+            </div>
+            <Card data-ocid="admin.keys.card">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <KeyRound className="size-4 text-primary" /> Integration keys
+                </CardTitle>
+                <CardDescription>
+                  Leave a field empty to keep the stored value. Type a new value
+                  to replace it, or use the × button to clear it.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {keysQuery.isLoading && !view ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Loading
+                    settings…
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Click2Mail · print fulfilment
                       </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">
-                      Auth header
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <code className="rounded-md bg-muted px-2 py-1.5 font-mono text-xs">
-                        {WEBHOOK_HEADER}: &lt;webhook secret&gt;
-                      </code>
-                      <CopyButton
-                        value={WEBHOOK_HEADER}
-                        ocid="admin.webhook.header.copy"
+                      <SecretField
+                        label="Click2Mail username"
+                        field="fulfilmentUsername"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.fulfilmentUsername}
+                        secret={false}
                       />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">
-                        Example payload
-                      </Label>
-                      <CopyButton
-                        value={WEBHOOK_EXAMPLE}
-                        ocid="admin.webhook.payload.copy"
+                      <SecretField
+                        label="Click2Mail password"
+                        field="fulfilmentPassword"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.fulfilmentPasswordMasked}
                       />
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">
+                          Click2Mail environment
+                        </Label>
+                        <Select
+                          value={currentEnvironment}
+                          onValueChange={(v) =>
+                            setEnvironment(v as FulfilmentEnvironment)
+                          }
+                        >
+                          <SelectTrigger
+                            className="w-full sm:w-64"
+                            data-ocid="admin.fulfilment_environment.select"
+                          >
+                            <SelectValue placeholder="Select environment" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem
+                              value={FulfilmentEnvironment.Production}
+                            >
+                              Production
+                            </SelectItem>
+                            <SelectItem value={FulfilmentEnvironment.Staging}>
+                              Staging
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Staging uses Click2Mail's sandbox REST endpoints; no
+                          mail is printed.
+                        </p>
+                      </div>
                     </div>
-                    <pre
-                      className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed"
-                      data-ocid="admin.webhook.payload.text"
-                    >
-                      {WEBHOOK_EXAMPLE}
-                    </pre>
-                    <p className="text-xs text-muted-foreground">
-                      <code className="font-mono">event</code> accepts any stage
-                      name (Created, InProduction, InTransit, SortedAtLocalHub,
-                      Delivered) or USPS scan wording;{" "}
-                      <code className="font-mono">timestamp</code> may be
-                      seconds, milliseconds or nanoseconds.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">
-                        Test with curl
-                      </Label>
-                      <CopyButton
-                        value={curlExample}
-                        ocid="admin.webhook.curl.copy"
-                      />
-                    </div>
-                    <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
-                      {curlExample}
-                    </pre>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card data-ocid="admin.config.card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Globe className="size-4 text-primary" /> Public
-                    configuration
-                  </CardTitle>
-                  <CardDescription>
-                    What the storefront sees. Updates after every save.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {configQuery.isLoading && !config ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> Loading…
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Stripe
+                      </p>
+                      <SecretField
+                        label="Stripe Secret Key"
+                        field="stripeSecretKey"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.stripeSecretKeyMasked}
+                        placeholder="sk_live_…"
+                      />
+                      <SecretField
+                        label="Stripe Publishable Key"
+                        field="stripePublishableKey"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.stripePublishableKey}
+                        secret={false}
+                        placeholder="pk_live_…"
+                      />
                     </div>
-                  ) : config ? (
-                    <>
-                      <ConfigFlag
-                        label="Stripe configured"
-                        on={config.stripeConfigured}
-                        detail={config.stripePublishableKey}
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Email &amp; AI
+                      </p>
+                      <SecretField
+                        label="Resend API Key"
+                        field="resendKey"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.resendKeyMasked}
+                        placeholder="re_…"
                       />
-                      <ConfigFlag
-                        label="Click2Mail configured"
-                        on={config.fulfilmentConfigured}
-                        detail={config.fulfilmentEnvironment}
+                      <SecretField
+                        label="Support Notification Email"
+                        field="supportEmailAddress"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.supportEmailAddress}
+                        secret={false}
+                        optional
+                        placeholder="support@yourdomain.com"
+                        helper="New support tickets are emailed here through Resend, with the customer as reply-to. Sent from notifications@ezmailout.com, so verify that domain in Resend."
                       />
-                      <ConfigFlag
-                        label="OpenAI configured"
-                        on={config.openAiConfigured}
+                      <SecretField
+                        label="OpenAI API Key"
+                        field="openAiKey"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.openAiKeyMasked}
+                        placeholder="sk-…"
                       />
-                      <ConfigFlag
-                        label="Resend configured"
-                        on={config.resendConfigured}
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Webhooks &amp; networking
+                      </p>
+                      <SecretField
+                        label="Webhook Secret"
+                        field="webhookSecret"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.webhookSecretMasked}
+                        helper={`Shared secret that Click2Mail (or your relay) sends in the ${WEBHOOK_HEADER} header.`}
+                        extra={
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() =>
+                                  setDraft(
+                                    "webhookSecret",
+                                    generateWebhookSecret(),
+                                  )
+                                }
+                                className="gap-1.5"
+                                data-ocid="admin.webhook_secret.generate"
+                              >
+                                <RefreshCw className="size-4" /> Generate
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Generate a random 32-character secret
+                            </TooltipContent>
+                          </Tooltip>
+                        }
                       />
-                      <ConfigFlag
-                        label="Sandbox checkout"
-                        on={config.sandboxCheckout}
+                      <SecretField
+                        label="Outcall proxy URL"
+                        field="outcallProxyUrl"
+                        draft={draft}
+                        setDraft={setDraft}
+                        masked={view?.outcallProxyUrl}
+                        secret={false}
+                        optional
+                        placeholder="https://relay.example.com/"
+                        helper="Optional https:// relay (IPv6-capable) for Internet Computer outcalls; requests and their credentials are sent here with an x-target-url header"
                       />
-                      <Separator className="my-2" />
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="text-muted-foreground">
-                          Tracking base
-                        </span>
-                        <code className="font-mono text-xs">
-                          {config.trackingBaseUrl}
-                        </code>
+                    </div>
+
+                    <Separator />
+
+                    <div
+                      className="flex items-start justify-between gap-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3"
+                      data-ocid="admin.sandbox_checkout.field"
+                    >
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="admin-sandbox"
+                          className="flex items-center gap-2 text-sm font-medium"
+                        >
+                          <FlaskConical className="size-4 text-primary" />
+                          Sandbox checkout
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Launch campaigns without Stripe for testing — never
+                          enable in production
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="text-muted-foreground">
-                          Referral base
-                        </span>
-                        <code className="font-mono text-xs">
-                          {config.referralBaseUrl}
-                        </code>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Public config unavailable.
+                      <Switch
+                        id="admin-sandbox"
+                        checked={currentSandbox}
+                        onCheckedChange={(checked) => setSandbox(checked)}
+                        data-ocid="admin.sandbox_checkout.switch"
+                      />
+                    </div>
+
+                    {saveError && (
+                      <Alert variant="destructive" data-ocid="admin.save.error">
+                        <AlertCircle className="size-4" />
+                        <AlertTitle>Save failed</AlertTitle>
+                        <AlertDescription>{saveError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={resetDraft}
+                        disabled={!dirty || saveKeys.isPending}
+                        data-ocid="admin.discard.button"
+                      >
+                        Discard
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={!dirty || saveKeys.isPending}
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                        data-ocid="admin.save_keys.button"
+                      >
+                        {saveKeys.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Save className="size-4" />
+                        )}
+                        {saveKeys.isPending ? "Saving…" : "Save settings"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card data-ocid="admin.webhook.card">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Webhook className="size-4 text-primary" /> Delivery webhook
+                </CardTitle>
+                <CardDescription>
+                  Point Click2Mail tracking (or any relay) at this endpoint.
+                  Events are matched by{" "}
+                  <code className="font-mono">campaignId</code> or{" "}
+                  <code className="font-mono">jobId</code> and mapped onto the
+                  delivery timeline.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Endpoint (POST)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <code
+                      className="flex-1 truncate rounded-md bg-muted px-2 py-1.5 font-mono text-xs"
+                      data-ocid="admin.webhook.url.text"
+                    >
+                      {webhookUrl}
+                    </code>
+                    <CopyButton
+                      value={webhookUrl}
+                      ocid="admin.webhook.url.copy"
+                    />
+                  </div>
+                  {!canisterId && (
+                    <p className="text-xs text-muted-foreground">
+                      Backend canister id unavailable in this build; substitute
+                      your deployed canister id.
                     </p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Auth header
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <code className="rounded-md bg-muted px-2 py-1.5 font-mono text-xs">
+                      {WEBHOOK_HEADER}: &lt;webhook secret&gt;
+                    </code>
+                    <CopyButton
+                      value={WEBHOOK_HEADER}
+                      ocid="admin.webhook.header.copy"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Example payload
+                    </Label>
+                    <CopyButton
+                      value={WEBHOOK_EXAMPLE}
+                      ocid="admin.webhook.payload.copy"
+                    />
+                  </div>
+                  <pre
+                    className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed"
+                    data-ocid="admin.webhook.payload.text"
+                  >
+                    {WEBHOOK_EXAMPLE}
+                  </pre>
+                  <p className="text-xs text-muted-foreground">
+                    <code className="font-mono">event</code> accepts any stage
+                    name (Created, InProduction, InTransit, SortedAtLocalHub,
+                    Delivered) or USPS scan wording;{" "}
+                    <code className="font-mono">timestamp</code> may be seconds,
+                    milliseconds or nanoseconds.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Test with curl
+                    </Label>
+                    <CopyButton
+                      value={curlExample}
+                      ocid="admin.webhook.curl.copy"
+                    />
+                  </div>
+                  <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+                    {curlExample}
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
 
-              <SupportInboxCard />
-            </>
-          ) : null}
-        </div>
-      )}
+            <Card data-ocid="admin.config.card">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Globe className="size-4 text-primary" /> Public configuration
+                </CardTitle>
+                <CardDescription>
+                  What the storefront sees. Updates after every save.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {configQuery.isLoading && !config ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Loading…
+                  </div>
+                ) : config ? (
+                  <>
+                    <ConfigFlag
+                      label="Stripe configured"
+                      on={config.stripeConfigured}
+                      detail={config.stripePublishableKey}
+                    />
+                    <ConfigFlag
+                      label="Click2Mail configured"
+                      on={config.fulfilmentConfigured}
+                      detail={config.fulfilmentEnvironment}
+                    />
+                    <ConfigFlag
+                      label="OpenAI configured"
+                      on={config.openAiConfigured}
+                    />
+                    <ConfigFlag
+                      label="Resend configured"
+                      on={config.resendConfigured}
+                    />
+                    <ConfigFlag
+                      label="Sandbox checkout"
+                      on={config.sandboxCheckout}
+                    />
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-muted-foreground">
+                        Tracking base
+                      </span>
+                      <code className="font-mono text-xs">
+                        {config.trackingBaseUrl}
+                      </code>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-muted-foreground">
+                        Referral base
+                      </span>
+                      <code className="font-mono text-xs">
+                        {config.referralBaseUrl}
+                      </code>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Public config unavailable.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <SupportInboxCard />
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

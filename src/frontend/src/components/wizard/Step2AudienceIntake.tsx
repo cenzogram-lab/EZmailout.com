@@ -33,13 +33,12 @@ const RadiusMap = lazy(() =>
 
 function RadiusMapLoading() {
   return (
-    <div
+    <output
       className="flex h-[436px] items-center justify-center rounded-xl bg-muted/60 text-sm text-muted-foreground"
-      role="status"
       data-ocid="audience.map.loading"
     >
       <Loader2 className="mr-2 size-4 animate-spin" /> Loading the map…
-    </div>
+    </output>
   );
 }
 

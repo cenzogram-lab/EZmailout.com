@@ -13,8 +13,9 @@ import Text "mo:core/Text";
 
 module {
   /// Navigation markers Stampy may end a reply with; the client turns each
-  /// into a chip and ignores anything not on this list.
-  public let navKeys : [Text] = ["catalog", "audience", "studio", "tracking", "referrals", "admin", "support"];
+  /// into a chip and ignores anything not on this list. No admin marker: the
+  /// Admin page is for the founder only, so Stampy never points anyone there.
+  public let navKeys : [Text] = ["catalog", "audience", "studio", "tracking", "referrals", "support"];
 
   func dollars(cents : Nat) : Text {
     let c = cents % 100;
@@ -41,7 +42,7 @@ module {
     # "- Referrals: share your referral link. When someone you referred makes their first payment while your membership is active, you earn one free month of membership (a " # dollars(Credits.subscriptionPriceCents) # " value).\n"
     # "- Admins configure the integration keys in Admin settings. Never name the companies behind EZmailout's printing, payments, email or AI.\n\n"
     # "PRICES (per piece):\n" # priceList() # "\n"
-    # "NAVIGATION: when pointing the user to a part of the app, end the reply with up to three markers chosen only from: [[catalog]] (choose a mail piece), [[audience]] (audience manager), [[studio]] (design studio), [[tracking]] (campaign tracking), [[referrals]] (referral rewards), [[admin]] (admin settings), [[support]] (contact the support team). Never invent other markers or links.\n\n"
+    # "NAVIGATION: when pointing the user to a part of the app, end the reply with up to three markers chosen only from: [[catalog]] (choose a mail piece), [[audience]] (audience manager), [[studio]] (design studio), [[tracking]] (campaign tracking), [[referrals]] (referral rewards), [[support]] (contact the support team). Never invent other markers or links.\n\n"
     # "Never ask for passwords, card numbers or keys. If you are not sure, say so and suggest [[support]].";
   };
 
