@@ -31,6 +31,9 @@ const RadiusMap = lazy(() =>
     .catch(() => ({ default: RadiusMapUnavailable })),
 );
 
+const AUDIENCE_TAB =
+  "min-w-0 flex-col gap-0.5 px-1 py-1.5 text-xs leading-tight whitespace-normal sm:flex-row sm:gap-1.5 sm:px-2 sm:py-1 sm:text-sm sm:whitespace-nowrap";
+
 function RadiusMapLoading() {
   return (
     <output
@@ -166,14 +169,29 @@ export function Step2AudienceIntake() {
         }}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-          <TabsTrigger value="map" data-ocid="audience.tab.map">
+        {/* Below sm each tab stacks its icon over its label: three icon +
+            label rows do not fit a third of a phone, and nowrap labels spilled
+            over the next tab. */}
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-9 sm:w-auto">
+          <TabsTrigger
+            value="map"
+            className={AUDIENCE_TAB}
+            data-ocid="audience.tab.map"
+          >
             <MapPin className="size-4" /> Radius Map
           </TabsTrigger>
-          <TabsTrigger value="csv" data-ocid="audience.tab.csv">
+          <TabsTrigger
+            value="csv"
+            className={AUDIENCE_TAB}
+            data-ocid="audience.tab.csv"
+          >
             <FileSpreadsheet className="size-4" /> CSV Upload
           </TabsTrigger>
-          <TabsTrigger value="preset" data-ocid="audience.tab.preset">
+          <TabsTrigger
+            value="preset"
+            className={AUDIENCE_TAB}
+            data-ocid="audience.tab.preset"
+          >
             <Bookmark className="size-4" /> Saved Presets
           </TabsTrigger>
         </TabsList>

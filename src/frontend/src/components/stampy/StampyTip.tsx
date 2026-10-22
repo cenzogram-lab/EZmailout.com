@@ -37,13 +37,17 @@ export function StampyTip({
       aria-label="Tip from Stampy"
       className={cn(
         "relative flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 shadow-xs",
-        compact ? "px-3 py-2" : "gap-4 p-4",
+        compact ? "px-3 py-2" : "gap-3 p-4 min-[400px]:gap-4",
         className,
       )}
       data-ocid={`stampy.tip.${id}`}
     >
       <Mascot
-        className={cn("shrink-0", compact ? "size-14" : "size-20 sm:size-24")}
+        // Smaller on narrow phones, so the tip's text keeps a readable width.
+        className={cn(
+          "shrink-0",
+          compact ? "size-14" : "size-14 min-[400px]:size-20 sm:size-24",
+        )}
       />
       <div className="min-w-0 flex-1 pr-6">
         <p

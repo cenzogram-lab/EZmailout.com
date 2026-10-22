@@ -164,7 +164,12 @@ export function Step3DesignCanvas() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      {/* Rail + drawer | editor | 3D proof. The proof is a third column only
+          from 1400 px, where the editor keeps ≥ 550 px: at 1024 px the rail,
+          drawer and a 340 px proof left the editor ~160 px wide (398 px at
+          1280), so below 1400 px the row wraps and the proof sits full width
+          under the editor. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-start min-[1400px]:flex-nowrap">
         <div
           className={cn(
             "flex flex-col gap-3 lg:sticky lg:top-24 lg:flex-row lg:items-start",
@@ -220,7 +225,7 @@ export function Step3DesignCanvas() {
           </div>
         </div>
 
-        <CanvasPreview3D className="lg:sticky lg:top-24 lg:w-[340px] lg:shrink-0" />
+        <CanvasPreview3D className="lg:basis-full min-[1400px]:sticky min-[1400px]:top-24 min-[1400px]:w-[340px] min-[1400px]:shrink-0 min-[1400px]:basis-auto" />
       </div>
 
       <div className="flex items-center justify-between pt-2">

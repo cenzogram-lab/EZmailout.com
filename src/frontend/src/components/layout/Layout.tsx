@@ -170,12 +170,12 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       >
-        <span className="hidden h-10 w-32 animate-pulse rounded-full bg-muted sm:block" />
-        <span className="block size-10 animate-pulse rounded-full bg-muted" />
+        <span className="hidden h-10 w-32 animate-pulse rounded-full bg-foreground/10 sm:block" />
+        <span className="block size-10 animate-pulse rounded-full bg-foreground/10" />
       </output>
     ) : (
       <output
-        className="block h-10 w-10 animate-pulse rounded-full bg-muted sm:w-[5.75rem]"
+        className="block h-10 w-10 animate-pulse rounded-full bg-foreground/10 sm:w-[5.75rem]"
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       />

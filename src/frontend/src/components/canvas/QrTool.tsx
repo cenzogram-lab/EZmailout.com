@@ -111,172 +111,174 @@ export function QrTool() {
     toast.success(`QR code added to the ${target} side`);
   }
 
+  // Laid out by the panel's own width (container queries), not the screen's:
+  // on desktop it sits in the studio's narrow drawer, where screen breakpoints
+  // gave it two columns and squeezed the mode cards to ~70 px.
   return (
-    <div
-      className="grid gap-4 md:grid-cols-[minmax(0,1fr)_170px]"
-      data-ocid="canvas.qr_tool"
-    >
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <Label htmlFor="qr-destination" className="text-sm font-medium">
-            Destination URL
-          </Label>
-          <Input
-            id="qr-destination"
-            value={qrDestinationUrl}
-            onChange={(e) => setQrDestinationUrl(e.target.value)}
-            placeholder="https://yourbusiness.com/offer, a calendar link, tel:+1…, or your menu"
-            className={cn(destinationInvalid && "border-destructive")}
-            aria-invalid={destinationInvalid}
-            data-ocid="canvas.qr.destination_input"
-          />
-          {mode === QrMode.DynamicTracking &&
-          qrDestinationUrl.trim() &&
-          !redirectOk ? (
-            <p
-              className="text-xs text-destructive"
-              data-ocid="canvas.qr.destination_error"
-            >
-              Tracked codes forward to web addresses only (https://…). For a
-              phone number or email, choose Static URL.
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-1.5">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex.label}
-                type="button"
-                onClick={() => setQrDestinationUrl(ex.value)}
-                className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-foreground"
-                data-ocid={`canvas.qr.example.${ex.label.toLowerCase().replace(/\s+/g, "_")}`}
-              >
-                <ex.icon className="size-3" /> {ex.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => setMode(QrMode.DynamicTracking)}
-            className={cn(
-              "rounded-lg border p-3 text-left text-xs transition-smooth",
-              mode === QrMode.DynamicTracking
-                ? "border-primary bg-primary/10"
-                : "hover:border-primary/50",
-            )}
-            data-ocid="canvas.qr.mode.dynamic"
-          >
-            <span className="font-semibold text-foreground">
-              Dynamic tracking (recommended)
-            </span>
-            <p className="mt-1 text-muted-foreground">
-              Every recipient gets a personal{" "}
-              <span className="font-mono">ezmailout.com/t/…</span> code. Scans
-              are logged per recipient, then redirected to your destination —
-              change it any time.
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode(QrMode.StaticUrl)}
-            className={cn(
-              "rounded-lg border p-3 text-left text-xs transition-smooth",
-              mode === QrMode.StaticUrl
-                ? "border-primary bg-primary/10"
-                : "hover:border-primary/50",
-            )}
-            data-ocid="canvas.qr.mode.static"
-          >
-            <span className="font-semibold text-foreground">Static URL</span>
-            <p className="mt-1 text-muted-foreground">
-              The QR encodes your destination directly. No scan analytics.
-            </p>
-          </button>
-        </div>
-        <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
+    <div className="@container" data-ocid="canvas.qr_tool">
+      <div className="grid gap-4 @xl:grid-cols-[minmax(0,1fr)_170px]">
+        <div className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Size · {size}px
+            <Label htmlFor="qr-destination" className="text-sm font-medium">
+              Destination URL
             </Label>
-            <Slider
-              min={40}
-              max={400}
-              step={1}
-              value={[size]}
-              onValueChange={([v]) => setSize(v)}
-              data-ocid="canvas.qr.size_slider"
+            <Input
+              id="qr-destination"
+              value={qrDestinationUrl}
+              onChange={(e) => setQrDestinationUrl(e.target.value)}
+              placeholder="https://yourbusiness.com/offer, a calendar link, tel:+1…, or your menu"
+              className={cn(destinationInvalid && "border-destructive")}
+              aria-invalid={destinationInvalid}
+              data-ocid="canvas.qr.destination_input"
             />
+            {mode === QrMode.DynamicTracking &&
+            qrDestinationUrl.trim() &&
+            !redirectOk ? (
+              <p
+                className="text-xs text-destructive"
+                data-ocid="canvas.qr.destination_error"
+              >
+                Tracked codes forward to web addresses only (https://…). For a
+                phone number or email, choose Static URL.
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-1.5">
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex.label}
+                  type="button"
+                  onClick={() => setQrDestinationUrl(ex.value)}
+                  className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-foreground"
+                  data-ocid={`canvas.qr.example.${ex.label.toLowerCase().replace(/\s+/g, "_")}`}
+                >
+                  <ex.icon className="size-3" /> {ex.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="space-y-1 text-center">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Ink
-            </Label>
-            <input
-              type="color"
-              value={fg}
-              onChange={(e) => setFg(e.target.value)}
-              className="block size-9 cursor-pointer rounded border bg-transparent"
-              aria-label="QR foreground"
-              data-ocid="canvas.qr.fg"
-            />
+          <div className="grid gap-2 @md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setMode(QrMode.DynamicTracking)}
+              className={cn(
+                "rounded-lg border p-3 text-left text-xs transition-smooth",
+                mode === QrMode.DynamicTracking
+                  ? "border-primary bg-primary/10"
+                  : "hover:border-primary/50",
+              )}
+              data-ocid="canvas.qr.mode.dynamic"
+            >
+              <span className="font-semibold text-foreground">
+                Dynamic tracking (recommended)
+              </span>
+              <p className="mt-1 text-muted-foreground">
+                Every recipient gets a personal{" "}
+                <span className="font-mono">ezmailout.com/t/…</span> code. Scans
+                are logged per recipient, then redirected to your destination —
+                change it any time.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode(QrMode.StaticUrl)}
+              className={cn(
+                "rounded-lg border p-3 text-left text-xs transition-smooth",
+                mode === QrMode.StaticUrl
+                  ? "border-primary bg-primary/10"
+                  : "hover:border-primary/50",
+              )}
+              data-ocid="canvas.qr.mode.static"
+            >
+              <span className="font-semibold text-foreground">Static URL</span>
+              <p className="mt-1 text-muted-foreground">
+                The QR encodes your destination directly. No scan analytics.
+              </p>
+            </button>
           </div>
-          <div className="space-y-1 text-center">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Paper
-            </Label>
-            <input
-              type="color"
-              value={bg}
-              onChange={(e) => setBg(e.target.value)}
-              className="block size-9 cursor-pointer rounded border bg-transparent"
-              aria-label="QR background"
-              data-ocid="canvas.qr.bg"
-            />
+          <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
+            <div className="space-y-1">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Size · {size}px
+              </Label>
+              <Slider
+                min={40}
+                max={400}
+                step={1}
+                value={[size]}
+                onValueChange={([v]) => setSize(v)}
+                data-ocid="canvas.qr.size_slider"
+              />
+            </div>
+            <div className="space-y-1 text-center">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Ink
+              </Label>
+              <input
+                type="color"
+                value={fg}
+                onChange={(e) => setFg(e.target.value)}
+                className="block size-9 cursor-pointer rounded border bg-transparent"
+                aria-label="QR foreground"
+                data-ocid="canvas.qr.fg"
+              />
+            </div>
+            <div className="space-y-1 text-center">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Paper
+              </Label>
+              <input
+                type="color"
+                value={bg}
+                onChange={(e) => setBg(e.target.value)}
+                className="block size-9 cursor-pointer rounded border bg-transparent"
+                aria-label="QR background"
+                data-ocid="canvas.qr.bg"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => add("front")}
+              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              data-ocid="canvas.qr.add_front"
+            >
+              <QrCode className="size-4" /> Add to front
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => add("back")}
+              className="gap-1.5"
+              data-ocid="canvas.qr.add_back"
+            >
+              <QrCode className="size-4" /> Add to back
+            </Button>
+            <span className="self-center text-[11px] text-muted-foreground">
+              Editing side: {activeSide}. Drag and resize the code anywhere on
+              the card.
+            </span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => add("front")}
-            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-            data-ocid="canvas.qr.add_front"
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="rounded-lg border bg-white p-2 shadow-sm"
+            data-ocid="canvas.qr.preview"
           >
-            <QrCode className="size-4" /> Add to front
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => add("back")}
-            className="gap-1.5"
-            data-ocid="canvas.qr.add_back"
+            {svgUrl ? (
+              <img src={svgUrl} alt="QR preview" className="size-[140px]" />
+            ) : (
+              <div className="size-[140px] animate-pulse rounded bg-muted" />
+            )}
+          </div>
+          <span
+            className="max-w-[170px] truncate font-mono text-[10px] text-muted-foreground"
+            title={encoded}
           >
-            <QrCode className="size-4" /> Add to back
-          </Button>
-          <span className="self-center text-[11px] text-muted-foreground">
-            Editing side: {activeSide}. Drag and resize the code anywhere on the
-            card.
+            {encoded}
+          </span>
+          <span className="text-center text-[10px] text-muted-foreground">
+            Vector-sharp at any print size
           </span>
         </div>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <div
-          className="rounded-lg border bg-white p-2 shadow-sm"
-          data-ocid="canvas.qr.preview"
-        >
-          {svgUrl ? (
-            <img src={svgUrl} alt="QR preview" className="size-[140px]" />
-          ) : (
-            <div className="size-[140px] animate-pulse rounded bg-muted" />
-          )}
-        </div>
-        <span
-          className="max-w-[170px] truncate font-mono text-[10px] text-muted-foreground"
-          title={encoded}
-        >
-          {encoded}
-        </span>
-        <span className="text-center text-[10px] text-muted-foreground">
-          Vector-sharp at any print size
-        </span>
       </div>
     </div>
   );
