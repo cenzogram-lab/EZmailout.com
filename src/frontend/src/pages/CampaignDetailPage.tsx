@@ -510,7 +510,7 @@ export function CampaignDetailPage() {
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="space-y-6 lg:col-span-2">
+            <div className="min-w-0 space-y-6 lg:col-span-2">
               {/* Production */}
               <Card data-ocid="campaign_detail.production.panel">
                 <CardHeader>
@@ -751,7 +751,7 @@ export function CampaignDetailPage() {
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               {/* Invoice */}
               <Card data-ocid="campaign_detail.invoice.panel">
                 <CardHeader>

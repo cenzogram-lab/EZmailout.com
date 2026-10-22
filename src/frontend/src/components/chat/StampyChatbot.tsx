@@ -385,7 +385,7 @@ function StampyChatbotPanel() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="group fixed bottom-[calc(1.25rem+var(--bottom-nav-h))] right-4 z-40 flex h-14 items-center gap-2 rounded-full border border-border/60 bg-card p-1 shadow-soft transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5 sm:pr-4"
+        className="hide-with-keyboard group fixed bottom-[calc(1.25rem+var(--bottom-nav-h))] right-4 z-40 flex h-14 items-center gap-2 rounded-full border border-border/60 bg-card p-1 shadow-soft transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5 sm:pr-4"
         aria-label={
           open
             ? "Minimize Stampy"

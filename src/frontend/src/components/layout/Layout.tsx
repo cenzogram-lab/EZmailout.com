@@ -322,7 +322,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 bg-background pt-[env(safe-area-inset-top,0px)]">
         {/* From 2xl the bar may use up to 100rem: the logo and the peeking Stampy keep growing with the viewport, and the page content (max-w-7xl) stays centred under it. */}
-        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8 2xl:max-w-[100rem]">
+        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-3 min-[360px]:px-4 sm:gap-3 sm:px-6 lg:px-8 2xl:max-w-[100rem]">
           <Link
             to="/"
             data-ocid="nav.logo.link"

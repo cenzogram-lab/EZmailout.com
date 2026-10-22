@@ -333,6 +333,13 @@ html {
   scroll-padding-bottom: calc(6rem + var(--bottom-nav-h));
 }
 
+/* While a phone's on-screen keyboard is up (useSoftKeyboardOpen sets the
+ * attribute), bottom-anchored controls step aside with the tab bar: on iOS a
+ * fixed element no longer stays on the screen edge with the keyboard open. */
+html[data-soft-keyboard] .hide-with-keyboard {
+  visibility: hidden;
+}
+
 /* The launcher's gentle idle bob; still for reduced motion. */
 @keyframes stampyBob {
   0%,

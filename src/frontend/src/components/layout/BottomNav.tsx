@@ -1,6 +1,7 @@
 import { PaymentStatus } from "@/backend";
 import { useAccountSync } from "@/hooks/use-account";
 import { useCampaigns } from "@/hooks/use-backend";
+import { useSoftKeyboardOpen } from "@/hooks/use-soft-keyboard";
 import { cn } from "@/lib/utils";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { House, Mailbox, Palette, Plus, UserRound } from "lucide-react";
@@ -26,13 +27,16 @@ function isActive(path: string, to: string): boolean {
  * the sheet's height including the home-indicator inset, and everything else
  * anchored to the bottom (Stampy, toasts, page padding) is offset by it; the
  * Create button rises above the sheet in the middle, clear of the Stampy
- * launcher in the right corner. Hidden on the QR redirect routes, which
- * recipients rather than customers land on.
+ * launcher in the right corner. While the on-screen keyboard is up it slides
+ * away (and is `inert`), so it never floats over the field being typed in.
+ * Hidden on the QR redirect routes, which recipients rather than customers
+ * land on.
  */
 export function BottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAuthenticated } = useAccountSync();
   const { data: campaigns } = useCampaigns(isAuthenticated);
+  const keyboardOpen = useSoftKeyboardOpen();
   if (path.startsWith("/t/") || path.startsWith("/track/")) return null;
 
   // Unpaid drafts expire after 14 days, so they are worth a count.
@@ -44,7 +48,11 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 rounded-t-[1.75rem] border-t border-border/60 bg-card pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_30px_-18px_rgb(15_23_42/0.35)] lg:hidden"
+      inert={keyboardOpen}
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-40 rounded-t-[1.75rem] border-t border-border/60 bg-card pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_30px_-18px_rgb(15_23_42/0.35)] motion-safe:transition-transform lg:hidden",
+        keyboardOpen && "pointer-events-none translate-y-full",
+      )}
       data-ocid="bottom_nav"
     >
       <ul className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 px-1">
