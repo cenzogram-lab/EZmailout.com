@@ -7,6 +7,9 @@
  * are re-exported as values (not `export type`).
  */
 import type { ProductType } from "@/backend";
+import type { Orientation } from "@/lib/printSpec";
+import type { FrameKind, SceneKind, TemplatePalette } from "@/lib/templateArt";
+import type { TemplateArchetype } from "@/lib/templateLayout";
 
 // ─── Backend enums (runtime values) ─────────────────────────────────────────
 export {
@@ -67,31 +70,112 @@ export type {
 
 // ─── UI-only types ──────────────────────────────────────────────────────────
 
-/** Minimal text block definition used by the template gallery. */
-export interface TemplateTextBlock {
-  text: string;
-  x: number;
-  y: number;
-  fontSize: number;
-  color: string;
+/** Gallery filter: the look of a template. */
+export type TemplateStyle =
+  | "Modern"
+  | "Minimalist"
+  | "Bold"
+  | "Elegant"
+  | "Playful"
+  | "Corporate";
+
+/** Gallery filter: the business a template is written for. */
+export type TemplateTheme =
+  | "Real Estate"
+  | "Restaurants & Cafés"
+  | "Health & Dental"
+  | "Home Services"
+  | "Retail & E-commerce"
+  | "Professional Services"
+  | "Fitness & Wellness"
+  | "Beauty & Salon"
+  | "Automotive"
+  | "Events & Nonprofit"
+  | "Education"
+  | "Pets";
+
+/** Gallery filter: dominant colours. */
+export type TemplateColor =
+  | "Blue"
+  | "Navy"
+  | "Green"
+  | "Teal"
+  | "Red"
+  | "Orange"
+  | "Yellow"
+  | "Purple"
+  | "Pink"
+  | "Brown"
+  | "Cream"
+  | "Black"
+  | "White";
+
+/** Gallery filter: what is on the piece. */
+export type TemplateFeature =
+  | "QR code"
+  | "Coupon or offer"
+  | "Checklist"
+  | "Event details"
+  | "Illustration"
+  | "Signature";
+
+/** Words a template prints; every one becomes an editable text layer. */
+export interface TemplateCopy {
+  brand: string;
+  eyebrow: string;
+  headline: string;
+  /** Second headline line in the accent colour (two-tone headlines). */
+  headline2?: string;
+  /** Script word above an event headline ("Creative", "Join us"). */
+  script?: string;
+  subhead: string;
+  /** Heading over the checklist. */
+  listTitle: string;
+  bullets: string[];
+  offer?: { big: string; small: string; code?: string; expires?: string };
+  cta: string;
+  contact: { phone: string; web: string; address?: string };
+  /** Event date, time and venue lines. */
+  details?: string[];
+  qrLabel: string;
+  back: { headline: string; body: string };
+  /** Letter body for the letterhead composition. */
+  letter?: {
+    date?: string;
+    greeting: string;
+    paragraphs: string[];
+    closing: string;
+    signer: string;
+    title: string;
+    ps?: string;
+  };
 }
 
-/** A pre-built design shown in the Templates gallery and loadable into the wizard canvas. */
+/**
+ * A gallery design: content plus a composition. It is laid out natively for
+ * any format and orientation by `lib/templateLayout.ts`, front and back.
+ */
 export interface DesignTemplate {
   id: string;
   name: string;
-  category: string;
-  industry: string;
+  /** One sentence for the preview dialog. */
+  description: string;
   productType: ProductType;
+  /** The format it is shown in; it builds on every other format too. */
   layoutVariant: string;
-  thumbnailDescription: string;
-  backgroundColor: string;
-  textBlocks: TemplateTextBlock[];
+  /** How it is shown on that format (`rotated` turns the sheet). */
+  orientation: Orientation;
+  archetype: TemplateArchetype;
+  palette: TemplatePalette;
+  fonts: { head: string; headWeight: number };
+  scene: SceneKind;
+  frame?: FrameKind;
+  copy: TemplateCopy;
   hasQrCode: boolean;
-  sizeLabel: string;
-  gradient: string;
-  accentColor: string;
-  overlayText: string;
+  style: TemplateStyle;
+  theme: TemplateTheme;
+  colors: TemplateColor[];
+  features: TemplateFeature[];
 }
 
 /** Geo-radius audience target selected on the map step. */

@@ -10,18 +10,23 @@ import type {
 } from "@/backend";
 import {
   canvasFromTemplate,
+  canvasSignature,
   emptyCanvasState,
   getSide,
   makeLogo,
   makeQrCode,
   makeTextBlock,
   rotateCanvasState,
-  sideSignature,
   withSide,
 } from "@/lib/canvas";
 import type { CatalogMailClass } from "@/lib/pricing";
 import { getPricingRow } from "@/lib/pricing";
-import { canvasDims, getLayoutDims, orientationOf } from "@/lib/printSpec";
+import {
+  type Orientation,
+  canvasDims,
+  getLayoutDims,
+  orientationOf,
+} from "@/lib/printSpec";
 import { isShapeUrl, reshapeForBox } from "@/lib/shapes";
 import type {
   CanvasAlignment,
@@ -75,9 +80,10 @@ interface WizardData {
     templateSignature: string | null;
   } | null;
   /**
-   * `sideSignature` of the front as `designTemplate` last laid it out. While
-   * the front still matches it the template is untouched ("pristine"), and
-   * turning the artboard rebuilds it natively instead of re-laying it.
+   * `canvasSignature` of both sides as `designTemplate` last laid them out.
+   * While the canvas still matches it the template is untouched
+   * ("pristine"), and turning the artboard rebuilds it natively instead of
+   * re-laying it.
    */
   templateSignature: string | null;
   activeSide: CanvasSideKey;
@@ -101,7 +107,14 @@ interface WizardActions {
   setRecipientCount: (count: number) => void;
   setGeoTarget: (target: MapTarget | null) => void;
   setSourcePresetId: (id: string | null) => void;
-  setDesignTemplate: (template: DesignTemplate | null) => void;
+  /**
+   * Lays `template` out on the current format, both sides. `orientation`
+   * defaults to the canvas's current one.
+   */
+  setDesignTemplate: (
+    template: DesignTemplate | null,
+    orientation?: Orientation,
+  ) => void;
   setCanvas: (canvas: CanvasState) => void;
   /**
    * Turns the artboard between the product's own orientation and the
@@ -265,8 +278,9 @@ function reindex(side: CanvasSide, id: string, z: bigint): CanvasSide {
 }
 
 /**
- * True while the front is exactly what `designTemplate` laid out: no element
- * added, moved, restyled or removed since, in the current orientation.
+ * True while both sides are exactly what `designTemplate` laid out: no
+ * element added, moved, restyled or removed since, in the current
+ * orientation.
  */
 export function isTemplatePristine(
   s: Pick<WizardData, "designTemplate" | "templateSignature" | "canvas">,
@@ -274,7 +288,7 @@ export function isTemplatePristine(
   return (
     s.designTemplate !== null &&
     s.templateSignature !== null &&
-    s.templateSignature === sideSignature(s.canvas)
+    s.templateSignature === canvasSignature(s.canvas)
   );
 }
 
@@ -326,7 +340,7 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
   setRecipientCount: (recipientCount) => set({ recipientCount }),
   setGeoTarget: (geoTarget) => set({ geoTarget }),
   setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
-  setDesignTemplate: (template) =>
+  setDesignTemplate: (template, orientation) =>
     set((s) => {
       if (!template) {
         return {
@@ -339,18 +353,13 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
       const built = canvasFromTemplate(
         template,
         layout,
-        orientationOf(s.canvas, layout),
+        orientation ?? orientationOf(s.canvas, layout),
       );
-      // A template replaces the front only; the back stays when it belongs
-      // to the same artboard.
-      const sameArtboard =
-        built.widthInches === s.canvas.widthInches &&
-        built.heightInches === s.canvas.heightInches;
-      const canvas = sameArtboard ? { ...built, back: s.canvas.back } : built;
+      // A template designs both sides, so it replaces the whole canvas.
       return {
         designTemplate: template,
-        canvas,
-        templateSignature: sideSignature(canvas),
+        canvas: built,
+        templateSignature: canvasSignature(built),
         rotationUndo: null,
         selectedElementId: null,
       };
@@ -388,21 +397,19 @@ export const useWizardStore = create<WizardStore>()((set, get) => ({
         templateSignature: s.templateSignature,
       };
       if (isTemplatePristine(s) && s.designTemplate) {
-        // An untouched template is laid out again for the new frame; the
-        // back, which templates never fill, is re-laid as usual.
-        const rebuilt = canvasFromTemplate(
+        // An untouched template is laid out again, both sides, for the
+        // new frame.
+        const rotated = canvasFromTemplate(
           s.designTemplate,
           layout,
           to.rotated ? "rotated" : "native",
         );
-        const rotated = { ...relaid, front: rebuilt.front };
         return {
           canvas: rotated,
-          templateSignature: sideSignature(rotated),
+          templateSignature: canvasSignature(rotated),
           rotationUndo: { ...rotationUndo, rotated },
-          // Front ids are new; back ids survive the re-layout.
-          selectedElementId:
-            s.activeSide === "front" ? null : s.selectedElementId,
+          // Every id is new.
+          selectedElementId: null,
         };
       }
       return {

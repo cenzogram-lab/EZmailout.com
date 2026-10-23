@@ -15,7 +15,7 @@ import {
   getLayoutDims,
   safeRect,
 } from "@/lib/printSpec";
-import { layoutTemplate } from "@/lib/templateLayout";
+import { layoutTemplateSide } from "@/lib/templateLayout";
 import { bandHeight, countLines } from "@/lib/textFit";
 import type { CanvasSideKey, DesignTemplate } from "@/types";
 
@@ -141,10 +141,10 @@ export function clampToCanvas(
 }
 
 /**
- * Builds a canvas from a gallery template (front side only), laid out
- * natively for the artboard in the given orientation — see
- * `lib/templateLayout.ts`. The result depends only on the template, the
- * format and the orientation, so rebuilding it gives the same design.
+ * Builds a canvas from a gallery template, front and back, laid out natively
+ * for the artboard in the given orientation — see `lib/templateLayout.ts`.
+ * The result depends only on the template, the format and the orientation,
+ * so rebuilding it gives the same design.
  */
 export function canvasFromTemplate(
   template: DesignTemplate,
@@ -153,23 +153,33 @@ export function canvasFromTemplate(
 ): CanvasState {
   const base = emptyCanvasState(layoutVariant, orientation);
   const dims = getLayoutDims(layoutVariant, orientation);
-  const front: CanvasSide = {
-    ...base.front,
-    backgroundColor: template.backgroundColor,
-  };
-  let z = 0n;
   const traits = physicalTraitsFor(layoutVariant, orientation);
-  for (const el of layoutTemplate(template, dims, traits)) {
-    z += 1n;
-    if (el.kind === "text") {
-      front.textBlocks.push(makeTextBlock(front, { ...el.block, zIndex: z }));
-    } else if (el.kind === "shape") {
-      front.logos.push(makeLogo(front, el.logo.url, { ...el.logo, zIndex: z }));
-    } else {
-      front.qrCodes.push(makeQrCode(front, { ...el.qr, zIndex: z }));
+  const build = (key: CanvasSideKey): CanvasSide => {
+    const laid = layoutTemplateSide(template, dims, traits, key);
+    const side: CanvasSide = {
+      ...base[key],
+      backgroundColor: laid.backgroundColor,
+      backgroundImageUrl: laid.backgroundImageUrl,
+    };
+    let z = 0n;
+    for (const el of laid.elements) {
+      z += 1n;
+      if (el.kind === "text") {
+        side.textBlocks.push(makeTextBlock(side, { ...el.block, zIndex: z }));
+      } else if (el.kind === "logo") {
+        side.logos.push(makeLogo(side, el.logo.url, { ...el.logo, zIndex: z }));
+      } else {
+        side.qrCodes.push(makeQrCode(side, { ...el.qr, zIndex: z }));
+      }
     }
-  }
-  return { ...base, front };
+    return side;
+  };
+  return { ...base, front: build("front"), back: build("back") };
+}
+
+/** Content signature of both sides (see `sideSignature`). */
+export function canvasSignature(canvas: CanvasState): string {
+  return `${sideSignature(canvas, "front")}\n${sideSignature(canvas, "back")}`;
 }
 
 /**

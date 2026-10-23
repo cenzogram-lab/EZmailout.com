@@ -61,6 +61,9 @@ export const STUDIO_SWATCHES: BrandSwatch[] = [
 export const STUDIO_FONTS = [
   "Geist",
   "Geist Mono",
+  "Playfair Display",
+  "Bebas Neue",
+  "Pacifico",
   "Georgia",
   "Times New Roman",
   "Arial",

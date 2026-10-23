@@ -27,6 +27,8 @@ Dark mode (`.dark`) keeps the same roles on navy surfaces with indigo-400 as pri
 ## Typography
 Geist (variable 100–900, self-hosted `public/assets/fonts/Geist-*.woff2`) for display and body; Geist Mono for ids,
 tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. Body: 400/500.
+Playfair Display, Bebas Neue and Pacifico are for printed designs (templates and the studio font picker) only, never
+the app's own UI.
 
 ## Components
 - Radius: `--radius: 0.875rem`; cards `rounded-xl`/`rounded-2xl`, buttons and badges are pills (`rounded-full`).
@@ -49,6 +51,20 @@ tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. 
 - Live 3D proof pinned on the right at `lg+` with flip and rotation; Geist is loaded (`document.fonts.ready`) before rasterizing.
 - Swatches: paper, text, QR and shape colour pickers expose the brand palette
   (`#ffffff #f4f4f4 #f0f1f5 #cff3fd #b5d8fc #dbefad #6366f1 #0e2b4f #01080a`).
+
+## Templates gallery (`/templates`, Canva reference)
+- Search pill on top, then a sticky filter bar of pills: **All** (opens a side sheet with every facet) · Style · Theme ·
+  Category · Color (round swatches) · Price (per-piece bands from the catalog) · Feature; an active pill turns
+  `bg-primary/10 text-primary-ink` with its count, and **Clear all** appears beside them.
+- Masonry columns (2 on phones → 5 at `2xl`) of true previews: every card is the template laid out by the engine, in
+  its own aspect, `rounded-xl` with a hairline border; the title sits under the card on one line with the format and
+  price below it. Pointer devices get a "1 of 2" page pill and a Preview chip on hover; the Back chip flips the card.
+- Preview dialog: both sides side by side (back sides show a sample mailing address in the USPS zone), size chips for
+  every size in the family, Portrait/Landscape, features, and **Customize this template** (opens the studio, Step 3).
+- Templates are original direct-mail designs — nine compositions (gradient, framed split, bold poster, minimal serif,
+  illustrated band, event, dark corporate, coupon, letterhead) × palette × typeface × vector illustration — never
+  stock photos. Typefaces: Geist plus Playfair Display (serif), Bebas Neue (condensed display) and Pacifico (script),
+  all self-hosted, SIL OFL.
 
 ## Catalog (Step 1 and homepage)
 - 14 product families drawn as monochrome line-art icons (`components/catalog/CatalogIcon.tsx`) in a 7-column grid.

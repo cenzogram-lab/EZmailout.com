@@ -1,13 +1,17 @@
+import { LazyTemplateSide } from "@/components/templates/TemplatePreview";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { LAYOUT_PRESETS } from "@/lib/layouts";
-import { templatesForLayout } from "@/lib/templates";
+import type { Orientation } from "@/lib/printSpec";
+import { loadTemplateFonts, templatesForLayout } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
-import { LayoutTemplate, Sparkles } from "lucide-react";
+import { LayoutTemplate, Search, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-/** Templates & layouts tool: gallery designs for this format plus text layouts. */
+/** Templates & layouts tool: every gallery design, laid out for this format. */
 export function TemplatesPanel() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const selectedProduct = useWizardStore((s) => s.selectedProduct);
@@ -17,10 +21,27 @@ export function TemplatesPanel() {
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
   const layoutVariant = selectedLayout ?? "6x9";
   const dims = useCanvasDims();
-  const templates = templatesForLayout(
-    layoutVariant,
-    selectedProduct?.productType ?? null,
-  );
+  const orientation: Orientation = dims.rotated ? "rotated" : "native";
+  const [query, setQuery] = useState("");
+  const templates = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return templatesForLayout(
+      layoutVariant,
+      selectedProduct?.productType ?? null,
+    ).filter(
+      (t) =>
+        !q ||
+        q
+          .split(/\s+/)
+          .every((w) =>
+            [t.name, t.theme, t.style, t.copy.headline, ...t.colors]
+              .join(" ")
+              .toLowerCase()
+              .includes(w),
+          ),
+    );
+  }, [layoutVariant, selectedProduct, query]);
+  const aspect = dims.designWidth / dims.designHeight;
 
   function applyLayout(id: string) {
     const preset = LAYOUT_PRESETS.find((p) => p.id === id);
@@ -34,57 +55,58 @@ export function TemplatesPanel() {
       <div>
         <p className="font-display text-sm font-semibold">Templates</p>
         <p className="text-xs text-muted-foreground">
-          Designs sized for this format. Applying one replaces the front side.
+          Every design, laid out for this size. Applying one replaces both
+          sides.
         </p>
+      </div>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search templates"
+          className="h-10 rounded-full pl-9"
+          aria-label="Search templates"
+          data-ocid="canvas.templates.search.input"
+        />
       </div>
       {templates.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
           <LayoutTemplate className="size-5" />
-          No gallery template for this format yet — start from a layout below.
+          No template matches — try another word.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {templates.map((t) => {
             const active = designTemplate?.id === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  await loadTemplateFonts();
                   setDesignTemplate(t);
                   toast.success(`Applied “${t.name}”`);
                 }}
-                className={cn(
-                  "group overflow-hidden rounded-xl border text-left transition-smooth hover:border-primary/50",
-                  active && "border-primary ring-2 ring-primary/20",
-                )}
+                className={cn("group min-w-0 text-left")}
+                aria-label={`Apply ${t.name}`}
                 data-ocid={`canvas.template.${t.id}`}
               >
-                <div
-                  className="relative flex h-20 items-center justify-center px-2 text-center"
-                  style={{ background: t.gradient }}
-                >
-                  <span
-                    className="font-display text-[11px] font-bold leading-tight"
-                    style={{ color: t.textBlocks[0]?.color ?? "#fff" }}
-                  >
-                    {t.textBlocks[0]?.text}
-                  </span>
-                  <span
-                    className="absolute right-1 top-1 rounded px-1 text-[8px] font-bold uppercase text-white"
-                    style={{ backgroundColor: t.accentColor }}
-                  >
-                    {t.overlayText}
-                  </span>
-                </div>
-                <div className="px-2 py-1.5">
-                  <p className="truncate text-[11px] font-medium text-foreground">
-                    {t.name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {t.industry}
-                  </p>
-                </div>
+                <LazyTemplateSide
+                  template={t}
+                  layoutVariant={layoutVariant}
+                  orientation={orientation}
+                  side="front"
+                  aspect={aspect}
+                  className={cn(
+                    "overflow-hidden rounded-lg border border-border/70 shadow-soft transition-smooth group-hover:border-primary/60",
+                    active && "border-primary ring-2 ring-primary/30",
+                  )}
+                />
+                <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-tight text-foreground">
+                  {t.name}
+                </p>
               </button>
             );
           })}
