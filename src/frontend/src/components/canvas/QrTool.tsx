@@ -1,4 +1,5 @@
 import { QrMode } from "@/backend";
+import { ColorPicker } from "@/components/canvas/ColorPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,8 +196,8 @@ export function QrTool() {
               </p>
             </button>
           </div>
-          <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
-            <div className="space-y-1">
+          <div className="grid grid-cols-2 items-end gap-3">
+            <div className="col-span-2 space-y-1">
               <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Size · {size}px
               </Label>
@@ -209,30 +210,26 @@ export function QrTool() {
                 data-ocid="canvas.qr.size_slider"
               />
             </div>
-            <div className="space-y-1 text-center">
+            <div className="space-y-1">
               <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Ink
               </Label>
-              <input
-                type="color"
+              <ColorPicker
                 value={fg}
-                onChange={(e) => setFg(e.target.value)}
-                className="block size-9 cursor-pointer rounded border bg-transparent"
-                aria-label="QR foreground"
-                data-ocid="canvas.qr.fg"
+                onChange={setFg}
+                label="QR foreground"
+                ocid="canvas.qr.fg"
               />
             </div>
-            <div className="space-y-1 text-center">
+            <div className="space-y-1">
               <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Paper
               </Label>
-              <input
-                type="color"
+              <ColorPicker
                 value={bg}
-                onChange={(e) => setBg(e.target.value)}
-                className="block size-9 cursor-pointer rounded border bg-transparent"
-                aria-label="QR background"
-                data-ocid="canvas.qr.bg"
+                onChange={setBg}
+                label="QR background"
+                ocid="canvas.qr.bg"
               />
             </div>
           </div>

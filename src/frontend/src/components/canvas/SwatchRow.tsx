@@ -1,8 +1,9 @@
+import { ColorPicker } from "@/components/canvas/ColorPicker";
 import { STUDIO_SWATCHES } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
-/** Round brand-colour swatches (Canva "colour palette" style) plus a free picker. */
+/** Round brand-colour swatches (Canva "colour palette" style), then the full colour picker. */
 export function SwatchRow({
   value,
   onChange,
@@ -53,22 +54,14 @@ export function SwatchRow({
           </button>
         );
       })}
-      <label
-        className={cn(
-          "relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-muted-foreground/50 bg-[conic-gradient(from_0deg,#f43f5e,#f59e0b,#84cc16,#06b6d4,#6366f1,#f43f5e)]",
-          size === "sm" ? "size-6" : "size-7",
-        )}
-        title="Custom colour"
-      >
-        <input
-          type="color"
-          value={/^#[0-9a-f]{6}$/i.test(value) ? value : "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 size-full cursor-pointer opacity-0"
-          aria-label={`${label}: custom colour`}
-          data-ocid={`${ocid}.custom`}
-        />
-      </label>
+      <ColorPicker
+        variant="swatch"
+        value={value}
+        onChange={onChange}
+        label={label}
+        ocid={ocid}
+        size={size}
+      />
     </div>
   );
 }

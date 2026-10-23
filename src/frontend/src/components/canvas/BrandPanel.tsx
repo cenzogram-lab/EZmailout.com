@@ -1,10 +1,12 @@
 import { findElementKind } from "@/components/canvas/CanvasEditor";
+import { FontPicker } from "@/components/canvas/FontPicker";
 import { SwatchRow } from "@/components/canvas/SwatchRow";
-import { STUDIO_FONTS, STUDIO_SWATCHES } from "@/lib/brand";
+import { STUDIO_SWATCHES } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
+import { FONT_CATALOG } from "@/lib/fonts";
 import { useWizardStore } from "@/store/wizard";
 
-/** Brand tool: paper colour, brand palette and the typefaces available in the inspector. */
+/** Brand tool: paper colour, element colour, brand palette and the font of the selected text. */
 export function BrandPanel() {
   const canvas = useWizardStore((s) => s.canvas);
   const activeSide = useWizardStore((s) => s.activeSide);
@@ -16,6 +18,10 @@ export function BrandPanel() {
   const kind = selectedElementId
     ? findElementKind(side, selectedElementId)
     : null;
+  const selectedFont =
+    kind === "text"
+      ? side.textBlocks.find((t) => t.id === selectedElementId)?.fontFamily
+      : undefined;
   const selectedColor =
     kind === "text"
       ? (side.textBlocks.find((t) => t.id === selectedElementId)?.color ?? "")
@@ -90,24 +96,26 @@ export function BrandPanel() {
       </div>
       <div className="space-y-1.5">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Typefaces
+          {kind === "text"
+            ? "Selected text font"
+            : "Font (select a text block)"}
         </p>
-        <ul className="space-y-1">
-          {STUDIO_FONTS.map((font) => (
-            <li
-              key={font}
-              className="rounded-lg border bg-card px-2.5 py-1.5 text-sm"
-              style={{ fontFamily: `"${font}", "Geist", sans-serif` }}
-            >
-              {font}
-              {font === "Geist" && (
-                <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 font-body text-[10px] font-medium text-primary-ink">
-                  brand
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <FontPicker
+          value={selectedFont ?? "Geist"}
+          onChange={(family) =>
+            selectedElementId &&
+            kind === "text" &&
+            updateTextBlock(activeSide, selectedElementId, {
+              fontFamily: family,
+            })
+          }
+          disabled={kind !== "text"}
+          ocid="canvas.brand.font"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          {FONT_CATALOG.length} typefaces. Every one except the System group is
+          built in, so it prints exactly as you see it.
+        </p>
       </div>
     </div>
   );

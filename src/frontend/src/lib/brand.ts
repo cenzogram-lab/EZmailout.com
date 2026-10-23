@@ -1,3 +1,4 @@
+import { FONT_CATALOG } from "@/lib/fonts";
 /** Brand constants and URL builders for EZmailout. */
 export const BRAND = {
   name: "EZmailout",
@@ -58,13 +59,6 @@ export const STUDIO_SWATCHES: BrandSwatch[] = [
 ];
 
 /** Typefaces offered by the text inspector (Geist is the brand face). */
-export const STUDIO_FONTS = [
-  "Geist",
-  "Geist Mono",
-  "Playfair Display",
-  "Bebas Neue",
-  "Pacifico",
-  "Georgia",
-  "Times New Roman",
-  "Arial",
-] as const;
+export const STUDIO_FONTS: readonly string[] = FONT_CATALOG.map(
+  (f) => f.family,
+);

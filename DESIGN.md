@@ -27,8 +27,8 @@ Dark mode (`.dark`) keeps the same roles on navy surfaces with indigo-400 as pri
 ## Typography
 Geist (variable 100–900, self-hosted `public/assets/fonts/Geist-*.woff2`) for display and body; Geist Mono for ids,
 tracking codes and prices in tables. Headings: semibold/bold, `tracking-tight`. Body: 400/500.
-Playfair Display, Bebas Neue and Pacifico are for printed designs (templates and the studio font picker) only, never
-the app's own UI.
+The studio's font catalogue (Playfair Display, Bebas Neue, Pacifico, Inter, Montserrat, Lora, Great Vibes and the rest,
+`lib/fonts.ts`) is for printed designs only, never the app's own UI.
 
 ## Components
 - Radius: `--radius: 0.875rem`; cards `rounded-xl`/`rounded-2xl`, buttons and badges are pills (`rounded-full`).
@@ -49,8 +49,11 @@ the app's own UI.
 - Elements are vector shapes stored as SVG data-URL logo layers (`lib/shapes.ts`) so they rasterize and persist like images;
   they resize freely and recolour from the inspector.
 - Live 3D proof pinned on the right at `lg+` with flip and rotation; Geist is loaded (`document.fonts.ready`) before rasterizing.
-- Swatches: paper, text, QR and shape colour pickers expose the brand palette
-  (`#ffffff #f4f4f4 #f0f1f5 #cff3fd #b5d8fc #dbefad #6366f1 #0e2b4f #01080a`).
+- Colour: every colour control shows the brand swatches (`#ffffff #f4f4f4 #f0f1f5 #cff3fd #b5d8fc #dbefad #6366f1
+  #0e2b4f #01080a`) and a rainbow "+" that opens the full picker — search or type any colour (hex, rgb, hsl, names),
+  saturation/brightness field, hue spectrum, hex field, eyedropper, document colours, brand colours and a colour chart.
+- Fonts: a searchable picker of 40 faces grouped Sans serif · Serif · Display · Script · Mono (· System), each name shown
+  in its own face.
 
 ## Templates gallery (`/templates`, Canva reference)
 - Search pill on top, then a sticky filter bar of pills: **All** (opens a side sheet with every facet) · Style · Theme ·

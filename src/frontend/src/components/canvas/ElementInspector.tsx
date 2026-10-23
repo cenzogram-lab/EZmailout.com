@@ -1,5 +1,7 @@
 import { QrMode } from "@/backend";
 import { findElementKind } from "@/components/canvas/CanvasEditor";
+import { ColorPicker } from "@/components/canvas/ColorPicker";
+import { FontPicker } from "@/components/canvas/FontPicker";
 import { SwatchRow } from "@/components/canvas/SwatchRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { STUDIO_FONTS } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
 import { normalizeDestinationUrl } from "@/lib/qr";
 import {
@@ -33,7 +34,6 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 
-const FONTS = STUDIO_FONTS;
 const WEIGHTS = ["300", "400", "500", "600", "700", "800"];
 
 function NumberField({
@@ -124,25 +124,11 @@ export function ElementInspector() {
             <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
               Font
             </Label>
-            <Select
+            <FontPicker
               value={block.fontFamily}
-              onValueChange={(v) => patch({ fontFamily: v })}
-            >
-              <SelectTrigger className="h-8" data-ocid="canvas.inspector.font">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FONTS.map((f) => (
-                  <SelectItem
-                    key={f}
-                    value={f}
-                    style={{ fontFamily: `"${f}", "Geist", sans-serif` }}
-                  >
-                    {f}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(v) => patch({ fontFamily: v })}
+              ocid="canvas.inspector.font"
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -494,33 +480,23 @@ export function ElementInspector() {
           <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Foreground
           </Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={qr.foreground}
-              onChange={(e) => patchQr({ foreground: e.target.value })}
-              className="size-8 cursor-pointer rounded border bg-transparent"
-              aria-label="QR foreground"
-              data-ocid="canvas.inspector.qr_fg"
-            />
-            <span className="font-mono text-xs">{qr.foreground}</span>
-          </div>
+          <ColorPicker
+            value={qr.foreground}
+            onChange={(hex) => patchQr({ foreground: hex })}
+            label="QR foreground"
+            ocid="canvas.inspector.qr_fg"
+          />
         </div>
         <div className="space-y-1">
           <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Background
           </Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={qr.background}
-              onChange={(e) => patchQr({ background: e.target.value })}
-              className="size-8 cursor-pointer rounded border bg-transparent"
-              aria-label="QR background"
-              data-ocid="canvas.inspector.qr_bg"
-            />
-            <span className="font-mono text-xs">{qr.background}</span>
-          </div>
+          <ColorPicker
+            value={qr.background}
+            onChange={(hex) => patchQr({ background: hex })}
+            label="QR background"
+            ocid="canvas.inspector.qr_bg"
+          />
         </div>
       </div>
       <div className="space-y-1">
