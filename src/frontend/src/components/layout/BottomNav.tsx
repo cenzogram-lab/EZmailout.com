@@ -28,7 +28,8 @@ function isActive(path: string, to: string): boolean {
  * anchored to the bottom (Stampy, toasts, page padding) is offset by it; the
  * Create button rises above the sheet in the middle, clear of the Stampy
  * launcher in the right corner. While the on-screen keyboard is up it slides
- * away (and is `inert`), so it never floats over the field being typed in.
+ * away (and is `inert`), so it never floats over the field being typed in; the
+ * slide is its height plus 3rem so the raised Create button goes too.
  * Hidden on the QR redirect routes, which recipients rather than customers
  * land on.
  */
@@ -51,7 +52,7 @@ export function BottomNav() {
       inert={keyboardOpen}
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 rounded-t-[1.75rem] border-t border-border/60 bg-card pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_30px_-18px_rgb(15_23_42/0.35)] motion-safe:transition-transform lg:hidden",
-        keyboardOpen && "pointer-events-none translate-y-full",
+        keyboardOpen && "pointer-events-none translate-y-[calc(100%+3rem)]",
       )}
       data-ocid="bottom_nav"
     >
