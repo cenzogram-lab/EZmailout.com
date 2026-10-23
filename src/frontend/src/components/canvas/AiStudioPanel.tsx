@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccountSync } from "@/hooks/use-account";
 import { useGenerateAiImage, usePublicConfig } from "@/hooks/use-backend";
 import { AI_COSTS } from "@/lib/credits";
+import { toDataUrl } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { useAccountStore } from "@/store/account";
 import { useWizardStore } from "@/store/wizard";
@@ -67,13 +68,13 @@ const SIZES: {
   },
 ];
 
-/** Downloads a remote image into an object URL so the rasterizer can draw it without CORS taint. */
+/** Downloads a remote image into a data URL so the rasterizer can draw it without CORS taint and a saved draft keeps it. */
 async function localizeImage(url: string): Promise<string> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return url;
     const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    return await toDataUrl(blob);
   } catch {
     return url;
   }

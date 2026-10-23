@@ -174,6 +174,11 @@ const sections = {
     let r = await call(env.pic, up, env.deferred(user).dispatchPrintJob(cid));
     check(!r.ok && r.productionStatus[0]?.Failed !== undefined && r.documentId.length === 1, "a dropped connection at step 2 fails the run and keeps the uploaded document", r);
     check(up.log.every((l) => l.url.startsWith("https://stage-rest.click2mail.com")), "a test-mode campaign only ever talks to print-partner Staging", up.log.map((l) => l.url));
+    const ownerError = r.error[0] ?? "";
+    check(ownerError.startsWith("Address list submission failed") && ownerError.includes("nothing has been printed") && !/connection reset|outcall|HTTP|click2mail|print-partner/i.test(ownerError), "the owner is told which step failed in plain words, never the network's or the partner's text", ownerError);
+    const ownerView = (await env.as(user).getCampaign(cid))[0]?.lastError[0] ?? "";
+    const adminView = (await env.as(env.controller).getCampaign(cid))[0]?.lastError[0] ?? "";
+    check(ownerView === ownerError && adminView.includes("connection reset"), "the stored error reads the same way to the owner; the admin keeps the detail", { ownerView, adminView });
     const docUploads = () => up.log.filter((l) => l.url.endsWith("/documents")).length;
     r = await call(env.pic, up, env.deferred(user).dispatchPrintJob(cid));
     check(!r.ok && (r.error[0] ?? "").includes("Wait"), "an owner's retry waits 5 minutes", r.error);

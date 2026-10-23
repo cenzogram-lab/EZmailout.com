@@ -19,6 +19,7 @@ import {
   rotateCanvasState,
   withSide,
 } from "@/lib/canvas";
+import { draftStorage } from "@/lib/draftStorage";
 import type { CatalogMailClass } from "@/lib/pricing";
 import { getPricingRow } from "@/lib/pricing";
 import {
@@ -28,6 +29,7 @@ import {
   orientationOf,
 } from "@/lib/printSpec";
 import { isShapeUrl, reshapeForBox } from "@/lib/shapes";
+import { measuredHeight } from "@/lib/textFit";
 import type {
   CanvasAlignment,
   CanvasSideKey,
@@ -36,6 +38,7 @@ import type {
   WizardAudienceType,
 } from "@/types";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 const DEFAULT_LAYOUT = "6x9";
 
@@ -292,399 +295,565 @@ export function isTemplatePristine(
   );
 }
 
-export const useWizardStore = create<WizardStore>()((set, get) => ({
-  ...initialData(),
+/** Height (design px) that holds a text block's words without overflow. */
+function fittedHeight(block: TextBlockState): number {
+  return Math.ceil(
+    measuredHeight(block.text || " ", {
+      width: block.width,
+      fontSize: block.fontSize,
+      fontWeight: Number(block.fontWeight),
+      fontFamily: block.fontFamily,
+    }),
+  );
+}
 
-  setStep: (step) => set({ currentStep: step }),
-  setCurrentStep: (step) => set({ currentStep: step }),
-  setCampaignName: (campaignName) => set({ campaignName }),
-  setProduct: (selectedProduct) => set({ selectedProduct }),
-  setLayout: (layoutVariant) =>
-    set((s) => {
-      const row = getPricingRow(layoutVariant);
-      return {
-        selectedLayout: layoutVariant,
-        selectedSpec: row
-          ? {
-              layoutVariant: row.id,
-              documentClass: row.documentClass,
-              widthInches: row.widthInches,
-              heightInches: row.heightInches,
-              unitPriceCents: row.retailPriceCents,
-              mailClass: row.defaultMailClass,
-              supportedMailClasses: row.supportedMailClasses,
-            }
-          : null,
-        canvas:
-          s.selectedLayout === layoutVariant
-            ? s.canvas
-            : emptyCanvasState(layoutVariant),
-        rotationUndo:
-          s.selectedLayout === layoutVariant ? s.rotationUndo : null,
-        templateSignature:
-          s.selectedLayout === layoutVariant ? s.templateSignature : null,
-        // The blank canvas no longer carries the template.
-        designTemplate:
-          s.selectedLayout === layoutVariant ? s.designTemplate : null,
-        selectedElementId: null,
-      };
-    }),
-  setMailClass: (mailClass) =>
-    set((s) =>
-      s.selectedSpec?.supportedMailClasses.includes(mailClass)
-        ? { selectedSpec: { ...s.selectedSpec, mailClass } }
-        : {},
-    ),
-  setAudienceType: (audienceType) => set({ audienceType }),
-  setVerifiedAddresses: (verifiedAddresses) => set({ verifiedAddresses }),
-  setRecipientCount: (recipientCount) => set({ recipientCount }),
-  setGeoTarget: (geoTarget) => set({ geoTarget }),
-  setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
-  setDesignTemplate: (template, orientation) =>
-    set((s) => {
-      if (!template) {
-        return {
-          designTemplate: null,
-          templateSignature: null,
-          selectedElementId: null,
-        };
-      }
-      const layout = s.selectedLayout ?? template.layoutVariant;
-      const built = canvasFromTemplate(
-        template,
-        layout,
-        orientation ?? orientationOf(s.canvas, layout),
-      );
-      // A template designs both sides, so it replaces the whole canvas.
-      return {
-        designTemplate: template,
-        canvas: built,
-        templateSignature: canvasSignature(built),
-        rotationUndo: null,
-        selectedElementId: null,
-      };
-    }),
-  setCanvas: (canvas) => set({ canvas }),
-  rotateCanvas: () =>
-    set((s) => {
-      if (s.rotationUndo?.rotated === s.canvas) {
-        const original = s.rotationUndo.original;
-        // A rebuilt front has new ids, so the selection may not survive.
-        const selected =
-          s.selectedElementId &&
-          geometryOf(getSide(original, s.activeSide), s.selectedElementId)
-            ? s.selectedElementId
-            : null;
-        return {
-          canvas: original,
-          templateSignature: s.rotationUndo.templateSignature,
-          rotationUndo: null,
-          selectedElementId: selected,
-        };
-      }
-      const layout = s.selectedLayout ?? DEFAULT_LAYOUT;
-      const from = canvasDims(s.canvas, layout);
-      const to = getLayoutDims(layout, from.rotated ? "native" : "rotated");
-      if (
-        to.widthInches === from.widthInches &&
-        to.heightInches === from.heightInches
-      ) {
-        return {};
-      }
-      const relaid = rotateCanvasState(s.canvas, from, to);
-      const rotationUndo = {
-        original: s.canvas,
-        templateSignature: s.templateSignature,
-      };
-      if (isTemplatePristine(s) && s.designTemplate) {
-        // An untouched template is laid out again, both sides, for the
-        // new frame.
-        const rotated = canvasFromTemplate(
-          s.designTemplate,
-          layout,
-          to.rotated ? "rotated" : "native",
-        );
-        return {
-          canvas: rotated,
-          templateSignature: canvasSignature(rotated),
-          rotationUndo: { ...rotationUndo, rotated },
-          // Every id is new.
-          selectedElementId: null,
-        };
-      }
-      return {
-        canvas: relaid,
-        rotationUndo: { ...rotationUndo, rotated: relaid },
-      };
-    }),
-  setActiveSide: (activeSide) => set({ activeSide, selectedElementId: null }),
-  setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
-  updateSide: (sideKey, patch) =>
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...getSide(s.canvas, sideKey),
-        ...patch,
-      }),
-    })),
+/** IndexedDB key of the saved draft. */
+export const WIZARD_DRAFT_KEY = "ezmailout_wizard_draft";
 
-  addTextBlock: (sideKey, partial) => {
-    const side = getSide(get().canvas, sideKey);
-    const block = makeTextBlock(side, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        textBlocks: [...side.textBlocks, block],
-      }),
-      selectedElementId: block.id,
-    }));
-    return block.id;
+/**
+ * Off from a confirmed payment until `reset()`: the paid design must not come
+ * back from storage and be launched (and paid for) a second time.
+ */
+let draftSaving = true;
+
+const draftJson = createJSONStorage<Partial<WizardData>>(
+  () => ({
+    getItem: (name) => draftStorage.getItem(name),
+    setItem: (name, value) =>
+      draftSaving ? draftStorage.setItem(name, value) : undefined,
+    removeItem: (name) => draftStorage.removeItem(name),
+  }),
+  {
+    // Canvas z-indexes, PPI and font weights are bigints. `main.tsx` gives
+    // BigInt a `toJSON` that turns them into strings before a replacer sees
+    // the value, so read the original from the holder (`this[key]`).
+    replacer(this: Record<string, unknown>, key: string, value: unknown) {
+      const raw = this[key];
+      return typeof raw === "bigint" ? { __bigint: raw.toString() } : value;
+    },
+    reviver: (_key, value) =>
+      value !== null &&
+      typeof value === "object" &&
+      "__bigint" in value &&
+      typeof (value as { __bigint: unknown }).__bigint === "string"
+        ? BigInt((value as { __bigint: string }).__bigint)
+        : value,
   },
-  updateTextBlock: (sideKey, id, patch) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          textBlocks: side.textBlocks.map((t) =>
-            t.id === id ? { ...t, ...patch } : t,
-          ),
-        }),
-      };
-    }),
-  removeTextBlock: (sideKey, id) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          textBlocks: side.textBlocks.filter((t) => t.id !== id),
-        }),
-        selectedElementId:
-          s.selectedElementId === id ? null : s.selectedElementId,
-      };
-    }),
+);
 
-  addLogo: (sideKey, url, partial) => {
-    const side = getSide(get().canvas, sideKey);
-    const logo = makeLogo(side, url, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        logos: [...side.logos, logo],
-      }),
-      selectedElementId: logo.id,
-    }));
-    return logo.id;
-  },
-  updateLogo: (sideKey, id, patch) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          logos: side.logos.map((l) => {
-            if (l.id !== id) return l;
-            const next = { ...l, ...patch };
-            // A resized pill or rounded rectangle is redrawn for its new
-            // aspect, so its corners stay round instead of stretching.
-            if (
-              (patch.width !== undefined || patch.height !== undefined) &&
-              patch.url === undefined &&
-              isShapeUrl(next.url)
-            ) {
-              next.url = reshapeForBox(next.url, next.width, next.height);
-            }
-            return next;
-          }),
-        }),
-      };
-    }),
-  removeLogo: (sideKey, id) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          logos: side.logos.filter((l) => l.id !== id),
-        }),
-        selectedElementId:
-          s.selectedElementId === id ? null : s.selectedElementId,
-      };
-    }),
+export const useWizardStore = create<WizardStore>()(
+  persist(
+    (set, get) => ({
+      ...initialData(),
 
-  addQrCode: (sideKey, partial) => {
-    const side = getSide(get().canvas, sideKey);
-    const qr = makeQrCode(side, partial);
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...side,
-        qrCodes: [...side.qrCodes, qr],
-      }),
-      selectedElementId: qr.id,
-    }));
-    return qr.id;
-  },
-  updateQrCode: (sideKey, id, patch) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          qrCodes: side.qrCodes.map((q) =>
-            q.id === id ? { ...q, ...patch } : q,
-          ),
+      setStep: (step) => set({ currentStep: step }),
+      setCurrentStep: (step) => set({ currentStep: step }),
+      setCampaignName: (campaignName) => set({ campaignName }),
+      setProduct: (selectedProduct) => set({ selectedProduct }),
+      setLayout: (layoutVariant) =>
+        set((s) => {
+          const row = getPricingRow(layoutVariant);
+          return {
+            selectedLayout: layoutVariant,
+            selectedSpec: row
+              ? {
+                  layoutVariant: row.id,
+                  documentClass: row.documentClass,
+                  widthInches: row.widthInches,
+                  heightInches: row.heightInches,
+                  unitPriceCents: row.retailPriceCents,
+                  mailClass: row.defaultMailClass,
+                  supportedMailClasses: row.supportedMailClasses,
+                }
+              : null,
+            canvas:
+              s.selectedLayout === layoutVariant
+                ? s.canvas
+                : emptyCanvasState(layoutVariant),
+            rotationUndo:
+              s.selectedLayout === layoutVariant ? s.rotationUndo : null,
+            templateSignature:
+              s.selectedLayout === layoutVariant ? s.templateSignature : null,
+            // The blank canvas no longer carries the template.
+            designTemplate:
+              s.selectedLayout === layoutVariant ? s.designTemplate : null,
+            selectedElementId: null,
+          };
         }),
-      };
-    }),
-  removeQrCode: (sideKey, id) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, {
-          ...side,
-          qrCodes: side.qrCodes.filter((q) => q.id !== id),
-        }),
-        selectedElementId:
-          s.selectedElementId === id ? null : s.selectedElementId,
-      };
-    }),
-
-  setBackgroundImage: (sideKey, url) =>
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...getSide(s.canvas, sideKey),
-        backgroundImageUrl: url ?? undefined,
-      }),
-    })),
-  setBackgroundColor: (sideKey, color) =>
-    set((s) => ({
-      canvas: withSide(s.canvas, sideKey, {
-        ...getSide(s.canvas, sideKey),
-        backgroundColor: color,
-      }),
-    })),
-  bringToFront: (sideKey, id) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      return {
-        canvas: withSide(s.canvas, sideKey, reindex(side, id, maxZ(side) + 1n)),
-      };
-    }),
-  sendToBack: (sideKey, id) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      // Shift everyone up by one, then put the target at 1.
-      const shifted: CanvasSide = {
-        ...side,
-        textBlocks: side.textBlocks.map((t) => ({
-          ...t,
-          zIndex: t.zIndex + 1n,
-        })),
-        logos: side.logos.map((l) => ({ ...l, zIndex: l.zIndex + 1n })),
-        qrCodes: side.qrCodes.map((q) => ({ ...q, zIndex: q.zIndex + 1n })),
-      };
-      return { canvas: withSide(s.canvas, sideKey, reindex(shifted, id, 1n)) };
-    }),
-  bringForward: (sideKey, id) =>
-    set((s) => ({
-      canvas: withSide(
-        s.canvas,
-        sideKey,
-        stepZ(getSide(s.canvas, sideKey), id, 1),
-      ),
-    })),
-  sendBackward: (sideKey, id) =>
-    set((s) => ({
-      canvas: withSide(
-        s.canvas,
-        sideKey,
-        stepZ(getSide(s.canvas, sideKey), id, -1),
-      ),
-    })),
-  alignElement: (sideKey, id, alignment) =>
-    set((s) => {
-      const side = getSide(s.canvas, sideKey);
-      const geo = geometryOf(side, id);
-      if (!geo) return {};
-      const dims = canvasDims(s.canvas, s.selectedLayout ?? DEFAULT_LAYOUT);
-      let { x, y } = geo;
-      switch (alignment) {
-        case "left":
-          x = 0;
-          break;
-        case "center":
-          x = (dims.designWidth - geo.width) / 2;
-          break;
-        case "right":
-          x = dims.designWidth - geo.width;
-          break;
-        case "top":
-          y = 0;
-          break;
-        case "middle":
-          y = (dims.designHeight - geo.height) / 2;
-          break;
-        case "bottom":
-          y = dims.designHeight - geo.height;
-          break;
-      }
-      return {
-        canvas: withSide(
-          s.canvas,
-          sideKey,
-          moveTo(
-            side,
-            id,
-            Math.round(Math.max(0, x)),
-            Math.round(Math.max(0, y)),
-          ),
+      setMailClass: (mailClass) =>
+        set((s) =>
+          s.selectedSpec?.supportedMailClasses.includes(mailClass)
+            ? { selectedSpec: { ...s.selectedSpec, mailClass } }
+            : {},
         ),
-      };
+      setAudienceType: (audienceType) => set({ audienceType }),
+      setVerifiedAddresses: (verifiedAddresses) => set({ verifiedAddresses }),
+      setRecipientCount: (recipientCount) => set({ recipientCount }),
+      setGeoTarget: (geoTarget) => set({ geoTarget }),
+      setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
+      setDesignTemplate: (template, orientation) =>
+        set((s) => {
+          if (!template) {
+            return {
+              designTemplate: null,
+              templateSignature: null,
+              selectedElementId: null,
+            };
+          }
+          const layout = s.selectedLayout ?? template.layoutVariant;
+          const built = canvasFromTemplate(
+            template,
+            layout,
+            orientation ?? orientationOf(s.canvas, layout),
+          );
+          // A template designs both sides, so it replaces the whole canvas.
+          return {
+            // An unnamed campaign takes the template's name (still editable).
+            campaignName: s.campaignName.trim()
+              ? s.campaignName
+              : template.name,
+            designTemplate: template,
+            canvas: built,
+            templateSignature: canvasSignature(built),
+            rotationUndo: null,
+            selectedElementId: null,
+          };
+        }),
+      setCanvas: (canvas) => set({ canvas }),
+      rotateCanvas: () =>
+        set((s) => {
+          if (s.rotationUndo?.rotated === s.canvas) {
+            const original = s.rotationUndo.original;
+            // A rebuilt front has new ids, so the selection may not survive.
+            const selected =
+              s.selectedElementId &&
+              geometryOf(getSide(original, s.activeSide), s.selectedElementId)
+                ? s.selectedElementId
+                : null;
+            return {
+              canvas: original,
+              templateSignature: s.rotationUndo.templateSignature,
+              rotationUndo: null,
+              selectedElementId: selected,
+            };
+          }
+          const layout = s.selectedLayout ?? DEFAULT_LAYOUT;
+          const from = canvasDims(s.canvas, layout);
+          const to = getLayoutDims(layout, from.rotated ? "native" : "rotated");
+          if (
+            to.widthInches === from.widthInches &&
+            to.heightInches === from.heightInches
+          ) {
+            return {};
+          }
+          const relaid = rotateCanvasState(s.canvas, from, to);
+          const rotationUndo = {
+            original: s.canvas,
+            templateSignature: s.templateSignature,
+          };
+          if (isTemplatePristine(s) && s.designTemplate) {
+            // An untouched template is laid out again, both sides, for the
+            // new frame.
+            const rotated = canvasFromTemplate(
+              s.designTemplate,
+              layout,
+              to.rotated ? "rotated" : "native",
+            );
+            return {
+              canvas: rotated,
+              templateSignature: canvasSignature(rotated),
+              rotationUndo: { ...rotationUndo, rotated },
+              // Every id is new.
+              selectedElementId: null,
+            };
+          }
+          return {
+            canvas: relaid,
+            rotationUndo: { ...rotationUndo, rotated: relaid },
+          };
+        }),
+      setActiveSide: (activeSide) =>
+        set({ activeSide, selectedElementId: null }),
+      setSelectedElementId: (selectedElementId) => set({ selectedElementId }),
+      updateSide: (sideKey, patch) =>
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...getSide(s.canvas, sideKey),
+            ...patch,
+          }),
+        })),
+
+      addTextBlock: (sideKey, partial) => {
+        const side = getSide(get().canvas, sideKey);
+        const block = makeTextBlock(side, partial);
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...side,
+            textBlocks: [...side.textBlocks, block],
+          }),
+          selectedElementId: block.id,
+        }));
+        return block.id;
+      },
+      updateTextBlock: (sideKey, id, patch) => {
+        // A box hugs its text, as in Canva: a change to the words, typeface,
+        // size, weight or width re-measures its height (an explicit height, as
+        // from a resize handle, is kept). Without this, longer copy or a wider
+        // face ran out of the box and printed over whatever sat below it.
+        const refit =
+          patch.height === undefined &&
+          (patch.text !== undefined ||
+            patch.fontFamily !== undefined ||
+            patch.fontSize !== undefined ||
+            patch.fontWeight !== undefined ||
+            patch.width !== undefined);
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              textBlocks: side.textBlocks.map((t) => {
+                if (t.id !== id) return t;
+                const next = { ...t, ...patch };
+                return refit ? { ...next, height: fittedHeight(next) } : next;
+              }),
+            }),
+          };
+        });
+        // A face that has not loaded yet is measured with a fallback; measure
+        // again once it arrives.
+        const block = getSide(get().canvas, sideKey).textBlocks.find(
+          (t) => t.id === id,
+        );
+        if (
+          refit &&
+          block &&
+          typeof document !== "undefined" &&
+          "fonts" in document
+        ) {
+          const face = `${Number(block.fontWeight)} 16px "${block.fontFamily}"`;
+          if (!document.fonts.check(face)) {
+            document.fonts
+              .load(face)
+              .then(() => {
+                const now = getSide(get().canvas, sideKey).textBlocks.find(
+                  (t) => t.id === id,
+                );
+                if (!now || now.fontFamily !== block.fontFamily) return;
+                const height = fittedHeight(now);
+                if (Math.abs(height - now.height) < 0.5) return;
+                set((s) => {
+                  const side = getSide(s.canvas, sideKey);
+                  return {
+                    canvas: withSide(s.canvas, sideKey, {
+                      ...side,
+                      textBlocks: side.textBlocks.map((t) =>
+                        t.id === id ? { ...t, height } : t,
+                      ),
+                    }),
+                  };
+                });
+              })
+              .catch(() => {});
+          }
+        }
+      },
+      removeTextBlock: (sideKey, id) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              textBlocks: side.textBlocks.filter((t) => t.id !== id),
+            }),
+            selectedElementId:
+              s.selectedElementId === id ? null : s.selectedElementId,
+          };
+        }),
+
+      addLogo: (sideKey, url, partial) => {
+        const side = getSide(get().canvas, sideKey);
+        const logo = makeLogo(side, url, partial);
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...side,
+            logos: [...side.logos, logo],
+          }),
+          selectedElementId: logo.id,
+        }));
+        return logo.id;
+      },
+      updateLogo: (sideKey, id, patch) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              logos: side.logos.map((l) => {
+                if (l.id !== id) return l;
+                const next = { ...l, ...patch };
+                // A resized pill or rounded rectangle is redrawn for its new
+                // aspect, so its corners stay round instead of stretching.
+                if (
+                  (patch.width !== undefined || patch.height !== undefined) &&
+                  patch.url === undefined &&
+                  isShapeUrl(next.url)
+                ) {
+                  next.url = reshapeForBox(next.url, next.width, next.height);
+                }
+                return next;
+              }),
+            }),
+          };
+        }),
+      removeLogo: (sideKey, id) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              logos: side.logos.filter((l) => l.id !== id),
+            }),
+            selectedElementId:
+              s.selectedElementId === id ? null : s.selectedElementId,
+          };
+        }),
+
+      addQrCode: (sideKey, partial) => {
+        const side = getSide(get().canvas, sideKey);
+        const qr = makeQrCode(side, partial);
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...side,
+            qrCodes: [...side.qrCodes, qr],
+          }),
+          selectedElementId: qr.id,
+        }));
+        return qr.id;
+      },
+      updateQrCode: (sideKey, id, patch) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              qrCodes: side.qrCodes.map((q) =>
+                q.id === id ? { ...q, ...patch } : q,
+              ),
+            }),
+          };
+        }),
+      removeQrCode: (sideKey, id) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(s.canvas, sideKey, {
+              ...side,
+              qrCodes: side.qrCodes.filter((q) => q.id !== id),
+            }),
+            selectedElementId:
+              s.selectedElementId === id ? null : s.selectedElementId,
+          };
+        }),
+
+      setBackgroundImage: (sideKey, url) =>
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...getSide(s.canvas, sideKey),
+            backgroundImageUrl: url ?? undefined,
+          }),
+        })),
+      setBackgroundColor: (sideKey, color) =>
+        set((s) => ({
+          canvas: withSide(s.canvas, sideKey, {
+            ...getSide(s.canvas, sideKey),
+            backgroundColor: color,
+          }),
+        })),
+      bringToFront: (sideKey, id) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          return {
+            canvas: withSide(
+              s.canvas,
+              sideKey,
+              reindex(side, id, maxZ(side) + 1n),
+            ),
+          };
+        }),
+      sendToBack: (sideKey, id) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          // Shift everyone up by one, then put the target at 1.
+          const shifted: CanvasSide = {
+            ...side,
+            textBlocks: side.textBlocks.map((t) => ({
+              ...t,
+              zIndex: t.zIndex + 1n,
+            })),
+            logos: side.logos.map((l) => ({ ...l, zIndex: l.zIndex + 1n })),
+            qrCodes: side.qrCodes.map((q) => ({ ...q, zIndex: q.zIndex + 1n })),
+          };
+          return {
+            canvas: withSide(s.canvas, sideKey, reindex(shifted, id, 1n)),
+          };
+        }),
+      bringForward: (sideKey, id) =>
+        set((s) => ({
+          canvas: withSide(
+            s.canvas,
+            sideKey,
+            stepZ(getSide(s.canvas, sideKey), id, 1),
+          ),
+        })),
+      sendBackward: (sideKey, id) =>
+        set((s) => ({
+          canvas: withSide(
+            s.canvas,
+            sideKey,
+            stepZ(getSide(s.canvas, sideKey), id, -1),
+          ),
+        })),
+      alignElement: (sideKey, id, alignment) =>
+        set((s) => {
+          const side = getSide(s.canvas, sideKey);
+          const geo = geometryOf(side, id);
+          if (!geo) return {};
+          const dims = canvasDims(s.canvas, s.selectedLayout ?? DEFAULT_LAYOUT);
+          let { x, y } = geo;
+          switch (alignment) {
+            case "left":
+              x = 0;
+              break;
+            case "center":
+              x = (dims.designWidth - geo.width) / 2;
+              break;
+            case "right":
+              x = dims.designWidth - geo.width;
+              break;
+            case "top":
+              y = 0;
+              break;
+            case "middle":
+              y = (dims.designHeight - geo.height) / 2;
+              break;
+            case "bottom":
+              y = dims.designHeight - geo.height;
+              break;
+          }
+          return {
+            canvas: withSide(
+              s.canvas,
+              sideKey,
+              moveTo(
+                side,
+                id,
+                Math.round(Math.max(0, x)),
+                Math.round(Math.max(0, y)),
+              ),
+            ),
+          };
+        }),
+      duplicateElement: (sideKey, id) => {
+        const side = getSide(get().canvas, sideKey);
+        const offset = 24;
+        const text = side.textBlocks.find((t) => t.id === id);
+        if (text) {
+          const { id: _id, zIndex: _z, ...rest } = text;
+          return get().addTextBlock(sideKey, {
+            ...rest,
+            x: text.x + offset,
+            y: text.y + offset,
+          });
+        }
+        const logo = side.logos.find((l) => l.id === id);
+        if (logo) {
+          const { id: _id, zIndex: _z, url, ...rest } = logo;
+          return get().addLogo(sideKey, url, {
+            ...rest,
+            x: logo.x + offset,
+            y: logo.y + offset,
+          });
+        }
+        const qr = side.qrCodes.find((q) => q.id === id);
+        if (qr) {
+          const { id: _id, zIndex: _z, ...rest } = qr;
+          return get().addQrCode(sideKey, {
+            ...rest,
+            x: qr.x + offset,
+            y: qr.y + offset,
+          });
+        }
+        return null;
+      },
+      removeElement: (sideKey, id) => {
+        const { removeTextBlock, removeLogo, removeQrCode } = get();
+        removeTextBlock(sideKey, id);
+        removeLogo(sideKey, id);
+        removeQrCode(sideKey, id);
+      },
+      setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
+      setReturnAddress: (returnAddress) => set({ returnAddress }),
+      setCampaignId: (campaignId) => set({ campaignId }),
+      setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
+      reset: () => {
+        draftSaving = true;
+        set(initialData());
+      },
     }),
-  duplicateElement: (sideKey, id) => {
-    const side = getSide(get().canvas, sideKey);
-    const offset = 24;
-    const text = side.textBlocks.find((t) => t.id === id);
-    if (text) {
-      const { id: _id, zIndex: _z, ...rest } = text;
-      return get().addTextBlock(sideKey, {
-        ...rest,
-        x: text.x + offset,
-        y: text.y + offset,
-      });
-    }
-    const logo = side.logos.find((l) => l.id === id);
-    if (logo) {
-      const { id: _id, zIndex: _z, url, ...rest } = logo;
-      return get().addLogo(sideKey, url, {
-        ...rest,
-        x: logo.x + offset,
-        y: logo.y + offset,
-      });
-    }
-    const qr = side.qrCodes.find((q) => q.id === id);
-    if (qr) {
-      const { id: _id, zIndex: _z, ...rest } = qr;
-      return get().addQrCode(sideKey, {
-        ...rest,
-        x: qr.x + offset,
-        y: qr.y + offset,
-      });
-    }
-    return null;
-  },
-  removeElement: (sideKey, id) => {
-    const { removeTextBlock, removeLogo, removeQrCode } = get();
-    removeTextBlock(sideKey, id);
-    removeLogo(sideKey, id);
-    removeQrCode(sideKey, id);
-  },
-  setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
-  setReturnAddress: (returnAddress) => set({ returnAddress }),
-  setCampaignId: (campaignId) => set({ campaignId }),
-  setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
-  reset: () => set(initialData()),
-}));
+    {
+      // Restored by `restoreWizardDraft()` before the first render, so a
+      // late read can never overwrite what the customer has started.
+      skipHydration: true,
+      // The design in progress survives a reload or a closed tab: product,
+      // audience, both sides of the canvas, the QR destination and the
+      // return address. Selection, undo for a turn and the launch ids are
+      // left out: a reloaded Step 4 starts its launch from the top.
+      name: WIZARD_DRAFT_KEY,
+      version: 1,
+      storage: draftJson,
+      partialize: (s): Partial<WizardData> => ({
+        currentStep: s.currentStep,
+        campaignName: s.campaignName,
+        selectedProduct: s.selectedProduct,
+        selectedLayout: s.selectedLayout,
+        selectedSpec: s.selectedSpec,
+        audienceType: s.audienceType,
+        verifiedAddresses: s.verifiedAddresses,
+        recipientCount: s.recipientCount,
+        geoTarget: s.geoTarget,
+        sourcePresetId: s.sourcePresetId,
+        designTemplate: s.designTemplate,
+        canvas: s.canvas,
+        templateSignature: s.templateSignature,
+        activeSide: s.activeSide,
+        qrDestinationUrl: s.qrDestinationUrl,
+        returnAddress: s.returnAddress,
+      }),
+    },
+  ),
+);
+
+/**
+ * Loads the saved draft into the store. `main.tsx` waits for it (at most
+ * 1.5 s, so a stuck IndexedDB never holds the app back) before rendering.
+ */
+export function restoreWizardDraft(): Promise<void> {
+  return Promise.race([
+    Promise.resolve(useWizardStore.persist.rehydrate()).catch(() => {}),
+    new Promise<void>((r) => setTimeout(r, 1500)),
+  ]).then(() => undefined);
+}
+
+/**
+ * Forgets the saved draft and stops saving until the next `reset()`. Called
+ * once a payment is confirmed and on sign-out (the next person on this
+ * browser must not inherit someone else's audience).
+ */
+export function discardWizardDraft(): void {
+  draftSaving = false;
+  void useWizardStore.persist.clearStorage();
+}
 
 /**
  * The step a deep link such as `/wizard?step=3` may open. Steps 2–4 are sized

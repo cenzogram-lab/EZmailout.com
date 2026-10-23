@@ -31,7 +31,7 @@ export function upstream(routes) {
   const handle = (req) => {
     const body = Buffer.from(req.body).toString("utf8");
     const headers = Object.fromEntries(req.headers.map(([k, v]) => [k.toLowerCase(), v]));
-    const entry = { method: String(req.httpMethod), url: req.url, headers, body, maxResponseBytes: req.maxResponseBytes };
+    const entry = { method: String(req.httpMethod), url: req.url, headers, body, bodyBytes: Buffer.from(req.body), maxResponseBytes: req.maxResponseBytes };
     log.push(entry);
     for (const [match, respond] of routes) {
       if (typeof match === "string" ? req.url.includes(match) : match(entry)) {

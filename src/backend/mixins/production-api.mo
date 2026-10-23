@@ -210,7 +210,11 @@ mixin (
     record.lastError := null;
     record.updatedAt := Time.now();
     try {
-      await* runDispatch(record, campaignId, auth, recipients, returnAddress);
+      let result = await* runDispatch(record, campaignId, auth, recipients, returnAddress);
+      switch (result.error) {
+        case (?e) { { result with error = ?AdminLib.providerError(adminKeysState, caller, e, Fulfilment.customerError(e)) } };
+        case null result;
+      };
     } finally {
       dispatchInFlight.remove(campaignId);
       // Every normal exit ends in #Submitted or #Failed. Anything else means a
@@ -379,7 +383,11 @@ mixin (
           };
           syncCooldowns.add(campaignId, now);
         };
-        await* syncOne(record);
+        let result = await* syncOne(record);
+        switch (result.error) {
+          case (?e) { { result with error = ?AdminLib.providerError(adminKeysState, caller, e, Fulfilment.customerError(e)) } };
+          case null result;
+        };
       };
     };
   };

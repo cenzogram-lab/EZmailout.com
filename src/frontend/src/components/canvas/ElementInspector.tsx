@@ -16,6 +16,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { getSide } from "@/lib/canvas";
+import { toDataUrl } from "@/lib/download";
 import { normalizeDestinationUrl } from "@/lib/qr";
 import {
   isShapeUrl,
@@ -334,13 +335,13 @@ export function ElementInspector() {
               type="file"
               accept="image/png,image/webp,image/svg+xml,image/jpeg"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const f = e.target.files?.[0];
+                e.target.value = "";
                 if (f)
                   updateLogo(activeSide, logo.id, {
-                    url: URL.createObjectURL(f),
+                    url: await toDataUrl(f),
                   });
-                e.target.value = "";
               }}
               data-ocid="canvas.inspector.logo_file"
             />

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/format";
 import { canvasDims, safeRect } from "@/lib/printSpec";
 import { normalizeRedirectUrl } from "@/lib/qr";
+import { measuredHeight } from "@/lib/textFit";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, WizardAudienceType } from "@/types";
 import {
@@ -49,6 +50,12 @@ export interface PreflightReport {
   /** True when a `fail` item blocks the launch. */
   blocked: boolean;
   warnings: number;
+}
+
+/** A short quote of a text box for a checklist line. */
+function clip(text: string): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > 28 ? `${t.slice(0, 27)}…` : t;
 }
 
 interface Rect {
@@ -183,6 +190,53 @@ export function computePreflight(input: PreflightInput): PreflightReport {
             id: "bounds",
             label: "Elements inside the safe area",
             detail: `Outside the safe margin and may be trimmed: ${offenders.join(", ")}.`,
+            level: "warn",
+          },
+    );
+  }
+
+  // 3b. Text that runs out of its box or over other text prints exactly
+  // like that, so flag it before payment (a warning: it may be intended).
+  {
+    const issues: string[] = [];
+    for (const key of ["front", "back"] as const) {
+      const blocks = input.canvas[key].textBlocks;
+      for (const t of blocks) {
+        const need = measuredHeight(t.text || " ", {
+          width: t.width,
+          fontSize: t.fontSize,
+          fontWeight: Number(t.fontWeight),
+          fontFamily: t.fontFamily,
+        });
+        if (need > t.height + 2)
+          issues.push(`${key}: “${clip(t.text)}” runs past its box`);
+      }
+      for (let i = 0; i < blocks.length; i++) {
+        for (let j = i + 1; j < blocks.length; j++) {
+          const a = blocks[i];
+          const b = blocks[j];
+          const ox =
+            Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+          const oy =
+            Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+          if (ox > 4 && oy > 4)
+            issues.push(`${key}: “${clip(a.text)}” overlaps “${clip(b.text)}”`);
+        }
+      }
+    }
+    items.push(
+      issues.length === 0
+        ? {
+            id: "text",
+            label: "Text fits and doesn't overlap",
+            detail:
+              "Every text box holds its words and none sit on top of each other.",
+            level: "pass",
+          }
+        : {
+            id: "text",
+            label: "Text fits and doesn't overlap",
+            detail: `Check before printing: ${issues.slice(0, 3).join("; ")}${issues.length > 3 ? ` and ${issues.length - 3} more` : ""}.`,
             level: "warn",
           },
     );

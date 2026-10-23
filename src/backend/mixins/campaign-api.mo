@@ -6,6 +6,7 @@ import CampaignLib "../lib/campaign";
 import AddressLib "../lib/address";
 import PricingLib "../lib/pricing";
 import AdminLib "../lib/admin";
+import Fulfilment "../lib/fulfilment";
 import Limits "../lib/limits";
 import Inputs "../lib/inputs";
 import Map "mo:core/Map";
@@ -294,7 +295,13 @@ mixin (
   /// One campaign in full, stored canvas included.
   public shared query ({ caller }) func getCampaign(id : Text) : async ?Types.CampaignRecordShared {
     let record = requireAccess(id, caller);
-    ?record.toShared(draftExpiry(record, checkoutActivity()));
+    let view = record.toShared(draftExpiry(record, checkoutActivity()));
+    // A dispatch failure quotes the print partner or the network; the owner
+    // sees which step failed and what to do, the admin sees the detail.
+    switch (view.lastError) {
+      case (?e) { ?{ view with lastError = ?AdminLib.providerError(adminKeysState, caller, e, Fulfilment.customerError(e)) } };
+      case null ?view;
+    };
   };
 
   public shared query ({ caller }) func getCampaignRecipients(campaignId : Text) : async [Common.VerifiedAddress] {

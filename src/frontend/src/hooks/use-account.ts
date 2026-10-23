@@ -1,5 +1,6 @@
 import { useEnsureAccount, useMyAccount } from "@/hooks/use-backend";
 import { useAccountStore } from "@/store/account";
+import { discardWizardDraft, useWizardStore } from "@/store/wizard";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useEffect, useRef } from "react";
 
@@ -86,7 +87,12 @@ export function useAccountSync() {
     isLoggingIn,
     principal,
     login,
-    logout: clear,
+    logout: () => {
+      // The next person on this browser must not inherit this draft.
+      discardWizardDraft();
+      useWizardStore.getState().reset();
+      clear();
+    },
     refresh: accountQuery.refetch,
   };
 }

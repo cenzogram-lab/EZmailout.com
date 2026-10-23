@@ -28,7 +28,7 @@ import {
   getUnitPriceCents,
 } from "@/lib/pricing";
 import { normalizeRedirectUrl } from "@/lib/qr";
-import { useWizardStore } from "@/store/wizard";
+import { discardWizardDraft, useWizardStore } from "@/store/wizard";
 import type { WizardAudienceType } from "@/types";
 import { Link } from "@tanstack/react-router";
 import {
@@ -721,7 +721,11 @@ export function Step4ReviewLaunch() {
                   title="Pay for your campaign"
                   description={`${formatNumber(recipientCount)} × ${productLabel ?? "pieces"}`}
                   submitLabel="Pay"
-                  onSuccess={() => void runDispatch()}
+                  onSuccess={() => {
+                    // Paid: the draft must not come back and be paid again.
+                    discardWizardDraft();
+                    void runDispatch();
+                  }}
                   onCancel={() =>
                     setMachine({
                       stage: "idle",

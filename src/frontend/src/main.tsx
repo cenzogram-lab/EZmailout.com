@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { identityCreateOptions } from "./lib/identityOrigin";
+import { restoreWizardDraft } from "./store/wizard";
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -23,15 +24,19 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <InternetIdentityProvider
-      createOptions={identityOptions}
-      // Plain sign-in: EZmailout reads no II attributes, so users are not
-      // asked to share their email.
-      withAttributes={false}
-    >
-      <App />
-    </InternetIdentityProvider>
-  </QueryClientProvider>,
+// The saved wizard draft is restored before the first render (see
+// `restoreWizardDraft`); the boot screen covers the few milliseconds it takes.
+void restoreWizardDraft().then(() =>
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <QueryClientProvider client={queryClient}>
+      <InternetIdentityProvider
+        createOptions={identityOptions}
+        // Plain sign-in: EZmailout reads no II attributes, so users are not
+        // asked to share their email.
+        withAttributes={false}
+      >
+        <App />
+      </InternetIdentityProvider>
+    </QueryClientProvider>,
+  ),
 );

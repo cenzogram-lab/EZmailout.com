@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { toDataUrl } from "@/lib/download";
 import { safeRect } from "@/lib/printSpec";
 import { useWizardStore } from "@/store/wizard";
 import { ImagePlus, Upload, X } from "lucide-react";
@@ -17,18 +18,18 @@ export function UploadsPanel() {
   const logoInput = useRef<HTMLInputElement>(null);
   const side = activeSide === "front" ? canvas.front : canvas.back;
 
-  function onBackgroundFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onBackgroundFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file");
       return;
     }
-    setBackgroundImage(activeSide, URL.createObjectURL(file));
     e.target.value = "";
+    setBackgroundImage(activeSide, await toDataUrl(file));
   }
 
-  function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -36,13 +37,13 @@ export function UploadsPanel() {
       return;
     }
     const safe = safeRect(dims);
-    addLogo(activeSide, URL.createObjectURL(file), {
+    e.target.value = "";
+    addLogo(activeSide, await toDataUrl(file), {
       x: safe.x + 12,
       y: safe.y + 12,
       width: 140,
       height: 140,
     });
-    e.target.value = "";
   }
 
   return (

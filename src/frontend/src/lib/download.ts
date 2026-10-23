@@ -29,3 +29,18 @@ export async function copyText(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * A file or blob as a `data:` URL. Studio images are kept this way rather
+ * than as `blob:` URLs, which die with the tab: a saved draft and the
+ * campaign's stored preview both need the image itself.
+ */
+export function toDataUrl(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () =>
+      reject(reader.error ?? new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}

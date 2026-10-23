@@ -259,6 +259,29 @@ module {
     if (editing) ?false else null;
   };
 
+  /// Steps whose failure message quotes the print partner's answer or the
+  /// network error (host names, library errors, HTTP bodies).
+  let partnerSteps : [Text] = [
+    "Document upload failed",
+    "Address list submission failed",
+    "Job creation failed",
+    "Job submission failed",
+    "Tracking lookup failed",
+  ];
+
+  /// What a customer is told about a print-partner failure: the step that
+  /// failed and what to do, never the partner's or the network's own text
+  /// (the admin and controllers still get that, through `providerError`).
+  /// Any other message is already written for customers and is returned as is.
+  public func customerError(detail : Text) : Text {
+    for (step in partnerSteps.vals()) {
+      if (detail.startsWith(#text step)) {
+        return step # ": the print service did not accept the request just now, so nothing has been printed yet.";
+      };
+    };
+    detail;
+  };
+
   /// The print partner refused a submit because the job was submitted already.
   public func submittedAlready(body : Text) : Bool {
     let t = parseDescription(body).toLower();
