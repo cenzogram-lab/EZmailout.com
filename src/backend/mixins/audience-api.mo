@@ -37,16 +37,18 @@ mixin (
   transient let maxPresetAddressesGlobal : Nat = 2_000_000;
   /// Rolling per-account verification quota (transient: a fresh window after upgrades).
   transient let verifyWindowNs : Int = 3_600_000_000_000;
-  transient let verifyAddressesPerWindow : Nat = 25_000;
+  // Sized so one account can verify a 250,000-address list within the hour
+  // (50 batches of 5,000); campaigns have no recipient limit.
+  transient let verifyAddressesPerWindow : Nat = 250_000;
   transient let verifyUsage = Map.empty<Text, { var windowStart : Int; var addresses : Nat }>();
 
   // Every verification is two print outcalls whatever the batch size, so
   // calls are budgeted as well as addresses: per identity (identities are
   // free to mint), for the whole canister, and with a gap between one
   // identity's calls so one-address batches cannot be streamed.
-  transient let verifyCallsPerHour : Nat = 20;
+  transient let verifyCallsPerHour : Nat = 60;
   transient let verifyCallsPerHourGlobal : Nat = 300;
-  transient let verifyMinGapNs : Int = 15_000_000_000;
+  transient let verifyMinGapNs : Int = 5_000_000_000;
   transient let verifyCalls = Map.empty<Text, Limits.Window>();
   transient let verifyGlobalKey : Text = "*";
 

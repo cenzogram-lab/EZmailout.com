@@ -313,6 +313,12 @@ export interface PricingRow {
     retailPriceCents: bigint;
     widthInches: number;
 }
+export interface RecipientStageResult {
+    error?: string;
+    ok: boolean;
+    stored: bigint;
+    total: bigint;
+}
 export interface PresetResult {
     error?: string;
     ok: boolean;
@@ -627,6 +633,7 @@ export interface backendInterface {
     _initialize_access_control(): Promise<void>;
     _internet_identity_sign_in_finish(): Promise<{ err: {  } } | { ok: null }>;
     _internet_identity_sign_in_start(): Promise<Uint8Array>;
+    addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
     askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     assignAdmin(arg0: Principal): Promise<ApiResult>;
@@ -787,6 +794,9 @@ export class Backend implements backendInterface {
     }
     async _internet_identity_sign_in_start(): Promise<Uint8Array> {
         return this._call("_internet_identity_sign_in_start", []) as Promise<Uint8Array>;
+    }
+    async addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult> {
+        return this._call("addCampaignRecipients", [arg0, arg1, arg2]) as Promise<RecipientStageResult>;
     }
     async applyReferralReward(arg0: string): Promise<ApiResult> {
         return this._call("applyReferralReward", [arg0]) as Promise<ApiResult>;

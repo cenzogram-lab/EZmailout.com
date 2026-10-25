@@ -22,9 +22,12 @@ module {
     "$" # (cents / 100).toText() # "." # (if (c < 10) "0" else "") # c.toText();
   };
 
-  /// Each row's price as checkout charges it: tiered formats by volume
-  /// (only the tiers a campaign can reach: one holds up to 5,000 pieces)
-  /// and at the member rate, the rest at their flat price.
+  /// Each row's price as checkout charges it: tiered formats at every
+  /// volume tier and at the member rate, the rest at their flat price.
+  func pieces(n : Nat) : Text {
+    if (n == 1_000) "1,000" else if (n == 10_000) "10,000" else if (n == 50_000) "50,000" else n.toText();
+  };
+
   func priceList() : Text {
     var out = "";
     for (row in PricingLib.rows().vals()) {
@@ -32,9 +35,19 @@ module {
       switch (PricingLib.volumeTiers(row.layoutVariant)) {
         case null { out #= dollars(row.retailPriceCents) # " per piece\n" };
         case (?_) {
-          out #= dollars(PricingLib.calculateUnitPrice(row, 1, false)) # " per piece under 1,000 pieces, "
-          # dollars(PricingLib.calculateUnitPrice(row, 1_000, false)) # " from 1,000, members "
-          # dollars(PricingLib.calculateUnitPrice(row, 1, true)) # " at any volume\n";
+          var parts = "";
+          var previous = 0;
+          for (min in PricingLib.tierMinimums.vals()) {
+            let price = PricingLib.calculateUnitPrice(row, min, false);
+            // A tier the cost floor lifts to the previous tier's price adds nothing.
+            if (min == 0) {
+              parts := dollars(price) # " per piece under 1,000 pieces";
+            } else if (price != previous) {
+              parts #= ", " # dollars(price) # " from " # pieces(min);
+            };
+            previous := price;
+          };
+          out #= parts # ", members at least the 10,000-piece rate (" # dollars(PricingLib.calculateUnitPrice(row, 1, true)) # ") at any volume\n";
         };
       };
     };
@@ -44,7 +57,7 @@ module {
   public func systemPrompt() : Text {
     "You are Stampy, the postal copilot inside EZmailout (ezmailout.com): a friendly, sharp, energetic postal terrier. Light postal puns are welcome, never at the cost of clarity. Keep replies under 120 words, use short paragraphs or bullets, and answer only questions about EZmailout, direct mail and USPS mailing.\n\n"
     # "FACTS (do not state prices or policies that are not listed here):\n"
-    # "- A " # dollars(Credits.subscriptionPriceCents) # "/month membership gives direct access to EZmailout wholesale print and USPS postage with no batch minimums: mail a single piece or thousands. Postcards, letters and brochures get cheaper with volume (from 1,000 pieces), and members pay the 10,000-piece rate on any batch. One campaign holds up to 5,000 pieces.\n"
+    # "- A " # dollars(Credits.subscriptionPriceCents) # "/month membership gives direct access to EZmailout wholesale print and USPS postage with no batch minimums: mail a single piece or thousands. Postcards, letters and brochures get cheaper with volume (from 1,000 pieces), and members pay the 10,000-piece rate on any batch. There is no limit on campaign size.\n"
     # "- Every price below includes printing, postage and USPS CASS address verification.\n"
     # "- The catalog has 14 product families and 29 sizes: postcards, letters, Certified Mail, EDDM (Every Door Direct Mail), Priority Mail, Priority Mail Express, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock. EDDM prices cover printing only; saturation postage is added per carrier route.\n"
     # "- The campaign wizard has four steps: 1 choose the mail piece, 2 audience (CSV upload with automatic CASS verification, a radius map estimate, or a saved preset), 3 design studio (keep text and logos inside the green 1/4 inch safe line; the red 1/8 inch bleed is trimmed), 4 review, pay and launch.\n"

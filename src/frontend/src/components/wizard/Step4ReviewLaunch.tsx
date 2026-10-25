@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useAccountSync } from "@/hooks/use-account";
 import {
+  useAddCampaignRecipients,
   useCreateCampaign,
   useDeleteCampaignDraft,
   useDispatchPrintJob,
@@ -17,7 +18,12 @@ import {
   useUploadDocumentChunk,
 } from "@/hooks/use-backend";
 import { formatNumber, layoutLabel } from "@/lib/format";
-import { canvasForStorage } from "@/lib/inputLimits";
+import {
+  INLINE_RECIPIENT_BYTES,
+  RECIPIENT_CHUNK_BYTES,
+  canvasForStorage,
+  recipientChunkEnd,
+} from "@/lib/inputLimits";
 import {
   catalogMailClassLabel,
   catalogMailClassToWire,
@@ -154,6 +160,7 @@ export function Step4ReviewLaunch() {
 
   const createCampaign = useCreateCampaign();
   const saveCanvas = useSaveCanvasState();
+  const addRecipients = useAddCampaignRecipients();
   const deleteDraft = useDeleteCampaignDraft();
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchPrintJob();
@@ -167,6 +174,11 @@ export function Step4ReviewLaunch() {
     error: null,
   });
   const [uploadProgress, setUploadProgress] = useState(0);
+  /** Recipients staged so far while a large list uploads. */
+  const [recipientProgress, setRecipientProgress] = useState<{
+    stored: number;
+    total: number;
+  } | null>(null);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [pdfInfo, setPdfInfo] = useState<{
     pages: number;
@@ -297,8 +309,16 @@ export function Step4ReviewLaunch() {
                 ? catalogMailClassToWire(state.selectedSpec.mailClass)
                 : undefined,
               audienceType: toAudienceType(state.audienceType),
-              recipients: state.verifiedAddresses,
-              recipientCount: BigInt(state.recipientCount),
+              // The first chunk rides along; the rest is staged below.
+              recipients: state.verifiedAddresses.slice(
+                0,
+                recipientChunkEnd(
+                  state.verifiedAddresses,
+                  0,
+                  INLINE_RECIPIENT_BYTES,
+                ),
+              ),
+              recipientCount: BigInt(state.verifiedAddresses.length),
               designTemplateId:
                 state.designTemplate?.id ?? state.mailTemplate?.id,
               // A preview copy that always fits the canister's canvas bounds.
@@ -329,6 +349,53 @@ export function Step4ReviewLaunch() {
               : expectedTotal,
           );
         }
+
+        // 1b. Stage the rest of the recipient list (a campaign has no size
+        // limit; each message carries a chunk). Resumes from what the
+        // canister already holds, so a retry never sends a chunk twice.
+        const all = state.verifiedAddresses;
+        const stagedReply = await addRecipients
+          .mutateAsync({ campaignId: id, offset: 0, recipients: [] })
+          .catch((e) => {
+            throw new StageError(
+              "creating",
+              messageOf(e, "The recipient list could not be uploaded."),
+            );
+          });
+        let stored = Number(stagedReply.stored);
+        if (!stagedReply.ok) {
+          throw new StageError(
+            "creating",
+            stagedReply.error ?? "The recipient list could not be uploaded.",
+          );
+        }
+        if (stored < all.length) {
+          setRecipientProgress({ stored, total: all.length });
+        }
+        while (stored < all.length) {
+          const end = recipientChunkEnd(all, stored, RECIPIENT_CHUNK_BYTES);
+          const reply = await addRecipients
+            .mutateAsync({
+              campaignId: id,
+              offset: stored,
+              recipients: all.slice(stored, end),
+            })
+            .catch((e) => {
+              throw new StageError(
+                "creating",
+                messageOf(e, "The recipient list could not be uploaded."),
+              );
+            });
+          if (!reply.ok || Number(reply.stored) <= stored) {
+            throw new StageError(
+              "creating",
+              reply.error ?? "The recipient list could not be uploaded.",
+            );
+          }
+          stored = Number(reply.stored);
+          setRecipientProgress({ stored, total: all.length });
+        }
+        setRecipientProgress(null);
 
         // 2. Render the print-ready PDF.
         setMachine({ stage: "rendering", failedStage: null, error: null });
@@ -394,6 +461,7 @@ export function Step4ReviewLaunch() {
       createCampaign,
       uploadChunk,
       saveCanvas,
+      addRecipients,
       deleteDraft,
       setLaunchedCampaign,
       launchedTotalCents,
@@ -808,6 +876,21 @@ export function Step4ReviewLaunch() {
                   );
                 })}
               </ol>
+
+              {machine.stage === "creating" && recipientProgress && (
+                <div className="space-y-1">
+                  <Progress
+                    value={
+                      (recipientProgress.stored / recipientProgress.total) * 100
+                    }
+                    data-ocid="review.recipients.progress"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formatNumber(recipientProgress.stored)} of{" "}
+                    {formatNumber(recipientProgress.total)} recipients uploaded
+                  </p>
+                </div>
+              )}
 
               {machine.stage === "uploading" && (
                 <div className="space-y-1">

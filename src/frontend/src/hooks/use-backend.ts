@@ -28,6 +28,7 @@ import type {
   PricingRow,
   PublicConfig,
   QrScanStats,
+  RecipientStageResult,
   ReferralStats,
   StampyReply,
   StampyTurn,
@@ -143,6 +144,29 @@ export function useCreateCampaign() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    },
+  });
+}
+
+/**
+ * Stages more of an unpaid campaign's recipients from `offset` (the list
+ * past what `createCampaign` carried). An empty chunk only reports how many
+ * are stored, so a resumed launch continues from there.
+ */
+export function useAddCampaignRecipients() {
+  const { actor } = useBackendActor();
+  return useMutation<
+    RecipientStageResult,
+    Error,
+    { campaignId: string; offset: number; recipients: VerifiedAddress[] }
+  >({
+    mutationFn: async ({ campaignId, offset, recipients }) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.addCampaignRecipients(
+        campaignId,
+        BigInt(offset),
+        recipients,
+      );
     },
   });
 }

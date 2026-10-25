@@ -12,6 +12,12 @@ export const ApiResult = IDL.Record({
   'ok' : IDL.Bool,
   'error' : IDL.Opt(IDL.Text),
 });
+export const RecipientStageResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'total' : IDL.Nat,
+  'error' : IDL.Opt(IDL.Text),
+  'stored' : IDL.Nat,
+});
 export const StampyRole = IDL.Variant({ 'User' : IDL.Null, 'Assistant' : IDL.Null });
 export const StampyTurn = IDL.Record({ 'content' : IDL.Text, 'role' : StampyRole });
 export const StampyReply = IDL.Record({
@@ -575,6 +581,11 @@ export const idlService = IDL.Service({
       [],
     ),
   '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+  'addCampaignRecipients' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
+      [RecipientStageResult],
+      [],
+    ),
   'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
   'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
   'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),
@@ -706,6 +717,12 @@ export const idlFactory = ({ IDL }) => {
   const ApiResult = IDL.Record({
     'ok' : IDL.Bool,
     'error' : IDL.Opt(IDL.Text),
+  });
+  const RecipientStageResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'total' : IDL.Nat,
+    'error' : IDL.Opt(IDL.Text),
+    'stored' : IDL.Nat,
   });
   const StampyRole = IDL.Variant({ 'User' : IDL.Null, 'Assistant' : IDL.Null });
   const StampyTurn = IDL.Record({ 'content' : IDL.Text, 'role' : StampyRole });
@@ -1269,6 +1286,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+    'addCampaignRecipients' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
+        [RecipientStageResult],
+        [],
+      ),
     'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
     'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
     'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),

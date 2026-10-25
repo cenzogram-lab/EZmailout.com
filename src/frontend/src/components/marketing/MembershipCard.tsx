@@ -22,15 +22,15 @@ interface Perk {
 const PERKS: Perk[] = [
   {
     icon: Tag,
-    title: "Wholesale per-piece rates",
+    title: "The 10,000-piece rate from piece one",
     description:
-      "The same print + postage price whether you send 50 pieces or 5,000. No tiers to unlock.",
+      "Members pay the 10,000-piece price on postcards, letters and brochures whether they send 50 pieces or 5,000, and the 50,000 tier past that. No tiers to unlock.",
   },
   {
     icon: Layers,
     title: "No minimum volume",
     description:
-      "Test a single postcard or drop an entire carrier route. There is never a floor on your order.",
+      "Test a single postcard or mail a whole city. There is no floor and no ceiling on your order.",
   },
   {
     icon: Sparkles,

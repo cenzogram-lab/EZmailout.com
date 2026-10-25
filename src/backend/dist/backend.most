@@ -1652,6 +1652,22 @@ type PaymentStatus__640394429 =
 type PaymentStatus__71296514 = {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
 type PaymentStatus__825349200 =
   {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
+type PrintBatch__526880683 =
+  {
+    addressListId : ?Text;
+    count : Nat;
+    first : Nat;
+    jobId : ?Text;
+    submitted : Bool
+  };
+type PrintBatch__885869486 =
+  {
+    addressListId : ?Text;
+    count : Nat;
+    first : Nat;
+    jobId : ?Text;
+    submitted : Bool
+  };
 type PrintSpec__177638092 =
   {
     color : Text;
@@ -2847,7 +2863,9 @@ type VerifiedAddress__924635918 =
   "20260927_000000_ReturnedMail" :
     (old : OldActor__44764964) -> NewActor__468495;
   "20261020_000000_FulfilmentNames" :
-    (old : OldActor__905065025) -> NewActor__754755005
+    (old : OldActor__905065025) -> NewActor__754755005;
+  "20261025_000000_PrintBatches" :
+    {} -> {printBatches : Map__521176851<Text, [PrintBatch__885869486]>}
 }
 actor  {
   stable accounts :
@@ -2899,6 +2917,11 @@ actor  {
   stable presetMeta :
     {
       var root : Node__809479745<Text, AudiencePreset__991566103>;
+      var size : Nat__677858269
+    };
+  stable printBatches :
+    {
+      var root : Node__809479745<Text, [PrintBatch__526880683]>;
       var size : Nat__677858269
     };
   stable qrScans :

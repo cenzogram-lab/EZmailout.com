@@ -27,6 +27,7 @@ import Order "mo:core/Order";
 mixin (
   campaigns : Map.Map<Text, Types.CampaignRecord>,
   campaignRecipients : Map.Map<Text, [Common.VerifiedAddress]>,
+  printBatches : Map.Map<Text, [Types.PrintBatch]>,
   trackingEvents : List.List<Types.TrackingEvent>,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   state : Common.Counters,
@@ -41,7 +42,9 @@ mixin (
   /// customer pays, so a file that cannot be sent is never charged for.
   transient let maxDocumentBytes : Nat = 1_900_000;
   transient let allowedMimeTypes : [Text] = ["application/pdf", "image/png", "image/jpeg"];
-  transient let maxPollPerTick : Nat = 10;
+  /// Print jobs one tracking poll looks up (two outcalls each), however
+  /// many campaigns or batches they belong to.
+  transient let maxPollJobsPerTick : Nat = 10;
 
   /// Campaigns with a print dispatch running. Taken before the first
   /// outcall and released in `finally`, so it survives a trap in any
@@ -189,6 +192,9 @@ mixin (
     let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?AdminLib.providerError(adminKeysState, caller, "Print fulfilment credentials not configured (Admin → Print fulfilment)", "Printing isn't available right now. Your payment is recorded; send it to print again a little later.")) } };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
+    if (recipients.size() != record.recipientCount) {
+      return dispatchResult(record, false, ?("The campaign's recipient list is incomplete (" # recipients.size().toText() # " of " # record.recipientCount.toText() # " stored)"));
+    };
     let returnAddress = switch (record.returnAddress) { case (?r) r; case null { return dispatchResult(record, false, ?"A return address is required") } };
     if (record.printDocumentId == null) {
       switch (documentUploads.get(campaignId)) {
@@ -247,10 +253,6 @@ mixin (
   ) : async* Types.DispatchResult {
     let base = Fulfilment.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
-    // A job from an earlier run may have been submitted even though that run
-    // never heard back (a timed-out submit), so it is checked before step 4.
-    let jobFromEarlierRun = record.printJobId != null;
-
     // 1. Document
     if (record.printDocumentId == null) {
       let upload = switch (documentUploads.get(campaignId)) { case (?u) u; case null { return markFailed(record, "Print document has not been uploaded") } };
@@ -270,46 +272,132 @@ mixin (
       };
     };
 
-    // 2. Address list
-    if (record.printAddressListId == null) {
-      let xml = Fulfilment.buildAddressListXml(record.name # " " # campaignId, recipients);
-      let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-      if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed", resp)) };
-      switch (Fulfilment.parseId(resp.body)) {
-        case (?id) { record.printAddressListId := ?id; ignore CampaignLib.moveProduction(record, #AddressListReady); record.updatedAt := Time.now() };
-        case null { return markFailed(record, "Address list returned no id") };
-      };
-    };
+    // 2–4. One address list and print job per batch (`batchPlan`), each
+    // listed, created and submitted in turn; a batch already submitted is
+    // skipped, so a retry resumes at the first unfinished one.
+    let documentId = switch (record.printDocumentId) { case (?d) d; case null "" };
+    let plan = batchPlan(record, campaignId, recipients);
+    let batches = plan.size();
+    var alreadySubmitted = 0;
+    for (i in plan.keys()) {
+      var b = batchAt(campaignId, i);
+      if (not b.submitted) {
+        let which = if (batches == 1) "" else " (batch " # (i + 1).toText() # " of " # batches.toText() # ")";
+        // A job from an earlier run may have been submitted even though that
+        // run never heard back (a timed-out submit), so it is checked first.
+        let jobFromEarlierRun = b.jobId != null;
 
-    // 3. Job
-    if (record.printJobId == null) {
-      let documentId = switch (record.printDocumentId) { case (?d) d; case null "" };
-      let addressListId = switch (record.printAddressListId) { case (?a) a; case null "" };
-      let form = Fulfilment.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
-      let resp = await* Http.postText(base # "/jobs", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
-      if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed", resp)) };
-      switch (Fulfilment.parseId(resp.body)) {
-        case (?id) { record.printJobId := ?id; ignore CampaignLib.moveProduction(record, #JobCreated); record.updatedAt := Time.now() };
-        case null { return markFailed(record, "Job creation returned no id") };
-      };
-    };
+        if (b.addressListId == null) {
+          let listName = record.name # " " # campaignId # (if (batches == 1) "" else " " # (i + 1).toText() # "/" # batches.toText());
+          let xml = Fulfilment.buildAddressListXml(listName, recipients.sliceToArray(b.first, b.first + b.count));
+          let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
+          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed" # which, resp)) };
+          switch (Fulfilment.parseId(resp.body)) {
+            case (?id) {
+              b := { b with addressListId = ?id };
+              saveBatch(campaignId, i, b);
+              if (i == 0) { record.printAddressListId := ?id };
+              ignore CampaignLib.moveProduction(record, #AddressListReady);
+              record.updatedAt := Time.now();
+            };
+            case null { return markFailed(record, "Address list returned no id" # which) };
+          };
+        };
 
-    // 4. Submit, unless an earlier run's submit already went through.
-    let jobId = switch (record.printJobId) { case (?j) j; case null "" };
-    if (jobFromEarlierRun) {
-      let probe = await* Http.get(base # "/jobs/" # jobId, Fulfilment.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-      if (Http.isSuccess(probe) and Fulfilment.jobSubmitted(probe.body) == ?true) {
-        return markSubmitted(record, campaignId, jobId, "This print job was already submitted; it was not submitted again");
+        if (b.jobId == null) {
+          let addressListId = switch (b.addressListId) { case (?a) a; case null "" };
+          let form = Fulfilment.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
+          let resp = await* Http.postText(base # "/jobs", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
+          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed" # which, resp)) };
+          switch (Fulfilment.parseId(resp.body)) {
+            case (?id) {
+              b := { b with jobId = ?id };
+              saveBatch(campaignId, i, b);
+              if (i == 0) { record.printJobId := ?id };
+              ignore CampaignLib.moveProduction(record, #JobCreated);
+              record.updatedAt := Time.now();
+            };
+            case null { return markFailed(record, "Job creation returned no id" # which) };
+          };
+        };
+
+        // Submit, unless an earlier run's submit already went through.
+        let jobId = switch (b.jobId) { case (?j) j; case null "" };
+        var done = false;
+        if (jobFromEarlierRun) {
+          let probe = await* Http.get(base # "/jobs/" # jobId, Fulfilment.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+          if (Http.isSuccess(probe) and Fulfilment.jobSubmitted(probe.body) == ?true) { done := true; alreadySubmitted += 1 };
+        };
+        if (not done) {
+          let submit = await* Http.postText(base # "/jobs/" # jobId # "/submit", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), Fulfilment.formEncode([("billingType", "User Credit")]), opts, transformFn);
+          if (not Http.isSuccess(submit) or Fulfilment.reportedFailure(submit.body)) {
+            if (jobFromEarlierRun and Fulfilment.submittedAlready(submit.body)) {
+              alreadySubmitted += 1;
+            } else {
+              return markFailed(record, responseError("Job submission failed" # which, submit));
+            };
+          };
+        };
+        b := { b with submitted = true };
+        saveBatch(campaignId, i, b);
       };
     };
-    let submit = await* Http.postText(base # "/jobs/" # jobId # "/submit", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), Fulfilment.formEncode([("billingType", "User Credit")]), opts, transformFn);
-    if (not Http.isSuccess(submit) or Fulfilment.reportedFailure(submit.body)) {
-      if (jobFromEarlierRun and Fulfilment.submittedAlready(submit.body)) {
-        return markSubmitted(record, campaignId, jobId, "The print service reports this job was already submitted");
-      };
-      return markFailed(record, responseError("Job submission failed", submit));
+    let firstJob = switch (record.printJobId) { case (?j) j; case null "" };
+    let detail = if (batches == 1) {
+      if (alreadySubmitted == 1) "This print job was already submitted; it was not submitted again" else "Print job submitted for production";
+    } else {
+      batches.toText() # " print jobs submitted for production (" # recipients.size().toText() # " pieces)" # (if (alreadySubmitted > 0) "; " # alreadySubmitted.toText() # " had already been submitted and were not submitted again" else "");
     };
-    markSubmitted(record, campaignId, jobId, "Print job submitted for production");
+    markSubmitted(record, campaignId, firstJob, detail);
+  };
+
+  /// The print batches of a campaign: the stored plan, or a new one from its
+  /// recipients. A campaign whose address list was already uploaded whole
+  /// (by a run from before batching) keeps that one list as its only batch.
+  private func batchPlan(record : Types.CampaignRecord, campaignId : Text, recipients : [Common.VerifiedAddress]) : [Types.PrintBatch] {
+    switch (printBatches.get(campaignId)) {
+      case (?plan) { if (plan.size() > 0) { return plan } };
+      case null {};
+    };
+    let slices = if (record.printAddressListId != null) [(0, recipients.size())] else Fulfilment.addressListBatches(recipients, Fulfilment.maxAddressListBytes);
+    let plan = Array.tabulate(slices.size(), func(i : Nat) : Types.PrintBatch {
+      let (first, count) = slices[i];
+      if (i == 0) {
+        { first; count; addressListId = record.printAddressListId; jobId = record.printJobId; submitted = false };
+      } else {
+        { first; count; addressListId = null; jobId = null; submitted = false };
+      };
+    });
+    printBatches.add(campaignId, plan);
+    plan;
+  };
+
+  private func batchAt(campaignId : Text, i : Nat) : Types.PrintBatch {
+    switch (printBatches.get(campaignId)) {
+      case (?plan) plan[i];
+      case null Runtime.trap("print batches missing for " # campaignId);
+    };
+  };
+
+  private func saveBatch(campaignId : Text, i : Nat, b : Types.PrintBatch) {
+    switch (printBatches.get(campaignId)) {
+      case (?plan) { printBatches.add(campaignId, Array.tabulate<Types.PrintBatch>(plan.size(), func(j) = if (j == i) b else plan[j])) };
+      case null {};
+    };
+  };
+
+  /// Every print job of a campaign: its batches' jobs, or the record's one
+  /// job for a campaign dispatched before batching.
+  private func jobIdsOf(record : Types.CampaignRecord) : [Text] {
+    switch (printBatches.get(record.id)) {
+      case (?plan) {
+        let ids = List.empty<Text>();
+        for (b in plan.vals()) { switch (b.jobId) { case (?j) ids.add(j); case null {} } };
+        if (ids.size() > 0) { return ids.toArray() };
+      };
+      case null {};
+    };
+    switch (record.printJobId) { case (?j) [j]; case null [] };
   };
 
   private func markSubmitted(record : Types.CampaignRecord, campaignId : Text, jobId : Text, detail : Text) : Types.DispatchResult {
@@ -324,23 +412,38 @@ mixin (
 
   // ─── Tracking ────────────────────────────────────────────────────────────
 
+  /// Reads every print job of the campaign and advances its timeline by the
+  /// scans of all its pieces together.
   private func syncOne(record : Types.CampaignRecord) : async* Types.SyncResult {
-    let jobId = switch (record.printJobId) { case (?j) j; case null { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } } };
+    let jobIds = jobIdsOf(record);
+    if (jobIds.size() == 0) { return { ok = false; error = ?"Campaign has not been dispatched"; status = ?record.status; newEvents = 0; cached = false } };
+    let jobId = jobIds[0];
     let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return { ok = false; error = ?"Print fulfilment credentials not configured"; status = ?record.status; newEvents = 0; cached = false } } };
     let base = Fulfilment.baseUrl(environmentFor(record));
     let headers = Fulfilment.jsonHeaders(auth, "application/json");
-    let jobResp = await* Http.get(base # "/jobs/" # jobId, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-    let trackResp = await* Http.get(base # "/jobs/" # jobId # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
-    if (not Http.isSuccess(jobResp) and not Http.isSuccess(trackResp)) {
-      return { ok = false; error = ?responseError("Tracking lookup failed", jobResp); status = ?record.status; newEvents = 0; cached = false };
-    };
     let statuses = List.empty<Text>();
-    if (Http.isSuccess(jobResp)) {
-      switch (Json.getString(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
-      switch (Json.xmlTag(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
-      statuses.add(Fulfilment.parseDescription(jobResp.body));
+    let pieces = List.empty<Text>();
+    var answered = false;
+    var firstFailure : ?Http.Response = null;
+    for (job in jobIds.vals()) {
+      let jobResp = await* Http.get(base # "/jobs/" # job, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
+      let trackResp = await* Http.get(base # "/jobs/" # job # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
+      if (Http.isSuccess(jobResp)) {
+        answered := true;
+        switch (Json.getString(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
+        switch (Json.xmlTag(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
+        statuses.add(Fulfilment.parseDescription(jobResp.body));
+      } else if (firstFailure == null) { firstFailure := ?jobResp };
+      if (Http.isSuccess(trackResp)) {
+        answered := true;
+        for (p in Fulfilment.parseTrackingStatuses(trackResp.body).vals()) { pieces.add(p) };
+      };
     };
-    let pieceStatuses = if (Http.isSuccess(trackResp)) Fulfilment.parseTrackingStatuses(trackResp.body) else [];
+    if (not answered) {
+      let failed = switch (firstFailure) { case (?r) r; case null { { status = 0; body = "no answer" } } };
+      return { ok = false; error = ?responseError("Tracking lookup failed", failed); status = ?record.status; newEvents = 0; cached = false };
+    };
+    let pieceStatuses = pieces.toArray();
     let stage = if (pieceStatuses.size() > 0) {
       Fulfilment.aggregateStage(pieceStatuses);
     } else {
@@ -397,10 +500,11 @@ mixin (
     };
   };
 
-  /// Syncs up to 10 in-flight campaigns and returns how many were synced:
-  /// the ones whose last lookup is oldest (never looked up first), so with
-  /// more than 10 in flight every campaign is reached in turn instead of the
-  /// same first 10 by id on every run.
+  /// Syncs in-flight campaigns, up to 10 print jobs in all (a campaign
+  /// split into several jobs counts each), and returns how many campaigns
+  /// were synced: the ones whose last lookup is oldest (never looked up
+  /// first), so every campaign is reached in turn instead of the same first
+  /// ones by id on every run.
   /// Private: the 6-hourly timer in `main.mo` calls it directly, so it is not
   /// reachable as a canister method.
   private func pollActiveCampaigns() : async* Nat {
@@ -414,12 +518,16 @@ mixin (
     let pending = inFlight.toArray().sort(func(a : (Int, Types.CampaignRecord), b : (Int, Types.CampaignRecord)) : Order.Order = Int.compare(a.0, b.0));
     pollRunning := true;
     var synced = 0;
+    var jobs = 0;
     try {
       for ((_, r) in pending.vals()) {
-        if (synced < maxPollPerTick) {
+        // The first campaign is always looked up, however many jobs it has.
+        let cost = jobIdsOf(r).size();
+        if (synced == 0 or jobs + cost <= maxPollJobsPerTick) {
           syncCooldowns.add(r.id, Time.now());
           ignore await* syncOne(r);
           synced += 1;
+          jobs += cost;
         };
       };
     } finally {
@@ -441,6 +549,12 @@ mixin (
   private func findByJobId(jobId : Text) : ?Types.CampaignRecord {
     for ((_, r) in campaigns.entries()) {
       if (r.printJobId == ?jobId) { return ?r };
+    };
+    // Jobs of a campaign's later batches.
+    for ((id, plan) in printBatches.entries()) {
+      for (b in plan.vals()) {
+        if (b.jobId == ?jobId) { return campaigns.get(id) };
+      };
     };
     null;
   };

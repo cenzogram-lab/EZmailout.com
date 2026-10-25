@@ -5,6 +5,7 @@ import {
   categoryRows,
 } from "@/lib/catalog";
 import { AI_COSTS, CREDIT_VALUE_CENTS, MONTHLY_ALLOWANCE } from "@/lib/credits";
+import { formatNumber } from "@/lib/format";
 import {
   PRICING_LEDGER,
   type ProductSpec,
@@ -13,6 +14,7 @@ import {
   getPricingRow,
   getUnitPriceCents,
   startingPriceCents,
+  volumeTierSteps,
   volumeTiers,
 } from "@/lib/pricing";
 
@@ -165,7 +167,7 @@ const INTENTS: Intent[] = [
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
     priceable: true,
     answer: () =>
-      `There are no batch minimums — mail one piece or thousands. Postcards, letters and brochures get cheaper from 1,000 pieces, and a ${membership}/month membership gets the 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
+      `There are no batch minimums — mail one piece or thousands. Postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, with no limit on campaign size, and a ${membership}/month membership gets the 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
     chips: ["catalog"],
   },
   {
@@ -240,15 +242,16 @@ const sameSize = (row: ProductSpec, [a, b]: [number, number]) => {
 /** One format's price in words: its volume tiers, or its flat price. */
 function rowPrice(row: ProductSpec): string {
   if (!volumeTiers(row.id)) return `${usd(row.retailPriceCents)} per piece`;
-  const at = (qty: number, member: boolean) =>
-    usd(getUnitPriceCents(row.id, qty, member));
-  const member = at(1, true);
-  return member === at(1_000, false)
-    ? `${at(1, false)} per piece under 1,000 pieces and ${member} from 1,000 or for members`
-    : `${at(1, false)} per piece under 1,000 pieces, ${at(1_000, false)} from 1,000, and ${member} for members at any volume`;
+  const steps = volumeTierSteps(row.id).map(({ minimum, cents }) =>
+    minimum === 0
+      ? `${usd(cents)} per piece under 1,000 pieces`
+      : `${usd(cents)} from ${formatNumber(minimum)}`,
+  );
+  const member = usd(getUnitPriceCents(row.id, 1, true));
+  return `${steps.join(", ")}, and members pay no more than ${member} at any volume (there is no limit on campaign size)`;
 }
 
-/** "from $0.62" for a volume-priced format, "$1.05" for a flat one. */
+/** "from $0.56" for a volume-priced format, "$1.05" for a flat one. */
 const fromPrice = (row: ProductSpec) =>
   `${volumeTiers(row.id) ? "from " : ""}${usd(startingPriceCents(row.id))}`;
 
@@ -295,7 +298,7 @@ function priceAnswer(question: string): string | null {
     if (rows.length === 1) {
       return `The ${low.name} is ${rowPrice(low)}, with ${INCLUDED}.`;
     }
-    const memberNote = volumeTiers(low.id) ? ", the member rate" : "";
+    const memberNote = volumeTiers(low.id) ? ", from 50,000 pieces" : "";
     return `Prices for ${category.name} start at ${usd(startingPriceCents(low.id))} per piece (${low.name}${memberNote}), across ${rows.length} sizes. Every price has ${INCLUDED}.`;
   }
   return null;

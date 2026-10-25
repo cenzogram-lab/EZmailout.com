@@ -25,6 +25,7 @@ mixin (
   payments : Map.Map<Text, Account.PaymentRecord>,
   referralRewards : List.List<Account.ReferralReward>,
   campaigns : Map.Map<Text, Types.CampaignRecord>,
+  campaignRecipients : Map.Map<Text, [Common.VerifiedAddress]>,
   trackingEvents : List.List<Types.TrackingEvent>,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   state : Common.Counters,
@@ -177,6 +178,13 @@ mixin (
             // when the campaign was created) times its pieces, nothing else.
             if (c.totalAmountChargedCents != c.unitPriceCents * c.recipientCount or c.totalAmountChargedCents > PricingLib.maxOrderCents) {
               return intentFail("This campaign's total doesn't add up; please contact support");
+            };
+            // Every priced recipient must be stored (a large list is staged in
+            // chunks by `addCampaignRecipients`), so the order paid for is
+            // exactly the one that prints.
+            let stored = switch (campaignRecipients.get(campaignId)) { case (?r) r.size(); case null 0 };
+            if (stored != c.recipientCount) {
+              return intentFail("This campaign's recipient list is still uploading (" # stored.toText() # " of " # c.recipientCount.toText() # "). Finish the upload, then pay.");
             };
             // Only an order that can go to print is paid for: its print file
             // must be fully staged (uploads close once the campaign is paid).

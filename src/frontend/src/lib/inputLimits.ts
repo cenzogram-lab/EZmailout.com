@@ -2,7 +2,7 @@
  * Text bounds the canister enforces where input enters it. Mirrors
  * `src/backend/lib/inputs.mo` and `mixins/support-api.mo`; change both.
  */
-import type { CanvasSide, CanvasState } from "@/backend";
+import type { CanvasSide, CanvasState, VerifiedAddress } from "@/backend";
 import { stripTextExtras } from "@/lib/textStyle";
 
 export const MAX_CAMPAIGN_NAME_CHARS = 100;
@@ -22,6 +22,40 @@ export const MAX_CANVAS_SHORT_CHARS = 100;
 export const MAX_CANVAS_CAPTION_CHARS = 200;
 /** Every image URL on both sides together. */
 export const MAX_CANVAS_IMAGE_CHARS = 1_000_000;
+
+// Recipients per message (`maxRecipientsPerCall` in the campaign mixin). A
+// campaign has no recipient limit: `createCampaign` carries the first chunk
+// and `addCampaignRecipients` the rest, each inside the 2 MB ingress limit.
+export const MAX_RECIPIENTS_PER_CALL = 5000;
+/** Recipients sent with `createCampaign`, beside a canvas of up to ~1 MB. */
+export const INLINE_RECIPIENT_BYTES = 400_000;
+/** Recipients per `addCampaignRecipients` call. */
+export const RECIPIENT_CHUNK_BYTES = 1_200_000;
+
+/** Bytes a recipient takes on the wire, rounded up (JSON is larger than Candid). */
+function recipientBytes(a: VerifiedAddress): number {
+  return JSON.stringify(a).length * 2 + 32;
+}
+
+/**
+ * How many of `addresses`, from `start`, fit one message: at most
+ * `MAX_RECIPIENTS_PER_CALL` and `maxBytes`, and always at least one.
+ */
+export function recipientChunkEnd(
+  addresses: VerifiedAddress[],
+  start: number,
+  maxBytes: number,
+): number {
+  let end = start;
+  let bytes = 0;
+  while (end < addresses.length && end - start < MAX_RECIPIENTS_PER_CALL) {
+    const next = recipientBytes(addresses[end]);
+    if (end > start && bytes + next > maxBytes) break;
+    bytes += next;
+    end += 1;
+  }
+  return end;
+}
 
 /** Image sources the canister stores: none, `blob:`, `data:image/` or `https://`. */
 export function imageUrlAllowed(url: string): boolean {

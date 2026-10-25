@@ -89,14 +89,55 @@ module {
   /// Address list XML for POST /addressLists (mapping id 1: Firstname, Lastname,
   /// Organization, Address1, Address2, City, State, Postalcode).
   public func buildAddressListXml(name : Text, addresses : [Common.VerifiedAddress]) : Text {
-    var body = "<addressList><addressListName>" # Json.xmlEscape(name) # "</addressListName><addressMappingId>" # addressMappingId # "</addressMappingId><addresses>";
+    var body = addressListHead(name);
+    for (a in addresses.vals()) { body #= addressXml(a) };
+    body # addressListTail;
+  };
+
+  func addressListHead(name : Text) : Text {
+    "<addressList><addressListName>" # Json.xmlEscape(name) # "</addressListName><addressMappingId>" # addressMappingId # "</addressMappingId><addresses>";
+  };
+
+  let addressListTail = "</addresses></addressList>";
+
+  /// One `<address>` element of an address list.
+  func addressXml(a : Common.VerifiedAddress) : Text {
+    let (first, last) = AddressLib.splitName(a.name);
+    let line2 = switch (a.address_line2) { case (?v) v; case null "" };
+    let zip = switch (a.zip_plus4) { case (?p) a.zip_code # "-" # p; case null a.zip_code };
+    "<address><Firstname>" # Json.xmlEscape(first) # "</Firstname><Lastname>" # Json.xmlEscape(last) # "</Lastname><Organization></Organization><Address1>" # Json.xmlEscape(a.address_line1) # "</Address1><Address2>" # Json.xmlEscape(line2) # "</Address2><City>" # Json.xmlEscape(a.city) # "</City><State>" # Json.xmlEscape(a.state) # "</State><Postalcode>" # Json.xmlEscape(zip) # "</Postalcode></address>";
+  };
+
+  /// Largest address-list body one outcall sends: an outcall request (URL,
+  /// headers and body) may not exceed 2 MB.
+  public let maxAddressListBytes : Nat = 1_800_000;
+
+  /// Splits `addresses` into contiguous `(first, count)` slices whose address
+  /// list stays within `maxBytes`, so
+  /// a campaign of any size is sent as several lists and print jobs. The same
+  /// addresses always give the same slices, so a retried dispatch resumes
+  /// the batches an earlier run planned.
+  public func addressListBatches(addresses : [Common.VerifiedAddress], maxBytes : Nat) : [(Nat, Nat)] {
+    // Room for the list's name: a campaign name (at most 100 characters),
+    // its id and the batch number, each character escaping to at most 6 bytes.
+    let frame = addressListHead("").size() + addressListTail.size() + 200 * 6;
+    let out = List.empty<(Nat, Nat)>();
+    var first = 0;
+    var count = 0;
+    var bytes = frame;
     for (a in addresses.vals()) {
-      let (first, last) = AddressLib.splitName(a.name);
-      let line2 = switch (a.address_line2) { case (?v) v; case null "" };
-      let zip = switch (a.zip_plus4) { case (?p) a.zip_code # "-" # p; case null a.zip_code };
-      body #= "<address><Firstname>" # Json.xmlEscape(first) # "</Firstname><Lastname>" # Json.xmlEscape(last) # "</Lastname><Organization></Organization><Address1>" # Json.xmlEscape(a.address_line1) # "</Address1><Address2>" # Json.xmlEscape(line2) # "</Address2><City>" # Json.xmlEscape(a.city) # "</City><State>" # Json.xmlEscape(a.state) # "</State><Postalcode>" # Json.xmlEscape(zip) # "</Postalcode></address>";
+      let size = addressXml(a).encodeUtf8().size();
+      if (count > 0 and bytes + size > maxBytes) {
+        out.add((first, count));
+        first += count;
+        count := 0;
+        bytes := frame;
+      };
+      bytes += size;
+      count += 1;
     };
-    body # "</addresses></addressList>";
+    if (count > 0) { out.add((first, count)) };
+    out.toArray();
   };
 
   /// Address list XML for CASS verification of raw inputs.

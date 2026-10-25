@@ -43,6 +43,35 @@ export interface CsvUploaderProps {
   onUseAudience: (addresses: VerifiedAddress[]) => void;
 }
 
+/**
+ * Addresses one verification call takes (the canister's per-batch limit: its
+ * address list goes to the print partner in one outcall). A larger list is
+ * verified batch by batch, `VERIFY_GAP_MS` apart (the per-account gap).
+ */
+const VERIFY_BATCH = 5000;
+const VERIFY_GAP_MS = 5500;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** The seconds a "Wait N seconds" refusal asks for, if it is one. */
+function waitSeconds(error: string | undefined): number | null {
+  const m = error?.match(/Wait (\d+) seconds/);
+  return m ? Number(m[1]) : null;
+}
+
+/** One result for a list verified in several batches. */
+function mergeBatches(
+  batches: VerificationBatchResult[],
+): VerificationBatchResult {
+  return {
+    ok: true,
+    results: batches.flatMap((b) => b.results),
+    validCount: batches.reduce((n, b) => n + b.validCount, 0n),
+    invalidCount: batches.reduce((n, b) => n + b.invalidCount, 0n),
+    addressListId: batches[0]?.addressListId,
+  };
+}
+
 function collectVerified(result: VerificationBatchResult): VerifiedAddress[] {
   const out: VerifiedAddress[] = [];
   for (const r of result.results) {
@@ -64,6 +93,8 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
   const [dragging, setDragging] = useState(false);
   const [result, setResult] = useState<VerificationBatchResult | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  /** Rows verified so far while a list larger than one batch is checked. */
+  const [verifyProgress, setVerifyProgress] = useState<number | null>(null);
   const [presetOpen, setPresetOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
 
@@ -126,24 +157,46 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
     if (rows.length === 0) return;
     setVerifyError(null);
     setResult(null);
+    // Fail-closed: a list is usable only when every batch verified.
+    const done: VerificationBatchResult[] = [];
     try {
-      const batch = await verify.mutateAsync(rows);
-      setResult(batch);
-      if (!batch.ok) {
-        setVerifyError(
-          batch.error ?? "EZmailout could not verify these addresses.",
-        );
-      } else {
-        toast.success(
-          `${formatNumber(batch.validCount)} of ${formatNumber(rows.length)} addresses verified.`,
-        );
+      for (let start = 0; start < rows.length; start += VERIFY_BATCH) {
+        if (start > 0) {
+          setVerifyProgress(start);
+          await sleep(VERIFY_GAP_MS);
+        }
+        const slice = rows.slice(start, start + VERIFY_BATCH);
+        let batch = await verify.mutateAsync(slice);
+        const wait = batch.ok ? null : waitSeconds(batch.error);
+        if (wait !== null && wait <= 60) {
+          await sleep(wait * 1000 + 500);
+          batch = await verify.mutateAsync(slice);
+        }
+        if (!batch.ok) {
+          const reason =
+            batch.error ?? "EZmailout could not verify these addresses.";
+          setVerifyError(
+            start > 0
+              ? `${reason} (${formatNumber(start)} of ${formatNumber(rows.length)} were verified before this; verify again to finish the list.)`
+              : reason,
+          );
+          return;
+        }
+        done.push(batch);
       }
+      const merged = mergeBatches(done);
+      setResult(merged);
+      toast.success(
+        `${formatNumber(merged.validCount)} of ${formatNumber(rows.length)} addresses verified.`,
+      );
     } catch (error) {
       setVerifyError(
         error instanceof Error
           ? error.message
           : "Address verification failed. Please try again.",
       );
+    } finally {
+      setVerifyProgress(null);
     }
   }
 
@@ -283,16 +336,18 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               type="button"
               variant="outline"
               onClick={() => void handleVerify()}
-              disabled={verify.isPending}
+              disabled={verify.isPending || verifyProgress !== null}
               className="gap-2"
               data-ocid="audience.csv.verify.button"
             >
-              {verify.isPending ? (
+              {verify.isPending || verifyProgress !== null ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <ShieldCheck className="size-4" />
               )}
-              Verify with EZmailout (CASS)
+              {verifyProgress !== null
+                ? `Verifying ${formatNumber(verifyProgress)} of ${formatNumber(rows.length)}…`
+                : "Verify with EZmailout (CASS)"}
             </Button>
           </div>
 

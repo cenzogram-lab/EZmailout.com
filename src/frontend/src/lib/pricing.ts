@@ -665,8 +665,8 @@ export const TIER_MINIMUMS = [0, 1_000, 10_000, 50_000] as const;
 /** Members are priced as an order of at least this many pieces. */
 export const MEMBER_TIER_QUANTITY = 10_000;
 
-/** One campaign holds at most this many recipients (the canister's limit). */
-export const MAX_CAMPAIGN_PIECES = 5_000;
+/** The fewest pieces of the last (lowest) tier: every order from here on pays it. */
+export const TOP_TIER_PIECES = TIER_MINIMUMS[TIER_MINIMUMS.length - 1];
 
 /**
  * Per-piece prices in cents, one per `TIER_MINIMUMS` entry, for the formats
@@ -724,30 +724,46 @@ export function getProductTierPrice(
 }
 
 /**
- * The lowest per-piece price a customer can actually get for a format: the
- * member rate for tiered formats (a campaign holds at most
- * `MAX_CAMPAIGN_PIECES`, so the 50,000 tier is out of reach), the flat price
- * otherwise. What "from $X" means anywhere in the app.
+ * The lowest per-piece price of a format: its last volume tier (an order of
+ * `TOP_TIER_PIECES` or more; campaigns have no size limit), or its flat
+ * price. What "from $X" means anywhere in the app.
  */
 export function startingPriceCents(layoutVariant: string): number {
-  return Math.min(
-    getUnitPriceCents(layoutVariant, MAX_CAMPAIGN_PIECES, false),
-    getUnitPriceCents(layoutVariant, 1, true),
-  );
+  return getUnitPriceCents(layoutVariant, TOP_TIER_PIECES, false);
 }
 
 /**
- * The tiers a customer can reach, in words ("$0.79 under 1,000 · $0.71 from
- * 1,000 · members $0.62"), or null for a flat-priced format.
+ * Every tier of a volume-priced format, in words ("$0.79 under 1,000 ·
+ * $0.71 from 1,000 · $0.62 from 10,000 · $0.56 from 50,000 · members
+ * $0.62"), or null for a flat-priced format. A tier the cost floor lifts to
+ * the previous tier's price is left out.
  */
 export function tierSummary(layoutVariant: string): string | null {
   if (!volumeTiers(layoutVariant)) return null;
-  const at = (qty: number, member: boolean) =>
-    formatCents(getUnitPriceCents(layoutVariant, qty, member));
-  const member = at(1, true);
-  return member === at(1_000, false)
-    ? `${at(1, false)} under 1,000 · ${member} from 1,000 or for members`
-    : `${at(1, false)} under 1,000 · ${at(1_000, false)} from 1,000 · members ${member}`;
+  return [
+    ...volumeTierSteps(layoutVariant).map(({ minimum, cents }) =>
+      minimum === 0
+        ? `${formatCents(cents)} under ${TIER_MINIMUMS[1].toLocaleString("en-US")}`
+        : `${formatCents(cents)} from ${minimum.toLocaleString("en-US")}`,
+    ),
+    `members ${formatCents(getUnitPriceCents(layoutVariant, 1, true))}`,
+  ].join(" · ");
+}
+
+/**
+ * The distinct price steps of a volume-priced format: each tier's minimum
+ * and price, dropping a tier whose (floored) price equals the one before.
+ */
+export function volumeTierSteps(
+  layoutVariant: string,
+): { minimum: number; cents: number }[] {
+  if (!volumeTiers(layoutVariant)) return [];
+  const steps: { minimum: number; cents: number }[] = [];
+  for (const minimum of TIER_MINIMUMS) {
+    const cents = getUnitPriceCents(layoutVariant, minimum, false);
+    if (steps.at(-1)?.cents !== cents) steps.push({ minimum, cents });
+  }
+  return steps;
 }
 
 /** Retail unit price in dollars for one piece (0 when the variant is unknown). */

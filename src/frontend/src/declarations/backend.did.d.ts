@@ -294,6 +294,12 @@ export type PaymentStatus = { 'Refunded' : null } |
   { 'Unpaid' : null } |
   { 'Waived' : null } |
   { 'Pending' : null };
+export interface RecipientStageResult {
+  'ok' : boolean,
+  'total' : bigint,
+  'error' : [] | [string],
+  'stored' : bigint,
+}
 export interface PresetResult {
   'ok' : boolean,
   'presetId' : [] | [string],
@@ -548,6 +554,10 @@ export interface _SERVICE {
       { 'err' : {} }
   >,
   '_internet_identity_sign_in_start' : ActorMethod<[], Uint8Array>,
+  'addCampaignRecipients' : ActorMethod<
+    [string, bigint, Array<VerifiedAddress>],
+    RecipientStageResult
+  >,
   'applyReferralReward' : ActorMethod<[string], ApiResult>,
   'askStampy' : ActorMethod<[Array<StampyTurn>], StampyReply>,
   'assignAdmin' : ActorMethod<[Principal], ApiResult>,

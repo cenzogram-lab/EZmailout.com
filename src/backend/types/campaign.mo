@@ -292,6 +292,27 @@ module {
     detail : ?Text;
   };
 
+  /// One print job of a campaign: a contiguous slice of its stored
+  /// recipients (`first`, `count`), sent as its own address list because an
+  /// outcall request may not exceed 2 MB. Batch 0 mirrors the record's
+  /// `printAddressListId` / `printJobId`.
+  public type PrintBatch = {
+    first : Nat;
+    count : Nat;
+    addressListId : ?Text;
+    jobId : ?Text;
+    submitted : Bool;
+  };
+
+  /// Reply to `addCampaignRecipients`: how many of the campaign's `total`
+  /// recipients are stored.
+  public type RecipientStageResult = {
+    ok : Bool;
+    error : ?Text;
+    stored : Nat;
+    total : Nat;
+  };
+
   public type DispatchResult = {
     ok : Bool;
     error : ?Text;

@@ -3,7 +3,7 @@
 // records the exact request the canister sent.
 import { PocketIcServer } from "@dfinity/pic";
 import { start, upstream, drive, call, check, failures, ident, anon, EOP, WASM } from "./harness.mjs";
-import { keys, SECRETS, RAW_SECRETS, campaignInput, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress } from "./fixtures.mjs";
+import { keys, SECRETS, RAW_SECRETS, campaignInput, addr, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress } from "./fixtures.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
@@ -164,7 +164,7 @@ const sections = {
     check(!r3.ok && r3.validCount === 0n, "a failed verification-result lookup marks nothing valid (fail-closed)", { ok: r3.ok, valid: r3.validCount, error: r3.error });
 
     const r4 = await call(env.pic, ok, env.deferred(user).verifyAddresses([rawAddr(1)]));
-    check(!r4.ok && (r4.error[0] ?? "").includes("Wait"), "one identity must wait 15 s between verifications", r4.error);
+    check(!r4.ok && (r4.error[0] ?? "").includes("Wait"), "one identity must wait 5 s between verifications", r4.error);
     const r5 = await call(env.pic, ok, env.deferred(anon).verifyAddresses([rawAddr(1)]));
     check(!r5.ok && ok.log.length === 2, "signed-out callers cannot spend verification outcalls");
   },
@@ -579,7 +579,8 @@ sections.pricing = async function pricing() {
   }
   check(mismatches.length === 0, "the frontend prices every row, quantity and membership as the canister does", mismatches.slice(0, 5));
   check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 56 && ts.getUnitPriceCents("4.25x6", 10, true) === 62, "the frontend's 4×6 tiers: 79¢, 71¢, floored 56¢, member 62¢");
-  check(ts.startingPriceCents("4.25x6") === 62 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the member rate for tiered formats and the flat price otherwise");
+  check(ts.startingPriceCents("4.25x6") === 56 && ts.startingPriceCents("11x8.5_brochure") === 108 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the last tier for tiered formats (campaigns have no size limit) and the flat price otherwise");
+  check(ts.tierSummary("4.25x6") === "$0.79 under 1,000 · $0.71 from 1,000 · $0.62 from 10,000 · $0.56 from 50,000 · members $0.62" && ts.tierSummary("11x8.5_brochure") === "$1.32 under 1,000 · $1.08 from 1,000 · members $1.08", "tier summaries list every distinct tier", [ts.tierSummary("4.25x6"), ts.tierSummary("11x8.5_brochure")]);
 
   // And the canister's own campaign prices agree with the frontend's quote.
   const buyer = env.as(ident(162));
@@ -615,6 +616,76 @@ sections.scale = async function scale() {
   const v = await call(env.pic, up, env.deferred(ident(142)).verifyAddresses(many));
   check(v.ok && v.validCount === 5000n, "a 5,000-address verification batch completes", { ok: v.ok, valid: v.validCount, error: v.error });
   console.log(`  (scale section took ${((Date.now() - t0) / 1000).toFixed(1)} s)`);
+};
+
+// ─── Campaigns of any size: staged recipients, one print job per batch ──────
+sections.bigOrder = async function bigOrder() {
+  const env = await setup({ sandboxCheckout: true });
+  const user = ident(171);
+  const u = env.as(user);
+  const up = upstream(fakePrintPartner());
+  const N = 12_000;
+  const all = Array.from({ length: N }, (_, i) => addr(i));
+
+  // Priced for the declared count, the first 5,000 sent with the campaign.
+  const created = await u.createCampaign(campaignInput(0, { recipients: all.slice(0, 5_000), recipientCount: BigInt(N) }));
+  check(created.ok && created.unitPriceCents[0] === 68n && created.totalCents[0] === BigInt(68 * N), "a 12,000-piece 6×9 order is priced at the 10,000 tier (68¢) for every piece", { error: created.error, unit: created.unitPriceCents, total: created.totalCents });
+  const cid = created.campaignId[0];
+  const tooMany = await u.createCampaign(campaignInput(0, { recipients: Array.from({ length: 5_001 }, (_, i) => addr(i)), recipientCount: 6_000n }));
+  check(!tooMany.ok && /5,000/.test(tooMany.error[0] ?? ""), "one message carries at most 5,000 recipients", tooMany.error);
+
+  await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(7));
+  const early = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(!early.ok && /still uploading \(5000 of 12000\)/.test(early.error[0] ?? ""), "checkout waits until every priced recipient is stored", early.error);
+
+  let st = await u.addCampaignRecipients(cid, 0n, []);
+  check(st.ok && st.stored === 5_000n && st.total === BigInt(N), "an empty chunk reports progress", st);
+  st = await u.addCampaignRecipients(cid, 6_000n, all.slice(6_000, 7_000));
+  check(!st.ok && st.stored === 5_000n, "recipients are added in order", st.error);
+  st = await u.addCampaignRecipients(cid, 5_000n, all.slice(5_000, 10_000));
+  check(st.ok && st.stored === 10_000n, "a chunk is appended", st);
+  st = await u.addCampaignRecipients(cid, 5_000n, all.slice(5_000, 10_000));
+  check(st.ok && st.stored === 10_000n, "a retried chunk is acknowledged, not stored twice", st);
+  st = await u.addCampaignRecipients(cid, 9_000n, all.slice(9_000, 12_000));
+  check(st.ok && st.stored === BigInt(N), "an overlapping chunk stores only its new part", st);
+  st = await u.addCampaignRecipients(cid, BigInt(N), [addr(N)]);
+  check(!st.ok && /created for 12000/.test(st.error[0] ?? ""), "no more recipients than the campaign was priced for", st.error);
+  const stranger = await env.as(ident(172)).addCampaignRecipients(cid, 0n, []);
+  check(!stranger.ok && stranger.total === 0n, "another identity cannot read or stage a campaign's recipients", stranger);
+
+  const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(intent.ok && intent.amountCents[0] === BigInt(68 * N), "with every recipient stored checkout opens for the full total", { error: intent.error, amount: intent.amountCents });
+  await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
+  const late = await u.addCampaignRecipients(cid, BigInt(N), [addr(N)]);
+  check(!late.ok && /paid/.test(late.error[0] ?? ""), "a paid campaign's list can no longer change", late.error);
+
+  // Dispatch: one address list and one job per batch, each under 2 MB.
+  const d = await call(env.pic, up, env.deferred(user).dispatchPrintJob(cid));
+  const lists = up.log.filter((l) => l.url.endsWith("/addressLists"));
+  const jobs = up.log.filter((l) => l.method === "POST" && l.url.endsWith("/jobs"));
+  const submits = up.log.filter((l) => l.url.endsWith("/submit"));
+  const sent = lists.map((l) => (l.body.match(/<address>/g) ?? []).length);
+  check(d.ok && d.productionStatus[0]?.Submitted !== undefined, "the 12,000-piece campaign is dispatched", d.error);
+  check(lists.length >= 2 && jobs.length === lists.length && submits.length === lists.length, "it is sent as several address lists, one print job each, all submitted", { lists: lists.length, jobs: jobs.length, submits: submits.length });
+  check(lists.every((l) => l.body.length < 1_900_000), "every address-list outcall stays under the 2 MB request cap", lists.map((l) => l.body.length));
+  check(sent.reduce((a, b) => a + b, 0) === N && lists[0].body.includes(all[0].address_line1) && lists.at(-1).body.includes(all[N - 1].address_line1), "every recipient is sent exactly once, in order", sent);
+  const jobIds = new Set(jobs.map((_, i) => i));
+  check(jobIds.size === jobs.length && new Set(jobs.map((j) => new URLSearchParams(j.body).get("addressId"))).size === lists.length, "each job carries its own address list", jobs.map((j) => new URLSearchParams(j.body).get("addressId")));
+  const again = await call(env.pic, up, env.deferred(env.controller).dispatchPrintJob(cid));
+  check(again.ok && up.log.filter((l) => l.url.endsWith("/submit")).length === submits.length, "a dispatched campaign is never submitted twice");
+
+  // Tracking reads every job; a webhook for a later batch's job finds the campaign.
+  const before = up.log.length;
+  const s = await call(env.pic, up, env.deferred(env.controller).syncPrintTracking(cid));
+  const tracked = up.log.slice(before).filter((l) => l.url.includes("/tracking")).length;
+  check(s.ok && tracked === lists.length, "tracking looks up every print job of the campaign", { tracked, lists: lists.length, error: s.error });
+  const lastJob = submits.at(-1).url.split("/jobs/")[1].split("/")[0];
+  const w = await env.as(anon).handleDeliveryWebhook(SECRETS.webhookSecret, JSON.stringify({ jobId: lastJob, status: "In transit", eventId: "evt-big-1" }));
+  check(w.ok && w.campaignId[0] === cid, "a webhook for a later batch's job is matched to its campaign", w);
+
+  // The 50,000 tier is reachable without membership.
+  const huge = await env.as(ident(173)).createCampaign(campaignInput(1, { recipientCount: 50_000n }));
+  check(huge.ok && huge.unitPriceCents[0] === 65n && huge.totalCents[0] === 3_250_000n, "a 50,000-piece 6×9 order is priced at the 50,000 tier (65¢)", { error: huge.error, unit: huge.unitPriceCents });
 };
 
 // ─── 11. Upgrade from the deployed version: keys and campaigns carry over ───

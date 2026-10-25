@@ -15,6 +15,7 @@ import List "mo:core/List";
 import Set "mo:core/Set";
 import Array "mo:core/Array";
 import Int "mo:core/Int";
+import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
@@ -31,12 +32,17 @@ mixin (
   payments : Map.Map<Text, Account.PaymentRecord>,
   accounts : Map.Map<Text, Account.UserAccount>,
 ) {
-  transient let maxRecipients : Nat = 5_000;
+  /// Recipients one message may carry (`createCampaign` or
+  /// `addCampaignRecipients`): an ingress message is at most 2 MB. A campaign
+  /// itself has no recipient limit; a larger list is staged in chunks.
+  transient let maxRecipientsPerCall : Nat = 5_000;
 
   // Drafts cost nothing to create, and identities are free to mint, so what
-  // one identity can stage before paying is bounded.
+  // unpaid drafts hold is bounded per identity and for the whole canister.
+  // These bound staging, not orders: paid campaigns do not count.
   transient let maxUnpaidDrafts : Nat = 5;
-  transient let maxUnpaidRecipients : Nat = 10_000;
+  transient let maxUnpaidRecipients : Nat = 1_000_000;
+  transient let maxUnpaidRecipientsGlobal : Nat = 5_000_000;
   /// A draft with a checkout opened this recently may still be paid.
   transient let openCheckoutNs : Int = 86_400_000_000_000;
 
@@ -55,29 +61,37 @@ mixin (
     record.paymentStatus == #Paid or record.paymentStatus == #Waived;
   };
 
-  /// The owner's unpaid drafts: how many, and how many recipients they hold.
-  private func unpaidDrafts(owner : Text) : (Nat, Nat) {
+  /// The owner's unpaid drafts: how many, how many recipients they are
+  /// priced for, and how many recipients every unpaid draft holds together.
+  private func unpaidDrafts(owner : Text) : (Nat, Nat, Nat) {
     var drafts = 0;
     var recipients = 0;
+    var everyone = 0;
     for ((_, r) in campaigns.entries()) {
-      if (r.ownerId == owner and r.paymentStatus == #Unpaid) {
-        drafts += 1;
-        recipients += r.recipientCount;
+      if (r.paymentStatus == #Unpaid) {
+        everyone += r.recipientCount;
+        if (r.ownerId == owner) {
+          drafts += 1;
+          recipients += r.recipientCount;
+        };
       };
     };
-    (drafts, recipients);
+    (drafts, recipients, everyone);
   };
 
   /// Why this owner cannot stage `adding` more recipients in a new draft, or
   /// null when their own caps have room. The canister-wide cap never
   /// refuses while a draft can be evicted (`makeRoomForDraft`).
   private func ownerDraftRefusal(owner : Text, adding : Nat) : ?Text {
-    let (drafts, recipients) = unpaidDrafts(owner);
+    let (drafts, recipients, everyone) = unpaidDrafts(owner);
     if (drafts >= maxUnpaidDrafts) {
       return ?("You have " # drafts.toText() # " unpaid drafts. Pay for one or delete a draft from Campaigns before starting another.");
     };
     if (recipients + adding > maxUnpaidRecipients) {
-      return ?"Unpaid drafts may hold at most 10,000 recipients in total. Pay for or delete a draft before adding this list.";
+      return ?"Unpaid drafts may hold at most 1,000,000 recipients in total. Pay for or delete a draft before adding this list.";
+    };
+    if (everyone + adding > maxUnpaidRecipientsGlobal) {
+      return ?"EZmailout is holding as many unpaid recipients as it can right now. Please try again later, or pay for a draft you already have.";
     };
     null;
   };
@@ -225,20 +239,24 @@ mixin (
       case null { return fail("Unknown layout variant: " # input.product.layoutVariant) };
     };
     if (caller.isAnonymous()) { return fail("Sign in with Internet Identity before creating a campaign") };
-    if (input.recipients.size() > maxRecipients) { return fail("A campaign may include at most 5,000 recipients") };
+    if (input.recipients.size() > maxRecipientsPerCall) {
+      return fail("Send at most 5,000 recipients with createCampaign and add the rest with addCampaignRecipients");
+    };
+    let recipients = input.recipients.map(AddressLib.sanitizeVerified);
+    if (recipients.size() == 0) { return fail("Add at least one verified recipient address before creating a campaign") };
+    // The campaign is priced for `recipientCount` pieces; recipients past the
+    // first message are staged with `addCampaignRecipients`, and checkout and
+    // dispatch both require the stored list to hold exactly that many, so
+    // the order is never priced on an estimate.
+    let count : Nat = Nat.max(input.recipientCount, recipients.size());
     // Drafts past their 14 days are pruned before an owner's cap refuses, so
     // an expired draft never holds a slot the timer has not freed yet.
     let owner = caller.toText();
-    let refusal = switch (ownerDraftRefusal(owner, input.recipients.size())) {
-      case (?_) { ignore pruneExpiredDrafts(Time.now()); ownerDraftRefusal(owner, input.recipients.size()) };
+    let refusal = switch (ownerDraftRefusal(owner, count)) {
+      case (?_) { ignore pruneExpiredDrafts(Time.now()); ownerDraftRefusal(owner, count) };
       case null null;
     };
     switch (refusal) { case (?msg) { return fail(msg) }; case null {} };
-    let recipients = input.recipients.map(AddressLib.sanitizeVerified);
-    // Billing and print dispatch both key off the stored list, so a campaign
-    // is priced for exactly the addresses supplied — never an estimated count.
-    let count : Nat = recipients.size();
-    if (count == 0) { return fail("Add at least one verified recipient address before creating a campaign") };
     // Text bounds at the boundary (lib/inputs.mo, mirrored in the frontend).
     if (AddressLib.sanitizeText(input.name).size() > Inputs.maxCampaignNameChars) {
       return fail("Campaign names are limited to " # Inputs.maxCampaignNameChars.toText() # " characters");
@@ -291,6 +309,38 @@ mixin (
     campaignRecipients.add(id, recipients);
     CampaignLib.appendEvent(trackingEvents, state, id, #Created, "campaign.created", id, #System, ?"Campaign draft created");
     { ok = true; error = null; campaignId = ?id; unitPriceCents = ?unitCents; totalCents = ?record.totalAmountChargedCents };
+  };
+
+  /// Stages more of an unpaid campaign's recipients, in order: `offset` is
+  /// where `recipients` start in the full list. A chunk already stored (a
+  /// retried call) is acknowledged without being stored twice, and an empty
+  /// chunk only reports progress, so a client resumes from `stored`.
+  public shared ({ caller }) func addCampaignRecipients(campaignId : Text, offset : Nat, recipients : [Common.VerifiedAddress]) : async Types.RecipientStageResult {
+    let record = switch (campaigns.get(campaignId)) {
+      case (?r) { if (canAccess(r, caller)) r else { return { ok = false; error = ?"Campaign not found"; stored = 0; total = 0 } } };
+      case null { return { ok = false; error = ?"Campaign not found"; stored = 0; total = 0 } };
+    };
+    let current = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
+    let stored = current.size();
+    let reply = func(ok : Bool, error : ?Text, now : Nat) : Types.RecipientStageResult {
+      { ok; error; stored = now; total = record.recipientCount };
+    };
+    if (recipients.size() == 0 or offset + recipients.size() <= stored) { return reply(true, null, stored) };
+    if (record.paymentStatus != #Unpaid) { return reply(false, ?"This campaign is paid, so its recipient list can no longer change", stored) };
+    if (recipients.size() > maxRecipientsPerCall) { return reply(false, ?"Send at most 5,000 recipients per call", stored) };
+    if (offset > stored) { return reply(false, ?("Recipients are added in order; " # stored.toText() # " are stored"), stored) };
+    // Only the part past what is stored is new (a retried chunk can overlap).
+    let fresh = recipients.sliceToArray(Nat.sub(stored, offset), recipients.size()).map(AddressLib.sanitizeVerified);
+    if (stored + fresh.size() > record.recipientCount) {
+      return reply(false, ?("This campaign was created for " # record.recipientCount.toText() # " recipients; start a new campaign for a larger list"), stored);
+    };
+    switch (Inputs.firstLongRecipient(fresh)) {
+      case (?i) { return reply(false, ?("Recipient " # (stored + i + 1).toText() # " has an address line longer than " # Inputs.maxAddressFieldChars.toText() # " characters"), stored) };
+      case null {};
+    };
+    campaignRecipients.add(campaignId, current.concat(fresh));
+    record.updatedAt := Time.now();
+    reply(true, null, stored + fresh.size());
   };
 
   /// The caller's campaigns as list rows, newest first; an admin sees all of

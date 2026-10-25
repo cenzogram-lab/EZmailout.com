@@ -27,8 +27,11 @@ import { Calculator, TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const MIN_QTY = 50;
-const MAX_QTY = 5000;
-const STEP = 10;
+/** Campaigns have no size limit; the box takes up to this many pieces. */
+const MAX_QTY = 1_000_000;
+/** The slider spans every volume tier (the last starts at 50,000). */
+const SLIDER_MAX = 100_000;
+const STEP = 50;
 const DEFAULT_QTY = 500;
 // Opens on the most-mailed card, which has volume tiers.
 const DEFAULT_VARIANT = getPricingRow("4.25x6")?.id ?? PRICING_LEDGER[0].id;
@@ -190,14 +193,14 @@ export function PricingCalculator() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") commitQty(Number(qtyInput));
                 }}
-                className="w-28 text-right font-mono"
+                className="w-32 text-right font-mono"
                 data-ocid="pricing_calc.quantity.input"
               />
             </div>
             <Slider
-              value={[qty]}
+              value={[Math.min(qty, SLIDER_MAX)]}
               min={MIN_QTY}
-              max={MAX_QTY}
+              max={SLIDER_MAX}
               step={STEP}
               onValueChange={(values) => commitQty(values[0] ?? MIN_QTY)}
               aria-label="Pieces to mail"
@@ -205,7 +208,7 @@ export function PricingCalculator() {
             />
             <div className="flex justify-between font-mono text-[11px] text-muted-foreground">
               <span>{formatNumber(MIN_QTY)}</span>
-              <span>{formatNumber(MAX_QTY)}</span>
+              <span>{formatNumber(SLIDER_MAX)}+</span>
             </div>
           </div>
 

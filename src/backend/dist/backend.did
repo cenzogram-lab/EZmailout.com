@@ -184,6 +184,13 @@ type ReferralReward =
    referrerId: text;
    timestamp: int;
  };
+type RecipientStageResult = 
+ record {
+   error: opt text;
+   ok: bool;
+   stored: nat;
+   total: nat;
+ };
 type QrScanStats = 
  record {
    recentScans: vec QrScanEvent;
@@ -647,6 +654,8 @@ service : {
                                               ok;
                                             });
   _internet_identity_sign_in_start: () -> (blob);
+  addCampaignRecipients: (campaignId: text, offset: nat, recipients:
+   vec VerifiedAddress) -> (RecipientStageResult);
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
   askStampy: (turns: vec StampyTurn) -> (StampyReply);
   assignAdmin: (newAdmin: principal) -> (ApiResult);

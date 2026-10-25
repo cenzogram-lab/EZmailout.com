@@ -264,6 +264,12 @@ export interface PricingRow {
     retailPriceCents: bigint;
     widthInches: number;
 }
+export interface RecipientStageResult {
+    error?: string;
+    ok: boolean;
+    stored: bigint;
+    total: bigint;
+}
 export interface PresetResult {
     error?: string;
     ok: boolean;
@@ -578,6 +584,7 @@ export interface backendInterface {
     _initialize_access_control(): Promise<void>;
     _internet_identity_sign_in_finish(): Promise<{ err: {  } } | { ok: null }>;
     _internet_identity_sign_in_start(): Promise<Uint8Array>;
+    addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
     askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     assignAdmin(arg0: Principal): Promise<ApiResult>;
