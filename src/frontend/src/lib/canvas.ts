@@ -17,6 +17,7 @@ import {
 } from "@/lib/printSpec";
 import { layoutTemplateSide } from "@/lib/templateLayout";
 import { bandHeight, countLines } from "@/lib/textFit";
+import { fontSpecOf } from "@/lib/textStyle";
 import type { CanvasSideKey, DesignTemplate } from "@/types";
 
 let idCounter = 0;
@@ -319,10 +320,7 @@ function scaledFontSize(
   height: number,
   scale: number,
 ): number {
-  const spec = {
-    fontWeight: Number(block.fontWeight),
-    fontFamily: block.fontFamily,
-  };
+  const { fontSize: _size, ...spec } = fontSpecOf(block);
   const lines = countLines(block.text, {
     ...spec,
     width: block.width,

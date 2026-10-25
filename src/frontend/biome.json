@@ -39,5 +39,36 @@
       "quoteStyle": "double",
       "semicolons": "always"
     }
-  }
+  },
+  "overrides": [
+    {
+      "include": [
+        "src/directmail/**"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          },
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          },
+          "complexity": {
+            "noUselessSwitchCase": "off"
+          },
+          "a11y": {
+            "noLabelWithoutControl": "off"
+          },
+          "style": {
+            "noCommaOperator": "off",
+            "useExponentiationOperator": "off",
+            "noUnusedTemplateLiteral": "off"
+          },
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          }
+        }
+      }
+    }
+  ]
 }

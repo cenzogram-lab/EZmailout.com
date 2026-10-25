@@ -3,6 +3,7 @@
  * `src/backend/lib/inputs.mo` and `mixins/support-api.mo`; change both.
  */
 import type { CanvasSide, CanvasState } from "@/backend";
+import { stripTextExtras } from "@/lib/textStyle";
 
 export const MAX_CAMPAIGN_NAME_CHARS = 100;
 export const MAX_PRESET_NAME_CHARS = 100;
@@ -40,7 +41,9 @@ function sideForStorage(side: CanvasSide): CanvasSide {
   const textBlocks = side.textBlocks
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE)
     .map((b) => ({
-      ...b,
+      // Tracking, leading, italic and rotation are studio-only (see
+      // `lib/textStyle.ts`): the stored copy is a preview.
+      ...stripTextExtras(b),
       id: short(b.id),
       text: clip(b.text, MAX_CANVAS_TEXT_CHARS),
       color: short(b.color),

@@ -235,7 +235,8 @@ export function Step4ReviewLaunch() {
               audienceType: toAudienceType(state.audienceType),
               recipients: state.verifiedAddresses,
               recipientCount: BigInt(state.recipientCount),
-              designTemplateId: state.designTemplate?.id,
+              designTemplateId:
+                state.designTemplate?.id ?? state.mailTemplate?.id,
               // A preview copy that always fits the canister's canvas bounds.
               canvasState: canvasForStorage(state.canvas),
               // Sent only as a web address the canister will accept.

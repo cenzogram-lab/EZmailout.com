@@ -97,6 +97,9 @@ try {
   await page.click(q("canvas.inspector.font"));
   await page.fill(q("canvas.inspector.font.search"), "montserrat");
   await page.keyboard.press("Enter");
+  // The font list hands focus back to its button as it closes; a colour
+  // picker opened before then loses focus to it and closes again.
+  await page.waitForSelector(q("canvas.inspector.font.popover"), { state: "detached" });
   await page.click(q("canvas.inspector.swatch.custom"));
   await page.fill(q("canvas.inspector.swatch.search"), "#7c3aed");
   await page.keyboard.press("Enter");

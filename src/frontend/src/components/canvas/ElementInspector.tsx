@@ -24,18 +24,24 @@ import {
   shapeFillOf,
   shapeKindOf,
 } from "@/lib/shapes";
+import {
+  LETTER_SPACING_RANGE,
+  LINE_HEIGHT_RANGE,
+  textExtras,
+} from "@/lib/textStyle";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  Italic,
   MousePointerSquareDashed,
   Trash2,
 } from "lucide-react";
 import { useRef } from "react";
 
-const WEIGHTS = ["300", "400", "500", "600", "700", "800"];
+const WEIGHTS = ["300", "400", "500", "600", "700", "800", "900"];
 
 function NumberField({
   label,
@@ -109,8 +115,9 @@ export function ElementInspector() {
   if (kind === "text") {
     const block = side.textBlocks.find((t) => t.id === selectedElementId);
     if (!block) return null;
-    const patch = (p: Partial<typeof block>) =>
+    const patch = (p: Parameters<typeof updateTextBlock>[2]) =>
       updateTextBlock(activeSide, block.id, p);
+    const extras = textExtras(block);
     return (
       <div className="space-y-3" data-ocid="canvas.inspector.text">
         {header("Text block")}
@@ -227,8 +234,60 @@ export function ElementInspector() {
               </Button>
             );
           })}
+          <Button
+            type="button"
+            variant={extras.italic ? "default" : "outline"}
+            size="icon"
+            className="ml-auto size-8"
+            onClick={() => patch({ italic: !extras.italic })}
+            aria-pressed={extras.italic}
+            aria-label="Italic"
+            data-ocid="canvas.inspector.italic"
+          >
+            <Italic className="size-4" />
+          </Button>
         </div>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Spacing
+              </Label>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {Math.round(extras.letterSpacing * 100)}
+              </span>
+            </div>
+            <Slider
+              min={LETTER_SPACING_RANGE.min}
+              max={LETTER_SPACING_RANGE.max}
+              step={0.01}
+              value={[extras.letterSpacing]}
+              onValueChange={([v]) => patch({ letterSpacing: v })}
+              aria-label="Letter spacing"
+              data-ocid="canvas.inspector.letter_spacing"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Line height
+              </Label>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {extras.lineHeight.toFixed(2)}
+              </span>
+            </div>
+            <Slider
+              min={LINE_HEIGHT_RANGE.min}
+              max={LINE_HEIGHT_RANGE.max}
+              step={0.05}
+              value={[extras.lineHeight]}
+              onValueChange={([v]) => patch({ lineHeight: v })}
+              aria-label="Line height"
+              data-ocid="canvas.inspector.line_height"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
           <NumberField
             label="X"
             value={block.x}
@@ -254,6 +313,15 @@ export function ElementInspector() {
             min={24}
             onChange={(height) => patch({ height })}
             ocid="canvas.inspector.h"
+          />
+          <NumberField
+            label="Turn°"
+            value={extras.rotation}
+            min={-180}
+            onChange={(rotation) =>
+              patch({ rotation: Math.max(-180, Math.min(180, rotation)) })
+            }
+            ocid="canvas.inspector.rotation"
           />
         </div>
       </div>

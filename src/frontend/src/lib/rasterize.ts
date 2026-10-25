@@ -3,6 +3,7 @@ import { QrMode } from "@/backend";
 import { DESIGN_PPI, type LayoutDims, RASTER_DPI } from "@/lib/printSpec";
 import { qrToCanvas } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
+import { canvasFont, fontSpecOf, textExtras } from "@/lib/textStyle";
 
 export interface RasterizeOptions {
   dpi?: number;
@@ -21,7 +22,7 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
 }
 
 function wrapLines(
-  ctx: CanvasRenderingContext2D,
+  measure: (s: string) => number,
   text: string,
   maxWidth: number,
 ): string[] {
@@ -35,7 +36,7 @@ function wrapLines(
     let current = "";
     for (const word of words) {
       const candidate = current ? `${current} ${word}` : word;
-      if (ctx.measureText(candidate).width <= maxWidth || !current) {
+      if (measure(candidate) <= maxWidth || !current) {
         current = candidate;
       } else {
         lines.push(current);
@@ -134,11 +135,23 @@ export async function rasterizeSide(
       kind: "text",
       z: block.zIndex,
       draw: async () => {
+        const spec = fontSpecOf(block);
+        const { rotation } = textExtras(block);
         const fontSize = block.fontSize * scale;
-        ctx.font = `${Number(block.fontWeight)} ${fontSize}px "${block.fontFamily}", "Geist", sans-serif`;
+        ctx.save();
+        ctx.font = canvasFont(spec, fontSize);
         ctx.fillStyle = block.color;
+        // Tracking: CSS adds it after every character. Where the 2D context
+        // supports `letterSpacing` it draws it natively; elsewhere each line
+        // is drawn character by character.
+        const tracking = spec.letterSpacing * fontSize;
+        const nativeTracking = "letterSpacing" in (ctx as object);
+        if (nativeTracking) ctx.letterSpacing = `${tracking}px`;
+        const measure = (line: string) =>
+          ctx.measureText(line).width +
+          (nativeTracking ? 0 : tracking * [...line].length);
         // Place each line on its baseline exactly where CSS does: the font's
-        // ascent + descent is centred in the 1.2 line box (half-leading), so
+        // ascent + descent is centred in the line box (half-leading), so
         // the PDF matches the editor. `textBaseline = "top"` sat ~0.15 em high.
         const metrics = ctx.measureText("Hg");
         const ascent = metrics.fontBoundingBoxAscent;
@@ -149,27 +162,42 @@ export async function rasterizeSide(
           block.align === "center" || block.align === "right"
             ? block.align
             : "left";
-        ctx.textAlign = align;
+        ctx.textAlign = "left";
         const boxX = block.x * scale;
+        const boxY = block.y * scale;
         const boxW = block.width * scale;
-        const lines = wrapLines(ctx, block.text, boxW - 4 * scale);
-        const lineHeight = fontSize * 1.2;
-        const originX =
-          align === "center"
-            ? boxX + boxW / 2
-            : align === "right"
-              ? boxX + boxW
-              : boxX + 2 * scale;
+        const boxH = block.height * scale;
+        if (rotation) {
+          // Turned about the box centre, as the editor's CSS transform does.
+          ctx.translate(boxX + boxW / 2, boxY + boxH / 2);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.translate(-(boxX + boxW / 2), -(boxY + boxH / 2));
+        }
+        const lines = wrapLines(measure, block.text, boxW - 4 * scale);
+        const lineHeight = fontSize * spec.lineHeight;
         const baselineOffset = cssBaseline
           ? (lineHeight - (ascent + descent)) / 2 + ascent
           : 0;
         lines.forEach((line, i) => {
-          ctx.fillText(
-            line,
-            originX,
-            block.y * scale + 2 * scale + i * lineHeight + baselineOffset,
-          );
+          const width = measure(line);
+          const x =
+            align === "center"
+              ? boxX + (boxW - width) / 2
+              : align === "right"
+                ? boxX + boxW - 2 * scale - width
+                : boxX + 2 * scale;
+          const y = boxY + 2 * scale + i * lineHeight + baselineOffset;
+          if (nativeTracking || !tracking) {
+            ctx.fillText(line, x, y);
+            return;
+          }
+          let cx = x;
+          for (const ch of line) {
+            ctx.fillText(ch, cx, y);
+            cx += ctx.measureText(ch).width + tracking;
+          }
         });
+        ctx.restore();
       },
     });
   }

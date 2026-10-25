@@ -1,3 +1,7 @@
+import {
+  LazyMailSide,
+  useMailLibrary,
+} from "@/components/templates/MailTemplatePreview";
 import { LazyTemplateSide } from "@/components/templates/TemplatePreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +20,9 @@ export function TemplatesPanel() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
   const selectedProduct = useWizardStore((s) => s.selectedProduct);
   const designTemplate = useWizardStore((s) => s.designTemplate);
+  const mailTemplate = useWizardStore((s) => s.mailTemplate);
+  const applyMailTemplate = useWizardStore((s) => s.applyMailTemplate);
+  const lib = useMailLibrary();
   const activeSide = useWizardStore((s) => s.activeSide);
   const setDesignTemplate = useWizardStore((s) => s.setDesignTemplate);
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
@@ -42,6 +49,26 @@ export function TemplatesPanel() {
     );
   }, [layoutVariant, selectedProduct, query]);
   const aspect = dims.designWidth / dims.designHeight;
+  // Library templates designed for exactly this product come first.
+  const madeForThis = useMemo(() => {
+    if (!lib) return [];
+    const q = query.trim().toLowerCase();
+    return lib.MAIL_GALLERY.filter(
+      (e) =>
+        e.layoutVariant === layoutVariant &&
+        (!q || q.split(/\s+/).every((w) => e.search.includes(w))),
+    );
+  }, [lib, layoutVariant, query]);
+
+  async function applyMail(id: string, name: string) {
+    if (!lib) return;
+    try {
+      applyMailTemplate({ id, name }, await lib.mailCanvasForStudio(id));
+      toast.success(`Applied “${name}”`);
+    } catch {
+      toast.error("That template could not be applied. Try another one.");
+    }
+  }
 
   function applyLayout(id: string) {
     const preset = LAYOUT_PRESETS.find((p) => p.id === id);
@@ -55,8 +82,8 @@ export function TemplatesPanel() {
       <div>
         <p className="font-display text-sm font-semibold">Templates</p>
         <p className="text-xs text-muted-foreground">
-          Every design, laid out for this size. Applying one replaces both
-          sides.
+          Designs made for this size, then every design laid out for it.
+          Applying one replaces both sides.
         </p>
       </div>
       <div className="relative">
@@ -71,6 +98,46 @@ export function TemplatesPanel() {
           data-ocid="canvas.templates.search.input"
         />
       </div>
+      {madeForThis.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Made for this size
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {madeForThis.map((e) => {
+              const active = mailTemplate?.id === e.id;
+              return (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => applyMail(e.id, e.name)}
+                  className="group min-w-0 text-left"
+                  aria-label={`Apply ${e.name}`}
+                  data-ocid={`canvas.mail_template.${e.id}`}
+                >
+                  {lib && (
+                    <LazyMailSide
+                      lib={lib}
+                      entry={e}
+                      side="front"
+                      className={cn(
+                        "overflow-hidden rounded-lg border border-border/70 shadow-soft transition-smooth group-hover:border-primary/60",
+                        active && "border-primary ring-2 ring-primary/30",
+                      )}
+                    />
+                  )}
+                  <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-tight text-foreground">
+                    {e.name}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            Every design, laid out for this size
+          </p>
+        </div>
+      )}
       {templates.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
           <LayoutTemplate className="size-5" />

@@ -9,7 +9,7 @@
  * sized with `bandHeight()` always contains the text `countLines()` reports.
  */
 
-/** Line height applied by `textBlockStyle` — keep the two in step. */
+/** Default line height applied by `textBlockStyle` — keep the two in step. */
 export const TEXT_LINE_HEIGHT = 1.2;
 
 /** Padding applied by `textBlockStyle`, on all four sides (design px). */
@@ -37,22 +37,30 @@ function context(): CanvasRenderingContext2D | null {
   return measureCtx;
 }
 
-function widthOf(
-  text: string,
-  fontSize: number,
-  fontWeight: number,
-  fontFamily: string,
-): number {
-  const ctx = context();
-  if (!ctx) return text.length * fontSize * FALLBACK_CHAR_RATIO;
-  ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
-  return ctx.measureText(text).width;
-}
-
 export interface FontSpec {
   fontSize: number;
   fontWeight?: number;
   fontFamily?: string;
+  /** Tracking in em, added after every character as CSS does. */
+  letterSpacing?: number;
+  /** Line height as a multiple of the size (`TEXT_LINE_HEIGHT` when unset). */
+  lineHeight?: number;
+  italic?: boolean;
+}
+
+function widthOf(text: string, spec: FontSpec): number {
+  const {
+    fontSize,
+    fontWeight = 400,
+    fontFamily = DEFAULT_FAMILY,
+    letterSpacing = 0,
+    italic = false,
+  } = spec;
+  const tracking = letterSpacing * fontSize * [...text].length;
+  const ctx = context();
+  if (!ctx) return text.length * fontSize * FALLBACK_CHAR_RATIO + tracking;
+  ctx.font = `${italic ? "italic " : ""}${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  return ctx.measureText(text).width + tracking;
 }
 
 export interface MeasureOptions extends FontSpec {
@@ -62,8 +70,7 @@ export interface MeasureOptions extends FontSpec {
 
 /** Advance width of `text` set on one line (design px), padding excluded. */
 export function textWidth(text: string, spec: FontSpec): number {
-  const { fontSize, fontWeight = 400, fontFamily = DEFAULT_FAMILY } = spec;
-  return widthOf(text, fontSize, fontWeight, fontFamily);
+  return widthOf(text, spec);
 }
 
 /**
@@ -74,11 +81,16 @@ export function textWidth(text: string, spec: FontSpec): number {
  * A band budgeted purely from the line height is a few pixels short at display
  * sizes, which is exactly the gap that used to show up as a 1–5px overflow.
  */
-function contentAreaRatio(spec: FontSpec): number {
+export function contentAreaRatio(spec: FontSpec): number {
   const ctx = context();
   if (!ctx) return FALLBACK_CONTENT_RATIO;
-  const { fontSize, fontWeight = 400, fontFamily = DEFAULT_FAMILY } = spec;
-  ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  const {
+    fontSize,
+    fontWeight = 400,
+    fontFamily = DEFAULT_FAMILY,
+    italic = false,
+  } = spec;
+  ctx.font = `${italic ? "italic " : ""}${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
   const m = ctx.measureText("Hgjpq");
   const ascent = m.fontBoundingBoxAscent;
   const descent = m.fontBoundingBoxDescent;
@@ -97,14 +109,9 @@ function contentAreaRatio(spec: FontSpec): number {
  * split across lines rather than overflowing.
  */
 export function countLines(text: string, opts: MeasureOptions): number {
-  const {
-    width,
-    fontSize,
-    fontWeight = 400,
-    fontFamily = DEFAULT_FAMILY,
-  } = opts;
+  const { width } = opts;
   const content = Math.max(1, width - TEXT_PADDING * 2);
-  const advance = (s: string) => widthOf(s, fontSize, fontWeight, fontFamily);
+  const advance = (s: string) => widthOf(s, opts);
 
   let lines = 0;
   for (const paragraph of text.split("\n")) {
@@ -148,9 +155,10 @@ export function countLines(text: string, opts: MeasureOptions): number {
  */
 export function bandHeight(lines: number, spec: FontSpec): number {
   const { fontSize } = spec;
-  const spill = Math.max(0, contentAreaRatio(spec) - TEXT_LINE_HEIGHT);
+  const lineHeight = spec.lineHeight ?? TEXT_LINE_HEIGHT;
+  const spill = Math.max(0, contentAreaRatio(spec) - lineHeight);
   return (
-    Math.ceil(fontSize * TEXT_LINE_HEIGHT * lines + fontSize * spill) +
+    Math.ceil(fontSize * lineHeight * lines + fontSize * spill) +
     TEXT_PADDING * 2
   );
 }

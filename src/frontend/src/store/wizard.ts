@@ -30,6 +30,11 @@ import {
 } from "@/lib/printSpec";
 import { isShapeUrl, reshapeForBox } from "@/lib/shapes";
 import { measuredHeight } from "@/lib/textFit";
+import {
+  type StudioTextBlock,
+  changesTextLayout,
+  fontSpecOf,
+} from "@/lib/textStyle";
 import type {
   CanvasAlignment,
   CanvasSideKey,
@@ -69,6 +74,12 @@ interface WizardData {
   geoTarget: MapTarget | null;
   sourcePresetId: string | null;
   designTemplate: DesignTemplate | null;
+  /**
+   * The mail-type library template (`src/directmail`) the canvas was built
+   * from, when it was; its layers are the design, so only its identity is
+   * kept.
+   */
+  mailTemplate: { id: string; name: string } | null;
   canvas: CanvasState;
   /**
    * The canvas as it was before the last turn, paired with the canvas that
@@ -118,6 +129,14 @@ interface WizardActions {
     template: DesignTemplate | null,
     orientation?: Orientation,
   ) => void;
+  /**
+   * Puts a converted mail-type template on the artboard: `canvas` holds
+   * both sides, laid out for the current format.
+   */
+  applyMailTemplate: (
+    template: { id: string; name: string },
+    canvas: CanvasState,
+  ) => void;
   setCanvas: (canvas: CanvasState) => void;
   /**
    * Turns the artboard between the product's own orientation and the
@@ -134,7 +153,7 @@ interface WizardActions {
   updateTextBlock: (
     side: CanvasSideKey,
     id: string,
-    patch: Partial<TextBlockState>,
+    patch: Partial<StudioTextBlock>,
   ) => void;
   removeTextBlock: (side: CanvasSideKey, id: string) => void;
   addLogo: (
@@ -191,6 +210,7 @@ function initialData(): WizardData {
     geoTarget: null,
     sourcePresetId: null,
     designTemplate: null,
+    mailTemplate: null,
     canvas: emptyCanvasState(DEFAULT_LAYOUT),
     rotationUndo: null,
     templateSignature: null,
@@ -299,10 +319,8 @@ export function isTemplatePristine(
 function fittedHeight(block: TextBlockState): number {
   return Math.ceil(
     measuredHeight(block.text || " ", {
+      ...fontSpecOf(block),
       width: block.width,
-      fontSize: block.fontSize,
-      fontWeight: Number(block.fontWeight),
-      fontFamily: block.fontFamily,
     }),
   );
 }
@@ -377,6 +395,8 @@ export const useWizardStore = create<WizardStore>()(
             // The blank canvas no longer carries the template.
             designTemplate:
               s.selectedLayout === layoutVariant ? s.designTemplate : null,
+            mailTemplate:
+              s.selectedLayout === layoutVariant ? s.mailTemplate : null,
             selectedElementId: null,
           };
         }),
@@ -396,6 +416,7 @@ export const useWizardStore = create<WizardStore>()(
           if (!template) {
             return {
               designTemplate: null,
+              mailTemplate: null,
               templateSignature: null,
               selectedElementId: null,
             };
@@ -413,12 +434,23 @@ export const useWizardStore = create<WizardStore>()(
               ? s.campaignName
               : template.name,
             designTemplate: template,
+            mailTemplate: null,
             canvas: built,
             templateSignature: canvasSignature(built),
             rotationUndo: null,
             selectedElementId: null,
           };
         }),
+      applyMailTemplate: (template, canvas) =>
+        set((s) => ({
+          campaignName: s.campaignName.trim() ? s.campaignName : template.name,
+          designTemplate: null,
+          mailTemplate: { id: template.id, name: template.name },
+          canvas,
+          templateSignature: canvasSignature(canvas),
+          rotationUndo: null,
+          selectedElementId: null,
+        })),
       setCanvas: (canvas) => set({ canvas }),
       rotateCanvas: () =>
         set((s) => {
@@ -500,13 +532,7 @@ export const useWizardStore = create<WizardStore>()(
         // size, weight or width re-measures its height (an explicit height, as
         // from a resize handle, is kept). Without this, longer copy or a wider
         // face ran out of the box and printed over whatever sat below it.
-        const refit =
-          patch.height === undefined &&
-          (patch.text !== undefined ||
-            patch.fontFamily !== undefined ||
-            patch.fontSize !== undefined ||
-            patch.fontWeight !== undefined ||
-            patch.width !== undefined);
+        const refit = patch.height === undefined && changesTextLayout(patch);
         set((s) => {
           const side = getSide(s.canvas, sideKey);
           return {
@@ -824,6 +850,7 @@ export const useWizardStore = create<WizardStore>()(
         geoTarget: s.geoTarget,
         sourcePresetId: s.sourcePresetId,
         designTemplate: s.designTemplate,
+        mailTemplate: s.mailTemplate,
         canvas: s.canvas,
         templateSignature: s.templateSignature,
         activeSide: s.activeSide,

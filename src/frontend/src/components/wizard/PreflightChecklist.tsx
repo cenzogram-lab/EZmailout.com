@@ -6,6 +6,7 @@ import { formatNumber } from "@/lib/format";
 import { canvasDims, safeRect } from "@/lib/printSpec";
 import { normalizeRedirectUrl } from "@/lib/qr";
 import { measuredHeight } from "@/lib/textFit";
+import { fontSpecOf, textInkRect, textLinesOverlap } from "@/lib/textStyle";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, WizardAudienceType } from "@/types";
 import {
@@ -77,10 +78,13 @@ function within(el: Rect, bounds: Rect): boolean {
 function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
   const ids: string[] = [];
   for (const t of side.textBlocks) {
-    if (!within({ x: t.x, y: t.y, w: t.width, h: t.height }, bounds))
-      ids.push(t.id);
+    // The ink, not the padded box: display type overhangs its box by design.
+    if (!within(textInkRect(t), bounds)) ids.push(t.id);
   }
   for (const l of side.logos) {
+    // Template art that runs to the trim on purpose (a photo or band that
+    // bleeds) carries `data-ez-bleed`; uploads never do.
+    if (l.url.includes("data-ez-bleed")) continue;
     if (!within({ x: l.x, y: l.y, w: l.width, h: l.height }, bounds))
       ids.push(l.id);
   }
@@ -203,24 +207,20 @@ export function computePreflight(input: PreflightInput): PreflightReport {
       const blocks = input.canvas[key].textBlocks;
       for (const t of blocks) {
         const need = measuredHeight(t.text || " ", {
+          ...fontSpecOf(t),
           width: t.width,
-          fontSize: t.fontSize,
-          fontWeight: Number(t.fontWeight),
-          fontFamily: t.fontFamily,
         });
         if (need > t.height + 2)
           issues.push(`${key}: “${clip(t.text)}” runs past its box`);
       }
       for (let i = 0; i < blocks.length; i++) {
         for (let j = i + 1; j < blocks.length; j++) {
-          const a = blocks[i];
-          const b = blocks[j];
-          const ox =
-            Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-          const oy =
-            Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-          if (ox > 4 && oy > 4)
-            issues.push(`${key}: “${clip(a.text)}” overlaps “${clip(b.text)}”`);
+          // Lines, not padded boxes: display type overhangs its box on
+          // purpose, so only words sitting on words count.
+          if (textLinesOverlap(blocks[i], blocks[j]))
+            issues.push(
+              `${key}: “${clip(blocks[i].text)}” overlaps “${clip(blocks[j].text)}”`,
+            );
         }
       }
     }

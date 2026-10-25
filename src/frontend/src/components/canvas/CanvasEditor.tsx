@@ -25,6 +25,7 @@ import {
 } from "@/lib/printSpec";
 import { qrDataUrl } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
+import { textExtras } from "@/lib/textStyle";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasElementKind, CanvasSideKey } from "@/types";
@@ -99,16 +100,22 @@ export function qrPreviewTarget(url: string, mode: QrMode): string {
 export function textBlockStyle(block: TextBlockState): CSSProperties {
   const align =
     block.align === "center" || block.align === "right" ? block.align : "left";
+  const x = textExtras(block);
   return {
     fontSize: block.fontSize,
     fontFamily: `"${block.fontFamily}", "Geist", sans-serif`,
     fontWeight: Number(block.fontWeight),
+    fontStyle: x.italic ? "italic" : undefined,
     color: block.color,
     textAlign: align,
-    lineHeight: 1.2,
+    lineHeight: x.lineHeight,
+    letterSpacing: x.letterSpacing ? `${x.letterSpacing}em` : undefined,
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
     padding: 2,
+    // Turned about the box centre; the editor moves this onto the element's
+    // wrapper so the selection outline and handles turn with the text.
+    transform: x.rotation ? `rotate(${x.rotation}deg)` : undefined,
   };
 }
 
@@ -708,6 +715,10 @@ export function CanvasEditor({
                   width: box.width,
                   height: box.height,
                   zIndex: el.z + 1,
+                  transform:
+                    el.kind === "text"
+                      ? textBlockStyle(el.data).transform
+                      : undefined,
                   outline: selected
                     ? `${outline}px solid oklch(var(--primary))`
                     : undefined,
@@ -744,14 +755,21 @@ export function CanvasEditor({
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                       className="size-full resize-none border-0 bg-transparent outline-none"
-                      style={{ ...textBlockStyle(el.data), overflow: "hidden" }}
+                      style={{
+                        ...textBlockStyle(el.data),
+                        transform: undefined,
+                        overflow: "hidden",
+                      }}
                       spellCheck={false}
                       data-ocid={`canvas.editor.text_input.${el.id}`}
                     />
                   ) : (
                     <div
                       className="size-full overflow-visible"
-                      style={textBlockStyle(el.data)}
+                      style={{
+                        ...textBlockStyle(el.data),
+                        transform: undefined,
+                      }}
                     >
                       {el.data.text || " "}
                     </div>

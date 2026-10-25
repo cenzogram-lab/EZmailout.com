@@ -224,10 +224,12 @@ function nativeTraitsFor(layoutVariant: string): PhysicalTraits {
         windows: [],
       };
     case "EDDM Self Mailer":
+      // EDDM® pieces are flats: every size is taller than 6⅛″ or longer
+      // than 11½″, which a piece folded in half would no longer be.
       return {
-        stock: "paper",
-        label: "EDDM® self-mailer · folded and tabbed",
-        creases: HALF_FOLD,
+        stock: "card",
+        label: "EDDM® flat · mailed unfolded",
+        creases: [],
         perforations: [],
         spine: null,
         windows: [],
