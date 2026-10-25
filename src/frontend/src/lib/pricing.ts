@@ -24,7 +24,7 @@ export interface ProductSpec {
   heightInches: number;
   /** print wholesale cost per piece, in dollars. */
   cogsBase: number;
-  /** EZmailout member price per piece, in dollars. */
+  /** List price per piece, in dollars (for tiered formats, under 1,000 pieces; see `VOLUME_TIERS`). */
   retailPrice: number;
   defaultMailClass: CatalogMailClass;
   supportedMailClasses: CatalogMailClass[];
@@ -149,7 +149,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     widthInches: 4.25,
     heightInches: 6,
     cogsBase: 0.55,
-    retailPrice: 1.15,
+    retailPrice: 0.79,
     defaultMailClass: "FirstClass",
     supportedMailClasses: ["FirstClass"],
     hasAddressBlock: true,
@@ -194,7 +194,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     widthInches: 6,
     heightInches: 9,
     cogsBase: 0.57,
-    retailPrice: 1.35,
+    retailPrice: 0.98,
     defaultMailClass: "StandardMarketing",
     supportedMailClasses: ["StandardMarketing", "FirstClass"],
     hasAddressBlock: true,
@@ -209,7 +209,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     widthInches: 6,
     heightInches: 11,
     cogsBase: 0.73,
-    retailPrice: 1.65,
+    retailPrice: 0.92,
     defaultMailClass: "StandardMarketing",
     supportedMailClasses: ["StandardMarketing", "FirstClass"],
     hasAddressBlock: true,
@@ -224,7 +224,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     widthInches: 8.5,
     heightInches: 11,
     cogsBase: 0.59,
-    retailPrice: 1.5,
+    retailPrice: 0.93,
     defaultMailClass: "FirstClass",
     supportedMailClasses: ["FirstClass"],
     hasAddressBlock: false,
@@ -417,7 +417,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     widthInches: 11,
     heightInches: 8.5,
     cogsBase: 1.07,
-    retailPrice: 2.25,
+    retailPrice: 1.32,
     defaultMailClass: "StandardMarketing",
     supportedMailClasses: ["StandardMarketing", "FirstClass"],
     hasAddressBlock: true,
@@ -657,12 +657,100 @@ export function getPricingRowsFor(productType: ProductType): ProductSpec[] {
   return PRICING_LEDGER.filter((row) => row.productType === productType);
 }
 
-/** Retail unit price in cents (0 when the variant is unknown). */
-export function getUnitPriceCents(layoutVariant: string): number {
-  return getPricingRow(layoutVariant)?.retailPriceCents ?? 0;
+// ─── Volume tiers ───────────────────────────────────────────────────────────
+
+/** Fewest pieces for each tier: under 1,000, from 1,000, 10,000, 50,000. */
+export const TIER_MINIMUMS = [0, 1_000, 10_000, 50_000] as const;
+
+/** Members are priced as an order of at least this many pieces. */
+export const MEMBER_TIER_QUANTITY = 10_000;
+
+/** One campaign holds at most this many recipients (the canister's limit). */
+export const MAX_CAMPAIGN_PIECES = 5_000;
+
+/**
+ * Per-piece prices in cents, one per `TIER_MINIMUMS` entry, for the formats
+ * competitors sell (the competitor's published price less 1¢). Everything
+ * else keeps its flat `retailPriceCents`; the first tier is the row's
+ * `retailPriceCents`. Mirrored by `PricingLib.volumeTiers` in
+ * `src/backend/lib/pricing.mo` — change both.
+ */
+export const VOLUME_TIERS: Readonly<Record<string, readonly number[]>> = {
+  "4.25x6": [79, 71, 62, 52],
+  "6x9": [98, 72, 68, 65],
+  "6x11": [92, 83, 74, 70],
+  letter: [93, 81, 74, 69],
+  "11x8.5_brochure": [132, 98, 82, 78],
+};
+
+/** The tier schedule for a (possibly legacy) layout key, if it has one. */
+export function volumeTiers(layoutVariant: string): readonly number[] | null {
+  return VOLUME_TIERS[normalizeLayoutVariant(layoutVariant)] ?? null;
 }
 
-/** Retail unit price in dollars (0 when the variant is unknown). */
+/**
+ * Cents per piece for `quantity` pieces, exactly as the canister prices a new
+ * campaign (`PricingLib.calculateUnitPrice`): a member is priced as at least
+ * `MEMBER_TIER_QUANTITY` pieces, and no tier sells below the print cost (one
+ * under it is lifted to cost + 1¢). 0 when the variant is unknown. With the
+ * defaults this is the list price for a single piece.
+ */
+export function getUnitPriceCents(
+  layoutVariant: string,
+  quantity = 1,
+  isMember = false,
+): number {
+  const row = getPricingRow(layoutVariant);
+  if (!row) return 0;
+  const tiers = volumeTiers(row.id);
+  if (!tiers) return row.retailPriceCents;
+  const effective = isMember
+    ? Math.max(quantity, MEMBER_TIER_QUANTITY)
+    : quantity;
+  let price = tiers[0];
+  TIER_MINIMUMS.forEach((min, i) => {
+    if (effective >= min) price = tiers[i];
+  });
+  return price > row.baseCostCents ? price : row.baseCostCents + 1;
+}
+
+/** `getUnitPriceCents` in dollars, for callers that work in dollars. */
+export function getProductTierPrice(
+  layoutVariant: string,
+  quantity: number,
+  isMember = false,
+): number {
+  return getUnitPriceCents(layoutVariant, quantity, isMember) / 100;
+}
+
+/**
+ * The lowest per-piece price a customer can actually get for a format: the
+ * member rate for tiered formats (a campaign holds at most
+ * `MAX_CAMPAIGN_PIECES`, so the 50,000 tier is out of reach), the flat price
+ * otherwise. What "from $X" means anywhere in the app.
+ */
+export function startingPriceCents(layoutVariant: string): number {
+  return Math.min(
+    getUnitPriceCents(layoutVariant, MAX_CAMPAIGN_PIECES, false),
+    getUnitPriceCents(layoutVariant, 1, true),
+  );
+}
+
+/**
+ * The tiers a customer can reach, in words ("$0.79 under 1,000 · $0.71 from
+ * 1,000 · members $0.62"), or null for a flat-priced format.
+ */
+export function tierSummary(layoutVariant: string): string | null {
+  if (!volumeTiers(layoutVariant)) return null;
+  const at = (qty: number, member: boolean) =>
+    formatCents(getUnitPriceCents(layoutVariant, qty, member));
+  const member = at(1, true);
+  return member === at(1_000, false)
+    ? `${at(1, false)} under 1,000 · ${member} from 1,000 or for members`
+    : `${at(1, false)} under 1,000 · ${at(1_000, false)} from 1,000 · members ${member}`;
+}
+
+/** Retail unit price in dollars for one piece (0 when the variant is unknown). */
 export function getPrice(layoutVariant: string): number {
   return getUnitPriceCents(layoutVariant) / 100;
 }

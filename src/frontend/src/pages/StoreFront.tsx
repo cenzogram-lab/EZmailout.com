@@ -215,10 +215,10 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
           </h1>
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
             A Canva-style studio, {CATALOG_SIZE_COUNT} mail formats and
-            wholesale per-piece pricing for{" "}
-            {formatCents(SUBSCRIPTION_PRICE_CENTS)} a month. Upload a list or
-            draw a radius, design in the browser, and USPS delivers with live
-            IMb tracking.
+            per-piece prices that drop with volume, or the best rate from the
+            first piece for {formatCents(SUBSCRIPTION_PRICE_CENTS)} a month.
+            Upload a list or draw a radius, design in the browser, and USPS
+            delivers with live IMb tracking.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button
@@ -899,8 +899,8 @@ export function StoreFront() {
       <Section
         id="membership"
         eyebrow="Membership"
-        title="One membership. Every wholesale rate."
-        subtitle="Skip the volume tiers and quote requests. Members pay the same low per-piece price on every format from day one."
+        title="One membership. The best volume rate."
+        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on postcards, letters and brochures from the first piece."
       >
         <MembershipCard />
       </Section>

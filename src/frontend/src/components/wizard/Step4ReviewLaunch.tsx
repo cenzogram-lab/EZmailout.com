@@ -28,8 +28,10 @@ import {
   formatCents,
   getPricingRow,
   getUnitPriceCents,
+  volumeTiers,
 } from "@/lib/pricing";
 import { normalizeRedirectUrl } from "@/lib/qr";
+import { useAccountStore } from "@/store/account";
 import {
   discardWizardDraft,
   launchOrderKey,
@@ -156,7 +158,8 @@ export function Step4ReviewLaunch() {
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchPrintJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
-  const { isAuthenticated, login, isLoggingIn } = useAccountSync();
+  const { isAuthenticated, login, isLoggingIn, subscriptionActive } =
+    useAccountSync();
 
   const [machine, setMachine] = useState<Machine>({
     stage: "idle",
@@ -173,11 +176,30 @@ export function Step4ReviewLaunch() {
     null,
   );
   const [paidTestMode, setPaidTestMode] = useState(false);
+  /** What the canister priced the launched campaign at (checkout charges it). */
+  const [launchedTotalCents, setLaunchedTotalCents] = useState<number | null>(
+    null,
+  );
   const running = useRef(false);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
-  const unitCents = selectedLayout ? getUnitPriceCents(selectedLayout) : 0;
+  // Priced as the canister prices the campaign: by volume and membership.
+  const unitCents = selectedLayout
+    ? getUnitPriceCents(selectedLayout, recipientCount, subscriptionActive)
+    : 0;
   const totalCents = unitCents * recipientCount;
+  const dueCents = launchedTotalCents ?? totalCents;
+  const tiered = selectedLayout ? volumeTiers(selectedLayout) !== null : false;
+  const listUnitCents = selectedLayout ? getUnitPriceCents(selectedLayout) : 0;
+  const savedCents = tiered ? (listUnitCents - unitCents) * recipientCount : 0;
+  const memberRateApplies =
+    subscriptionActive &&
+    selectedLayout !== null &&
+    unitCents < getUnitPriceCents(selectedLayout, recipientCount, false);
+  const memberUnitCents = selectedLayout
+    ? getUnitPriceCents(selectedLayout, recipientCount, true)
+    : 0;
+  const memberSavingsCents = (unitCents - memberUnitCents) * recipientCount;
   const productLabel = row
     ? `${row.name}${
         selectedProduct?.colorOption === "bw" ? " (black & white)" : ""
@@ -231,10 +253,20 @@ export function Step4ReviewLaunch() {
         const orderKey = launchOrderKey(state);
         // A retry or a second attempt reuses the campaign only while it is
         // unpaid and is still this order; the new design replaces its file.
+        // The price is part of the order too (joining the membership after
+        // a launch lowers it), so a campaign priced differently is replaced.
+        const expectedTotal = state.selectedLayout
+          ? getUnitPriceCents(
+              state.selectedLayout,
+              state.recipientCount,
+              useAccountStore.getState().subscriptionActive,
+            ) * state.recipientCount
+          : 0;
         let id =
           state.campaignId &&
           !state.campaignPaid &&
-          state.campaignOrderKey === orderKey
+          state.campaignOrderKey === orderKey &&
+          (launchedTotalCents === null || launchedTotalCents === expectedTotal)
             ? state.campaignId
             : null;
         if (id) {
@@ -291,6 +323,11 @@ export function Step4ReviewLaunch() {
           }
           id = created.campaignId;
           setLaunchedCampaign(id, orderKey);
+          setLaunchedTotalCents(
+            created.totalCents !== undefined
+              ? Number(created.totalCents)
+              : expectedTotal,
+          );
         }
 
         // 2. Render the print-ready PDF.
@@ -359,6 +396,7 @@ export function Step4ReviewLaunch() {
       saveCanvas,
       deleteDraft,
       setLaunchedCampaign,
+      launchedTotalCents,
       fail,
     ],
   );
@@ -403,7 +441,7 @@ export function Step4ReviewLaunch() {
     machine.stage === "rendering" ||
     machine.stage === "uploading" ||
     machine.stage === "dispatching";
-  const launchDisabled = report.blocked || busy || totalCents <= 0;
+  const launchDisabled = report.blocked || busy || dueCents <= 0;
 
   if (machine.stage === "done") {
     const paidId = campaignId ?? "";
@@ -429,8 +467,8 @@ export function Step4ReviewLaunch() {
               {campaignName || "Your campaign"} — {formatNumber(recipientCount)}{" "}
               pieces,{" "}
               {paidTestMode
-                ? `${formatCents(totalCents)} in test mode: nothing was charged, and the job goes only to the print service's test system, so nothing is mailed.`
-                : `${formatCents(totalCents)} charged.`}
+                ? `${formatCents(dueCents)} in test mode: nothing was charged, and the job goes only to the print service's test system, so nothing is mailed.`
+                : `${formatCents(dueCents)} charged.`}
             </p>
             <Badge variant="outline" className="font-mono">
               {paidId}
@@ -651,6 +689,18 @@ export function Step4ReviewLaunch() {
                   {formatCents(totalCents)}
                 </span>
               </div>
+              {savedCents > 0 ? (
+                <p
+                  className="rounded-lg bg-emerald-brand/10 p-2 text-xs text-emerald-brand"
+                  data-ocid="review.invoice.volume_discount"
+                >
+                  {memberRateApplies
+                    ? "Member rate active"
+                    : "Volume discount active"}
+                  : {formatCents(unitCents)}/pc (saved {formatCents(savedCents)}
+                  )
+                </p>
+              ) : null}
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Printing, postage and CASS included</span>
                 <span>$0.00</span>
@@ -676,15 +726,36 @@ export function Step4ReviewLaunch() {
               <Separator />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium text-foreground">Total due</span>
-                <span className="font-display text-2xl font-bold text-primary">
-                  {formatCents(totalCents)}
+                <span
+                  className="font-display text-2xl font-bold text-primary"
+                  data-ocid="review.invoice.total"
+                >
+                  {formatCents(dueCents)}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Member wholesale rate. The{" "}
-                {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
-                membership is billed separately and is not part of this invoice.
-              </p>
+              {subscriptionActive ? (
+                <p className="text-xs text-muted-foreground">
+                  Your {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
+                  membership is billed separately and is not part of this
+                  invoice.
+                </p>
+              ) : tiered && memberSavingsCents > 0 ? (
+                <p
+                  className="text-xs text-muted-foreground"
+                  data-ocid="review.invoice.member_prompt"
+                >
+                  Club members pay {formatCents(memberUnitCents)}/pc regardless
+                  of volume ({formatCents(memberSavingsCents)} less on this
+                  order).{" "}
+                  <Link
+                    to="/dashboard"
+                    className="font-medium text-primary-ink underline-offset-2 hover:underline"
+                    data-ocid="review.invoice.member_prompt.link"
+                  >
+                    Join for {formatCents(SUBSCRIPTION_PRICE_CENTS)}/mo
+                  </Link>
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -767,7 +838,7 @@ export function Step4ReviewLaunch() {
                 <StripeCheckout
                   purpose={PaymentPurpose.CampaignOrder}
                   reference={campaignId}
-                  amountLabel={formatCents(totalCents)}
+                  amountLabel={formatCents(dueCents)}
                   title="Pay for your campaign"
                   description={`${formatNumber(recipientCount)} × ${productLabel ?? "pieces"}`}
                   submitLabel="Pay"

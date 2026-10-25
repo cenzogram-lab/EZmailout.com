@@ -85,8 +85,8 @@ export function MembershipCard() {
               </span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-primary-foreground">
-              One flat fee unlocks wholesale print rates on every format. Pay
-              per piece only for what you actually mail.
+              One flat fee gets you the 10,000-piece rate from your first piece.
+              Pay per piece only for what you actually mail.
             </p>
             <ul className="mt-6 space-y-2">
               {INCLUDED.map((item) => (

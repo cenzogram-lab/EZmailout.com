@@ -5,6 +5,7 @@ import { PocketIcServer } from "@dfinity/pic";
 import { start, upstream, drive, call, check, failures, ident, anon, EOP, WASM } from "./harness.mjs";
 import { keys, SECRETS, RAW_SECRETS, campaignInput, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress } from "./fixtures.mjs";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 
 const only = process.argv.slice(2);
@@ -466,6 +467,20 @@ sections.orders = async function orders() {
   const sub = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ Subscription: null }, [], []));
   const subPaid = await call(env.pic, up, env.deferred(referrer).confirmPayment(sub.paymentIntentId[0]));
   check(subPaid.ok && subPaid.subscriptionActive[0] === true, "the referrer's membership is live", subPaid.error);
+  // Volume tiers: a campaign is priced by its pieces, a member at the
+  // 10,000-piece rate, and checkout charges exactly the stored total.
+  const few = await o.createCampaign(campaignInput(3));
+  check(few.ok && few.unitPriceCents[0] === 98n && few.totalCents[0] === 294n, "a non-member's 3 × 6×9 postcards cost 98¢ each", { unit: few.unitPriceCents, total: few.totalCents });
+  const many = await o.createCampaign(campaignInput(1000));
+  check(many.ok && many.unitPriceCents[0] === 72n && many.totalCents[0] === 72_000n, "1,000 × 6×9 postcards cost 72¢ each", { unit: many.unitPriceCents, total: many.totalCents });
+  const mem = await r.createCampaign(campaignInput(3));
+  check(mem.ok && mem.unitPriceCents[0] === 68n, "a member's 3 × 6×9 postcards cost the 10,000-piece 68¢", mem.unitPriceCents);
+  await r.uploadDocumentChunk(mem.campaignId[0], 0n, 1n, "application/pdf", "art.pdf", pdf(3));
+  await env.pic.advanceTime(3_000); await env.pic.tick(); // the per-identity checkout gap
+  const memIntent = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ CampaignOrder: null }, [mem.campaignId[0]], []));
+  const charged = pay.intents.get(memIntent.paymentIntentId?.[0])?.amount;
+  check(memIntent.ok && memIntent.amountCents[0] === 204n && charged === 204, "checkout charges the stored tier total (3 × 68¢)", { amount: memIntent.amountCents, charged, error: memIntent.error });
+
   const referee = ident(153);
   await env.as(referee).ensureAccount([code], []);
   const p1 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
@@ -507,6 +522,73 @@ sections.orders = async function orders() {
     }
   }
   check(accepted === 200 && /busy/.test(busy ?? ""), "fresh identities together file at most 200 tickets an hour", { accepted, busy });
+};
+
+// ─── Pricing parity: src/frontend/src/lib/pricing.ts vs the canister ─────────
+// The frontend quotes what checkout will charge, so its mirror of
+// src/backend/lib/pricing.mo must price every row, quantity and membership
+// exactly as the canister does.
+sections.pricing = async function pricing() {
+  const root = new URL("../../", import.meta.url);
+  const front = createRequire(new URL("src/frontend/package.json", root));
+  const esbuild = createRequire(front.resolve("vite"))("esbuild");
+  const out = new URL(".gen/pricing.mjs", import.meta.url).pathname;
+  await esbuild.build({
+    entryPoints: [new URL("src/frontend/src/lib/pricing.ts", root).pathname],
+    bundle: true, format: "esm", platform: "node", outfile: out, logLevel: "error",
+    alias: { "@": new URL("src/frontend/src", root).pathname },
+  });
+  const ts = await import(out);
+
+  // The tier tables, read from the Motoko source.
+  const mo = readFileSync(new URL("src/backend/lib/pricing.mo", root), "utf8");
+  const nums = (t) => t.split(",").map((x) => Number(x.replace(/_/g, "").trim()));
+  const moMinimums = nums(/tierMinimums : \[Nat\] = \[([^\]]+)\]/.exec(mo)[1]);
+  const moMember = Number(/memberTierQuantity : Nat = ([\d_]+)/.exec(mo)[1].replace(/_/g, ""));
+  const body = mo.slice(mo.indexOf("func volumeTiers"), mo.indexOf("func calculateUnitPrice"));
+  const moTiers = Object.fromEntries([...body.matchAll(/case \("([^"]+)"\) \?\[([^\]]+)\]/g)].map((m) => [m[1], nums(m[2])]));
+  check(ser(moMinimums) === ser([...ts.TIER_MINIMUMS]) && moMember === ts.MEMBER_TIER_QUANTITY, "tier minimums and the member quantity match", { moMinimums, moMember });
+  check(ser(moTiers) === ser(ts.VOLUME_TIERS), "every tier schedule matches", { moTiers, ts: ts.VOLUME_TIERS });
+
+  // Every ledger row, priced by the canister's rule, at every tier edge.
+  const env = await start();
+  const ledger = await env.as(ident(161)).getPricingLedger();
+  check(ledger.length === ts.PRICING_LEDGER.length, "both ledgers have the same rows", { canister: ledger.length, frontend: ts.PRICING_LEDGER.length });
+  const canisterUnit = (row, qty, member) => {
+    const tiers = moTiers[row.layoutVariant];
+    if (!tiers) return Number(row.retailPriceCents);
+    const effective = member && qty < moMember ? moMember : qty;
+    let price = tiers[0];
+    moMinimums.forEach((min, i) => { if (effective >= min) price = tiers[i]; });
+    return price > Number(row.baseCostCents) ? price : Number(row.baseCostCents) + 1;
+  };
+  const mismatches = [];
+  for (const row of ledger) {
+    const f = ts.getPricingRow(row.layoutVariant);
+    if (!f || f.retailPriceCents !== Number(row.retailPriceCents) || f.baseCostCents !== Number(row.baseCostCents)) {
+      mismatches.push({ row: row.layoutVariant, retail: [row.retailPriceCents, f?.retailPriceCents], cost: [row.baseCostCents, f?.baseCostCents] });
+      continue;
+    }
+    for (const qty of [1, 500, 999, 1_000, 2_000, 5_000, 9_999, 10_000, 49_999, 50_000, 55_000]) {
+      for (const member of [false, true]) {
+        const want = canisterUnit(row, qty, member);
+        const got = ts.getUnitPriceCents(row.layoutVariant, qty, member);
+        if (want !== got) mismatches.push({ row: row.layoutVariant, qty, member, want, got });
+      }
+    }
+  }
+  check(mismatches.length === 0, "the frontend prices every row, quantity and membership as the canister does", mismatches.slice(0, 5));
+  check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 56 && ts.getUnitPriceCents("4.25x6", 10, true) === 62, "the frontend's 4×6 tiers: 79¢, 71¢, floored 56¢, member 62¢");
+  check(ts.startingPriceCents("4.25x6") === 62 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the member rate for tiered formats and the flat price otherwise");
+
+  // And the canister's own campaign prices agree with the frontend's quote.
+  const buyer = env.as(ident(162));
+  for (const [variant, n] of [["4.25x6", 1], ["4.25x6", 1_000], ["letter", 999], ["11x8.5_brochure", 1_000], ["certified_letter", 2]]) {
+    const r = await buyer.createCampaign(campaignInput(n, { product: { colorOption: [], layoutVariant: variant, productType: { Postcard: null } } }));
+    const unit = ts.getUnitPriceCents(variant, n, false);
+    check(r.ok && r.unitPriceCents[0] === BigInt(unit) && r.totalCents[0] === BigInt(unit * n), `the canister prices ${n} × ${variant} at the frontend's ${unit}¢`, { error: r.error, unit: r.unitPriceCents, total: r.totalCents });
+    if (r.ok) await buyer.deleteCampaignDraft(r.campaignId[0]);
+  }
 };
 
 sections.scale = async function scale() {

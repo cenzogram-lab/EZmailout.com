@@ -18,7 +18,10 @@ import {
   formatCents,
   getBenchmarkCents,
   getPricingRow,
+  getUnitPriceCents,
   mailClassLabel,
+  startingPriceCents,
+  tierSummary,
 } from "@/lib/pricing";
 import { Calculator, TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -27,7 +30,8 @@ const MIN_QTY = 50;
 const MAX_QTY = 5000;
 const STEP = 10;
 const DEFAULT_QTY = 500;
-const DEFAULT_VARIANT = PRICING_LEDGER[0].id;
+// Opens on the most-mailed card, which has volume tiers.
+const DEFAULT_VARIANT = getPricingRow("4.25x6")?.id ?? PRICING_LEDGER[0].id;
 
 function clampQty(value: number): number {
   if (!Number.isFinite(value)) return MIN_QTY;
@@ -36,6 +40,7 @@ function clampQty(value: number): number {
 
 interface Quote {
   retailCents: number;
+  memberCents: number;
   benchmarkCents: number;
   ezTotalCents: number;
   shopTotalCents: number;
@@ -43,12 +48,15 @@ interface Quote {
   savingsPercent: number;
   perPieceSavingsCents: number;
   breakEvenPieces: number | null;
-  netFirstMonthCents: number;
+  memberNetCents: number;
 }
 
 function buildQuote(layoutVariant: string, qty: number): Quote {
   const row = getPricingRow(layoutVariant) ?? PRICING_LEDGER[0];
-  const retailCents = row.retailPriceCents;
+  // Volume pricing as checkout applies it: the tier for this many pieces,
+  // and the member rate (any volume) for the membership comparison.
+  const retailCents = getUnitPriceCents(row.id, qty, false);
+  const memberCents = getUnitPriceCents(row.id, qty, true);
   const benchmarkCents = getBenchmarkCents(row.id);
   const ezTotalCents = qty * retailCents;
   const shopTotalCents = qty * benchmarkCents;
@@ -56,12 +64,14 @@ function buildQuote(layoutVariant: string, qty: number): Quote {
   const savingsPercent =
     shopTotalCents > 0 ? (savingsCents / shopTotalCents) * 100 : 0;
   const perPieceSavingsCents = benchmarkCents - retailCents;
+  const memberSavingsPerPiece = retailCents - memberCents;
   const breakEvenPieces =
-    perPieceSavingsCents > 0
-      ? Math.ceil(SUBSCRIPTION_PRICE_CENTS / perPieceSavingsCents)
+    memberSavingsPerPiece > 0
+      ? Math.ceil(SUBSCRIPTION_PRICE_CENTS / memberSavingsPerPiece)
       : null;
   return {
     retailCents,
+    memberCents,
     benchmarkCents,
     ezTotalCents,
     shopTotalCents,
@@ -69,7 +79,7 @@ function buildQuote(layoutVariant: string, qty: number): Quote {
     savingsPercent,
     perPieceSavingsCents,
     breakEvenPieces,
-    netFirstMonthCents: savingsCents - SUBSCRIPTION_PRICE_CENTS,
+    memberNetCents: memberSavingsPerPiece * qty - SUBSCRIPTION_PRICE_CENTS,
   };
 }
 
@@ -136,7 +146,8 @@ export function PricingCalculator() {
                     {categoryRows(category).map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.documentClass} ·{" "}
-                        {formatCents(item.retailPriceCents)}
+                        {tierSummary(item.id) ? "from " : ""}
+                        {formatCents(startingPriceCents(item.id))}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -148,6 +159,14 @@ export function PricingCalculator() {
               {mailClassLabel(row.mailClass)}
               {row.envelope ? ` · ${row.envelope} envelope` : ""}
             </p>
+            {tierSummary(row.id) ? (
+              <p
+                className="text-xs text-muted-foreground"
+                data-ocid="pricing_calc.tiers.text"
+              >
+                Volume pricing: {tierSummary(row.id)}
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-6 space-y-3">
@@ -271,6 +290,15 @@ export function PricingCalculator() {
 
           <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-card text-sm">
             <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-muted-foreground">Member rate / piece</span>
+              <span
+                className="font-mono font-medium text-foreground"
+                data-ocid="pricing_calc.member_rate.value"
+              >
+                {formatCents(quote.memberCents)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3">
               <span className="text-muted-foreground">
                 EZmailout membership
               </span>
@@ -280,17 +308,17 @@ export function PricingCalculator() {
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-muted-foreground">
-                Net first-month savings
+                Member savings on this order, after the fee
               </span>
               <span
                 className={
-                  quote.netFirstMonthCents >= 0
+                  quote.memberNetCents >= 0
                     ? "font-mono font-semibold text-emerald-brand"
                     : "font-mono font-semibold text-muted-foreground"
                 }
               >
-                {quote.netFirstMonthCents >= 0 ? "" : "−"}
-                {formatCents(Math.abs(quote.netFirstMonthCents))}
+                {quote.memberNetCents >= 0 ? "" : "−"}
+                {formatCents(Math.abs(quote.memberNetCents))}
               </span>
             </div>
           </div>
@@ -303,12 +331,12 @@ export function PricingCalculator() {
               ? `Membership pays for itself after ${formatNumber(quote.breakEvenPieces)} ${
                   quote.breakEvenPieces === 1 ? "piece" : "pieces"
                 }.`
-              : "Membership value depends on the format you choose."}
+              : "This format costs the same for everyone; members save on volume-priced formats."}
           </p>
           <p className="mt-1 text-center text-[11px] text-muted-foreground">
             Print-shop benchmark is a typical local quote including postage.
-            Actual EZmailout charges are the per-piece rates above plus
-            membership.
+            EZmailout charges the per-piece rate for your volume; membership is
+            optional.
           </p>
         </div>
       </div>

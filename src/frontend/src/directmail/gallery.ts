@@ -7,7 +7,7 @@
  */
 import type { CanvasState } from "@/backend";
 import { categoryForVariant } from "@/lib/catalog";
-import { getPricingRow } from "@/lib/pricing";
+import { getPricingRow, startingPriceCents } from "@/lib/pricing";
 import type { Orientation } from "@/lib/printSpec";
 import { TEMPLATE_COLORS } from "@/lib/templates";
 import type {
@@ -205,7 +205,7 @@ function entryOf(t: MailTemplateSpec): MailGalleryEntry {
     aspect,
     mailType,
     twoSided: templateSides(t).includes("back"),
-    priceCents: row?.retailPriceCents ?? 0,
+    priceCents: row ? startingPriceCents(row.id) : 0,
     search: [
       t.name,
       t.description,

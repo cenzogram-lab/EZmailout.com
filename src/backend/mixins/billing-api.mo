@@ -9,6 +9,7 @@ import CampaignLib "../lib/campaign";
 import Credits "../lib/credits";
 import Http "../lib/http";
 import Limits "../lib/limits";
+import PricingLib "../lib/pricing";
 import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
@@ -172,6 +173,11 @@ mixin (
             if (c.ownerId != a.id and not AdminLib.isAdmin(adminKeysState, caller)) { return intentFail("You do not own this campaign") };
             if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
             if (c.totalAmountChargedCents == 0) { return intentFail("Campaign total is zero") };
+            // The total is the stored per-piece price (its volume tier, fixed
+            // when the campaign was created) times its pieces, nothing else.
+            if (c.totalAmountChargedCents != c.unitPriceCents * c.recipientCount or c.totalAmountChargedCents > PricingLib.maxOrderCents) {
+              return intentFail("This campaign's total doesn't add up; please contact support");
+            };
             // Only an order that can go to print is paid for: its print file
             // must be fully staged (uploads close once the campaign is paid).
             let staged = switch (documentUploads.get(campaignId)) { case (?u) u.receivedChunks == u.totalChunks; case null false };

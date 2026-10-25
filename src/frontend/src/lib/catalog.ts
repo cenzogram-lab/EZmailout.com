@@ -1,5 +1,9 @@
 import { ProductType } from "@/backend";
-import { PRICING_LEDGER, type PricingRowUi } from "@/lib/pricing";
+import {
+  PRICING_LEDGER,
+  type PricingRowUi,
+  startingPriceCents,
+} from "@/lib/pricing";
 
 /** Line-art icon ids drawn by `components/catalog/CatalogIcon.tsx`. */
 export type CatalogIconId =
@@ -197,10 +201,12 @@ export function categoryRows(category: CatalogCategory): PricingRowUi[] {
     .filter((r): r is PricingRowUi => r !== undefined);
 }
 
-/** Lowest retail price of a category, in cents. */
+/** Lowest price a customer can reach in a category, in cents. */
 export function categoryFromCents(category: CatalogCategory): number {
   const rows = categoryRows(category);
-  return rows.length ? Math.min(...rows.map((r) => r.retailPriceCents)) : 0;
+  return rows.length
+    ? Math.min(...rows.map((r) => startingPriceCents(r.id)))
+    : 0;
 }
 
 /** Total number of sizes across the catalog. */

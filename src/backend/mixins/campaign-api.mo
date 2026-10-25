@@ -2,6 +2,7 @@
 import Types "../types/campaign";
 import Common "../types/common";
 import Account "../types/account";
+import AccountLib "../lib/account";
 import CampaignLib "../lib/campaign";
 import AddressLib "../lib/address";
 import PricingLib "../lib/pricing";
@@ -28,6 +29,7 @@ mixin (
   adminKeysState : Common.AdminState,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   payments : Map.Map<Text, Account.PaymentRecord>,
+  accounts : Map.Map<Text, Account.UserAccount>,
 ) {
   transient let maxRecipients : Nat = 5_000;
 
@@ -272,12 +274,23 @@ mixin (
     if (not makeRoomForDraft(Time.now())) {
       return fail("EZmailout is holding as many unpaid drafts as it can right now. Please try again later, or pay for a draft you already have.");
     };
+    // Priced here, once, and charged exactly as stored: volume tiers by the
+    // number of pieces, members at the 10,000 tier whatever the batch.
+    let isMember = switch (accounts.get(owner)) {
+      case (?a) AccountLib.isSubscriptionLive(a, Time.now());
+      case null false;
+    };
+    let unitCents = PricingLib.calculateUnitPrice(row, count, isMember);
+    switch (PricingLib.campaignCostCents(unitCents, count)) {
+      case null { return fail("This order is too large for one checkout; split it into smaller campaigns") };
+      case (?_) {};
+    };
     let id = CampaignLib.nextId(state);
-    let record = CampaignLib.create(id, caller.toText(), { input with qrDestinationUrl = qrDestination }, printSpec, row.retailPriceCents, row.baseCostCents, count);
+    let record = CampaignLib.create(id, caller.toText(), { input with qrDestinationUrl = qrDestination }, printSpec, unitCents, row.baseCostCents, count);
     campaigns.add(id, record);
     campaignRecipients.add(id, recipients);
     CampaignLib.appendEvent(trackingEvents, state, id, #Created, "campaign.created", id, #System, ?"Campaign draft created");
-    { ok = true; error = null; campaignId = ?id; unitPriceCents = ?row.retailPriceCents; totalCents = ?record.totalAmountChargedCents };
+    { ok = true; error = null; campaignId = ?id; unitPriceCents = ?unitCents; totalCents = ?record.totalAmountChargedCents };
   };
 
   /// The caller's campaigns as list rows, newest first; an admin sees all of

@@ -32,7 +32,9 @@ import {
   formatCents,
   getPricingRow,
   mailClassDelivery,
+  startingPriceCents,
   supportsBlackAndWhite,
+  tierSummary,
 } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -96,6 +98,10 @@ function SizeRow({
   onMailClass: (mailClass: CatalogMailClass) => void;
 }) {
   const multiClass = row.supportedMailClasses.length > 1;
+  // Volume-tiered formats show the lowest price a customer can reach and
+  // spell out the tiers; flat-priced ones show their one price.
+  const tiers = tierSummary(row.id);
+  const priceBadge = `${tiers ? "from " : ""}${formatCents(startingPriceCents(row.id))} / piece`;
   return (
     <div
       className={cn(
@@ -135,20 +141,28 @@ function SizeRow({
             {sizeLabel(row.id)} · {row.paperType}
             {row.envelope ? ` · ${row.envelope}` : ""}
           </span>
+          {tiers ? (
+            <span
+              className="block text-xs text-muted-foreground"
+              data-ocid={`catalog.size.${row.id}.tiers`}
+            >
+              {tiers}
+            </span>
+          ) : null}
           {/* On phones the price sits under the name, so the name and paper
               line keep the row's full width instead of one word per line. */}
           <Badge
             className="mt-1.5 bg-primary text-primary-foreground sm:hidden"
             data-ocid={`catalog.size.${row.id}.price_inline`}
           >
-            {formatCents(row.retailPriceCents)} / piece
+            {priceBadge}
           </Badge>
         </span>
         <Badge
           className="mt-0.5 hidden shrink-0 bg-primary text-primary-foreground sm:inline-flex"
           data-ocid={`catalog.size.${row.id}.price`}
         >
-          {formatCents(row.retailPriceCents)} / piece
+          {priceBadge}
         </Badge>
       </button>
       <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pl-11 sm:pl-[4.25rem]">
@@ -451,9 +465,9 @@ export function Step1ProductCatalog() {
           <span className="font-semibold">
             {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month membership
           </span>{" "}
-          unlocks these wholesale rates on every size — send one piece or ten
-          thousand at the same per-piece price, next-day production by
-          EZmailout, USPS IMb tracking included.
+          skips the volume tiers: members pay the 10,000-piece rate on
+          postcards, letters and brochures from the first piece. Next-day
+          production by EZmailout, USPS IMb tracking included.
         </p>
       </div>
 
@@ -469,7 +483,9 @@ export function Step1ProductCatalog() {
                 {selectedRow.documentClass}
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
-              {formatCents(selectedRow.retailPriceCents)} per piece (
+              {tierSummary(selectedRow.id) ??
+                `${formatCents(selectedRow.retailPriceCents)} per piece`}{" "}
+              (
               {catalogMailClassLabel(
                 selectedSpec?.mailClass ?? selectedRow.defaultMailClass,
               )}

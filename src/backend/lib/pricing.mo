@@ -1,5 +1,6 @@
-/// Retail pricing ledger: print base cost vs EZmailout retail price
-/// (100%–140% margin spread). Mirrored by src/frontend/src/lib/pricing.ts.
+/// Retail pricing ledger: print base cost vs EZmailout retail price, with
+/// volume tiers for the formats competitors sell (`calculateUnitPrice`).
+/// Mirrored by src/frontend/src/lib/pricing.ts.
 import Types "../types/campaign";
 import Array "mo:core/Array";
 
@@ -52,12 +53,12 @@ module {
   public func rows() : [Types.PricingRow] {
     [
       row("3.5x5", "3.5 x 5 Mini Postcard", #Postcard, "Postcard 3.5 x 5", "Double Sided Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 53, 110, 3.5, 5.0),
-      row("4.25x6", "4.25 x 6 Postcard", #Postcard, "Postcard 4.25 x 6", "Double Sided Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 55, 115, 4.25, 6.0),
+      row("4.25x6", "4.25 x 6 Postcard", #Postcard, "Postcard 4.25 x 6", "Double Sided Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 55, 79, 4.25, 6.0),
       row("4x9", "4 x 9 Slim Postcard", #Postcard, "Postcard 4 x 9", "Double Sided Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 55, 120, 4.0, 9.0),
       row("5x8", "5 x 8 Postcard", #Postcard, "Postcard 5 x 8", "Double Sided Postcard", #FirstClass, "White Matte with Gloss UV Finish", null, 54, 125, 5.0, 8.0),
-      row("6x9", "6 x 9 Postcard", #Postcard, "Postcard 6 x 9", "Double Sided Postcard", #MarketingMail, "White Matte with Gloss UV Finish", null, 57, 135, 6.0, 9.0),
-      row("6x11", "6 x 11 Jumbo Postcard", #Postcard, "Postcard 6 x 11", "Double Sided Postcard", #MarketingMail, "White Matte with Gloss UV Finish", null, 73, 165, 6.0, 11.0),
-      row("letter", "8.5 x 11 Letter", #Letter, "Letter 8.5 x 11", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 59, 150, 8.5, 11.0),
+      row("6x9", "6 x 9 Postcard", #Postcard, "Postcard 6 x 9", "Double Sided Postcard", #MarketingMail, "White Matte with Gloss UV Finish", null, 57, 98, 6.0, 9.0),
+      row("6x11", "6 x 11 Jumbo Postcard", #Postcard, "Postcard 6 x 11", "Double Sided Postcard", #MarketingMail, "White Matte with Gloss UV Finish", null, 73, 92, 6.0, 11.0),
+      row("letter", "8.5 x 11 Letter", #Letter, "Letter 8.5 x 11", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 59, 93, 8.5, 11.0),
       row("letter_legal", "8.5 x 14 Legal Letter", #Letter, "Letter 8.5 x 14", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 61, 165, 8.5, 14.0),
       row("certified_self_mailer", "Certified Self Mailer 8.5 x 11", #CertifiedMail, "Certified Self Mailer 8.5 x 11", "Certified Self Mailer", #FirstClass, "White 24#", null, 645, 1290, 8.5, 11.0),
       row("certified_letter", "Certified Letter 8.5 x 11", #CertifiedMail, "Certified Letter 8.5 x 11", "Address on Separate Page", #FirstClass, "White 24#", ?"#10 Double Window", 666, 1350, 8.5, 11.0),
@@ -69,7 +70,7 @@ module {
       row("priority_letter", "Priority Letter 8.5 x 11", #PriorityMail, "Priority Letter 8.5 x 11", "Address on Separate Page", #Priority, "White 24#", null, 1166, 2250, 8.5, 11.0),
       row("priority_express_letter", "Priority Mail® Express Letter 8.5 x 11", #PriorityMailExpress, "Priority Mail® Express Letters 8.5 x 11", "Address on Separate Page", #PriorityExpress, "White 24#", null, 3206, 5500, 8.5, 11.0),
       row("8.5x11_flyer", "8.5 x 11 Flyer", #Flyer, "Flyer 8.5 x 11", "Unfolded Flyer", #MarketingMail, "White Matte with Gloss UV Finish", null, 57, 145, 8.5, 11.0),
-      row("11x8.5_brochure", "11 x 8.5 Trifold Brochure", #Brochure, "Brochure 11 x 8.5", "Trifold Self-Mailer", #MarketingMail, "White Matte with Gloss UV Finish", null, 107, 225, 11.0, 8.5),
+      row("11x8.5_brochure", "11 x 8.5 Trifold Brochure", #Brochure, "Brochure 11 x 8.5", "Trifold Self-Mailer", #MarketingMail, "White Matte with Gloss UV Finish", null, 107, 132, 11.0, 8.5),
       row("8.5x11_secure", "8.5 x 11 Secure Self Mailer", #SnapPack, "Secure Self Mailer 8.5 x 11", "Pressure Seal Snap Pack", #FirstClass, "White 28#", null, 58, 195, 8.5, 11.0),
       row("notecard_4.25x5.5", "4.25 x 5.5 Notecard", #Notecard, "Notecard 4.25 x 5.5", "Flat Notecard", #FirstClass, "White Matte with Gloss UV Finish", null, 87, 185, 4.25, 5.5),
       row("folded_notecard_4.25x5.5", "4.25 x 5.5 Folded Notecard", #Notecard, "Folded Notecard 4.25 x 5.5", "Folded Notecard", #FirstClass, "White Matte with Gloss UV Finish", null, 104, 225, 4.25, 5.5),
@@ -81,6 +82,60 @@ module {
       row("booklet_address_back", "8.5 x 11 Booklet · Address Back Page", #Booklet, "Booklet Address Back Page 8.5 x 11", "Address on Back Page", #MarketingMail, "White Matte with Gloss UV Finish", null, 162, 360, 8.5, 11.0),
       row("card_stock_12x4.5", "12 x 4.5 Card Stock", #CardStock, "Card Stock Paper 12 x 4.5", "Double Sided Postcard", #MarketingMail, "Heavy Cardstock", null, 65, 165, 12.0, 4.5),
     ];
+  };
+
+  // ─── Volume tiers ────────────────────────────────────────────────────────
+
+  /// Fewest pieces for each tier: under 1,000, from 1,000, 10,000, 50,000.
+  public let tierMinimums : [Nat] = [0, 1_000, 10_000, 50_000];
+
+  /// Members are priced as an order of at least this many pieces (the
+  /// 10,000 tier), whatever the batch size.
+  public let memberTierQuantity : Nat = 10_000;
+
+  /// Per-piece prices in cents, one per `tierMinimums` entry, for the
+  /// formats competitors sell (the competitor's published price less 1¢).
+  /// Formats only EZmailout offers (certified, Priority, secure mailers,
+  /// EDDM®, booklets…) keep their flat `retailPriceCents`. The first tier is
+  /// the row's `retailPriceCents`. Mirrored by `VOLUME_TIERS` in
+  /// src/frontend/src/lib/pricing.ts — change both.
+  public func volumeTiers(layoutVariant : Text) : ?[Nat] {
+    switch (normalizeVariant(layoutVariant)) {
+      case ("4.25x6") ?[79, 71, 62, 52];
+      case ("6x9") ?[98, 72, 68, 65];
+      case ("6x11") ?[92, 83, 74, 70];
+      case ("letter") ?[93, 81, 74, 69];
+      case ("11x8.5_brochure") ?[132, 98, 82, 78];
+      case (_) null;
+    };
+  };
+
+  /// Cents per piece for `qty` pieces of `row`. A member is priced as at
+  /// least `memberTierQuantity` pieces. A tier never sells below the print
+  /// cost: one under it is lifted to cost + 1¢ (4.25 × 6 and 6 × 11 at
+  /// 50,000, the brochure from 1,000).
+  public func calculateUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
+    switch (volumeTiers(row.layoutVariant)) {
+      case null row.retailPriceCents;
+      case (?tiers) {
+        let effective = if (isMember and qty < memberTierQuantity) memberTierQuantity else qty;
+        var price = tiers[0];
+        for (i in tiers.keys()) {
+          if (effective >= tierMinimums[i]) { price := tiers[i] };
+        };
+        if (price > row.baseCostCents) price else row.baseCostCents + 1;
+      };
+    };
+  };
+
+  /// The most a single checkout may charge (the payment processor's limit).
+  public let maxOrderCents : Nat = 99_999_999;
+
+  /// What `count` pieces at `unitCents` cost, or null when the order is empty
+  /// or over `maxOrderCents`. Nat is unbounded, so the product cannot wrap.
+  public func campaignCostCents(unitCents : Nat, count : Nat) : ?Nat {
+    let total = unitCents * count;
+    if (count == 0 or total == 0 or total > maxOrderCents) null else ?total;
   };
 
   /// Layout keys that shipped before the print catalog audit map onto the

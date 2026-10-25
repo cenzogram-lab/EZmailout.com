@@ -10,6 +10,10 @@ import {
   type ProductSpec,
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
+  getPricingRow,
+  getUnitPriceCents,
+  startingPriceCents,
+  volumeTiers,
 } from "@/lib/pricing";
 
 /**
@@ -161,7 +165,7 @@ const INTENTS: Intent[] = [
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
     priceable: true,
     answer: () =>
-      `A ${membership}/month membership unlocks EZmailout wholesale print and USPS postage with no batch minimums — mail one piece or thousands. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
+      `There are no batch minimums — mail one piece or thousands. Postcards, letters and brochures get cheaper from 1,000 pieces, and a ${membership}/month membership gets the 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards start at ${cheapest()} each.`,
     chips: ["catalog"],
   },
   {
@@ -233,23 +237,41 @@ const sameSize = (row: ProductSpec, [a, b]: [number, number]) => {
   );
 };
 
+/** One format's price in words: its volume tiers, or its flat price. */
+function rowPrice(row: ProductSpec): string {
+  if (!volumeTiers(row.id)) return `${usd(row.retailPriceCents)} per piece`;
+  const at = (qty: number, member: boolean) =>
+    usd(getUnitPriceCents(row.id, qty, member));
+  const member = at(1, true);
+  return member === at(1_000, false)
+    ? `${at(1, false)} per piece under 1,000 pieces and ${member} from 1,000 or for members`
+    : `${at(1, false)} per piece under 1,000 pieces, ${at(1_000, false)} from 1,000, and ${member} for members at any volume`;
+}
+
+/** "from $0.62" for a volume-priced format, "$1.05" for a flat one. */
+const fromPrice = (row: ProductSpec) =>
+  `${volumeTiers(row.id) ? "from " : ""}${usd(startingPriceCents(row.id))}`;
+
 function priceAnswer(question: string): string | null {
   const family = familyIn(question);
   const size = sizeIn(question);
   if (size) {
-    const all = PRICING_LEDGER.filter((r) => sameSize(r, size));
+    const exact = PRICING_LEDGER.filter((r) => sameSize(r, size));
+    // A legacy size name ("4x6" for the 4.25 × 6 card) finds its row.
+    const legacy = getPricingRow(`${size[0]}x${size[1]}`);
+    const all = exact.length || !legacy ? exact : [legacy];
     const inFamily = all.filter((r) => r.category === family);
     const rows = inFamily.length ? inFamily : all;
     if (rows.length === 1) {
-      return `The ${rows[0].name} is ${usd(rows[0].retailPriceCents)} per piece, with ${INCLUDED}.`;
+      return `The ${rows[0].name} is ${rowPrice(rows[0])}, with ${INCLUDED}.`;
     }
     if (rows.length > 1) {
       const cheapestFirst = [...rows].sort(
-        (a, b) => a.retailPriceCents - b.retailPriceCents,
+        (a, b) => startingPriceCents(a.id) - startingPriceCents(b.id),
       );
       const list = cheapestFirst
         .slice(0, MAX_LISTED)
-        .map((r) => `${r.name} ${usd(r.retailPriceCents)}`)
+        .map((r) => `${r.name} ${fromPrice(r)}`)
         .join(", ");
       const more =
         rows.length > MAX_LISTED
@@ -268,12 +290,13 @@ function priceAnswer(question: string): string | null {
     const rows = category ? categoryRows(category) : [];
     if (!category || !rows.length) return null;
     const low = rows.reduce((a, b) =>
-      b.retailPriceCents < a.retailPriceCents ? b : a,
+      startingPriceCents(b.id) < startingPriceCents(a.id) ? b : a,
     );
     if (rows.length === 1) {
-      return `The ${low.name} is ${usd(low.retailPriceCents)} per piece, with ${INCLUDED}.`;
+      return `The ${low.name} is ${rowPrice(low)}, with ${INCLUDED}.`;
     }
-    return `Prices for ${category.name} start at ${usd(low.retailPriceCents)} per piece (${low.name}), across ${rows.length} sizes. Every price has ${INCLUDED}.`;
+    const memberNote = volumeTiers(low.id) ? ", the member rate" : "";
+    return `Prices for ${category.name} start at ${usd(startingPriceCents(low.id))} per piece (${low.name}${memberNote}), across ${rows.length} sizes. Every price has ${INCLUDED}.`;
   }
   return null;
 }

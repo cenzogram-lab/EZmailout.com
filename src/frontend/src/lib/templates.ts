@@ -1,6 +1,6 @@
 import type { ProductType } from "@/backend";
 import { categoryForVariant } from "@/lib/catalog";
-import { getPricingRow } from "@/lib/pricing";
+import { getPricingRow, startingPriceCents } from "@/lib/pricing";
 import type { TemplatePalette } from "@/lib/templateArt";
 import type {
   DesignTemplate,
@@ -1953,9 +1953,11 @@ export function templateCategory(t: DesignTemplate): string {
   return categoryForVariant(t.layoutVariant)?.name ?? "Postcards";
 }
 
-/** Retail price per piece of the template's format, in cents. */
+/** Lowest price per piece of the template's format ("from"), in cents. */
 export function templatePriceCents(t: DesignTemplate): number {
-  return getPricingRow(t.layoutVariant)?.retailPriceCents ?? 0;
+  return getPricingRow(t.layoutVariant)
+    ? startingPriceCents(t.layoutVariant)
+    : 0;
 }
 
 export function templatePriceBand(t: DesignTemplate): TemplatePriceBand {
