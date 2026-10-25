@@ -688,6 +688,77 @@ sections.bigOrder = async function bigOrder() {
   check(huge.ok && huge.unitPriceCents[0] === 65n && huge.totalCents[0] === 3_250_000n, "a 50,000-piece 6×9 order is priced at the 50,000 tier (65¢)", { error: huge.error, unit: huge.unitPriceCents });
 };
 
+// ─── Saved audiences of any size, and paged reads of large lists ──────────────
+sections.bigAudience = async function bigAudience() {
+  const env = await setup({ sandboxCheckout: true });
+  const user = ident(181);
+  const u = env.as(user);
+  const N = 12_000;
+  const all = Array.from({ length: N }, (_, i) => addr(i));
+  const readAll = async (read) => {
+    const out = [];
+    for (;;) {
+      const page = await read(BigInt(out.length), 2_000n);
+      out.push(...page.addresses);
+      if (page.addresses.length === 0 || out.length >= Number(page.total)) return { out, total: Number(page.total) };
+    }
+  };
+
+  // Saved: the first 5,000 with savePreset, the rest appended in order.
+  const tooMany = await u.savePreset("Too big at once", Array.from({ length: 5_001 }, (_, i) => addr(i)), []);
+  check(!tooMany.ok && /addPresetAddresses/.test(tooMany.error[0] ?? ""), "one message saves at most 5,000 addresses", tooMany.error);
+  const saved = await u.savePreset("Whole city", all.slice(0, 5_000), []);
+  check(saved.ok, "a saved audience starts with its first chunk", saved.error);
+  const pid = saved.presetId[0];
+  let st = await u.addPresetAddresses(pid, 5_000n, all.slice(5_000, 10_000));
+  check(st.ok && st.stored === 10_000n, "a chunk is appended to the saved audience", st);
+  st = await u.addPresetAddresses(pid, 5_000n, all.slice(5_000, 10_000));
+  check(st.ok && st.stored === 10_000n, "a retried chunk is not stored twice", st);
+  st = await u.addPresetAddresses(pid, 11_000n, all.slice(11_000));
+  check(!st.ok && st.stored === 10_000n, "addresses are added in order", st.error);
+  st = await u.addPresetAddresses(pid, 10_000n, all.slice(10_000));
+  check(st.ok && st.stored === BigInt(N), "the whole 12,000-address list is saved", st);
+  const listed = (await u.listPresets()).find((p) => p.id === pid);
+  check(listed && listed.recipientCount === BigInt(N), "the preset reports all 12,000 addresses", listed?.recipientCount);
+  const stranger = await env.as(ident(182)).addPresetAddresses(pid, 0n, []);
+  check(!stranger.ok, "another identity cannot add to the preset", stranger);
+
+  // Read back page by page, in order; a page never exceeds 2,000.
+  const big = await u.getPresetAddressesPage(pid, 0n, 99_999n);
+  check(big.addresses.length === 2_000 && big.total === BigInt(N), "a page holds at most 2,000 addresses", big.addresses.length);
+  const back = await readAll((o, l) => u.getPresetAddressesPage(pid, o, l));
+  check(back.out.length === N && back.out[0].address_line1 === all[0].address_line1 && back.out[N - 1].address_line1 === all[N - 1].address_line1, "the saved audience reads back whole and in order", back.out.length);
+  const foreign = await env.as(ident(182)).getPresetAddressesPage(pid, 0n, 10n);
+  check(foreign.total === 0n && foreign.addresses.length === 0, "another identity reads nothing of the preset", foreign);
+
+  // Replaced: updatePreset takes the first chunk, the rest is appended.
+  const upd = await u.updatePreset(pid, "Whole city (trimmed)", all.slice(0, 5_000));
+  st = await u.addPresetAddresses(pid, 5_000n, all.slice(5_000, 8_000));
+  const after = (await u.listPresets()).find((p) => p.id === pid);
+  check(upd.ok && st.ok && after.recipientCount === 8_000n && after.name === "Whole city (trimmed)", "an update replaces the list, then grows it in chunks", { upd: upd.error, count: after?.recipientCount });
+
+  // A campaign of 12,000 reads back page by page; the CSV export pages too.
+  const created = await u.createCampaign(campaignInput(0, { recipients: all.slice(0, 5_000), recipientCount: BigInt(N) }));
+  const cid = created.campaignId[0];
+  await u.addCampaignRecipients(cid, 5_000n, all.slice(5_000, 10_000));
+  await u.addCampaignRecipients(cid, 10_000n, all.slice(10_000));
+  const rec = await readAll((o, l) => u.getCampaignRecipientsPage(cid, o, l));
+  check(rec.out.length === N && rec.total === N && rec.out[N - 1].address_line1 === all[N - 1].address_line1, "a 12,000-recipient campaign reads back whole, page by page", rec.out.length);
+  const csv = [];
+  for (let o = 0; ; o += 2_000) {
+    const page = (await u.exportCampaignRecipientsPage(cid, BigInt(o), 2_000n))[0];
+    if (page.csv) csv.push(page.csv);
+    if (o + 2_000 >= Number(page.total)) break;
+  }
+  const lines = csv.join("\n").split("\n");
+  check(lines.length === N + 1 && lines[0].startsWith("name,") && lines.filter((l) => l.startsWith("name,")).length === 1 && lines[N].includes(all[N - 1].address_line1), "the paged CSV export has one header and every recipient", { lines: lines.length, last: lines[N] });
+  const whole = (await u.exportCampaignRecipients(cid))[0] ?? "";
+  check(csv.join("\n") === whole, "pages joined equal the one-shot export", { paged: csv.join("\n").length, whole: whole.length });
+  let denied = false;
+  try { await env.as(ident(182)).getCampaignRecipientsPage(cid, 0n, 10n); } catch { denied = true; }
+  check(denied, "another identity cannot read the campaign's recipients");
+};
+
 // ─── 11. Upgrade from the deployed version: keys and campaigns carry over ───
 sections.upgrade = async function upgrade() {
   const OLD_WASM = process.env.OLD_WASM ?? new URL("./.gen/old-backend.wasm", import.meta.url).pathname;

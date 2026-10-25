@@ -191,6 +191,11 @@ type RecipientStageResult =
    stored: nat;
    total: nat;
  };
+type RecipientPage = 
+ record {
+   addresses: vec VerifiedAddress;
+   total: nat;
+ };
 type QrScanStats = 
  record {
    recentScans: vec QrScanEvent;
@@ -391,6 +396,11 @@ type DispatchResult =
    jobId: opt text;
    ok: bool;
    productionStatus: opt ProductionStatus;
+ };
+type CsvPage = 
+ record {
+   csv: text;
+   total: nat;
  };
 type CreditResult = 
  record {
@@ -656,6 +666,8 @@ service : {
   _internet_identity_sign_in_start: () -> (blob);
   addCampaignRecipients: (campaignId: text, offset: nat, recipients:
    vec VerifiedAddress) -> (RecipientStageResult);
+  addPresetAddresses: (presetId: text, offset: nat, addresses:
+   vec VerifiedAddress) -> (RecipientStageResult);
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
   askStampy: (turns: vec StampyTurn) -> (StampyReply);
   assignAdmin: (newAdmin: principal) -> (ApiResult);
@@ -669,12 +681,16 @@ service : {
   dispatchPrintJob: (campaignId: text) -> (DispatchResult);
   ensureAccount: (referralCode: opt text, email: opt text) -> (AccountResult);
   exportCampaignRecipients: (campaignId: text) -> (opt text) query;
+  exportCampaignRecipientsPage: (campaignId: text, offset: nat, limit:
+   nat) -> (opt CsvPage) query;
   generateAiCopy: (input: AiCopyInput) -> (AiCopyResult);
   generateAiImage: (prompt: text, size: AiImageSize) -> (AiImageResult);
   getAdminKeys: () -> (AdminKeysView) query;
   getAiPricing: () -> (AiPricing) query;
   getCampaign: (id: text) -> (opt CampaignRecordShared) query;
   getCampaignRecipients: (campaignId: text) -> (vec VerifiedAddress) query;
+  getCampaignRecipientsPage: (campaignId: text, offset: nat, limit: nat) ->
+   (RecipientPage) query;
   getCampaigns: () -> (vec CampaignSummary) query;
   getCanvasState: (campaignId: text) -> (opt CanvasState) query;
   getCreditLedger: () -> (vec CreditLedgerEntry) query;
@@ -682,6 +698,8 @@ service : {
    (opt DocumentUploadStatus) query;
   getMyAccount: () -> (opt UserAccountShared) query;
   getPresetAddresses: (presetId: text) -> (vec VerifiedAddress) query;
+  getPresetAddressesPage: (presetId: text, offset: nat, limit: nat) ->
+   (RecipientPage) query;
   getPricingLedger: () -> (vec PricingRow) query;
   getPublicConfig: () -> (PublicConfig) query;
   getQrScanStats: (campaignId: text) -> (QrScanStats) query;

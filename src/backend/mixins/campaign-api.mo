@@ -375,6 +375,23 @@ mixin (
     };
   };
 
+  /// One page (at most 2,000) of a campaign's recipients from `offset`, and
+  /// how many it holds: a list of any size is read page by page.
+  public shared query ({ caller }) func getCampaignRecipientsPage(campaignId : Text, offset : Nat, limit : Nat) : async Types.RecipientPage {
+    ignore requireAccess(campaignId, caller);
+    AddressLib.page(switch (campaignRecipients.get(campaignId)) { case (?a) a; case null [] }, offset, limit);
+  };
+
+  /// One page (at most 2,000 rows) of `exportCampaignRecipients`, the header
+  /// row on the first page only; pages joined with newlines make the file.
+  public shared query ({ caller }) func exportCampaignRecipientsPage(campaignId : Text, offset : Nat, limit : Nat) : async ?Types.CsvPage {
+    ignore requireAccess(campaignId, caller);
+    switch (campaignRecipients.get(campaignId)) {
+      case null null;
+      case (?addrs) ?{ csv = CampaignLib.exportCsvRows(campaignId, addrs, AdminLib.trackingBaseUrl, offset, Nat.min(limit, AddressLib.maxPageSize)); total = addrs.size() };
+    };
+  };
+
   /// CSV export with recipient ids and tracking URLs.
   public shared query ({ caller }) func exportCampaignRecipients(campaignId : Text) : async ?Text {
     ignore requireAccess(campaignId, caller);

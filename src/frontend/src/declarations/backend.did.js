@@ -111,6 +111,11 @@ export const VerifiedAddress = IDL.Record({
   'state' : IDL.Text,
   'zip_plus4' : IDL.Opt(IDL.Text),
 });
+export const RecipientPage = IDL.Record({
+  'addresses' : IDL.Vec(VerifiedAddress),
+  'total' : IDL.Nat,
+});
+export const CsvPage = IDL.Record({ 'csv' : IDL.Text, 'total' : IDL.Nat });
 export const MailClass = IDL.Variant({
   'PriorityExpress' : IDL.Null,
   'MarketingMail' : IDL.Null,
@@ -586,6 +591,11 @@ export const idlService = IDL.Service({
       [RecipientStageResult],
       [],
     ),
+  'addPresetAddresses' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
+      [RecipientStageResult],
+      [],
+    ),
   'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
   'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
   'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),
@@ -619,6 +629,11 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Text)],
       ['query'],
     ),
+  'exportCampaignRecipientsPage' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [IDL.Opt(CsvPage)],
+      ['query'],
+    ),
   'generateAiCopy' : IDL.Func([AiCopyInput], [AiCopyResult], []),
   'generateAiImage' : IDL.Func([IDL.Text, AiImageSize], [AiImageResult], []),
   'getAdminKeys' : IDL.Func([], [AdminKeysView], ['query']),
@@ -633,6 +648,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(VerifiedAddress)],
       ['query'],
     ),
+  'getCampaignRecipientsPage' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [RecipientPage],
+      ['query'],
+    ),
   'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
   'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
   'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
@@ -645,6 +665,11 @@ export const idlService = IDL.Service({
   'getPresetAddresses' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(VerifiedAddress)],
+      ['query'],
+    ),
+  'getPresetAddressesPage' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [RecipientPage],
       ['query'],
     ),
   'getPricingLedger' : IDL.Func([], [IDL.Vec(PricingRow)], ['query']),
@@ -817,6 +842,11 @@ export const idlFactory = ({ IDL }) => {
     'state' : IDL.Text,
     'zip_plus4' : IDL.Opt(IDL.Text),
   });
+  const RecipientPage = IDL.Record({
+    'addresses' : IDL.Vec(VerifiedAddress),
+    'total' : IDL.Nat,
+  });
+  const CsvPage = IDL.Record({ 'csv' : IDL.Text, 'total' : IDL.Nat });
   const MailClass = IDL.Variant({
     'PriorityExpress' : IDL.Null,
     'MarketingMail' : IDL.Null,
@@ -1291,6 +1321,11 @@ export const idlFactory = ({ IDL }) => {
         [RecipientStageResult],
         [],
       ),
+    'addPresetAddresses' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
+        [RecipientStageResult],
+        [],
+      ),
     'applyReferralReward' : IDL.Func([IDL.Text], [ApiResult], []),
     'askStampy' : IDL.Func([IDL.Vec(StampyTurn)], [StampyReply], []),
     'assignAdmin' : IDL.Func([IDL.Principal], [ApiResult], []),
@@ -1324,6 +1359,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Text)],
         ['query'],
       ),
+    'exportCampaignRecipientsPage' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [IDL.Opt(CsvPage)],
+        ['query'],
+      ),
     'generateAiCopy' : IDL.Func([AiCopyInput], [AiCopyResult], []),
     'generateAiImage' : IDL.Func([IDL.Text, AiImageSize], [AiImageResult], []),
     'getAdminKeys' : IDL.Func([], [AdminKeysView], ['query']),
@@ -1338,6 +1378,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(VerifiedAddress)],
         ['query'],
       ),
+    'getCampaignRecipientsPage' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [RecipientPage],
+        ['query'],
+      ),
     'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
     'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
     'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
@@ -1350,6 +1395,11 @@ export const idlFactory = ({ IDL }) => {
     'getPresetAddresses' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(VerifiedAddress)],
+        ['query'],
+      ),
+    'getPresetAddressesPage' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [RecipientPage],
         ['query'],
       ),
     'getPricingLedger' : IDL.Func([], [IDL.Vec(PricingRow)], ['query']),

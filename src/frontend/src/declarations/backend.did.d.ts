@@ -294,6 +294,11 @@ export type PaymentStatus = { 'Refunded' : null } |
   { 'Unpaid' : null } |
   { 'Waived' : null } |
   { 'Pending' : null };
+export interface RecipientPage {
+  'total' : bigint,
+  'addresses' : Array<VerifiedAddress>,
+}
+export interface CsvPage { 'csv' : string, 'total' : bigint }
 export interface RecipientStageResult {
   'ok' : boolean,
   'total' : bigint,
@@ -558,6 +563,10 @@ export interface _SERVICE {
     [string, bigint, Array<VerifiedAddress>],
     RecipientStageResult
   >,
+  'addPresetAddresses' : ActorMethod<
+    [string, bigint, Array<VerifiedAddress>],
+    RecipientStageResult
+  >,
   'applyReferralReward' : ActorMethod<[string], ApiResult>,
   'askStampy' : ActorMethod<[Array<StampyTurn>], StampyReply>,
   'assignAdmin' : ActorMethod<[Principal], ApiResult>,
@@ -577,12 +586,20 @@ export interface _SERVICE {
     VerificationBatchResult
   >,
   'exportCampaignRecipients' : ActorMethod<[string], [] | [string]>,
+  'exportCampaignRecipientsPage' : ActorMethod<
+    [string, bigint, bigint],
+    [] | [CsvPage]
+  >,
   'generateAiCopy' : ActorMethod<[AiCopyInput], AiCopyResult>,
   'generateAiImage' : ActorMethod<[string, AiImageSize], AiImageResult>,
   'getAdminKeys' : ActorMethod<[], AdminKeysView>,
   'getAiPricing' : ActorMethod<[], AiPricing>,
   'getCampaign' : ActorMethod<[string], [] | [CampaignRecordShared]>,
   'getCampaignRecipients' : ActorMethod<[string], Array<VerifiedAddress>>,
+  'getCampaignRecipientsPage' : ActorMethod<
+    [string, bigint, bigint],
+    RecipientPage
+  >,
   'getCampaigns' : ActorMethod<[], Array<CampaignSummary>>,
   'getCanvasState' : ActorMethod<[string], [] | [CanvasState]>,
   'getCreditLedger' : ActorMethod<[], Array<CreditLedgerEntry>>,
@@ -592,6 +609,10 @@ export interface _SERVICE {
   >,
   'getMyAccount' : ActorMethod<[], [] | [UserAccountShared]>,
   'getPresetAddresses' : ActorMethod<[string], Array<VerifiedAddress>>,
+  'getPresetAddressesPage' : ActorMethod<
+    [string, bigint, bigint],
+    RecipientPage
+  >,
   'getPricingLedger' : ActorMethod<[], Array<PricingRow>>,
   'getPublicConfig' : ActorMethod<[], PublicConfig>,
   'getQrScanStats' : ActorMethod<[string], QrScanStats>,

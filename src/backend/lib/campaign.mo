@@ -308,25 +308,38 @@ module {
   ) : ?Text {
     switch (recipients.get(campaignId)) {
       case null { null };
-      case (?addrs) {
-        let header = "name,address_line1,address_line2,city,state,zip_code,zip_plus4,recipient_id,tracking_url";
-        let rows = List.empty<Text>();
-        rows.add(header);
-        var idx = 0;
-        for (addr in addrs.vals()) {
-          let line2 = switch (addr.address_line2) { case (?v) v; case null "" };
-          let zipPlus4 = switch (addr.zip_plus4) { case (?v) v; case null "" };
-          let rid = AddressLib.recipientId(campaignId, idx);
-          rows.add(
-            csvEscape(addr.name) # "," # csvEscape(addr.address_line1) # "," # csvEscape(line2) # "," #
-            csvEscape(addr.city) # "," # csvEscape(addr.state) # "," # csvEscape(addr.zip_code) # "," #
-            csvEscape(zipPlus4) # "," # rid # "," # trackingBase # rid
-          );
-          idx += 1;
-        };
-        ?rows.values().join("\n");
-      };
+      case (?addrs) ?exportCsvRows(campaignId, addrs, trackingBase, 0, addrs.size());
     };
+  };
+
+  /// `count` CSV rows of a campaign's recipients from `offset`, with the
+  /// header row when `offset` is 0, so pages joined with "\n" make the file.
+  /// Recipient ids keep their position in the whole list.
+  public func exportCsvRows(
+    campaignId : Text,
+    addrs : [Common.VerifiedAddress],
+    trackingBase : Text,
+    offset : Nat,
+    count : Nat,
+  ) : Text {
+    let start = Nat.min(offset, addrs.size());
+    let end = Nat.min(addrs.size(), start + count);
+    let header = "name,address_line1,address_line2,city,state,zip_code,zip_plus4,recipient_id,tracking_url";
+    let rows = List.empty<Text>();
+    if (offset == 0) { rows.add(header) };
+    var idx = start;
+    for (addr in addrs.sliceToArray(start, end).vals()) {
+      let line2 = switch (addr.address_line2) { case (?v) v; case null "" };
+      let zipPlus4 = switch (addr.zip_plus4) { case (?v) v; case null "" };
+      let rid = AddressLib.recipientId(campaignId, idx);
+      rows.add(
+        csvEscape(addr.name) # "," # csvEscape(addr.address_line1) # "," # csvEscape(line2) # "," #
+        csvEscape(addr.city) # "," # csvEscape(addr.state) # "," # csvEscape(addr.zip_code) # "," #
+        csvEscape(zipPlus4) # "," # rid # "," # trackingBase # rid
+      );
+      idx += 1;
+    };
+    rows.values().join("\n");
   };
 
   private func csvEscape(s : Text) : Text {

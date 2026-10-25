@@ -313,6 +313,21 @@ module {
     total : Nat;
   };
 
+  /// One page of a stored address list (a campaign's recipients or a saved
+  /// audience) and how many the whole list holds. Lists of any size are read
+  /// page by page: a reply is capped at a few MB.
+  public type RecipientPage = {
+    addresses : [Common.VerifiedAddress];
+    total : Nat;
+  };
+
+  /// One page of a campaign's recipient CSV (the header row only on the
+  /// first page) and how many recipients the campaign holds.
+  public type CsvPage = {
+    csv : Text;
+    total : Nat;
+  };
+
   public type DispatchResult = {
     ok : Bool;
     error : ?Text;

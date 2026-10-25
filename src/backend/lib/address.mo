@@ -8,6 +8,17 @@ import Iter "mo:core/Iter";
 import Nat "mo:core/Nat";
 
 module {
+  /// Addresses one page of a list read returns at most: 2,000 addresses of
+  /// 100-character lines stay well inside a query reply.
+  public let maxPageSize : Nat = 2_000;
+
+  /// `limit` (at most `maxPageSize`) addresses of `all` from `offset`.
+  public func page(all : [Common.VerifiedAddress], offset : Nat, limit : Nat) : { addresses : [Common.VerifiedAddress]; total : Nat } {
+    let start = Nat.min(offset, all.size());
+    let end = Nat.min(all.size(), start + Nat.min(limit, maxPageSize));
+    { addresses = all.sliceToArray(start, end); total = all.size() };
+  };
+
   private func isWs(c : Char) : Bool { c == ' ' or c == '\t' or c == '\n' or c == '\r' };
 
   /// Trim leading/trailing whitespace.

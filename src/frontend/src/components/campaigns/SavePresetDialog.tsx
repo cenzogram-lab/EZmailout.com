@@ -43,6 +43,9 @@ function addressLine(address: VerifiedAddress): string {
  * Loads a campaign's recipients, lets the user name the audience and prune
  * rows, then saves it as a reusable preset (requires sign-in).
  */
+/** Rows the recipient list renders at once. */
+const MAX_LISTED_ROWS = 200;
+
 export function SavePresetDialog({
   campaignId,
   campaignName,
@@ -82,6 +85,10 @@ export function SavePresetDialog({
         addressLine(row.address).toLowerCase().includes(needle),
     );
   }, [rows, filter]);
+
+  // A campaign can hold any number of recipients; the list shows the first
+  // matches and the filter finds the rest.
+  const listedRows = visibleRows.slice(0, MAX_LISTED_ROWS);
 
   const keptCount = rows.length - removed.size;
 
@@ -202,7 +209,7 @@ export function SavePresetDialog({
                 </p>
               ) : (
                 <ul className="divide-y">
-                  {visibleRows.map((row) => {
+                  {listedRows.map((row) => {
                     const isRemoved = removed.has(row.index);
                     return (
                       <li
@@ -246,6 +253,16 @@ export function SavePresetDialog({
                       </li>
                     );
                   })}
+                  {visibleRows.length > listedRows.length ? (
+                    <li
+                      className="px-3 py-2 text-xs text-muted-foreground"
+                      data-ocid="campaigns.save_preset.more.text"
+                    >
+                      Showing {formatNumber(listedRows.length)} of{" "}
+                      {formatNumber(visibleRows.length)}. Filter by name or
+                      address to find a recipient.
+                    </li>
+                  ) : null}
                 </ul>
               )}
             </div>

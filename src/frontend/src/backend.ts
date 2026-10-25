@@ -313,6 +313,14 @@ export interface PricingRow {
     retailPriceCents: bigint;
     widthInches: number;
 }
+export interface RecipientPage {
+    addresses: Array<VerifiedAddress>;
+    total: bigint;
+}
+export interface CsvPage {
+    csv: string;
+    total: bigint;
+}
 export interface RecipientStageResult {
     error?: string;
     ok: boolean;
@@ -634,6 +642,7 @@ export interface backendInterface {
     _internet_identity_sign_in_finish(): Promise<{ err: {  } } | { ok: null }>;
     _internet_identity_sign_in_start(): Promise<Uint8Array>;
     addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
+    addPresetAddresses(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
     askStampy(arg0: Array<StampyTurn>): Promise<StampyReply>;
     assignAdmin(arg0: Principal): Promise<ApiResult>;
@@ -647,18 +656,21 @@ export interface backendInterface {
     ensureAccount(arg0: string | null, arg1: string | null): Promise<AccountResult>;
     verifyAddresses(arg0: Array<AddressInput>): Promise<VerificationBatchResult>;
     exportCampaignRecipients(arg0: string): Promise<string | null>;
+    exportCampaignRecipientsPage(arg0: string, arg1: bigint, arg2: bigint): Promise<CsvPage | null>;
     generateAiCopy(arg0: AiCopyInput): Promise<AiCopyResult>;
     generateAiImage(arg0: string, arg1: AiImageSize): Promise<AiImageResult>;
     getAdminKeys(): Promise<AdminKeysView>;
     getAiPricing(): Promise<AiPricing>;
     getCampaign(arg0: string): Promise<CampaignRecordShared | null>;
     getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>>;
+    getCampaignRecipientsPage(arg0: string, arg1: bigint, arg2: bigint): Promise<RecipientPage>;
     getCampaigns(): Promise<Array<CampaignSummary>>;
     getCanvasState(arg0: string): Promise<CanvasState | null>;
     getCreditLedger(): Promise<Array<CreditLedgerEntry>>;
     getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null>;
     getMyAccount(): Promise<UserAccountShared | null>;
     getPresetAddresses(arg0: string): Promise<Array<VerifiedAddress>>;
+    getPresetAddressesPage(arg0: string, arg1: bigint, arg2: bigint): Promise<RecipientPage>;
     getPricingLedger(): Promise<Array<PricingRow>>;
     getPublicConfig(): Promise<PublicConfig>;
     getQrScanStats(arg0: string): Promise<QrScanStats>;
@@ -798,6 +810,9 @@ export class Backend implements backendInterface {
     async addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult> {
         return this._call("addCampaignRecipients", [arg0, arg1, arg2]) as Promise<RecipientStageResult>;
     }
+    async addPresetAddresses(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult> {
+        return this._call("addPresetAddresses", [arg0, arg1, arg2]) as Promise<RecipientStageResult>;
+    }
     async applyReferralReward(arg0: string): Promise<ApiResult> {
         return this._call("applyReferralReward", [arg0]) as Promise<ApiResult>;
     }
@@ -837,6 +852,9 @@ export class Backend implements backendInterface {
     async exportCampaignRecipients(arg0: string): Promise<string | null> {
         return this._call("exportCampaignRecipients", [arg0]) as Promise<string | null>;
     }
+    async exportCampaignRecipientsPage(arg0: string, arg1: bigint, arg2: bigint): Promise<CsvPage | null> {
+        return this._call("exportCampaignRecipientsPage", [arg0, arg1, arg2]) as Promise<CsvPage | null>;
+    }
     async generateAiCopy(arg0: AiCopyInput): Promise<AiCopyResult> {
         return this._call("generateAiCopy", [arg0]) as Promise<AiCopyResult>;
     }
@@ -855,6 +873,9 @@ export class Backend implements backendInterface {
     async getCampaignRecipients(arg0: string): Promise<Array<VerifiedAddress>> {
         return this._call("getCampaignRecipients", [arg0]) as Promise<Array<VerifiedAddress>>;
     }
+    async getCampaignRecipientsPage(arg0: string, arg1: bigint, arg2: bigint): Promise<RecipientPage> {
+        return this._call("getCampaignRecipientsPage", [arg0, arg1, arg2]) as Promise<RecipientPage>;
+    }
     async getCampaigns(): Promise<Array<CampaignSummary>> {
         return this._call("getCampaigns", []) as Promise<Array<CampaignSummary>>;
     }
@@ -872,6 +893,9 @@ export class Backend implements backendInterface {
     }
     async getPresetAddresses(arg0: string): Promise<Array<VerifiedAddress>> {
         return this._call("getPresetAddresses", [arg0]) as Promise<Array<VerifiedAddress>>;
+    }
+    async getPresetAddressesPage(arg0: string, arg1: bigint, arg2: bigint): Promise<RecipientPage> {
+        return this._call("getPresetAddressesPage", [arg0, arg1, arg2]) as Promise<RecipientPage>;
     }
     async getPricingLedger(): Promise<Array<PricingRow>> {
         return this._call("getPricingLedger", []) as Promise<Array<PricingRow>>;

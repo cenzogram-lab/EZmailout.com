@@ -26,15 +26,19 @@ mixin (
   adminKeysState : Common.AdminState,
   transformFn : Http.TransformFn,
 ) {
+  /// Addresses one message carries: a verification batch (its list goes to
+  /// the print partner in one outcall), or a chunk of a saved audience (an
+  /// ingress message is at most 2 MB). A saved audience itself has no size
+  /// limit; a larger one is saved in chunks with `addPresetAddresses`.
   transient let maxAddresses : Nat = 5_000;
   // Presets cost nothing to save, so what one identity can keep is bounded
   // like its unpaid drafts are.
   transient let maxPresetsPerOwner : Nat = 20;
-  transient let maxPresetAddressesPerOwner : Nat = 25_000;
+  transient let maxPresetAddressesPerOwner : Nat = 1_000_000;
   // Identities are free to mint, so the per-owner bounds need canister-wide
   // partners or stable memory could still grow without limit.
   transient let maxPresetsGlobal : Nat = 50_000;
-  transient let maxPresetAddressesGlobal : Nat = 2_000_000;
+  transient let maxPresetAddressesGlobal : Nat = 5_000_000;
   /// Rolling per-account verification quota (transient: a fresh window after upgrades).
   transient let verifyWindowNs : Int = 3_600_000_000_000;
   // Sized so one account can verify a 250,000-address list within the hour
@@ -295,7 +299,7 @@ mixin (
 
   private func presetQuotaError(t : { presets : Nat; addresses : Nat; allPresets : Nat; allAddresses : Nat }, adding : Nat) : ?Text {
     if (t.addresses + adding > maxPresetAddressesPerOwner) {
-      ?"Saved audiences may hold at most 25,000 addresses in total. Delete a preset you no longer need first.";
+      ?"Saved audiences may hold at most 1,000,000 addresses in total. Delete a preset you no longer need first.";
     } else if (t.allAddresses + adding > maxPresetAddressesGlobal) {
       ?"Saved audiences can't take more addresses right now. You can still mail this list; contact support if you need to keep it.";
     } else null;
@@ -310,7 +314,7 @@ mixin (
   public shared ({ caller }) func savePreset(name : Text, addresses : [Common.VerifiedAddress], sourceCampaignId : ?Text) : async Types.PresetResult {
     if (caller.isAnonymous()) { return { ok = false; error = ?signInRequired; presetId = null } };
     if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address"; presetId = null } };
-    if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses"; presetId = null } };
+    if (addresses.size() > maxAddresses) { return { ok = false; error = ?"Send at most 5,000 addresses with savePreset and add the rest with addPresetAddresses"; presetId = null } };
     switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
     switch (sourceCampaignId) {
       case (?c) { if (c.size() > Inputs.maxIdChars) { return { ok = false; error = ?"The source campaign reference is too long"; presetId = null } } };
@@ -342,7 +346,7 @@ mixin (
       case null { { ok = false; error = ?"Preset not found" } };
       case (?meta) {
         if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address" } };
-        if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses" } };
+        if (addresses.size() > maxAddresses) { return { ok = false; error = ?"Send at most 5,000 addresses with updatePreset and add the rest with addPresetAddresses" } };
         switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e } }; case null {} };
         switch (presetQuotaError(presetTotals(owner, ?presetId), addresses.size())) { case (?e) { return { ok = false; error = ?e } }; case null {} };
         let clean = addresses.map(AddressLib.sanitizeVerified);
@@ -352,6 +356,38 @@ mixin (
         { ok = true; error = null };
       };
     };
+  };
+
+  /// Appends more addresses to one of the caller's presets, in order:
+  /// `offset` is where `addresses` start in the full list. A chunk already
+  /// stored (a retried call) is acknowledged without being stored twice, and
+  /// an empty chunk only reports how many are stored (`stored` and `total`
+  /// are both that count).
+  public shared ({ caller }) func addPresetAddresses(presetId : Text, offset : Nat, addresses : [Common.VerifiedAddress]) : async Types.RecipientStageResult {
+    let notFound = { ok = false; error = ?"Preset not found"; stored = 0; total = 0 };
+    if (caller.isAnonymous()) { return { notFound with error = ?signInRequired } };
+    let owner = caller.toText();
+    let k = key(owner, presetId);
+    let meta = switch (presetMeta.get(k)) { case (?m) m; case null { return notFound } };
+    let current = switch (savedAudiencePresets.get(k)) { case (?a) a; case null [] };
+    let stored = current.size();
+    let reply = func(ok : Bool, error : ?Text, now : Nat) : Types.RecipientStageResult { { ok; error; stored = now; total = now } };
+    if (addresses.size() == 0 or offset + addresses.size() <= stored) { return reply(true, null, stored) };
+    if (addresses.size() > maxAddresses) { return reply(false, ?"Send at most 5,000 addresses per call", stored) };
+    if (offset > stored) { return reply(false, ?("Addresses are added in order; " # stored.toText() # " are stored"), stored) };
+    let fresh = addresses.sliceToArray(Nat.sub(stored, offset), addresses.size()).map(AddressLib.sanitizeVerified);
+    switch (Inputs.firstLongRecipient(fresh)) {
+      case (?i) { return reply(false, ?("Address " # (stored + i + 1).toText() # " has a line longer than " # Inputs.maxAddressFieldChars.toText() # " characters"), stored) };
+      case null {};
+    };
+    switch (presetQuotaError(presetTotals(owner, ?presetId), stored + fresh.size())) {
+      case (?e) { return reply(false, ?e, stored) };
+      case null {};
+    };
+    let all = current.concat(fresh);
+    savedAudiencePresets.add(k, all);
+    presetMeta.add(k, { id = meta.id; ownerId = meta.ownerId; name = meta.name; sourceCampaignId = meta.sourceCampaignId; recipientCount = all.size(); createdAt = meta.createdAt; var updatedAt = Time.now() });
+    reply(true, null, all.size());
   };
 
   public shared ({ caller }) func deletePreset(presetId : Text) : async Common.ApiResult {
@@ -371,6 +407,13 @@ mixin (
       if (p.ownerId == owner) { out.add(presetShared(p)) };
     };
     out.toArray().sort<Types.AudiencePresetShared>(func(a, b) = Int.compare(b.updatedAt, a.updatedAt));
+  };
+
+  /// One page (at most 2,000) of a preset's addresses from `offset`, and
+  /// how many it holds: a saved audience of any size is read page by page.
+  public shared query ({ caller }) func getPresetAddressesPage(presetId : Text, offset : Nat, limit : Nat) : async Types.RecipientPage {
+    if (caller.isAnonymous()) { return { addresses = []; total = 0 } };
+    AddressLib.page(switch (savedAudiencePresets.get(key(caller.toText(), presetId))) { case (?a) a; case null [] }, offset, limit);
   };
 
   public shared query ({ caller }) func getPresetAddresses(presetId : Text) : async [Common.VerifiedAddress] {

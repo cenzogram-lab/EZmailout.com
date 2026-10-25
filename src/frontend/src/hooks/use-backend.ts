@@ -28,6 +28,7 @@ import type {
   PricingRow,
   PublicConfig,
   QrScanStats,
+  RecipientPage,
   RecipientStageResult,
   ReferralStats,
   StampyReply,
@@ -42,6 +43,7 @@ import type {
   VerificationBatchResult,
   VerifiedAddress,
 } from "@/backend";
+import { RECIPIENT_CHUNK_BYTES, recipientChunkEnd } from "@/lib/inputLimits";
 import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -105,11 +107,61 @@ export function useCampaign(id: string) {
   });
 }
 
+/** Addresses per page of a list read (`AddressLib.maxPageSize`). */
+const ADDRESS_PAGE = 2000;
+
+/**
+ * Reads a whole stored address list page by page: one reply is capped at a
+ * few MB, and campaigns and saved audiences have no size limit.
+ */
+async function readAllPages(
+  read: (offset: bigint, limit: bigint) => Promise<RecipientPage>,
+): Promise<VerifiedAddress[]> {
+  const out: VerifiedAddress[] = [];
+  for (;;) {
+    const page = await read(BigInt(out.length), BigInt(ADDRESS_PAGE));
+    for (const a of page.addresses) out.push(a);
+    if (page.addresses.length === 0 || out.length >= Number(page.total)) {
+      return out;
+    }
+  }
+}
+
+/**
+ * Sends `addresses` past the first `start` in chunks with `append`, which
+ * stores them in order and answers how many are stored. Returns the error
+ * that stopped it, or null once every address is stored.
+ */
+async function appendInChunks(
+  addresses: VerifiedAddress[],
+  start: number,
+  append: (
+    offset: bigint,
+    chunk: VerifiedAddress[],
+  ) => Promise<RecipientStageResult>,
+): Promise<string | null> {
+  let stored = start;
+  while (stored < addresses.length) {
+    const end = recipientChunkEnd(addresses, stored, RECIPIENT_CHUNK_BYTES);
+    const reply = await append(BigInt(stored), addresses.slice(stored, end));
+    if (!reply.ok || Number(reply.stored) <= stored) {
+      return reply.error ?? "The address list could not be saved.";
+    }
+    stored = Number(reply.stored);
+  }
+  return null;
+}
+
 export function useCampaignRecipients(id: string | null) {
   const { actor, ready } = useBackendActor();
   return useQuery<VerifiedAddress[]>({
     queryKey: ["campaignRecipients", id],
-    queryFn: async () => (actor && id ? actor.getCampaignRecipients(id) : []),
+    queryFn: async () =>
+      actor && id
+        ? readAllPages((offset, limit) =>
+            actor.getCampaignRecipientsPage(id, offset, limit),
+          )
+        : [],
     enabled: ready && !!id,
   });
 }
@@ -194,7 +246,21 @@ export function useExportCampaign() {
   return useMutation<string | null, Error, string>({
     mutationFn: async (campaignId) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.exportCampaignRecipients(campaignId);
+      // Page by page (the header row comes with the first), so a campaign of
+      // any size exports.
+      const parts: string[] = [];
+      let offset = 0;
+      for (;;) {
+        const page = await actor.exportCampaignRecipientsPage(
+          campaignId,
+          BigInt(offset),
+          BigInt(ADDRESS_PAGE),
+        );
+        if (!page) return parts.length ? parts.join("\n") : null;
+        if (page.csv) parts.push(page.csv);
+        offset += ADDRESS_PAGE;
+        if (offset >= Number(page.total)) return parts.join("\n");
+      }
     },
   });
 }
@@ -264,7 +330,11 @@ export function usePresetAddresses(presetId: string | null) {
   return useQuery<VerifiedAddress[]>({
     queryKey: ["presetAddresses", presetId],
     queryFn: async () =>
-      actor && presetId ? actor.getPresetAddresses(presetId) : [],
+      actor && presetId
+        ? readAllPages((offset, limit) =>
+            actor.getPresetAddressesPage(presetId, offset, limit),
+          )
+        : [],
     enabled: ready && !!presetId,
   });
 }
@@ -283,7 +353,25 @@ export function useSavePreset() {
   >({
     mutationFn: async ({ name, addresses, sourceCampaignId }) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.savePreset(name, addresses, sourceCampaignId);
+      // The first chunk creates the preset and the rest is appended, so a
+      // saved audience of any size fits the 2 MB message limit.
+      const first = recipientChunkEnd(addresses, 0, RECIPIENT_CHUNK_BYTES);
+      const created = await actor.savePreset(
+        name,
+        addresses.slice(0, first),
+        sourceCampaignId,
+      );
+      if (!created.ok || !created.presetId) return created;
+      const presetId = created.presetId;
+      const error = await appendInChunks(addresses, first, (offset, chunk) =>
+        actor.addPresetAddresses(presetId, offset, chunk),
+      );
+      if (error) {
+        // Never leave half a list behind as if it were the audience.
+        await actor.deletePreset(presetId).catch(() => {});
+        return { ok: false, error };
+      }
+      return created;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["presets"] });
@@ -301,7 +389,23 @@ export function useUpdatePreset() {
   >({
     mutationFn: async ({ presetId, name, addresses }) => {
       if (!actor) throw new Error(NO_BACKEND);
-      return actor.updatePreset(presetId, name, addresses);
+      // The first chunk replaces the list and the rest is appended.
+      const first = recipientChunkEnd(addresses, 0, RECIPIENT_CHUNK_BYTES);
+      const replaced = await actor.updatePreset(
+        presetId,
+        name,
+        addresses.slice(0, first),
+      );
+      if (!replaced.ok) return replaced;
+      const error = await appendInChunks(addresses, first, (offset, chunk) =>
+        actor.addPresetAddresses(presetId, offset, chunk),
+      );
+      return error
+        ? {
+            ok: false,
+            error: `${error} Only part of the list was saved; save again to finish it.`,
+          }
+        : replaced;
     },
     onSuccess: (_, { presetId }) => {
       queryClient.invalidateQueries({ queryKey: ["presets"] });
