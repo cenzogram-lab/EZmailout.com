@@ -1,7 +1,9 @@
+import { RETURN_ADDRESS_STORAGE_KEY } from "@/components/wizard/ReturnAddressForm";
 import { useEnsureAccount, useMyAccount } from "@/hooks/use-backend";
 import { useAccountStore } from "@/store/account";
 import { discardWizardDraft, useWizardStore } from "@/store/wizard";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 /**
@@ -19,6 +21,7 @@ export function useAccountSync() {
     isLoggingIn,
   } = useInternetIdentity();
   const principal = identity?.getPrincipal().toString() ?? null;
+  const queryClient = useQueryClient();
   const accountQuery = useMyAccount(isAuthenticated);
   const ensureAccount = useEnsureAccount();
   const setAccount = useAccountStore((s) => s.setAccount);
@@ -88,9 +91,20 @@ export function useAccountSync() {
     principal,
     login,
     logout: () => {
-      // The next person on this browser must not inherit this draft.
+      // The next person on this browser must not inherit this draft, the
+      // return address remembered for it, or anything cached for this
+      // account (its record, campaigns, presets, admin view): a cached
+      // account let the next sign-in skip creating its own.
       discardWizardDraft();
       useWizardStore.getState().reset();
+      try {
+        window.localStorage.removeItem(RETURN_ADDRESS_STORAGE_KEY);
+      } catch {
+        // Storage may be unavailable (private mode); nothing was kept then.
+      }
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey[0] !== "actor",
+      });
       clear();
     },
     refresh: accountQuery.refetch,

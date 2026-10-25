@@ -20,6 +20,7 @@ import {
   usePresetAddresses,
   useSavePreset,
   useUpdatePreset,
+  useVerifyAddresses,
 } from "@/hooks/use-backend";
 import { formatNumber } from "@/lib/format";
 import { MAX_ADDRESS_FIELD_CHARS } from "@/lib/inputLimits";
@@ -98,6 +99,7 @@ export function PresetEditor({
   const updatePreset = useUpdatePreset();
   const savePreset = useSavePreset();
   const deletePreset = useDeletePreset();
+  const verify = useVerifyAddresses();
 
   const [name, setName] = useState(preset.name);
   const [list, setList] = useState<VerifiedAddress[]>([]);
@@ -127,16 +129,48 @@ export function PresetEditor({
     }));
   }
 
-  function handleAdd() {
+  /**
+   * A typed address goes through the same verification as an uploaded list
+   * before it joins the audience: the preset is mailed as "verified", so an
+   * unchecked typo would be printed and posted.
+   */
+  async function handleAdd() {
     const error = validateForm(form);
     if (error) {
       setFormError(error);
       return;
     }
-    setList((prev) => [...prev, toAddress(form)]);
-    setForm(EMPTY_FORM);
+    const typed = toAddress(form);
     setFormError(null);
-    setDirty(true);
+    try {
+      const result = await verify.mutateAsync([
+        {
+          name: typed.name,
+          address_line1: typed.address_line1,
+          address_line2: typed.address_line2,
+          city: typed.city,
+          state: typed.state,
+          zip_code: typed.zip_code,
+        },
+      ]);
+      const checked = result.results[0];
+      if (!result.ok || !checked?.isValid || !checked.verified) {
+        setFormError(
+          checked?.errorMessage ??
+            result.error ??
+            "This address could not be verified. Check it and try again.",
+        );
+        return;
+      }
+      const verified = checked.verified;
+      setList((prev) => [...prev, verified]);
+      setForm(EMPTY_FORM);
+      setDirty(true);
+    } catch {
+      setFormError(
+        "Address verification is unavailable right now; try again in a few minutes.",
+      );
+    }
   }
 
   function handleDeleteRow(index: number) {
@@ -367,11 +401,17 @@ export function PresetEditor({
           <Button
             type="button"
             variant="outline"
-            onClick={handleAdd}
+            onClick={() => void handleAdd()}
+            disabled={verify.isPending}
             className="gap-2"
             data-ocid="audience.preset_editor.add.button"
           >
-            <Plus className="size-4" /> Add recipient
+            {verify.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}{" "}
+            {verify.isPending ? "Verifying…" : "Verify and add"}
           </Button>
         </CardContent>
       </Card>

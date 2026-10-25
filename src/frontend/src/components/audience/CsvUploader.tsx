@@ -92,8 +92,13 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
       setRows(parsed.rows);
       setParseErrors(parsed.errors);
       if (parsed.errors.length === 0) {
+        const dupes = parsed.duplicatesRemoved;
         toast.success(
-          `Parsed ${formatNumber(parsed.rows.length)} recipients from ${file.name}.`,
+          `Parsed ${formatNumber(parsed.rows.length)} recipients from ${file.name}.${
+            dupes > 0
+              ? ` ${formatNumber(dupes)} duplicate ${dupes === 1 ? "row was" : "rows were"} left out, so nobody gets two.`
+              : ""
+          }`,
         );
       }
     } catch (error) {

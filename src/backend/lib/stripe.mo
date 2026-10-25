@@ -28,7 +28,12 @@ module {
     Fulfilment.formEncode([
       ("amount", amountCents.toText()),
       ("currency", "usd"),
-      ("automatic_payment_methods[enabled]", "true"),
+      // Cards only (wallets that pay by card included): they succeed or fail
+      // while the customer is on the page (3-D Secure runs in a modal), so a
+      // payment is always confirmed by the checkout that took it. Methods
+      // that clear days later or leave the page would need a webhook to be
+      // credited, and there is none.
+      ("payment_method_types[]", "card"),
       ("description", description),
       ("metadata[purpose]", purpose),
       ("metadata[reference]", reference),

@@ -46,7 +46,7 @@ actor {
   include AdminApi(adminKeysState);
   include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments);
   include AudienceApi(savedAudiencePresets, presetMeta, state, adminKeysState, transform);
-  include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, trackingEvents, state, adminKeysState, transform);
+  include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, trackingEvents, documentUploads, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
   include ProductionApi(campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
   include SupportApi(supportTickets, supportEmailOutbox, adminKeysState, transform);

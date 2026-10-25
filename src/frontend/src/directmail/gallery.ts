@@ -244,6 +244,9 @@ export const MAIL_GALLERY: readonly MailGalleryEntry[] = (() => {
 const BY_ID = new Map(STUDIO_MAIL_TEMPLATES.map((t) => [t.id, t]));
 const canvases = new Map<string, Promise<CanvasState>>();
 
+/** Preview canvases kept (the most recently converted). */
+const CANVAS_LIMIT = 120;
+
 /** The template as a studio canvas (converted once, then cached). */
 export function mailCanvas(id: string): Promise<CanvasState> {
   let hit = canvases.get(id);
@@ -253,13 +256,20 @@ export function mailCanvas(id: string): Promise<CanvasState> {
     hit = studioDraft(t).then(canvasFromStudioDraft);
     hit.catch(() => canvases.delete(id));
     canvases.set(id, hit);
+    for (const key of canvases.keys()) {
+      if (canvases.size <= CANVAS_LIMIT) break;
+      if (key !== id) canvases.delete(key);
+    }
   }
   return hit;
 }
 
-/** A fresh canvas (new element ids) to put on the artboard. */
+/**
+ * A fresh canvas (new element ids) to put on the artboard. The customer is
+ * waiting on it, so it goes ahead of any thumbnails still converting.
+ */
 export async function mailCanvasForStudio(id: string): Promise<CanvasState> {
   const t = BY_ID.get(id);
   if (!t) throw new Error(`Unknown template ${id}`);
-  return canvasFromStudioDraft(await studioDraft(t));
+  return canvasFromStudioDraft(await studioDraft(t, true));
 }

@@ -1,5 +1,15 @@
 import { CatalogIcon } from "@/components/catalog/CatalogIcon";
 import { StampyStep1Catalog, StampyTip } from "@/components/stampy";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { sideHasContent } from "./usePrintDocument";
 
 const COLOR_OPTIONS = [
   { label: "Full Color", value: "full_color" },
@@ -257,7 +268,13 @@ export function Step1ProductCatalog() {
   const expanded = CATALOG.find((c) => c.id === expandedId) ?? null;
   const selectedRow = selectedLayout ? getPricingRow(selectedLayout) : null;
 
-  function chooseFormat(category: CatalogCategory, layoutVariant: string) {
+  /** A size change that would wipe a design waits for a yes. */
+  const [pendingFormat, setPendingFormat] = useState<{
+    category: CatalogCategory;
+    layoutVariant: string;
+  } | null>(null);
+
+  function applyFormat(category: CatalogCategory, layoutVariant: string) {
     const bw = supportsBlackAndWhite(category.productType);
     setProduct({
       productType: category.productType,
@@ -267,9 +284,27 @@ export function Step1ProductCatalog() {
     setLayout(layoutVariant);
   }
 
+  function chooseFormat(category: CatalogCategory, layoutVariant: string) {
+    // A design is laid out for its size: another size starts a blank one.
+    const { canvas } = useWizardStore.getState();
+    const designed =
+      sideHasContent(canvas.front) || sideHasContent(canvas.back);
+    if (selectedLayout && selectedLayout !== layoutVariant && designed) {
+      setPendingFormat({ category, layoutVariant });
+      return;
+    }
+    applyFormat(category, layoutVariant);
+  }
+
   function chooseColor(value: string) {
     setColorOption(value);
-    if (selectedProduct && selectedLayout) {
+    // Black & white applies only to the products printed that way; on a
+    // postcard it would show on the invoice and print in colour anyway.
+    if (
+      selectedProduct &&
+      selectedLayout &&
+      supportsBlackAndWhite(selectedProduct.productType)
+    ) {
       setProduct({ ...selectedProduct, colorOption: value });
     }
   }
@@ -455,6 +490,48 @@ export function Step1ProductCatalog() {
           <ArrowRight className="size-4" />
         </Button>
       </div>
+      <AlertDialog
+        open={pendingFormat !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingFormat(null);
+        }}
+      >
+        <AlertDialogContent data-ocid="catalog.change_format.dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Start a new design for this size?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Your design is laid out for{" "}
+              {selectedLayout
+                ? layoutLabel(selectedLayout)
+                : "the current size"}
+              . Switching to{" "}
+              {pendingFormat ? layoutLabel(pendingFormat.layoutVariant) : ""}{" "}
+              starts with a blank canvas, and both sides of the current design
+              are cleared.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-ocid="catalog.change_format.cancel">
+              Keep my design
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-ocid="catalog.change_format.confirm"
+              onClick={() => {
+                if (pendingFormat)
+                  applyFormat(
+                    pendingFormat.category,
+                    pendingFormat.layoutVariant,
+                  );
+                setPendingFormat(null);
+              }}
+            >
+              Switch size
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

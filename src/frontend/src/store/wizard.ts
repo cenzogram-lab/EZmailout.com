@@ -43,7 +43,11 @@ import type {
   WizardAudienceType,
 } from "@/types";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  type PersistStorage,
+  type StorageValue,
+  persist,
+} from "zustand/middleware";
 
 const DEFAULT_LAYOUT = "6x9";
 
@@ -104,7 +108,17 @@ interface WizardData {
   selectedElementId: string | null;
   qrDestinationUrl: string;
   returnAddress: ReturnAddress | null;
+  /** The campaign the last launch created (not persisted). */
   campaignId: string | null;
+  /**
+   * `launchOrderKey` of the order `campaignId` was created for. A launch
+   * reuses the campaign only while it is unpaid and the order still matches;
+   * anything else (another product, audience, return address…) is a new
+   * campaign, so a design can never be uploaded onto someone else's order.
+   */
+  campaignOrderKey: string | null;
+  /** True once `campaignId` is paid: no later launch may reuse it. */
+  campaignPaid: boolean;
   paymentIntentId: string | null;
 }
 
@@ -191,6 +205,10 @@ interface WizardActions {
   setQrDestinationUrl: (url: string) => void;
   setReturnAddress: (address: ReturnAddress | null) => void;
   setCampaignId: (id: string | null) => void;
+  /** Records the campaign a launch created and the order it was made for. */
+  setLaunchedCampaign: (id: string, orderKey: string) => void;
+  /** Marks the launched campaign paid, so no later launch reuses it. */
+  markCampaignPaid: () => void;
   setPaymentIntentId: (id: string | null) => void;
   reset: () => void;
 }
@@ -219,6 +237,8 @@ function initialData(): WizardData {
     qrDestinationUrl: "",
     returnAddress: null,
     campaignId: null,
+    campaignOrderKey: null,
+    campaignPaid: false,
     paymentIntentId: null,
   };
 }
@@ -325,6 +345,20 @@ function fittedHeight(block: TextBlockState): number {
   );
 }
 
+/**
+ * Bumped by every template choice and format change. A library template is
+ * converted asynchronously; `claimTemplateApply` lets it land only if nothing
+ * else was chosen meanwhile, so a slow conversion can never replace a design
+ * picked after it or one laid out for another format.
+ */
+let templateApplySeq = 0;
+
+/** Starts applying a template; the check says whether it may still land. */
+export function claimTemplateApply(): () => boolean {
+  const seq = ++templateApplySeq;
+  return () => seq === templateApplySeq;
+}
+
 /** IndexedDB key of the saved draft. */
 export const WIZARD_DRAFT_KEY = "ezmailout_wizard_draft";
 
@@ -334,30 +368,96 @@ export const WIZARD_DRAFT_KEY = "ezmailout_wizard_draft";
  */
 let draftSaving = true;
 
-const draftJson = createJSONStorage<Partial<WizardData>>(
-  () => ({
-    getItem: (name) => draftStorage.getItem(name),
-    setItem: (name, value) =>
-      draftSaving ? draftStorage.setItem(name, value) : undefined,
-    removeItem: (name) => draftStorage.removeItem(name),
-  }),
-  {
-    // Canvas z-indexes, PPI and font weights are bigints. `main.tsx` gives
-    // BigInt a `toJSON` that turns them into strings before a replacer sees
-    // the value, so read the original from the holder (`this[key]`).
-    replacer(this: Record<string, unknown>, key: string, value: unknown) {
-      const raw = this[key];
-      return typeof raw === "bigint" ? { __bigint: raw.toString() } : value;
-    },
-    reviver: (_key, value) =>
-      value !== null &&
-      typeof value === "object" &&
-      "__bigint" in value &&
-      typeof (value as { __bigint: unknown }).__bigint === "string"
-        ? BigInt((value as { __bigint: string }).__bigint)
-        : value,
+// Canvas z-indexes, PPI and font weights are bigints. `main.tsx` gives
+// BigInt a `toJSON` that turns them into strings before a replacer sees the
+// value, so read the original from the holder (`this[key]`).
+function draftReplacer(
+  this: Record<string, unknown>,
+  key: string,
+  value: unknown,
+): unknown {
+  const raw = this[key];
+  return typeof raw === "bigint" ? { __bigint: raw.toString() } : value;
+}
+
+function draftReviver(_key: string, value: unknown): unknown {
+  return value !== null &&
+    typeof value === "object" &&
+    "__bigint" in value &&
+    typeof (value as { __bigint: unknown }).__bigint === "string"
+    ? BigInt((value as { __bigint: string }).__bigint)
+    : value;
+}
+
+/**
+ * Every store update asks to save the draft, and a drag updates the store
+ * on every pointer move; serialising a design that holds multi-MB image data
+ * URLs that often made dragging stutter. Saves are coalesced: at most one
+ * write per `DRAFT_SAVE_MS`, always of the latest state, flushed when the
+ * page is hidden or closed.
+ */
+const DRAFT_SAVE_MS = 400;
+let pendingDraft: {
+  name: string;
+  value: StorageValue<Partial<WizardData>>;
+} | null = null;
+let draftTimer: ReturnType<typeof setTimeout> | null = null;
+
+function writeDraftNow(): void {
+  if (draftTimer) clearTimeout(draftTimer);
+  draftTimer = null;
+  const pending = pendingDraft;
+  pendingDraft = null;
+  if (!pending || !draftSaving) return;
+  void draftStorage.setItem(
+    pending.name,
+    JSON.stringify(pending.value, draftReplacer),
+  );
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", writeDraftNow);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") writeDraftNow();
+  });
+}
+
+const draftJson: PersistStorage<Partial<WizardData>> = {
+  getItem: async (name) => {
+    const raw = await draftStorage.getItem(name);
+    return raw
+      ? (JSON.parse(raw, draftReviver) as StorageValue<Partial<WizardData>>)
+      : null;
   },
-);
+  setItem: (name, value) => {
+    if (!draftSaving) return;
+    pendingDraft = { name, value };
+    draftTimer ??= setTimeout(writeDraftNow, DRAFT_SAVE_MS);
+  },
+  removeItem: (name) => {
+    pendingDraft = null;
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = null;
+    return draftStorage.removeItem(name);
+  },
+};
+
+/**
+ * Set when the first render stopped waiting for the saved draft. A draft
+ * read after that lands only while the customer has not started anything,
+ * so a slow read can never replace work done in the meantime.
+ */
+let restoreGaveUp = false;
+
+function untouched(s: WizardData): boolean {
+  return (
+    s.selectedLayout === null &&
+    s.campaignName === "" &&
+    s.verifiedAddresses.length === 0 &&
+    s.designTemplate === null &&
+    s.mailTemplate === null
+  );
+}
 
 export const useWizardStore = create<WizardStore>()(
   persist(
@@ -370,6 +470,8 @@ export const useWizardStore = create<WizardStore>()(
       setProduct: (selectedProduct) => set({ selectedProduct }),
       setLayout: (layoutVariant) =>
         set((s) => {
+          // A conversion still running for the old format must not land.
+          if (s.selectedLayout !== layoutVariant) templateApplySeq++;
           const row = getPricingRow(layoutVariant);
           return {
             selectedLayout: layoutVariant,
@@ -413,6 +515,8 @@ export const useWizardStore = create<WizardStore>()(
       setSourcePresetId: (sourcePresetId) => set({ sourcePresetId }),
       setDesignTemplate: (template, orientation) =>
         set((s) => {
+          // Picked after a library template that is still converting: it wins.
+          templateApplySeq++;
           if (!template) {
             return {
               designTemplate: null,
@@ -821,6 +925,12 @@ export const useWizardStore = create<WizardStore>()(
       setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
       setReturnAddress: (returnAddress) => set({ returnAddress }),
       setCampaignId: (campaignId) => set({ campaignId }),
+      setLaunchedCampaign: (campaignId, campaignOrderKey) => {
+        // A new order is in progress: its design is saved again.
+        draftSaving = true;
+        set({ campaignId, campaignOrderKey, campaignPaid: false });
+      },
+      markCampaignPaid: () => set({ campaignPaid: true }),
       setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
       reset: () => {
         draftSaving = true;
@@ -838,6 +948,10 @@ export const useWizardStore = create<WizardStore>()(
       name: WIZARD_DRAFT_KEY,
       version: 1,
       storage: draftJson,
+      merge: (persisted, current) =>
+        restoreGaveUp && !untouched(current)
+          ? current
+          : { ...current, ...(persisted as Partial<WizardData>) },
       partialize: (s): Partial<WizardData> => ({
         currentStep: s.currentStep,
         campaignName: s.campaignName,
@@ -868,7 +982,13 @@ export const useWizardStore = create<WizardStore>()(
 export function restoreWizardDraft(): Promise<void> {
   return Promise.race([
     Promise.resolve(useWizardStore.persist.rehydrate()).catch(() => {}),
-    new Promise<void>((r) => setTimeout(r, 1500)),
+    new Promise<void>((r) =>
+      setTimeout(() => {
+        // Rendering goes ahead without it; see `restoreGaveUp`.
+        restoreGaveUp = true;
+        r();
+      }, 1500),
+    ),
   ]).then(() => undefined);
 }
 
@@ -880,6 +1000,28 @@ export function restoreWizardDraft(): Promise<void> {
 export function discardWizardDraft(): void {
   draftSaving = false;
   void useWizardStore.persist.clearStorage();
+}
+
+/**
+ * Everything a launch sends to `createCampaign` except the design, which a
+ * re-upload may replace while the campaign is unpaid. Two launches with the
+ * same key are the same order.
+ */
+export function launchOrderKey(s: WizardData): string {
+  return JSON.stringify(
+    [
+      s.campaignName.trim(),
+      s.selectedProduct,
+      s.selectedSpec?.mailClass ?? null,
+      s.audienceType,
+      s.recipientCount,
+      s.verifiedAddresses,
+      s.qrDestinationUrl.trim(),
+      s.returnAddress,
+      s.sourcePresetId,
+    ],
+    (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+  );
 }
 
 /**

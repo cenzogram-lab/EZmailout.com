@@ -4,6 +4,8 @@ export interface CsvParseResult {
   rows: AddressInput[];
   errors: string[];
   headers: string[];
+  /** Rows dropped because the same recipient at the same address came earlier. */
+  duplicatesRemoved: number;
 }
 
 /** RFC-4180-style parser (quoted fields, escaped quotes, CRLF). */
@@ -48,22 +50,36 @@ export function parseCsvTable(raw: string): string[][] {
 }
 
 const HEADER_ALIASES: Record<string, string[]> = {
-  name: ["name", "full_name", "fullname", "recipient", "contact", "customer"],
-  first_name: ["first_name", "firstname", "first"],
-  last_name: ["last_name", "lastname", "last", "surname"],
+  name: [
+    "name",
+    "full_name",
+    "recipient",
+    "recipient_name",
+    "contact",
+    "customer",
+  ],
+  first_name: ["first_name", "first"],
+  last_name: ["last_name", "last", "surname"],
   address_line1: [
     "address_line1",
     "address1",
     "address",
     "street",
     "street_address",
+    "street1",
+    "street_address1",
+    "mailing_address",
     "addr1",
     "line1",
   ],
   address_line2: [
     "address_line2",
     "address2",
+    "street2",
+    "street_address2",
     "apt",
+    "apartment",
+    "apt_suite",
     "suite",
     "unit",
     "addr2",
@@ -71,14 +87,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
   ],
   city: ["city", "town"],
   state: ["state", "st", "province", "region"],
-  zip_code: [
-    "zip_code",
-    "zip",
-    "zipcode",
-    "postal_code",
-    "postalcode",
-    "postcode",
-  ],
+  zip_code: ["zip_code", "zip", "zip_postal_code", "postal_code", "postcode"],
 };
 
 function normalizeHeader(h: string): string {
@@ -89,13 +98,34 @@ function normalizeHeader(h: string): string {
     .replace(/^_|_$/g, "");
 }
 
+/**
+ * A header with its separators dropped, so "Address Line 1"
+ * (`address_line_1`), "AddressLine1" and "address_line1" all match.
+ */
+const squash = (h: string) => h.replace(/_/g, "");
+
 function findColumn(headers: string[], key: string): number {
   const aliases = HEADER_ALIASES[key] ?? [key];
+  const squashed = headers.map(squash);
   for (const alias of aliases) {
-    const idx = headers.indexOf(alias);
+    const idx = squashed.indexOf(squash(alias));
     if (idx >= 0) return idx;
   }
   return -1;
+}
+
+/** One recipient at one address, however the row was typed. */
+function recipientKey(a: AddressInput): string {
+  return [
+    a.name,
+    a.address_line1,
+    a.address_line2 ?? "",
+    a.city,
+    a.state,
+    a.zip_code,
+  ]
+    .map((v) => v.trim().toLowerCase().replace(/\s+/g, " "))
+    .join("|");
 }
 
 /** Parses a recipient CSV into address inputs with header auto-detection. */
@@ -106,6 +136,7 @@ export function parseAddressCsv(raw: string): CsvParseResult {
       rows: [],
       errors: ["The file needs a header row and at least one recipient."],
       headers: [],
+      duplicatesRemoved: 0,
     };
   }
   const headers = table[0].map(normalizeHeader);
@@ -126,8 +157,12 @@ export function parseAddressCsv(raw: string): CsvParseResult {
   if (col.city < 0) errors.push("Missing a city column.");
   if (col.state < 0) errors.push("Missing a state column.");
   if (col.zip < 0) errors.push("Missing a zip_code column.");
-  if (errors.length) return { rows: [], errors, headers };
+  if (errors.length) return { rows: [], errors, headers, duplicatesRemoved: 0 };
   const rows: AddressInput[] = [];
+  // The same person at the same address twice would be printed, posted and
+  // paid for twice.
+  const seen = new Set<string>();
+  let duplicatesRemoved = 0;
   for (let i = 1; i < table.length; i++) {
     const cells = table[i];
     const get = (idx: number) => (idx >= 0 ? (cells[idx] ?? "").trim() : "");
@@ -136,16 +171,23 @@ export function parseAddressCsv(raw: string): CsvParseResult {
         ? get(col.name)
         : `${get(col.first)} ${get(col.last)}`.trim();
     const line2 = get(col.line2);
-    rows.push({
+    const row: AddressInput = {
       name,
       address_line1: get(col.line1),
       address_line2: line2 ? line2 : undefined,
       city: get(col.city),
       state: get(col.state).toUpperCase(),
       zip_code: get(col.zip),
-    });
+    };
+    const key = recipientKey(row);
+    if (seen.has(key)) {
+      duplicatesRemoved++;
+      continue;
+    }
+    seen.add(key);
+    rows.push(row);
   }
-  return { rows, errors, headers };
+  return { rows, errors, headers, duplicatesRemoved };
 }
 
 function escapeCell(value: string): string {

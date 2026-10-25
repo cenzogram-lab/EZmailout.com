@@ -11,7 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { useAccountSync } from "@/hooks/use-account";
 import {
   useCreateCampaign,
+  useDeleteCampaignDraft,
   useDispatchPrintJob,
+  useSaveCanvasState,
   useUploadDocumentChunk,
 } from "@/hooks/use-backend";
 import { formatNumber, layoutLabel } from "@/lib/format";
@@ -28,7 +30,11 @@ import {
   getUnitPriceCents,
 } from "@/lib/pricing";
 import { normalizeRedirectUrl } from "@/lib/qr";
-import { discardWizardDraft, useWizardStore } from "@/store/wizard";
+import {
+  discardWizardDraft,
+  launchOrderKey,
+  useWizardStore,
+} from "@/store/wizard";
 import type { WizardAudienceType } from "@/types";
 import { Link } from "@tanstack/react-router";
 import {
@@ -138,11 +144,15 @@ export function Step4ReviewLaunch() {
   const returnAddress = useWizardStore((s) => s.returnAddress);
   const qrDestinationUrl = useWizardStore((s) => s.qrDestinationUrl);
   const campaignId = useWizardStore((s) => s.campaignId);
-  const setCampaignId = useWizardStore((s) => s.setCampaignId);
+  const campaignPaid = useWizardStore((s) => s.campaignPaid);
+  const setLaunchedCampaign = useWizardStore((s) => s.setLaunchedCampaign);
+  const markCampaignPaid = useWizardStore((s) => s.markCampaignPaid);
   const setStep = useWizardStore((s) => s.setStep);
   const reset = useWizardStore((s) => s.reset);
 
   const createCampaign = useCreateCampaign();
+  const saveCanvas = useSaveCanvasState();
+  const deleteDraft = useDeleteCampaignDraft();
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchPrintJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
@@ -162,6 +172,7 @@ export function Step4ReviewLaunch() {
   const [dispatchResult, setDispatchResult] = useState<DispatchResult | null>(
     null,
   );
+  const [paidTestMode, setPaidTestMode] = useState(false);
   const running = useRef(false);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
@@ -217,9 +228,30 @@ export function Step4ReviewLaunch() {
       setMachine({ stage: from, failedStage: null, error: null });
       try {
         const state = useWizardStore.getState();
-        let id = state.campaignId;
+        const orderKey = launchOrderKey(state);
+        // A retry or a second attempt reuses the campaign only while it is
+        // unpaid and is still this order; the new design replaces its file.
+        let id =
+          state.campaignId &&
+          !state.campaignPaid &&
+          state.campaignOrderKey === orderKey
+            ? state.campaignId
+            : null;
+        if (id) {
+          // Keep the stored preview in step with the file about to replace it.
+          void saveCanvas
+            .mutateAsync({
+              campaignId: id,
+              canvas: canvasForStorage(state.canvas),
+            })
+            .catch(() => {});
+        } else if (state.campaignId && !state.campaignPaid) {
+          // The order changed: its old draft goes (refused while a checkout
+          // opened for it could still complete; it then expires on its own).
+          void deleteDraft.mutateAsync(state.campaignId).catch(() => {});
+        }
 
-        // 1. Create the campaign (skipped on retry once an id exists).
+        // 1. Create the campaign.
         if (!id) {
           if (!state.selectedProduct) {
             throw new StageError("creating", "No product selected.");
@@ -258,7 +290,7 @@ export function Step4ReviewLaunch() {
             );
           }
           id = created.campaignId;
-          setCampaignId(id);
+          setLaunchedCampaign(id, orderKey);
         }
 
         // 2. Render the print-ready PDF.
@@ -320,7 +352,15 @@ export function Step4ReviewLaunch() {
         }
       }
     },
-    [buildPdf, createCampaign, uploadChunk, setCampaignId, fail],
+    [
+      buildPdf,
+      createCampaign,
+      uploadChunk,
+      saveCanvas,
+      deleteDraft,
+      setLaunchedCampaign,
+      fail,
+    ],
   );
 
   /** Runs the print dispatch after payment succeeded. */
@@ -378,11 +418,19 @@ export function Step4ReviewLaunch() {
               <PartyPopper className="size-8" />
             </div>
             <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-              Campaign paid and on its way
+              {paidTestMode
+                ? "Test order placed"
+                : "Campaign paid and on its way"}
             </h2>
-            <p className="max-w-md text-sm text-muted-foreground">
+            <p
+              className="max-w-md text-sm text-muted-foreground"
+              data-ocid="review.success.summary"
+            >
               {campaignName || "Your campaign"} — {formatNumber(recipientCount)}{" "}
-              pieces, {formatCents(totalCents)} charged.
+              pieces,{" "}
+              {paidTestMode
+                ? `${formatCents(totalCents)} in test mode: nothing was charged, and the job goes only to the print service's test system, so nothing is mailed.`
+                : `${formatCents(totalCents)} charged.`}
             </p>
             <Badge variant="outline" className="font-mono">
               {paidId}
@@ -633,7 +681,7 @@ export function Step4ReviewLaunch() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Member wholesale rate. Your{" "}
+                Member wholesale rate. The{" "}
                 {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
                 membership is billed separately and is not part of this invoice.
               </p>
@@ -658,6 +706,7 @@ export function Step4ReviewLaunch() {
                       STAGE_ORDER.indexOf(machine.failedStage) > idx) ||
                     (machine.stage === "idle" &&
                       campaignId &&
+                      !campaignPaid &&
                       s === "creating");
                   const isFailed = machine.failedStage === s;
                   return (
@@ -722,8 +771,11 @@ export function Step4ReviewLaunch() {
                   title="Pay for your campaign"
                   description={`${formatNumber(recipientCount)} × ${productLabel ?? "pieces"}`}
                   submitLabel="Pay"
-                  onSuccess={() => {
-                    // Paid: the draft must not come back and be paid again.
+                  onSuccess={(_result, testMode) => {
+                    // Paid: the draft must not come back and be paid again,
+                    // and no later launch may upload onto this campaign.
+                    setPaidTestMode(testMode);
+                    markCampaignPaid();
                     discardWizardDraft();
                     void runDispatch();
                   }}

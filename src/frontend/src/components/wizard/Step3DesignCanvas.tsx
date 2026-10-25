@@ -1,7 +1,7 @@
 import { AiCopywriterDrawer } from "@/components/canvas/AiCopywriterDrawer";
 import { AiStudioPanel } from "@/components/canvas/AiStudioPanel";
 import { BrandPanel } from "@/components/canvas/BrandPanel";
-import { CanvasEditor, sortedElements } from "@/components/canvas/CanvasEditor";
+import { CanvasEditor } from "@/components/canvas/CanvasEditor";
 import { CanvasPreview3D } from "@/components/canvas/CanvasPreview3D";
 import { CanvasToolbar } from "@/components/canvas/CanvasToolbar";
 import { ElementInspector } from "@/components/canvas/ElementInspector";
@@ -30,6 +30,7 @@ import {
   PanelLeftClose,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { outOfBoundsIds } from "./PreflightChecklist";
 
 function useResolutionWarning(url: string | undefined, dims: LayoutDims) {
   const [warning, setWarning] = useState<string | null>(null);
@@ -78,24 +79,13 @@ export function Step3DesignCanvas() {
   const side = activeSide === "front" ? canvas.front : canvas.back;
   const resolutionWarning = useResolutionWarning(side.backgroundImageUrl, dims);
 
+  // The same rule as Step 4's preflight (ink, not padded boxes; template
+  // art that bleeds on purpose is exempt), so the two never disagree.
   const outsideSafe = useMemo(() => {
     const safe = safeRect(dims);
-    const offenders: string[] = [];
-    for (const key of ["front", "back"] as const) {
-      for (const el of sortedElements(canvas[key])) {
-        const w = el.kind === "qr" ? el.data.size : el.data.width;
-        const h = el.kind === "qr" ? el.data.size : el.data.height;
-        if (
-          el.data.x < safe.x ||
-          el.data.y < safe.y ||
-          el.data.x + w > safe.x + safe.w ||
-          el.data.y + h > safe.y + safe.h
-        ) {
-          offenders.push(`${key}: ${el.kind}`);
-        }
-      }
-    }
-    return offenders;
+    return (["front", "back"] as const).flatMap((key) =>
+      outOfBoundsIds(canvas[key], safe).map((id) => `${key}: ${id}`),
+    );
   }, [canvas, dims]);
 
   const panel = (() => {

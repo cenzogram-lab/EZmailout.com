@@ -31,6 +31,10 @@ mixin (
   // like its unpaid drafts are.
   transient let maxPresetsPerOwner : Nat = 20;
   transient let maxPresetAddressesPerOwner : Nat = 25_000;
+  // Identities are free to mint, so the per-owner bounds need canister-wide
+  // partners or stable memory could still grow without limit.
+  transient let maxPresetsGlobal : Nat = 50_000;
+  transient let maxPresetAddressesGlobal : Nat = 2_000_000;
   /// Rolling per-account verification quota (transient: a fresh window after upgrades).
   transient let verifyWindowNs : Int = 3_600_000_000_000;
   transient let verifyAddressesPerWindow : Nat = 25_000;
@@ -70,6 +74,14 @@ mixin (
   /// Charges `count` addresses against the caller's hourly quota; false when exceeded.
   private func chargeVerifyQuota(userId : Text, count : Nat) : Bool {
     let now = Time.now();
+    // Keyed by caller, and identities are free: drop finished windows once
+    // the map grows, like every other rate map.
+    if (verifyUsage.size() > Limits.sweepAbove) {
+      for ((k, u) in verifyUsage.entries().toArray().vals()) {
+        if (now - u.windowStart > verifyWindowNs) { verifyUsage.remove(k) };
+      };
+    };
+    if (verifyCalls.size() > Limits.sweepAbove) { Limits.sweep(verifyCalls, now, verifyWindowNs) };
     switch (verifyUsage.get(userId)) {
       case (?usage) {
         if (now - usage.windowStart > verifyWindowNs) {
@@ -183,7 +195,13 @@ mixin (
     let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
     let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
     if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) {
-      let msg = if (resp.status == 0) Fulfilment.scrub(resp.body) else "The address list was rejected: " # Fulfilment.parseDescription(resp.body);
+      // The detail (a network error, the partner's own wording) is for the
+      // admin; customers get plain advice.
+      let msg = if (resp.status == 0) {
+        AdminLib.providerError(adminKeysState, caller, Fulfilment.scrub(resp.body), "Address verification is unavailable right now; try again in a few minutes");
+      } else {
+        AdminLib.providerError(adminKeysState, caller, "The address list was rejected: " # Fulfilment.parseDescription(resp.body), "The address list was rejected. Check the addresses for typos and try again.");
+      };
       markAll(msg);
       return batch(false, ?msg, results.toArray(), null);
     };
@@ -204,6 +222,13 @@ mixin (
       return batch(false, ?msg, results.toArray(), ?listId);
     };
     let objects = addressDetailRecords(detail.body);
+    // Per-address detail that does not line up one-to-one with the batch
+    // cannot say which address is which: nothing counts as checked.
+    if (objects.size() > 0 and objects.size() != candidates.size()) {
+      let msg = "Address verification returned an incomplete result; try again in a few minutes";
+      markAll(msg);
+      return batch(false, ?msg, results.toArray(), ?listId);
+    };
     var k = 0;
     for (idx in candidateIdx.values()) {
       let a = sanitized[idx];
@@ -218,6 +243,7 @@ mixin (
           };
         };
       } else {
+        // No per-address detail: the list was accepted as a whole.
         results[idx] := { input = a; verified = ?AddressLib.toVerified(a, null); isValid = true; errorMessage = null };
       };
       k += 1;
@@ -244,22 +270,32 @@ mixin (
     };
   };
 
-  /// The owner's presets other than `except`: how many, and how many addresses they hold.
-  private func ownerPresets(owner : Text, except : ?Text) : (Nat, Nat) {
+  /// Presets other than `except`: the owner's count and addresses, and the
+  /// canister's count and addresses.
+  private func presetTotals(owner : Text, except : ?Text) : { presets : Nat; addresses : Nat; allPresets : Nat; allAddresses : Nat } {
     var presets = 0;
     var addresses = 0;
+    var allPresets = 0;
+    var allAddresses = 0;
     for ((_, p) in presetMeta.entries()) {
-      if (p.ownerId == owner and ?p.id != except) {
-        presets += 1;
-        addresses += p.recipientCount;
+      let same = p.ownerId == owner and ?p.id == except;
+      if (not same) {
+        allPresets += 1;
+        allAddresses += p.recipientCount;
+        if (p.ownerId == owner) {
+          presets += 1;
+          addresses += p.recipientCount;
+        };
       };
     };
-    (presets, addresses);
+    { presets; addresses; allPresets; allAddresses };
   };
 
-  private func presetQuotaError(heldAddresses : Nat, adding : Nat) : ?Text {
-    if (heldAddresses + adding > maxPresetAddressesPerOwner) {
+  private func presetQuotaError(t : { presets : Nat; addresses : Nat; allPresets : Nat; allAddresses : Nat }, adding : Nat) : ?Text {
+    if (t.addresses + adding > maxPresetAddressesPerOwner) {
       ?"Saved audiences may hold at most 25,000 addresses in total. Delete a preset you no longer need first.";
+    } else if (t.allAddresses + adding > maxPresetAddressesGlobal) {
+      ?"Saved audiences can't take more addresses right now. You can still mail this list; contact support if you need to keep it.";
     } else null;
   };
 
@@ -279,11 +315,14 @@ mixin (
       case null {};
     };
     let owner = caller.toText();
-    let (held, heldAddresses) = ownerPresets(owner, null);
-    if (held >= maxPresetsPerOwner) {
+    let totals = presetTotals(owner, null);
+    if (totals.presets >= maxPresetsPerOwner) {
       return { ok = false; error = ?"You can keep up to 20 saved audiences. Delete one you no longer need first."; presetId = null };
     };
-    switch (presetQuotaError(heldAddresses, addresses.size())) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
+    if (totals.allPresets >= maxPresetsGlobal) {
+      return { ok = false; error = ?"Saved audiences can't take new lists right now. You can still mail this list; contact support if you need to keep it."; presetId = null };
+    };
+    switch (presetQuotaError(totals, addresses.size())) { case (?e) { return { ok = false; error = ?e; presetId = null } }; case null {} };
     let id = "pre_" # state.nextPresetId.toText();
     state.nextPresetId += 1;
     let now = Time.now();
@@ -303,8 +342,7 @@ mixin (
         if (addresses.size() == 0) { return { ok = false; error = ?"A preset needs at least one address" } };
         if (addresses.size() > maxAddresses) { return { ok = false; error = ?"A preset may hold at most 5,000 addresses" } };
         switch (presetInputError(name, addresses)) { case (?e) { return { ok = false; error = ?e } }; case null {} };
-        let (_, heldAddresses) = ownerPresets(owner, ?presetId);
-        switch (presetQuotaError(heldAddresses, addresses.size())) { case (?e) { return { ok = false; error = ?e } }; case null {} };
+        switch (presetQuotaError(presetTotals(owner, ?presetId), addresses.size())) { case (?e) { return { ok = false; error = ?e } }; case null {} };
         let clean = addresses.map(AddressLib.sanitizeVerified);
         savedAudiencePresets.add(key(owner, presetId), clean);
         let updated : Types.AudiencePreset = { id = meta.id; ownerId = meta.ownerId; name = cleanName(name); sourceCampaignId = meta.sourceCampaignId; recipientCount = clean.size(); createdAt = meta.createdAt; var updatedAt = Time.now() };

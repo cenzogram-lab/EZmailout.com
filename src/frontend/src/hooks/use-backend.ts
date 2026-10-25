@@ -41,13 +41,20 @@ import type {
   VerificationBatchResult,
   VerifiedAddress,
 } from "@/backend";
-import { useActor } from "@caffeineai/core-infrastructure";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useBackendActor() {
   const { actor, isFetching } = useActor(createActor);
-  return { actor, isFetching, ready: !!actor && !isFetching };
+  const { identity } = useInternetIdentity();
+  /**
+   * Who the actor calls as. Per-caller answers are cached under it, so one
+   * person's account or admin view is never served to the next one to sign
+   * in, nor an answer fetched before sign-in to the signed-in caller.
+   */
+  const caller = identity?.getPrincipal().toString() ?? "anonymous";
+  return { actor, isFetching, ready: !!actor && !isFetching, caller };
 }
 
 const NO_BACKEND = "Backend not available";
@@ -298,9 +305,9 @@ export function useDeletePreset() {
 // ─── Accounts, credits, referrals ───────────────────────────────────────────
 
 export function useMyAccount(enabled = true) {
-  const { actor, ready } = useBackendActor();
+  const { actor, ready, caller } = useBackendActor();
   return useQuery<UserAccountShared | null>({
-    queryKey: ["myAccount"],
+    queryKey: ["myAccount", caller],
     queryFn: async () => (actor ? actor.getMyAccount() : null),
     enabled: ready && enabled,
     refetchInterval: 60_000,
@@ -575,9 +582,9 @@ export function useIsAdmin(principal: string | null): boolean {
 }
 
 export function useAdminKeys() {
-  const { actor, ready } = useBackendActor();
+  const { actor, ready, caller } = useBackendActor();
   return useQuery<AdminKeysView | null>({
-    queryKey: ["adminKeys"],
+    queryKey: ["adminKeys", caller],
     queryFn: async () => (actor ? actor.getAdminKeys() : null),
     enabled: ready,
   });

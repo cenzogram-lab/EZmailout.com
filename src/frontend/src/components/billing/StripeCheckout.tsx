@@ -34,7 +34,8 @@ export interface StripeCheckoutProps {
   title?: string;
   description?: string;
   submitLabel?: string;
-  onSuccess: (result: ConfirmPaymentResult) => void;
+  /** `testMode` is true when the canister settled it as a test-mode order. */
+  onSuccess: (result: ConfirmPaymentResult, testMode: boolean) => void;
   onCancel?: () => void;
 }
 
@@ -86,6 +87,8 @@ function PaymentForm({
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       redirect: "if_required",
+      // Intents are card-only, so nothing leaves the page; Stripe still
+      // requires a return address.
       confirmParams: { return_url: `${window.location.origin}/dashboard` },
     });
     if (stripeError) {
@@ -178,7 +181,7 @@ export function StripeCheckout({
   const started = useRef(false);
 
   const finish = useCallback(
-    async (paymentIntentId: string) => {
+    async (paymentIntentId: string, testMode = false) => {
       setPhase({ kind: "confirming", paymentIntentId });
       try {
         const result = await confirmPayment.mutateAsync(paymentIntentId);
@@ -193,7 +196,7 @@ export function StripeCheckout({
         if (result.creditBalance !== undefined)
           setCreditBalance(result.creditBalance);
         setPhase({ kind: "done", result });
-        onSuccess(result);
+        onSuccess(result, testMode);
       } catch (e) {
         setPhase({
           kind: "error",
@@ -231,7 +234,7 @@ export function StripeCheckout({
           referralRewardApplied: false,
         };
         setPhase({ kind: "done", result });
-        onSuccess(result);
+        onSuccess(result, false);
         return;
       }
       if (!intent.paymentIntentId) {
@@ -242,7 +245,7 @@ export function StripeCheckout({
         return;
       }
       if (intent.sandbox || !intent.clientSecret) {
-        await finish(intent.paymentIntentId);
+        await finish(intent.paymentIntentId, intent.sandbox === true);
         return;
       }
       if (!intent.publishableKey) {
@@ -348,6 +351,17 @@ export function StripeCheckout({
               <AlertTitle>Checkout problem</AlertTitle>
               <AlertDescription>{phase.message}</AlertDescription>
             </Alert>
+            {phase.paymentIntentId && (
+              // The card step ran: the charge may already be on its way, so
+              // there is no way out that leads to paying a second time.
+              <p
+                className="text-xs text-muted-foreground"
+                data-ocid="checkout.recheck.note"
+              >
+                If your card was charged, don't pay again: re-check here, or
+                open the order under Campaigns once the payment clears.
+              </p>
+            )}
             <div className="flex gap-2">
               {phase.paymentIntentId ? (
                 <Button
@@ -366,7 +380,7 @@ export function StripeCheckout({
                   Try again
                 </Button>
               )}
-              {onCancel && (
+              {onCancel && !phase.paymentIntentId && (
                 <Button variant="ghost" onClick={onCancel}>
                   Cancel
                 </Button>

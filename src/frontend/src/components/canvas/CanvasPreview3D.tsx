@@ -63,7 +63,7 @@ function Face({
           return (
             <div
               key={el.id}
-              className="absolute overflow-hidden"
+              className="absolute overflow-visible"
               style={{
                 left: el.data.x,
                 top: el.data.y,

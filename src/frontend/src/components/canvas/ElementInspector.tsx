@@ -39,9 +39,64 @@ import {
   MousePointerSquareDashed,
   Trash2,
 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 const WEIGHTS = ["300", "400", "500", "600", "700", "800", "900"];
+
+/**
+ * A number box that lets the customer finish typing: what they type is kept
+ * as typed and applied as soon as it is in range, and clamped only when they
+ * leave the box or press Enter. (Clamping every keystroke turned "36" into
+ * "86": the "3" became the minimum 8 before the "6" arrived.)
+ */
+function NumberInput({
+  value,
+  onChange,
+  min,
+  max = Number.POSITIVE_INFINITY,
+  className,
+  ocid,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max?: number;
+  className?: string;
+  ocid: string;
+}) {
+  const shown = String(Math.round(value));
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    const n = Number(draft);
+    if (draft.trim() !== "" && Number.isFinite(n)) {
+      const clamped = Math.min(max, Math.max(min, n));
+      if (clamped !== value) onChange(clamped);
+    }
+    setDraft(null);
+  };
+  return (
+    <Input
+      type="number"
+      min={min}
+      max={Number.isFinite(max) ? max : undefined}
+      value={draft ?? shown}
+      onChange={(e) => {
+        const text = e.target.value;
+        setDraft(text);
+        const n = Number(text);
+        if (text.trim() !== "" && Number.isFinite(n) && n >= min && n <= max)
+          onChange(n);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+      }}
+      className={className}
+      data-ocid={ocid}
+    />
+  );
+}
 
 function NumberField({
   label,
@@ -61,13 +116,12 @@ function NumberField({
       <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
         {label}
       </Label>
-      <Input
-        type="number"
+      <NumberInput
+        value={value}
+        onChange={onChange}
         min={min}
-        value={Math.round(value)}
-        onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))}
         className="h-8"
-        data-ocid={ocid}
+        ocid={ocid}
       />
     </div>
   );
@@ -167,21 +221,13 @@ export function ElementInspector() {
             <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
               Size
             </Label>
-            <Input
-              type="number"
+            <NumberInput
               min={8}
               max={160}
-              value={Math.round(block.fontSize)}
-              onChange={(e) =>
-                patch({
-                  fontSize: Math.min(
-                    160,
-                    Math.max(8, Number(e.target.value) || 8),
-                  ),
-                })
-              }
+              value={block.fontSize}
+              onChange={(fontSize) => patch({ fontSize })}
               className="h-7 w-20"
-              data-ocid="canvas.inspector.size_input"
+              ocid="canvas.inspector.size_input"
             />
           </div>
           <Slider
@@ -568,18 +614,8 @@ export function ElementInspector() {
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Caption (optional)
-        </Label>
-        <Input
-          value={qr.caption ?? ""}
-          onChange={(e) => patchQr({ caption: e.target.value || undefined })}
-          placeholder="Scan to book"
-          className="h-8"
-          data-ocid="canvas.inspector.qr_caption"
-        />
-      </div>
+      {/* A caption ("Scan to book") is a text layer placed under the code:
+          the code layer itself draws only the code. */}
       <div className="grid grid-cols-2 gap-2">
         <NumberField
           label="X"

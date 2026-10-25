@@ -289,6 +289,25 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
+/** Controls whose own keys (arrows, Backspace, Escape) must not reach the canvas. */
+const OWN_KEYS =
+  'button, a[href], [role="slider"], [role="button"], [role="menuitem"], [role="option"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="listbox"], [role="dialog"], [data-radix-popper-content-wrapper]';
+
+/**
+ * Whether a key press belongs to something other than the canvas: a text
+ * field, or a control outside the artboard (an inspector slider, a colour
+ * field, a layer row, an open popover). Arrow keys there used to nudge the
+ * selection too, and Backspace on a focused button deleted it.
+ */
+function isForeignKeyTarget(target: EventTarget | null): boolean {
+  if (isTypingTarget(target)) return true;
+  if (!(target instanceof HTMLElement)) return false;
+  const control = target.closest(OWN_KEYS);
+  return (
+    control !== null && !control.closest('[data-ocid="canvas.editor.sheet"]')
+  );
+}
+
 function elementBox(el: CanvasElement): ElementBox {
   if (el.kind === "qr") {
     return {
@@ -470,7 +489,12 @@ export function CanvasEditor({
   // Keyboard: delete / escape / nudge for the selected element.
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (editingId || isTypingTarget(event.target)) return;
+      if (
+        editingId ||
+        event.defaultPrevented ||
+        isForeignKeyTarget(event.target)
+      )
+        return;
       const store = useWizardStore.getState();
       const id = store.selectedElementId;
       if (!id) return;

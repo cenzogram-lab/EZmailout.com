@@ -157,7 +157,15 @@ export function AiStudioPanel() {
       setTopUpOpen(true);
       return;
     }
-    const result = await generate.mutateAsync({ prompt: clean, size });
+    let result: Awaited<ReturnType<typeof generate.mutateAsync>>;
+    try {
+      result = await generate.mutateAsync({ prompt: clean, size });
+    } catch {
+      // Not answered at all (offline, canister unreachable): nothing was
+      // charged, since the canister debits only inside the call.
+      toast.error("The AI studio couldn't be reached. Try again in a moment.");
+      return;
+    }
     if (result.creditBalance !== undefined)
       setCreditBalance(result.creditBalance);
     if (!result.ok || !result.imageUrl) {

@@ -101,6 +101,11 @@ mixin (
     if (record.printDocumentId != null or record.productionStatus == #Submitted) {
       return { ok = false; error = ?"This campaign's print file is already in production and can no longer be replaced" };
     };
+    // Checkout needs the file staged, so a paid campaign always has the one
+    // it was paid for; a later upload could only swap in another design.
+    if (record.paymentStatus == #Paid or record.paymentStatus == #Waived) {
+      return { ok = false; error = ?"This campaign is paid, so its print file can no longer be replaced" };
+    };
     if (not allowedMimeTypes.any(func(m : Text) : Bool { m == mimeType })) { return { ok = false; error = ?"The print file must be a PDF, PNG or JPEG" } };
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
     if (chunkIndex >= totalChunks) { return { ok = false; error = ?"chunkIndex out of range" } };
@@ -181,7 +186,7 @@ mixin (
     // Checked and taken in the same message as the checks above, before the
     // first await, so no interleaving call can get past it.
     if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
-    let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?"Print fulfilment credentials not configured (Admin → Print fulfilment)") } };
+    let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?AdminLib.providerError(adminKeysState, caller, "Print fulfilment credentials not configured (Admin → Print fulfilment)", "Printing isn't available right now. Your payment is recorded; send it to print again a little later.")) } };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
     let returnAddress = switch (record.returnAddress) { case (?r) r; case null { return dispatchResult(record, false, ?"A return address is required") } };

@@ -48,7 +48,7 @@ import {
   templatePriceCents,
 } from "@/lib/templates";
 import { cn } from "@/lib/utils";
-import { useWizardStore } from "@/store/wizard";
+import { claimTemplateApply, useWizardStore } from "@/store/wizard";
 import type { DesignTemplate } from "@/types";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -240,8 +240,11 @@ function useApplyMailTemplate() {
   const navigate = useNavigate();
   const store = useWizardStore();
   return async (lib: MailLibrary, entry: MailGalleryEntry) => {
+    const stillCurrent = claimTemplateApply();
     try {
       const canvas = await lib.mailCanvasForStudio(entry.id);
+      // Another template chosen while this one converted wins.
+      if (!stillCurrent()) return;
       const row = getPricingRow(entry.layoutVariant);
       if (row) {
         store.setProduct({

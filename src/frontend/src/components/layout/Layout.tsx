@@ -297,10 +297,39 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+/** The home page's title, from index.html. */
+const SITE_TITLE = "EZmailout — Direct Mail Campaigns Without Minimums";
+
+/**
+ * Each page names itself in the tab, history and screen readers. /admin
+ * keeps the site title: for anyone but the admin it is the 404, and a tab
+ * reading "Admin" would give away that the page exists.
+ */
+function pageTitle(pathname: string): string {
+  const page =
+    pathname === "/templates"
+      ? "Templates"
+      : pathname === "/wizard"
+        ? "Create a campaign"
+        : pathname === "/campaigns"
+          ? "Campaigns"
+          : pathname.startsWith("/campaigns/")
+            ? "Campaign"
+            : pathname === "/dashboard"
+              ? "Dashboard"
+              : pathname.startsWith("/ref/")
+                ? "You're invited"
+                : null;
+  return page ? `${page} · EZmailout` : SITE_TITLE;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isAuthenticated, principal } = useAccountSync();
+  useEffect(() => {
+    document.title = pageTitle(pathname);
+  }, [pathname]);
   // The phone menu closes on any navigation (the tab bar, Back, a link in the
   // page), not only through its own links, and on Escape.
   // biome-ignore lint/correctness/useExhaustiveDependencies: closes on path change by design

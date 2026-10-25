@@ -17,7 +17,7 @@ import {
 } from "@/lib/printSpec";
 import { layoutTemplateSide } from "@/lib/templateLayout";
 import { bandHeight, countLines } from "@/lib/textFit";
-import { fontSpecOf } from "@/lib/textStyle";
+import { fontSpecOf, textExtras } from "@/lib/textStyle";
 import type { CanvasSideKey, DesignTemplate } from "@/types";
 
 let idCounter = 0;
@@ -204,22 +204,31 @@ export function sideSignature(
         ? u
         : `${u.length}:${u.slice(0, 128)}…${u.slice(-128)}`;
   const items: { z: bigint; item: unknown[] }[] = [
-    ...side.textBlocks.map((t) => ({
-      z: t.zIndex,
-      item: [
-        "text",
-        t.text,
-        r(t.x),
-        r(t.y),
-        r(t.width),
-        r(t.height),
-        r(t.fontSize),
-        t.color,
-        t.fontFamily,
-        String(t.fontWeight),
-        t.align,
-      ],
-    })),
+    ...side.textBlocks.map((t) => {
+      // Tracking, leading, italic and turn are edits too: leaving them out
+      // let a turn rebuild the template over them.
+      const x = textExtras(t);
+      return {
+        z: t.zIndex,
+        item: [
+          "text",
+          t.text,
+          r(t.x),
+          r(t.y),
+          r(t.width),
+          r(t.height),
+          r(t.fontSize),
+          t.color,
+          t.fontFamily,
+          String(t.fontWeight),
+          t.align,
+          r(x.letterSpacing),
+          r(x.lineHeight),
+          x.italic,
+          r(x.rotation),
+        ],
+      };
+    }),
     ...side.logos.map((l) => ({
       z: l.zIndex,
       item: ["logo", url(l.url), r(l.x), r(l.y), r(l.width), r(l.height)],

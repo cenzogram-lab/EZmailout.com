@@ -25,6 +25,7 @@ mixin (
   referralRewards : List.List<Account.ReferralReward>,
   campaigns : Map.Map<Text, Types.CampaignRecord>,
   trackingEvents : List.List<Types.TrackingEvent>,
+  documentUploads : Map.Map<Text, Types.DocumentUpload>,
   state : Common.Counters,
   adminKeysState : Common.AdminState,
   transformFn : Http.TransformFn,
@@ -171,6 +172,12 @@ mixin (
             if (c.ownerId != a.id and not AdminLib.isAdmin(adminKeysState, caller)) { return intentFail("You do not own this campaign") };
             if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
             if (c.totalAmountChargedCents == 0) { return intentFail("Campaign total is zero") };
+            // Only an order that can go to print is paid for: its print file
+            // must be fully staged (uploads close once the campaign is paid).
+            let staged = switch (documentUploads.get(campaignId)) { case (?u) u.receivedChunks == u.totalChunks; case null false };
+            if (not staged and c.printDocumentId == null) {
+              return intentFail("This draft's print file was never uploaded, so it can't be paid for. Re-run it from Campaigns to launch it again from the studio, then delete this draft.");
+            };
             amount := c.totalAmountChargedCents;
             description := "EZmailout campaign " # c.id # " (" # c.recipientCount.toText() # " pieces)";
             refText := campaignId;
@@ -260,7 +267,22 @@ mixin (
     if (record.amountCents == 0) { return false };
     // Test-mode payments move no money, so they never earn a free month.
     if (record.sandbox) { return false };
-    for (r in referralRewards.values()) { if (r.paymentIntentId == record.paymentIntentId) { return false } };
+    // One free month per referred customer, ever: whichever of their
+    // payments is confirmed first. (Ordering by creation time alone let a
+    // customer confirm several open checkouts newest first and earn one each.)
+    for (r in referralRewards.values()) {
+      if (r.paymentIntentId == record.paymentIntentId or r.refereeId == record.userId) { return false };
+    };
+    // A campaign payment counts only if it is the one that paid the campaign:
+    // not a duplicate for an already paid campaign, nor a payment for a draft
+    // removed before it arrived (both are refunded).
+    if (record.purpose == #CampaignOrder) {
+      let settled = switch (record.reference) {
+        case (?id) switch (campaigns.get(id)) { case (?c) c.paymentIntentId == ?record.paymentIntentId; case null false };
+        case null false;
+      };
+      if (not settled) { return false };
+    };
     let payer = switch (accounts.get(record.userId)) { case (?p) p; case null { return false } };
     if (not isFirstPayment(payer.id, record.paymentIntentId)) { return false };
     let referrerId = switch (payer.referredBy) { case (?r) r; case null { return false } };

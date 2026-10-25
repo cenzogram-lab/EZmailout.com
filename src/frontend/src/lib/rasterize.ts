@@ -1,8 +1,9 @@
 import type { CanvasSide } from "@/backend";
 import { QrMode } from "@/backend";
 import { DESIGN_PPI, type LayoutDims, RASTER_DPI } from "@/lib/printSpec";
-import { qrToCanvas } from "@/lib/qr";
+import { normalizeDestinationUrl, qrToCanvas } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
+import { wrapText } from "@/lib/textFit";
 import { canvasFont, fontSpecOf, textExtras } from "@/lib/textStyle";
 
 export interface RasterizeOptions {
@@ -19,33 +20,6 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
     img.onerror = () => resolve(null);
     img.src = url;
   });
-}
-
-function wrapLines(
-  measure: (s: string) => number,
-  text: string,
-  maxWidth: number,
-): string[] {
-  const lines: string[] = [];
-  for (const paragraph of text.split(/\r?\n/)) {
-    const words = paragraph.split(/\s+/).filter(Boolean);
-    if (words.length === 0) {
-      lines.push("");
-      continue;
-    }
-    let current = "";
-    for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (measure(candidate) <= maxWidth || !current) {
-        current = candidate;
-      } else {
-        lines.push(current);
-        current = word;
-      }
-    }
-    lines.push(current);
-  }
-  return lines;
 }
 
 /**
@@ -173,7 +147,8 @@ export async function rasterizeSide(
           ctx.rotate((rotation * Math.PI) / 180);
           ctx.translate(-(boxX + boxW / 2), -(boxY + boxH / 2));
         }
-        const lines = wrapLines(measure, block.text, boxW - 4 * scale);
+        // Wrapped exactly as the editor and the height refit wrap it.
+        const lines = wrapText(block.text, boxW - 4 * scale, measure);
         const lineHeight = fontSize * spec.lineHeight;
         const baselineOffset = cssBaseline
           ? (lineHeight - (ascent + descent)) / 2 + ascent
@@ -213,7 +188,8 @@ export async function rasterizeSide(
                 "{{recipientId}}",
                 options.sampleRecipientId ?? "preview",
               )
-            : qr.url;
+            : // A bare domain typed into a static code still opens in a browser.
+              (normalizeDestinationUrl(qr.url) ?? qr.url);
         const size = Math.round(qr.size * scale);
         const tmp = document.createElement("canvas");
         await qrToCanvas(tmp, target || "https://ezmailout.com", {

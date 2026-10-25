@@ -620,7 +620,34 @@ function assembleSide(
 }
 
 const cache = new Map<string, Promise<StudioTemplateDraft>>();
-let queue: Promise<unknown> = Promise.resolve();
+/** Converted drafts kept; scrolling the whole library would otherwise hold all 657. */
+const CACHE_LIMIT = 120;
+/** Conversions waiting to run, in order; `urgent` ones go to the front. */
+const waiting: { id: string; run: () => Promise<void> }[] = [];
+let converting = false;
+
+async function pump(): Promise<void> {
+  if (converting) return;
+  converting = true;
+  try {
+    for (let next = waiting.shift(); next; next = waiting.shift()) {
+      await next.run();
+    }
+  } finally {
+    converting = false;
+  }
+}
+
+function remember(id: string, job: Promise<StudioTemplateDraft>): void {
+  cache.set(id, job);
+  job.catch(() => cache.delete(id));
+  // Oldest first (a Map keeps insertion order); a dropped entry is simply
+  // converted again if it is asked for later.
+  for (const key of cache.keys()) {
+    if (cache.size <= CACHE_LIMIT) break;
+    if (key !== id) cache.delete(key);
+  }
+}
 
 /** Sample copy a template is previewed with. */
 export function sampleContentFor(t: MailTemplateSpec): MailContent {
@@ -629,16 +656,33 @@ export function sampleContentFor(t: MailTemplateSpec): MailContent {
 
 /**
  * The template as studio layers, front and back, for its product. Converted
- * once per template (the result is memoised); conversions run one at a time
- * so a gallery scroll never mounts dozens of off-screen pieces at once.
+ * once per template (the most recent results are memoised); conversions run
+ * one at a time so a gallery scroll never mounts dozens of off-screen pieces
+ * at once. `urgent` (the customer is applying it) jumps the queue of
+ * thumbnails, including when the same template was already waiting there.
  */
-export function studioDraft(t: MailTemplateSpec): Promise<StudioTemplateDraft> {
+export function studioDraft(
+  t: MailTemplateSpec,
+  urgent = false,
+): Promise<StudioTemplateDraft> {
   const hit = cache.get(t.id);
-  if (hit) return hit;
-  const job = queue.then(() => convert(t));
-  queue = job.catch(() => undefined);
-  cache.set(t.id, job);
-  job.catch(() => cache.delete(t.id));
+  if (hit) {
+    if (urgent) {
+      const at = waiting.findIndex((w) => w.id === t.id);
+      if (at > 0) waiting.unshift(...waiting.splice(at, 1));
+    }
+    return hit;
+  }
+  const job = new Promise<StudioTemplateDraft>((resolve, reject) => {
+    const entry = {
+      id: t.id,
+      run: () => convert(t).then(resolve, reject),
+    };
+    if (urgent) waiting.unshift(entry);
+    else waiting.push(entry);
+  });
+  remember(t.id, job);
+  void pump();
   return job;
 }
 

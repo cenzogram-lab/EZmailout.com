@@ -109,42 +109,56 @@ export function contentAreaRatio(spec: FontSpec): number {
  * split across lines rather than overflowing.
  */
 export function countLines(text: string, opts: MeasureOptions): number {
-  const { width } = opts;
-  const content = Math.max(1, width - TEXT_PADDING * 2);
-  const advance = (s: string) => widthOf(s, opts);
+  const content = Math.max(1, opts.width - TEXT_PADDING * 2);
+  return Math.max(1, wrapText(text, content, (s) => widthOf(s, opts)).length);
+}
 
-  let lines = 0;
-  for (const paragraph of text.split("\n")) {
-    if (paragraph === "") {
-      lines += 1;
+/**
+ * The lines a text block breaks into at `maxWidth`, as the editor lays it out
+ * (`white-space: pre-wrap` + `word-break: break-word`): explicit newlines
+ * always break, words wrap greedily, runs of spaces are kept, and a word
+ * wider than the line is split across lines. The measurement above and the
+ * print rasterizer both use it, so the PDF wraps exactly where the editor
+ * and the height refit do.
+ */
+export function wrapText(
+  text: string,
+  maxWidth: number,
+  advance: (s: string) => number,
+): string[] {
+  const lines: string[] = [];
+  for (const paragraph of text.split(/\r?\n/)) {
+    if (paragraph.trim() === "") {
+      lines.push("");
       continue;
     }
-    let current = "";
-    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (advance(candidate) <= content) {
+    let current: string | null = null;
+    for (const word of paragraph.split(" ")) {
+      const candidate: string = current === null ? word : `${current} ${word}`;
+      // Spaces at a wrap point hang past the edge, as in the editor.
+      if (advance(candidate.trimEnd()) <= maxWidth) {
         current = candidate;
         continue;
       }
-      if (current) {
-        lines += 1;
-        current = "";
+      if (current !== null && current.trim() !== "") {
+        lines.push(current.trimEnd());
+        current = null;
       }
       // A word that cannot fit on its own line is broken character by character.
       let chunk = "";
       for (const char of word) {
-        if (advance(chunk + char) <= content) {
+        if (chunk === "" || advance(chunk + char) <= maxWidth) {
           chunk += char;
           continue;
         }
-        if (chunk) lines += 1;
+        lines.push(chunk);
         chunk = char;
       }
       current = chunk;
     }
-    lines += 1;
+    lines.push((current ?? "").trimEnd());
   }
-  return Math.max(1, lines);
+  return lines;
 }
 
 /**

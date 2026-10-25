@@ -5,6 +5,7 @@ import { PocketIcServer } from "@dfinity/pic";
 import { start, upstream, drive, call, check, failures, ident, anon, EOP, WASM } from "./harness.mjs";
 import { keys, SECRETS, RAW_SECRETS, campaignInput, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress } from "./fixtures.mjs";
 import { existsSync, readFileSync } from "node:fs";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 
 const only = process.argv.slice(2);
 const server = await PocketIcServer.start();
@@ -28,12 +29,14 @@ async function paidCampaign(env, user, up, { n = 3, stripe = false } = {}) {
   const created = await u.createCampaign(campaignInput(n));
   if (!created.ok) throw new Error("createCampaign: " + created.error);
   const cid = created.campaignId[0];
+  // The print file is staged before checkout, as Step 4 does: the canister
+  // takes no payment for a campaign without one.
+  const up1 = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(37));
+  if (!up1.ok) throw new Error("upload: " + up1.error);
   const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   if (!intent.ok) throw new Error("createPaymentIntent: " + intent.error);
   const conf = await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
   if (!conf.ok) throw new Error("confirmPayment: " + conf.error);
-  const up1 = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(37));
-  if (!up1.ok) throw new Error("upload: " + up1.error);
   return cid;
 }
 
@@ -263,6 +266,7 @@ const sections = {
     check(intent.ok && intent.clientSecret[0]?.endsWith("_secret"), "a credit-pack intent is created with Stripe", intent);
     const body = new URLSearchParams(up.log[0].body);
     check(body.get("currency") === "usd" && body.get("metadata[userId]") === user.getPrincipal().toText(), "the intent body carries amount, currency and the payer", Object.fromEntries(body));
+    check(body.getAll("payment_method_types[]").join() === "card" && !body.has("automatic_payment_methods[enabled]"), "checkout takes cards only, which settle while the customer is on the page", Object.fromEntries(body));
     state.paid = false;
     let c = await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
     check(!c.ok && (c.error[0] ?? "").includes("processing"), "an unfinished payment grants nothing", c);
@@ -432,6 +436,79 @@ const sections = {
 };
 
 // ─── 12. Scale: largest allowed campaign, print file and verification batch ───
+// ─── Orders, referrals and abuse budgets (functional audit fixes) ───────────
+sections.orders = async function orders() {
+  const env = await setup({ sandboxCheckout: false });
+  const pay = { intents: new Map() };
+  const up = upstream([...fakeStripe(pay), ...fakePrintPartner()]);
+  const pdf = (fill) => new Uint8Array(2048).fill(fill);
+
+  // A campaign is paid for only once its print file is staged, and that file
+  // is the one that prints.
+  const owner = ident(151);
+  const o = env.as(owner);
+  const cid = (await o.createCampaign(campaignInput(3))).campaignId[0];
+  const early = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(!early.ok && /print file/.test(early.error[0] ?? ""), "checkout refuses a campaign whose print file was never uploaded", early.error);
+  check((await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", pdf(1))).ok, "the print file is staged");
+  const intent = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  const paid = await call(env.pic, up, env.deferred(owner).confirmPayment(intent.paymentIntentId[0]));
+  check(intent.ok && paid.ok, "with its file staged the campaign is paid", { intent: intent.error, paid: paid.error });
+  const swap = await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "other.pdf", pdf(9));
+  check(!swap.ok && /paid/.test(swap.error[0] ?? ""), "a paid campaign's print file can no longer be replaced", swap.error);
+
+  // A referred customer earns their referrer one free month, whichever
+  // payment is confirmed first (newest-first confirmation earned one each).
+  const referrer = ident(152);
+  const r = env.as(referrer);
+  const code = (await r.ensureAccount([], [])).account[0].referralCode;
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  const sub = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ Subscription: null }, [], []));
+  const subPaid = await call(env.pic, up, env.deferred(referrer).confirmPayment(sub.paymentIntentId[0]));
+  check(subPaid.ok && subPaid.subscriptionActive[0] === true, "the referrer's membership is live", subPaid.error);
+  const referee = ident(153);
+  await env.as(referee).ensureAccount([code], []);
+  const p1 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  const p2 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const c2 = await call(env.pic, up, env.deferred(referee).confirmPayment(p2.paymentIntentId[0]));
+  const c1 = await call(env.pic, up, env.deferred(referee).confirmPayment(p1.paymentIntentId[0]));
+  const stats = (await r.getReferralStats())[0];
+  check(c1.ok && c2.ok && stats.referralCreditsEarned === 1n, "two checkouts confirmed newest first earn the referrer one free month, not two", { earned: stats.referralCreditsEarned, c1: c1.referralRewardApplied, c2: c2.referralRewardApplied });
+  const again = await env.as(referee).applyReferralReward(p1.paymentIntentId[0]);
+  check(!again.ok && (await r.getReferralStats())[0].referralCreditsEarned === 1n, "asking for the reward again grants nothing");
+
+  // Verification fails closed when the per-address result does not line up
+  // with the batch, and a customer sees plain advice, not network detail.
+  const short = upstream(fakePrintPartner({ detail: [{ Address1: "1 A St", status: "valid" }, { Address1: "2 B St", status: "invalid" }] }));
+  const batch = [rawAddr(0), rawAddr(1), rawAddr(2)];
+  const v = await call(env.pic, short, env.deferred(ident(154)).verifyAddresses(batch));
+  check(!v.ok && v.validCount === 0n, "a result with fewer records than addresses marks nothing valid", { ok: v.ok, valid: v.validCount, error: v.error });
+  const down = upstream([[(q) => q.url.includes("/addressLists"), () => ({ reject: "dns error: failed to lookup stage-rest.click2mail.com" })]]);
+  const cust = await call(env.pic, down, env.deferred(ident(155)).verifyAddresses(batch));
+  check(!cust.ok && !/dns|outcall|click2mail|print-partner/i.test(cust.error[0] ?? ""), "a customer's verification error carries no network or partner detail", cust.error);
+  const adm = await call(env.pic, down, env.deferred(env.controller).verifyAddresses(batch));
+  check(/dns/i.test(adm.error[0] ?? ""), "the admin sees the network detail", adm.error);
+
+  // A small postcard is mailed First-Class only, whatever the request says.
+  const small = await o.createCampaign(campaignInput(2, { product: { colorOption: [], layoutVariant: "3.5x5", productType: { Postcard: null } }, mailClass: [{ MarketingMail: null }] }));
+  const rec = (await o.getCampaign(small.campaignId[0]))[0];
+  check(small.ok && rec.printSpec.mailClass.FirstClass === null, "a 3.5×5 postcard asked for as Marketing Mail is booked First-Class", rec?.printSpec.mailClass);
+
+  // Support tickets: every caller together is held to an hourly budget.
+  let accepted = 0;
+  let busy = null;
+  for (let i = 0; i < 45 && !busy; i++) {
+    const a = env.as(Ed25519KeyIdentity.generate());
+    for (let k = 0; k < 5; k++) {
+      const t = await a.submitSupportTicket({ name: "Flood", email: "flood@example.com", subject: `s${i}`, message: "m", pagePath: [] });
+      if (t.ok) accepted++;
+      else { busy = t.error[0]; break; }
+    }
+  }
+  check(accepted === 200 && /busy/.test(busy ?? ""), "fresh identities together file at most 200 tickets an hour", { accepted, busy });
+};
+
 sections.scale = async function scale() {
   const env = await setup({ sandboxCheckout: true });
   const user = ident(141);
@@ -441,11 +518,11 @@ sections.scale = async function scale() {
   const created = await u.createCampaign(campaignInput(5000));
   check(created.ok, "a 5,000-recipient campaign is created", created.error);
   const cid = created.campaignId[0];
-  const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
-  await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
   const big = new Uint8Array(1_890_000).fill(65);
   const upl = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "big.pdf", big);
   check(upl.ok, "a 1.89 MB print file is staged in one chunk", upl.error);
+  const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
   const d = await call(env.pic, up, env.deferred(user).dispatchPrintJob(cid));
   const docReq = up.log.find((l) => l.url.endsWith("/documents"));
   const listReq = up.log.find((l) => l.url.endsWith("/addressLists"));

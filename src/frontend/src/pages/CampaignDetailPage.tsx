@@ -433,6 +433,32 @@ export function CampaignDetailPage() {
           <Loader2 className="mr-2 size-5 animate-spin" />
           Loading campaign…
         </div>
+      ) : !campaign &&
+        campaignQuery.isError &&
+        !/not found or access denied/i.test(
+          String(campaignQuery.error?.message ?? ""),
+        ) ? (
+        // The canister answers an unknown or foreign id with that message;
+        // anything else is a failed load, not a missing campaign.
+        <div
+          className="rounded-xl border border-dashed bg-card py-20 text-center"
+          data-ocid="campaign_detail.error.state"
+        >
+          <p className="font-display text-lg font-semibold text-foreground">
+            We couldn't load this campaign
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            EZmailout didn't answer just now; try again in a moment.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-4 rounded-full"
+            onClick={() => void campaignQuery.refetch()}
+            data-ocid="campaign_detail.error.retry.button"
+          >
+            Try again
+          </Button>
+        </div>
       ) : !campaign ? (
         <div
           className="rounded-xl border border-dashed bg-card py-20 text-center"
@@ -660,7 +686,7 @@ export function CampaignDetailPage() {
                   </CardTitle>
                   <CardDescription>
                     Dynamic QR codes route through ezmailout.com/t/… so every
-                    scan is attributed to a recipient.
+                    scan is counted for this campaign.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -675,12 +701,20 @@ export function CampaignDetailPage() {
                         )}
                       </p>
                     </div>
+                    {/* Every piece carries the campaign's code (one print
+                        file per campaign), so scans are counted, not told
+                        apart by recipient. */}
                     <div className="rounded-lg border bg-muted/30 px-4 py-3">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Unique recipients
+                        Latest scan
                       </p>
-                      <p className="font-display text-2xl font-bold text-emerald-brand">
-                        {formatNumber(qrStats ? qrStats.uniqueRecipients : 0)}
+                      <p
+                        className="font-display text-base font-bold text-foreground"
+                        data-ocid="campaign_detail.qr.latest_scan"
+                      >
+                        {qrStats?.recentScans[0]
+                          ? formatTimestamp(qrStats.recentScans[0].timestamp)
+                          : "—"}
                       </p>
                     </div>
                   </div>

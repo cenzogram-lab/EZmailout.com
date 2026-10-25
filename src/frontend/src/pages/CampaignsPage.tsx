@@ -39,6 +39,7 @@ import {
   layoutLabel,
   productTypeLabel,
 } from "@/lib/format";
+import { MAX_CAMPAIGN_NAME_CHARS } from "@/lib/inputLimits";
 import { useWizardStore } from "@/store/wizard";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -164,7 +165,13 @@ function RowActions({
 
 export function CampaignsPage() {
   const navigate = useNavigate();
-  const { data: campaigns, isLoading } = useCampaigns();
+  const {
+    data: campaigns,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useCampaigns();
   const exportMutation = useExportCampaign();
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [presetTarget, setPresetTarget] = useState<CampaignSummary | null>(
@@ -199,7 +206,12 @@ export function CampaignsPage() {
     const addresses = rerunRecipients.data;
     const count = addresses.length || Number(rerunTarget.recipientCount);
     resetWizard();
-    setCampaignName(`${rerunTarget.name} (re-run)`);
+    // Within the canister's name limit, and without stacking "(re-run)".
+    const base = rerunTarget.name.replace(/(\s*\(re-run\))+$/, "");
+    const suffix = " (re-run)";
+    setCampaignName(
+      `${base.slice(0, MAX_CAMPAIGN_NAME_CHARS - suffix.length).trimEnd()}${suffix}`,
+    );
     setProduct(rerunTarget.product);
     setLayout(rerunTarget.product.layoutVariant);
     setAudienceType("preset");
@@ -361,6 +373,31 @@ export function CampaignsPage() {
         >
           <Loader2 className="mr-2 size-5 animate-spin" />
           Loading campaigns…
+        </div>
+      ) : isError && !campaigns ? (
+        // Unreachable is not empty: "No mailouts yet" here read as if the
+        // customer's campaigns were gone.
+        <div
+          className="rounded-3xl border border-border/60 bg-card px-4 py-10 text-center shadow-soft"
+          data-ocid="campaigns.error.state"
+        >
+          <p className="font-display text-lg font-semibold text-foreground">
+            We couldn't load your campaigns
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            EZmailout didn't answer just now. Your campaigns are safe; try again
+            in a moment.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-4 gap-2 rounded-full"
+            onClick={() => void refetch()}
+            disabled={isRefetching}
+            data-ocid="campaigns.error.retry.button"
+          >
+            {isRefetching ? <Loader2 className="size-4 animate-spin" /> : null}
+            Try again
+          </Button>
         </div>
       ) : list.length === 0 ? (
         <div className="rounded-3xl border border-border/60 bg-card px-4 py-6 shadow-soft">

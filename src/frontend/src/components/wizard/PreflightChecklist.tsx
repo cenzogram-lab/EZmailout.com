@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/format";
 import { canvasDims, safeRect } from "@/lib/printSpec";
-import { normalizeRedirectUrl } from "@/lib/qr";
+import { normalizeDestinationUrl, normalizeRedirectUrl } from "@/lib/qr";
 import { measuredHeight } from "@/lib/textFit";
 import { fontSpecOf, textInkRect, textLinesOverlap } from "@/lib/textStyle";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,7 @@ function within(el: Rect, bounds: Rect): boolean {
   );
 }
 
-function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
+export function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
   const ids: string[] = [];
   for (const t of side.textBlocks) {
     // The ink, not the padded box: display type overhangs its box by design.
@@ -93,6 +93,47 @@ function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
       ids.push(q.id);
   }
   return ids;
+}
+
+function overlaps(a: Rect, b: Rect): boolean {
+  return (
+    Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 0.5 &&
+    Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 0.5
+  );
+}
+
+/**
+ * What sits in the back's USPS zone, where the print partner prints the
+ * address, postage and IMb barcode: text and QR codes there are covered or
+ * make the barcode unreadable; artwork may be (template bleed art and the
+ * light address panel are meant to be there).
+ */
+function zoneOccupants(
+  side: CanvasSide,
+  zone: Rect,
+): { hard: string[]; art: number } {
+  const hard: string[] = [];
+  for (const t of side.textBlocks)
+    if (overlaps(textInkRect(t), zone)) hard.push(`“${clip(t.text)}”`);
+  for (const q of side.qrCodes)
+    if (overlaps({ x: q.x, y: q.y, w: q.size, h: q.size }, zone))
+      hard.push("a QR code");
+  let art = 0;
+  for (const l of side.logos) {
+    if (/data-ez-(bleed|zone)/.test(l.url)) continue;
+    if (overlaps({ x: l.x, y: l.y, w: l.width, h: l.height }, zone)) art++;
+  }
+  return { hard, art };
+}
+
+/** Static QR codes that would not open anything (empty or not an address). */
+function brokenStaticQrs(canvas: CanvasState): number {
+  let n = 0;
+  for (const key of ["front", "back"] as const)
+    for (const q of canvas[key].qrCodes)
+      if (q.mode !== QrMode.DynamicTracking && !normalizeDestinationUrl(q.url))
+        n++;
+  return n;
 }
 
 function hasDynamicQr(canvas: CanvasState): boolean {
@@ -197,6 +238,38 @@ export function computePreflight(input: PreflightInput): PreflightReport {
             level: "warn",
           },
     );
+  }
+
+  // 3a. The USPS address zone on the back stays clear.
+  if (input.selectedLayout) {
+    const zone = canvasDims(input.canvas, input.selectedLayout).addressZone;
+    if (zone) {
+      const { hard, art } = zoneOccupants(input.canvas.back, zone);
+      items.push(
+        hard.length > 0
+          ? {
+              id: "zone",
+              label: "USPS address area clear",
+              detail: `The address, postage and barcode print in the hatched area on the back. Move ${hard.slice(0, 3).join(", ")}${hard.length > 3 ? ` and ${hard.length - 3} more` : ""} out of it.`,
+              level: "fail",
+            }
+          : art > 0
+            ? {
+                id: "zone",
+                label: "USPS address area clear",
+                detail:
+                  "An image sits in the hatched address area on the back. The address prints over it; keep that area light and plain so the barcode reads.",
+                level: "warn",
+              }
+            : {
+                id: "zone",
+                label: "USPS address area clear",
+                detail:
+                  "Nothing on the back covers the address, postage and barcode area.",
+                level: "pass",
+              },
+      );
+    }
   }
 
   // 3b. Text that runs out of its box or over other text prints exactly
@@ -348,6 +421,17 @@ export function computePreflight(input: PreflightInput): PreflightReport {
               level: "fail",
             },
     );
+  }
+
+  // 9. Static QR codes must open something.
+  const broken = brokenStaticQrs(input.canvas);
+  if (broken > 0) {
+    items.push({
+      id: "static_qr",
+      label: "QR code destinations",
+      detail: `${broken === 1 ? "A QR code has" : `${broken} QR codes have`} no web address, phone number or email to open. Add one in the designer, or delete the code.`,
+      level: "fail",
+    });
   }
 
   return {

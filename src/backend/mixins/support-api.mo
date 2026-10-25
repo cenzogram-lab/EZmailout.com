@@ -33,6 +33,9 @@ mixin (
   transient let ticketsPerHourSignedIn : Nat = 5;
   /// Shared by every signed-out visitor: they all arrive as one principal.
   transient let ticketsPerHourAnonymous : Nat = 20;
+  /// Every caller together, signed in or not.
+  transient let ticketsPerHourGlobal : Nat = 200;
+  transient let ticketsGlobalKey : Text = "*";
   transient let maxNameChars : Nat = 120;
   transient let maxEmailChars : Nat = 254;
   transient let maxSubjectChars : Nat = 160;
@@ -108,11 +111,24 @@ mixin (
     if (not AdminLib.looksLikeEmail(email)) { return fail("Enter a valid email address so we can reply") };
     if (subject == "" or subject.size() > maxSubjectChars) { return fail("Enter a subject (up to " # maxSubjectChars.toText() # " characters)") };
     if (message == "" or message.size() > maxMessageChars) { return fail("Enter a message (up to " # maxMessageChars.toText() # " characters)") };
-    if (supportTickets.size() >= maxStoredTickets) { return fail("The support inbox is full right now; please try again later") };
     let anonymous = caller.isAnonymous();
     let limit = if (anonymous) ticketsPerHourAnonymous else ticketsPerHourSignedIn;
     if (not charge(ticketUsage, caller.toText(), limit)) { return fail("Too many tickets in the last hour; please try again later") };
-    let id = "tkt_" # (supportTickets.size() + 1).toText();
+    // Identities are free to mint: the per-identity limit has a canister-wide
+    // partner, so the inbox cannot be flooded in one burst.
+    if (not charge(ticketUsage, ticketsGlobalKey, ticketsPerHourGlobal)) { return fail("The support inbox is busy right now; please try again in a few minutes") };
+    // A full inbox makes room by dropping its oldest ticket (and that
+    // ticket's email entry) rather than turning every new ticket away.
+    let id = "tkt_" # nextTicketNumber().toText();
+    if (supportTickets.size() >= maxStoredTickets) {
+      switch (supportTickets.first()) {
+        case (?oldest) {
+          supportEmailOutbox.remove(oldest.id);
+          supportTickets.retain(func(t : Support.SupportTicket) : Bool { t.id != oldest.id });
+        };
+        case null {};
+      };
+    };
     let ticket : Support.SupportTicket = {
       id;
       userId = if (anonymous) null else ?caller.toText();
@@ -137,8 +153,23 @@ mixin (
     { ok = true; error = null; ticketId = ?id };
   };
 
-  /// The stored ticket for an id (`tkt_N` is the N-th ticket; tickets are
-  /// append-only), with a scan as a fallback.
+  /// One more than the newest ticket's number (`tkt_N`). Ids stay unique
+  /// once a full inbox starts dropping its oldest tickets.
+  private func nextTicketNumber() : Nat {
+    switch (supportTickets.last()) {
+      case (?t) {
+        switch (t.id.stripStart(#text "tkt_")) {
+          case (?n) { switch (Nat.fromText(n)) { case (?i) { return i + 1 }; case null {} } };
+          case null {};
+        };
+      };
+      case null {};
+    };
+    supportTickets.size() + 1;
+  };
+
+  /// The stored ticket for an id (`tkt_N` is the N-th ticket until a full
+  /// inbox drops its oldest), with a scan as a fallback.
   private func ticketById(id : Text) : ?Support.SupportTicket {
     switch (id.stripStart(#text "tkt_")) {
       case (?n) {

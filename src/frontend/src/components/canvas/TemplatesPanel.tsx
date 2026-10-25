@@ -10,7 +10,7 @@ import { LAYOUT_PRESETS } from "@/lib/layouts";
 import type { Orientation } from "@/lib/printSpec";
 import { loadTemplateFonts, templatesForLayout } from "@/lib/templates";
 import { cn } from "@/lib/utils";
-import { useWizardStore } from "@/store/wizard";
+import { claimTemplateApply, useWizardStore } from "@/store/wizard";
 import { LayoutTemplate, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -62,11 +62,23 @@ export function TemplatesPanel() {
 
   async function applyMail(id: string, name: string) {
     if (!lib) return;
+    const stillCurrent = claimTemplateApply();
+    const before = useWizardStore.getState().canvas;
+    const pending = toast.loading(`Laying out “${name}”…`);
     try {
-      applyMailTemplate({ id, name }, await lib.mailCanvasForStudio(id));
-      toast.success(`Applied “${name}”`);
+      const canvas = await lib.mailCanvasForStudio(id);
+      // Another template, another format or an edit since the click wins:
+      // a late conversion never replaces work done while it ran.
+      if (!stillCurrent() || useWizardStore.getState().canvas !== before) {
+        toast.dismiss(pending);
+        return;
+      }
+      applyMailTemplate({ id, name }, canvas);
+      toast.success(`Applied “${name}”`, { id: pending });
     } catch {
-      toast.error("That template could not be applied. Try another one.");
+      toast.error("That template could not be applied. Try another one.", {
+        id: pending,
+      });
     }
   }
 

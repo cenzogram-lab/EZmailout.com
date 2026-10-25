@@ -63,10 +63,15 @@ const MAX_TURNS = 8;
  */
 export function StampyChatbot() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { identity } = useInternetIdentity();
   if (pathname.startsWith("/t/") || pathname.startsWith("/track/")) {
     return null;
   }
-  return <StampyChatbotPanel />;
+  // One conversation per signed-in person: signing out (or in as someone
+  // else) starts a fresh one, so nobody reads the previous person's chat.
+  return (
+    <StampyChatbotPanel key={identity?.getPrincipal().toString() ?? "guest"} />
+  );
 }
 
 function StampyChatbotPanel() {
@@ -510,26 +515,35 @@ function Message({
   );
 }
 
-/** Re-sends tickets queued while the canister was unreachable. */
+/** How often queued tickets are tried again while any are waiting. */
+const OUTBOX_RETRY_MS = 120_000;
+
+/**
+ * Re-sends tickets queued while the canister was unreachable: when the
+ * backend becomes reachable, when the browser comes back online, and every
+ * two minutes while any are waiting (not only on the next page load).
+ */
 function useSupportOutboxFlush() {
   const { ready } = useBackendActor();
   const submit = useSubmitSupportTicket();
   const flushing = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: flush once each time the backend becomes reachable
+  const submitRef = useRef(submit.mutateAsync);
+  submitRef.current = submit.mutateAsync;
   useEffect(() => {
-    if (!ready || flushing.current) return;
-    const queued = readOutbox();
-    if (queued.length === 0) return;
-    flushing.current = true;
-    (async () => {
+    if (!ready) return;
+    const flush = async () => {
+      if (flushing.current) return;
+      const queued = readOutbox();
+      if (queued.length === 0) return;
+      flushing.current = true;
       const remaining = [...queued];
       while (remaining.length > 0) {
         try {
-          const result = await submit.mutateAsync(remaining[0]);
-          // A rate limit or a full inbox clears later ("try again later"):
-          // keep the ticket. Anything else was refused on its merits and
-          // would be refused again, so it leaves the outbox.
-          if (!result.ok && result.error?.includes("try again later")) break;
+          const result = await submitRef.current(remaining[0]);
+          // A rate limit or a busy inbox clears later ("try again …"): keep
+          // the ticket. Anything else was refused on its merits and would be
+          // refused again, so it leaves the outbox.
+          if (!result.ok && /try again/i.test(result.error ?? "")) break;
           remaining.shift();
         } catch {
           break; // Still unreachable: keep the rest for next time.
@@ -537,6 +551,14 @@ function useSupportOutboxFlush() {
       }
       writeOutbox(remaining);
       flushing.current = false;
-    })();
+    };
+    void flush();
+    const onOnline = () => void flush();
+    window.addEventListener("online", onOnline);
+    const timer = window.setInterval(() => void flush(), OUTBOX_RETRY_MS);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.clearInterval(timer);
+    };
   }, [ready]);
 }

@@ -81,13 +81,21 @@ export function AiCopywriterDrawer({
       setTopUpOpen(true);
       return;
     }
-    const res = await generate.mutateAsync({
-      businessName: businessName.trim(),
-      industry,
-      offer: offer.trim(),
-      callToAction: cta.trim(),
-      tone,
-    });
+    let res: Awaited<ReturnType<typeof generate.mutateAsync>>;
+    try {
+      res = await generate.mutateAsync({
+        businessName: businessName.trim(),
+        industry,
+        offer: offer.trim(),
+        callToAction: cta.trim(),
+        tone,
+      });
+    } catch {
+      toast.error(
+        "The AI copywriter couldn't be reached. Try again in a moment.",
+      );
+      return;
+    }
     if (res.creditBalance !== undefined) setCreditBalance(res.creditBalance);
     if (!res.ok) {
       toast.error(res.error ?? "Could not generate copy");

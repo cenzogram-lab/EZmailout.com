@@ -1,3 +1,4 @@
+import { queueTicket } from "@/components/chat/supportOutbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSubmitSupportTicket } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-import { CalendarCheck, CheckCircle2, Clock, X } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Clock, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const WEEKDAY_SLOTS = [
@@ -88,6 +90,9 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
     volume: "",
   });
   const [errors, setErrors] = useState<Partial<ContactFormState>>({});
+  const submit = useSubmitSupportTicket();
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [delivery, setDelivery] = useState<"sent" | "queued">("sent");
 
   // Reset when re-opened
   useEffect(() => {
@@ -97,6 +102,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
       setStep(1);
       setForm({ name: "", email: "", company: "", phone: "", volume: "" });
       setErrors({});
+      setSendError(null);
     }
   }, [open]);
 
@@ -133,16 +139,50 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setStep(3);
-  }
-
   const formattedSlot =
     selectedDate && selectedTime
       ? `${selectedDate.label}, ${selectedDate.month} ${selectedDate.dateNum} at ${selectedTime}`
       : "";
+
+  /**
+   * The request reaches the team as a support ticket (the admin inbox, and
+   * email when it is set up). Nothing books a calendar slot by itself, so
+   * the team confirms the time by email.
+   */
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validateForm() || submit.isPending) return;
+    setSendError(null);
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const ticket = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      subject: `Walkthrough request: ${formattedSlot}`.slice(0, 160),
+      message: [
+        `Preferred time: ${formattedSlot} (${zone})`,
+        `Company: ${form.company.trim()}`,
+        form.phone.trim() ? `Phone: ${form.phone.trim()}` : null,
+        form.volume ? `Monthly mail volume: ${form.volume}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n")
+        .slice(0, 2000),
+      pagePath: window.location.pathname,
+    };
+    try {
+      const result = await submit.mutateAsync(ticket);
+      if (!result.ok) {
+        setSendError(result.error ?? "The request could not be sent.");
+        return;
+      }
+      setDelivery("sent");
+    } catch {
+      // The canister could not be reached: keep it and send it later.
+      queueTicket(ticket);
+      setDelivery("queued");
+    }
+    setStep(3);
+  }
 
   return (
     <dialog
@@ -462,14 +502,27 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 </div>
               </div>
 
+              {sendError && (
+                <p
+                  className="text-sm text-destructive"
+                  data-ocid="demo_modal.send_error"
+                >
+                  {sendError}
+                </p>
+              )}
               <Button
                 type="submit"
                 size="lg"
+                disabled={submit.isPending}
                 className="w-full gap-2 text-base"
                 data-ocid="demo_modal.submit_button"
               >
-                <CalendarCheck className="size-4" />
-                Confirm my walkthrough
+                {submit.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <CalendarCheck className="size-4" />
+                )}
+                Request my walkthrough
               </Button>
             </form>
           )}
@@ -484,11 +537,15 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 <CheckCircle2 className="size-9 text-emerald-brand" />
               </div>
               <h3 className="mt-4 font-display text-xl font-bold text-foreground">
-                You're on the calendar!
+                {delivery === "sent" ? "Request received" : "Request saved"}
               </h3>
-              <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-                We'll send a calendar invite from {BRAND.supportEmail} shortly.
-                The EZmailout team looks forward to speaking with you.
+              <p
+                className="mt-2 max-w-xs text-sm text-muted-foreground"
+                data-ocid="demo_modal.confirmation_text"
+              >
+                {delivery === "sent"
+                  ? `We'll confirm your time by email from ${BRAND.supportEmail}. The EZmailout team looks forward to speaking with you.`
+                  : "We couldn't reach EZmailout just now, so your request is saved on this device and will be sent the next time you're online."}
               </p>
 
               {/* Booking summary */}

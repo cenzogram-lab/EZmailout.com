@@ -109,7 +109,7 @@ module {
     };
   };
 
-  /// USPS mail classes a product may be sent with (the ledger default first).
+  /// USPS mail classes a product type may be sent with (the ledger default first).
   public func supportedMailClasses(productType : Types.ProductType) : [Types.MailClass] {
     switch (productType) {
       case (#Postcard or #Flyer or #Brochure) [#MarketingMail, #FirstClass];
@@ -118,6 +118,15 @@ module {
       case (#PriorityMailExpress) [#PriorityExpress];
       case (_) [#FirstClass];
     };
+  };
+
+  /// The classes one ledger row offers, as the Step 1 chips do
+  /// (`supportedMailClasses` in lib/pricing.ts): a row that defaults to
+  /// Marketing Mail may also go First-Class when its type allows it; a row
+  /// that defaults to anything else (the small postcards, rack cards) is
+  /// mailed only at its own class.
+  public func rowMailClasses(r : Types.PricingRow) : [Types.MailClass] {
+    if (r.printSpec.mailClass == #MarketingMail) supportedMailClasses(r.productType) else [r.printSpec.mailClass];
   };
 
   /// Print spec for a product selection (letters switch to B&W when requested).
@@ -131,7 +140,7 @@ module {
         // for the product, otherwise the ledger default stands.
         let chosen : Types.MailClass = switch (mailClass) {
           case (?requested) {
-            let allowed = supportedMailClasses(r.productType);
+            let allowed = rowMailClasses(r);
             if (allowed.any(func(m : Types.MailClass) : Bool { m == requested })) {
               requested;
             } else { r.printSpec.mailClass };
