@@ -1,8 +1,8 @@
 # EZmailout.com
 
 Direct mail campaigns without minimums: every price includes printing and postage, and volume prices drop from 1,000
-pieces. An optional $9 membership (a 30-day pass, never renewed automatically) prices any order at the 10,000-piece
-rate and adds monthly AI credits and referral rewards. Printing and mailing run through our
+pieces. An optional $9 membership (a 30-day pass, never renewed automatically) prices small batches at the 10,000-piece
+rate and adds AI credits with each pass and referral rewards. Printing and mailing run through our
 print partner's REST API; the whole backend is a single Motoko canister on the Internet Computer.
 
 ## Stack
@@ -18,7 +18,7 @@ print partner's REST API; the whole backend is a single Motoko canister on the I
 14 product families, 29 document classes. `documentClass` is the exact print product name and the trim size
 follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 
-| Family | Print document class | Trim | Cost | Price (1–999) | Volume prices | Mail class |
+| Family | Print document class | Trim | Cost | Rate (under 1,000) | Volume prices | Mail class |
 | --- | --- | --- | ---: | ---: | --- | --- |
 | Postcards | `Postcard 3.5 x 5` | 3.5″ × 5″ | $0.53 | **$1.10** | — | First-Class |
 | Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$0.79** | 1,000+: $0.71 · 10,000+: $0.62 · 50,000+: $0.58 | First-Class |
@@ -50,13 +50,15 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 | Booklets | `Booklet Address Back Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | — | Marketing Mail |
 | Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | — | Marketing Mail |
 
-Prices are per piece and include printing and postage, generated from `PRICING_LEDGER` (`src/frontend/src/lib/pricing.ts`,
+Rates are per piece and include printing and postage, generated from `PRICING_LEDGER` (`src/frontend/src/lib/pricing.ts`,
 mirrored in `src/backend/lib/pricing.mo`). Volume prices apply from the quantity shown; a live member pays at most the
-10,000-piece price on those five formats, and no price sells under cost + 1¢ a piece once the card fee (2.9% + 30¢)
+10,000-piece rate on those five formats, and no price sells under cost + 1¢ a piece once the card fee (2.9% + 30¢)
 is paid: the percentage sets the per-piece floor, and an order of only a few pieces of a thin-margin format is priced a
-little higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.89). EDDM® prices include USPS EDDM Retail
+little higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.89, members included; the lift reaches a
+few hundred pieces only for a member's First-Class 6x11 or brochure, at 1¢ a piece). EDDM® prices include USPS EDDM Retail
 saturation postage ($0.26 a piece; the Cost column is print only). The 6x9 and 6x11 postcards and the brochure are priced
-for Marketing Mail; First-Class adds $0.24 a piece. Orders run from $0.50 to $999,999.99.
+for Marketing Mail; First-Class adds $0.24 a piece. An order is at most $999,999.99 (and at least $0.50, the smallest card charge,
+which the floor already keeps every order above).
 
 Costs and member prices are final. The spread is deliberate retail positioning — standardised letter pricing,
 carrier cost absorbed on Priority Mail® Express to stay competitive, and higher margin on self-mailers — so nothing

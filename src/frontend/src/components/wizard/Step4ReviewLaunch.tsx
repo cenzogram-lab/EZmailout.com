@@ -885,24 +885,22 @@ export function Step4ReviewLaunch() {
               ) : null}
               {subscriptionActive ? (
                 <p className="text-xs text-muted-foreground">
-                  Your {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
-                  membership is billed separately and is not part of this
-                  invoice.
+                  Your EZmailout membership is a 30-day pass of its own and is
+                  not part of this invoice.
                 </p>
               ) : tiered && memberSavingsCents > 0 ? (
                 <p
                   className="text-xs text-muted-foreground"
                   data-ocid="review.invoice.member_prompt"
                 >
-                  Club members pay {formatCents(memberUnitCents)}/pc regardless
-                  of volume ({formatCents(memberSavingsCents)} less on this
-                  order).{" "}
+                  Members would pay {formatCents(memberUnitCents)}/pc on this
+                  order ({formatCents(memberSavingsCents)} less).{" "}
                   <Link
                     to="/dashboard"
                     className="font-medium text-primary-ink underline-offset-2 hover:underline"
                     data-ocid="review.invoice.member_prompt.link"
                   >
-                    Join for {formatCents(SUBSCRIPTION_PRICE_CENTS)}/mo
+                    Join for {formatCents(SUBSCRIPTION_PRICE_CENTS)} (30 days)
                   </Link>
                 </p>
               ) : null}

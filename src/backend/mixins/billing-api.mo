@@ -183,16 +183,23 @@ mixin (
               return intentFail("This campaign's total doesn't add up; please contact support");
             };
             // A draft keeps the price it was created at, so a price change
-            // (new postage, a surcharge, a cost, the card fee) must not let an
-            // older draft be paid below what the order now costs to print,
-            // mail and charge.
-            let floorCents = switch (PricingLib.find(c.product.layoutVariant)) {
-              case (?row) ?PricingLib.orderFloorCents(PricingLib.pieceCostCents(row, c.printSpec.mailClass), c.recipientCount);
-              case null null;
-            };
-            switch (floorCents) {
-              case (?floor) if (c.unitPriceCents < floor) {
-                return intentFail("Prices for this format have changed since this draft was created. Re-run it from Campaigns to launch it again at today's price, then delete this draft.");
+            // (new postage, a surcharge, a cost, the card fee) or the end of
+            // the owner's membership must not let it be paid for less than
+            // the same order costs today. Today's price is never under cost
+            // plus the card fee (`unitPriceFor` includes `orderFloorCents`).
+            switch (PricingLib.find(c.product.layoutVariant)) {
+              case (?row) {
+                let ownerIsMember = switch (accounts.get(c.ownerId)) {
+                  case (?owner) AccountLib.isSubscriptionLive(owner, Time.now());
+                  case null false;
+                };
+                let today = PricingLib.unitPriceFor(row, c.recipientCount, ownerIsMember, c.printSpec.mailClass);
+                if (c.unitPriceCents < today) {
+                  let memberPriced = PricingLib.unitPriceFor(row, c.recipientCount, true, c.printSpec.mailClass);
+                  return intentFail(
+                    if (not ownerIsMember and c.unitPriceCents >= memberPriced) "This draft was priced at the member rate, and the membership has since ended. Renew it from the Dashboard, or re-run the campaign from Campaigns at today's price, then delete this draft." else "Prices for this format have changed since this draft was created. Re-run it from Campaigns to launch it again at today's price, then delete this draft."
+                  );
+                };
               };
               case null { return intentFail("This format is no longer offered. Re-run the campaign from Campaigns in another size, then delete this draft.") };
             };

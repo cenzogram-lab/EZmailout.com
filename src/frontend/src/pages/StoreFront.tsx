@@ -206,8 +206,8 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-brand opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-brand" />
             </span>
-            Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month · cancel
-            anytime
+            Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)} for 30 days ·
+            never renews by itself
           </div>
           <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground animate-fade-up sm:text-6xl sm:leading-[1.02]">
             Design it. Target it.
@@ -215,10 +215,10 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
           </h1>
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
             A Canva-style studio, {CATALOG_SIZE_COUNT} mail formats and
-            per-piece prices that drop with volume, or the 10,000-piece rate
-            from the first piece for {formatCents(SUBSCRIPTION_PRICE_CENTS)} a
-            month. Upload a list or draw a radius, design in the browser, and
-            USPS delivers with live IMb tracking.
+            per-piece prices that drop with volume, or the 10,000-piece rate on
+            small batches with a {formatCents(SUBSCRIPTION_PRICE_CENTS)}
+            30-day membership. Upload a list or draw a radius, design in the
+            browser, and USPS delivers with live IMb tracking.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button
@@ -271,7 +271,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
 /* ─── Marquee ─── */
 function Marquee() {
   const text =
-    "No minimums • $9/month membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • EZmailout fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
+    "No minimums • $9 30-day membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • EZmailout fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
   return (
     <div className="relative overflow-hidden border-y border-border/60 bg-ice py-3">
       <div className="flex whitespace-nowrap animate-marquee-scroll">
@@ -407,7 +407,7 @@ function StudioFeatures() {
 const FAQ: { q: string; a: string }[] = [
   {
     q: "Is there really no minimum order?",
-    a: "No. You can send a single piece. Volume prices start at 1,000 pieces, and members pay the 10,000-piece price on those sizes at any quantity. Membership is a 30-day pass you renew when you choose: nothing is billed automatically, so there is nothing to cancel.",
+    a: "No. You can send a single piece. Volume prices start at 1,000 pieces, and members pay at most the 10,000-piece price on those sizes (only an order of a few pieces costs a little more, to cover the card fee). Membership is a 30-day pass you renew when you choose: nothing is billed automatically, so there is nothing to cancel.",
   },
   {
     q: "Which formats can I send?",
@@ -419,7 +419,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "What does the AI Studio cost?",
-    a: `One credit is one cent. Copy costs ${AI_COSTS.copy} credit, backgrounds ${AI_COSTS.squareImage}–${AI_COSTS.hdImage} credits, and members receive ${MONTHLY_ALLOWANCE} credits every month.`,
+    a: `One credit is one cent. Copy costs ${AI_COSTS.copy} credit, backgrounds ${AI_COSTS.squareImage}–${AI_COSTS.hdImage} credits, and members receive ${MONTHLY_ALLOWANCE} credits with each 30-day membership.`,
   },
   {
     q: "Can I track delivery?",
@@ -572,7 +572,7 @@ function AiStudioTeaser() {
             Describe the vibe and drop an AI background straight onto your
             postcard. Ask the AI copywriter for headlines, bullets and calls to
             action tuned to your offer. Every member gets {MONTHLY_ALLOWANCE}{" "}
-            credits a month — one credit is one cent.
+            credits with each 30-day pass — one credit is one cent.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-white/15 bg-black/10 p-4">
@@ -901,7 +901,7 @@ export function StoreFront() {
         id="membership"
         eyebrow="Membership"
         title="One membership. The best volume rate."
-        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on every volume-priced size from the first piece."
+        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on every volume-priced size, however small the batch (a few pieces cost a little more, to cover the card fee)."
       >
         <MembershipCard />
       </Section>
@@ -919,7 +919,7 @@ export function StoreFront() {
         id="ai-studio"
         eyebrow="AI Studio"
         title="Design help that lives in the editor"
-        subtitle={`${MONTHLY_ALLOWANCE} AI credits are included every month. Top up with packs from ${formatCents(CREDIT_PACKS[0].priceCents)}.`}
+        subtitle={`${MONTHLY_ALLOWANCE} AI credits come with each 30-day membership. Top up with packs from ${formatCents(CREDIT_PACKS[0].priceCents)}.`}
       >
         <AiStudioTeaser />
       </Section>

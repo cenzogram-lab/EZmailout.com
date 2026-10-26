@@ -52,8 +52,8 @@ export function SubscriptionWidget() {
               Membership
             </CardTitle>
             <CardDescription>
-              {priceLabel}/month · {MONTHLY_ALLOWANCE} AI credits included every
-              renewal.
+              {priceLabel} for 30 days · {MONTHLY_ALLOWANCE} AI credits with
+              each pass.
             </CardDescription>
           </div>
           <Badge

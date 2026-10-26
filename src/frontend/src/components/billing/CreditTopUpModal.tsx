@@ -43,7 +43,8 @@ export function CreditTopUpModal() {
           <DialogDescription>
             1 credit = $0.01. Copy assistant 1 credit · square art 7 ·
             widescreen 14 · HD 20. Members get {MONTHLY_ALLOWANCE} free credits
-            every month. Current balance: <strong>{creditBalance}</strong>.
+            with each 30-day pass. Current balance:{" "}
+            <strong>{creditBalance}</strong>.
           </DialogDescription>
         </DialogHeader>
         {!selected ? (

@@ -22,19 +22,19 @@ interface Perk {
 const PERKS: Perk[] = [
   {
     icon: Tag,
-    title: "The 10,000-piece rate from piece one",
+    title: "The 10,000-piece rate on small batches",
     description:
-      "On volume-priced sizes (4.25 × 6, 6 × 9 and 6 × 11 postcards, letters, trifold brochures) members pay the 10,000-piece price whether they send 50 pieces or 5,000, and the 50,000 tier past that.",
+      "On volume-priced sizes (4.25 × 6, 6 × 9 and 6 × 11 postcards, letters, trifold brochures) members pay the 10,000-piece price whether they send 50 pieces or 5,000, and any lower 50,000-piece price past that. Only an order of a few pieces costs a little more, to cover the card fee.",
   },
   {
     icon: Layers,
     title: "No minimum volume",
     description:
-      "Test a single postcard or mail a whole city. Volume-priced sizes cost their 10,000-piece price at any quantity.",
+      "Test a single postcard or mail a whole city: there is no minimum order.",
   },
   {
     icon: Sparkles,
-    title: `${MONTHLY_ALLOWANCE} AI credits every month`,
+    title: `${MONTHLY_ALLOWANCE} AI credits with every pass`,
     description:
       "Generate backgrounds and copy in the AI Studio without buying a credit pack.",
   },
@@ -53,13 +53,13 @@ const PERKS: Perk[] = [
 ];
 
 const INCLUDED = [
-  "Cancel anytime",
+  "30 days, never renews by itself",
   "EZmailout print & USPS delivery",
   "Real-time IMb tracking",
   "Dynamic QR tracking links",
 ];
 
-/** The $9/month platform membership card used on the landing page. */
+/** The $9 30-day platform membership card used on the landing page. */
 export function MembershipCard() {
   return (
     <div
@@ -81,12 +81,12 @@ export function MembershipCard() {
                 {formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}
               </span>
               <span className="pb-1 text-base text-primary-foreground">
-                / month
+                / 30 days
               </span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-primary-foreground">
-              One flat fee gets you the 10,000-piece rate from your first piece.
-              Pay per piece only for what you actually mail.
+              One flat fee gets you the 10,000-piece rate on small batches. Pay
+              per piece only for what you actually mail.
             </p>
             <ul className="mt-6 space-y-2">
               {INCLUDED.map((item) => (

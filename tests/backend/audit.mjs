@@ -522,6 +522,17 @@ sections.orders = async function orders() {
     }
   }
   check(accepted === 200 && /busy/.test(busy ?? ""), "fresh identities together file at most 200 tickets an hour", { accepted, busy });
+
+  // A draft keeps its member price only while the membership lasts: once the
+  // 30-day pass has ended, checkout refuses it until it is launched again.
+  const day = 24 * 3600 * 1000;
+  await env.pic.advanceTime(25 * day); await env.pic.tick();
+  const late = await r.createCampaign(campaignInput(5));
+  check(late.ok && late.unitPriceCents[0] === 68n, "a member's draft on day 25 of the pass is priced at the member 68¢", { error: late.error, unit: late.unitPriceCents });
+  await r.uploadDocumentChunk(late.campaignId[0], 0n, 1n, "application/pdf", "art.pdf", pdf(4));
+  await env.pic.advanceTime(6 * day); await env.pic.tick();
+  const lapsed = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ CampaignOrder: null }, [late.campaignId[0]], []));
+  check(!lapsed.ok && /membership/i.test(lapsed.error[0] ?? ""), "once the membership has ended, checkout refuses the member-priced draft", lapsed.error);
 };
 
 // ─── Pricing parity: src/frontend/src/lib/pricing.ts vs the canister ─────────

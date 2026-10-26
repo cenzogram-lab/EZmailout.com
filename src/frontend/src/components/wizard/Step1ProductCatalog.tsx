@@ -484,12 +484,13 @@ export function Step1ProductCatalog() {
         </span>
         <p className="text-sm text-foreground">
           <span className="font-semibold">
-            {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month membership
+            {formatCents(SUBSCRIPTION_PRICE_CENTS)} 30-day membership
           </span>{" "}
           skips the volume tiers: members pay the 10,000-piece rate on
           volume-priced sizes (the 4.25 × 6, 6 × 9 and 6 × 11 postcards, the
-          letter and the trifold brochure) from the first piece. Next-day
-          production by EZmailout, USPS IMb tracking included.
+          letter and the trifold brochure) however small the batch; only an
+          order of a few pieces costs a little more, to cover the card fee.
+          Next-day production by EZmailout, USPS IMb tracking included.
         </p>
       </div>
 

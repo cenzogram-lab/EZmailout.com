@@ -116,7 +116,7 @@ const CREDITS: Intent = {
   keywords:
     /\b(credit|credits|ai|generate|generator|image\w*|copywrit\w*|headline\w*)\b/i,
   answer: () =>
-    `AI Studio lives in the design rail. 1 AI credit = ${usd(CREDIT_VALUE_CENTS)}: copy costs ${AI_COSTS.copy} credit, images ${AI_COSTS.squareImage}, ${AI_COSTS.wideImage} or ${AI_COSTS.hdImage}. Members get ${MONTHLY_ALLOWANCE} free credits every month, and packs are available any time.`,
+    `AI Studio lives in the design rail. 1 AI credit = ${usd(CREDIT_VALUE_CENTS)}: copy costs ${AI_COSTS.copy} credit, images ${AI_COSTS.squareImage}, ${AI_COSTS.wideImage} or ${AI_COSTS.hdImage}. Members get ${MONTHLY_ALLOWANCE} free credits with each 30-day membership, and packs are available any time.`,
   chips: ["studio"],
 };
 
@@ -170,7 +170,7 @@ const INTENTS: Intent[] = [
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
     priceable: true,
     answer: () =>
-      `There are no batch minimums — mail one piece or thousands. The volume-priced postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, and a ${membership}/month membership gets their 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
+      `There are no batch minimums — mail one piece or thousands. The volume-priced postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, and a ${membership} 30-day membership gets their 10,000-piece rate on small batches (only an order of a few pieces costs a little more, to cover the card fee). Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
     chips: ["catalog"],
   },
   {
@@ -258,7 +258,7 @@ function rowPrice(row: ProductSpec): string {
   );
   const member = usd(pieceRateCents(row.id, 1, true));
   const firstClass = classSurchargeCents(row.id, "FirstClass");
-  return `${steps.join(", ")}, and members pay no more than ${member} at any volume${
+  return `${steps.join(", ")}, and members pay no more than ${member} on all but the smallest orders${
     firstClass > 0
       ? ` (Marketing Mail; First-Class adds ${usd(firstClass)} a piece)`
       : ""
