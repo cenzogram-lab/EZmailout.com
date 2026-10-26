@@ -31,6 +31,7 @@ import {
   catalogMailClassLabel,
   formatCents,
   getPricingRow,
+  getUnitPriceCents,
   mailClassDelivery,
   startingPriceCents,
   supportsBlackAndWhite,
@@ -485,7 +486,7 @@ export function Step1ProductCatalog() {
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
               {tierSummary(selectedRow.id) ??
-                `${formatCents(selectedRow.retailPriceCents)} per piece`}{" "}
+                `${formatCents(getUnitPriceCents(selectedRow.id))} per piece`}{" "}
               (
               {catalogMailClassLabel(
                 selectedSpec?.mailClass ?? selectedRow.defaultMailClass,

@@ -557,7 +557,13 @@ sections.pricing = async function pricing() {
   const env = await start();
   const ledger = await env.as(ident(161)).getPricingLedger();
   check(ledger.length === ts.PRICING_LEDGER.length, "both ledgers have the same rows", { canister: ledger.length, frontend: ts.PRICING_LEDGER.length });
+  const moPostage = Number(/eddmPostageCents : Nat = ([\d_]+)/.exec(mo)[1]);
+  check(moPostage === ts.EDDM_POSTAGE_CENTS, "EDDM postage matches", { moPostage, front: ts.EDDM_POSTAGE_CENTS });
   const canisterUnit = (row, qty, member) => {
+    const postage = row.productType.Eddm !== undefined ? moPostage : 0;
+    return canisterPrint(row, qty, member) + postage;
+  };
+  const canisterPrint = (row, qty, member) => {
     const tiers = moTiers[row.layoutVariant];
     if (!tiers) return Number(row.retailPriceCents);
     const effective = member && qty < moMember ? moMember : qty;
@@ -587,7 +593,7 @@ sections.pricing = async function pricing() {
 
   // And the canister's own campaign prices agree with the frontend's quote.
   const buyer = env.as(ident(162));
-  for (const [variant, n] of [["4.25x6", 1], ["4.25x6", 1_000], ["letter", 999], ["11x8.5_brochure", 1_000], ["certified_letter", 2]]) {
+  for (const [variant, n] of [["4.25x6", 1], ["4.25x6", 1_000], ["letter", 999], ["11x8.5_brochure", 1_000], ["certified_letter", 2], ["eddm_8.5x11", 3]]) {
     const r = await buyer.createCampaign(campaignInput(n, { product: { colorOption: [], layoutVariant: variant, productType: { Postcard: null } } }));
     const unit = ts.getUnitPriceCents(variant, n, false);
     check(r.ok && r.unitPriceCents[0] === BigInt(unit) && r.totalCents[0] === BigInt(unit * n), `the canister prices ${n} × ${variant} at the frontend's ${unit}¢`, { error: r.error, unit: r.unitPriceCents, total: r.totalCents });
@@ -778,9 +784,10 @@ sections.auditFixes = async function auditFixes() {
   const after = (await b.getMyAccount())[0].creditBalance;
   check(packPaid.ok && after - before === 1600n, "the Growth pack grants its advertised 1,600 credits, bonus included once", { before, after, error: packPaid.error });
 
-  // Card payments start at $0.50: a smaller order is refused up front.
-  const tiny = await b.createCampaign(campaignInput(1, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
-  check(!tiny.ok && /\$0\.50/.test(tiny.error[0] ?? ""), "an order under $0.50 is refused when it is created, not at checkout", tiny.error);
+  // EDDM is charged its USPS saturation postage on top of the print price,
+  // so even one piece clears the $0.50 card minimum.
+  const eddm = await b.createCampaign(campaignInput(1, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
+  check(eddm.ok && eddm.unitPriceCents[0] === 66n && eddm.totalCents[0] === 66n, "one EDDM 6.5 × 9 piece costs 66¢: 40¢ print + 26¢ USPS saturation postage", { error: eddm.error, unit: eddm.unitPriceCents });
 
   // Declared recipient counts do not fill the canister-wide budget: six
   // identities each pricing a 1,000,000-piece draft leave room for others.

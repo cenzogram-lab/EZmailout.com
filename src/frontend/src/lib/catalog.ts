@@ -80,7 +80,7 @@ export const CATALOG: CatalogCategory[] = [
       "Saturation flats delivered to every address on the carrier routes you pick.",
     icon: "eddm",
     variants: ["eddm_6.5x9", "eddm_8.5x11", "eddm_6.25x11", "eddm_8.5x12"],
-    note: "EDDM® drops are priced per household on the routes you choose in the audience step.",
+    note: "EDDM® prices include USPS saturation postage ($0.26 a piece) for every address you mail.",
   },
   {
     id: "priority-mail-plus",

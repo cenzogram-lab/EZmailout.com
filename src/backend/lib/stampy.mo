@@ -33,7 +33,10 @@ module {
     for (row in PricingLib.rows().vals()) {
       out #= "- " # row.displayName # ": ";
       switch (PricingLib.volumeTiers(row.layoutVariant)) {
-        case null { out #= dollars(row.retailPriceCents) # " per piece\n" };
+        case null {
+          let postage = PricingLib.postageCents(row);
+          out #= dollars(PricingLib.calculateUnitPrice(row, 1, false)) # " per piece" # (if (postage > 0) " (USPS EDDM saturation postage of " # dollars(postage) # " included)" else "") # "\n";
+        };
         case (?_) {
           var parts = "";
           var previous = 0;
@@ -59,7 +62,7 @@ module {
     # "FACTS (do not state prices or policies that are not listed here):\n"
     # "- A " # dollars(Credits.subscriptionPriceCents) # "/month membership gives direct access to EZmailout wholesale print and USPS postage with no batch minimums: mail a single piece or thousands. The volume-priced sizes (4.25x6, 6x9 and 6x11 postcards, the letter and the trifold brochure) get cheaper from 1,000, 10,000 and 50,000 pieces, and members pay at most the 10,000-piece rate on any batch of those sizes; every other size has one price. A campaign can hold up to 1,000,000 recipients, and orders under $0.50 cannot be paid by card.\n"
     # "- Every price below includes printing, postage and USPS CASS address verification.\n"
-    # "- The catalog has 14 product families and 29 sizes: postcards, letters, Certified Mail, EDDM (Every Door Direct Mail), Priority Mail, Priority Mail Express, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock. EDDM prices cover printing only; saturation postage is added per carrier route.\n"
+    # "- The catalog has 14 product families and 29 sizes: postcards, letters, Certified Mail, EDDM (Every Door Direct Mail), Priority Mail, Priority Mail Express, flyers, secure mailers, notecards, rack cards, brochures, reply mail, booklets and card stock. EDDM prices below already include USPS EDDM saturation postage of " # dollars(PricingLib.eddmPostageCents) # " a piece.\n"
     # "- The campaign wizard has four steps: 1 choose the mail piece, 2 audience (CSV upload with automatic CASS verification, a radius map estimate, or a saved preset), 3 design studio (keep text and logos inside the green 1/4 inch safe line; the red 1/8 inch bleed is trimmed), 4 review, pay and launch.\n"
     # "- AI Studio in the design rail writes copy and generates backgrounds with AI credits. 1 AI credit = $0.01. Copy costs " # Credits.copyCredits.toText() # " credit; images cost " # Credits.imageCredits(#Square1024).toText() # ", " # Credits.imageCredits(#Wide1792).toText() # " or " # Credits.imageCredits(#WideHd1792).toText() # " credits. Members get " # Credits.monthlyAllowance.toText() # " free credits every month, and credit packs can be bought any time.\n"
     # "- Every campaign is tracked with USPS Intelligent Mail barcode (IMb) scans on a 5-stage timeline: created, in production, in transit, sorted at the local hub, delivered. Mail USPS cannot deliver (including forwarded mail) is marked Undeliverable, and mail sent back is marked Returned. Dynamic QR codes record scans.\n"

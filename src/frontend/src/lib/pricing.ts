@@ -311,7 +311,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     hasAddressBlock: true,
     layout: "EDDM Self Mailer",
     paperType: "White Matte with Gloss UV Finish",
-    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+    note: "USPS EDDM® saturation postage ($0.26 a piece)",
   }),
   spec({
     id: "eddm_8.5x11",
@@ -327,7 +327,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     hasAddressBlock: true,
     layout: "EDDM Self Mailer",
     paperType: "White Matte with Gloss UV Finish",
-    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+    note: "USPS EDDM® saturation postage ($0.26 a piece)",
   }),
   spec({
     id: "eddm_6.25x11",
@@ -343,7 +343,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     hasAddressBlock: true,
     layout: "EDDM Self Mailer",
     paperType: "White Matte with Gloss UV Finish",
-    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+    note: "USPS EDDM® saturation postage ($0.26 a piece)",
   }),
   spec({
     id: "eddm_8.5x12",
@@ -359,7 +359,7 @@ export const PRICING_LEDGER: ProductSpec[] = [
     hasAddressBlock: true,
     layout: "EDDM Self Mailer",
     paperType: "White Matte with Gloss UV Finish",
-    note: "Print base rate — EDDM® saturation postage is added per carrier route.",
+    note: "USPS EDDM® saturation postage ($0.26 a piece)",
   }),
   spec({
     id: "priority_letter",
@@ -699,8 +699,9 @@ export function volumeTiers(layoutVariant: string): readonly number[] | null {
  * Cents per piece for `quantity` pieces, exactly as the canister prices a new
  * campaign (`PricingLib.calculateUnitPrice`): a member is priced as at least
  * `MEMBER_TIER_QUANTITY` pieces, and no tier sells below the print cost (one
- * under it is lifted to cost + 1¢). 0 when the variant is unknown. With the
- * defaults this is the list price for a single piece.
+ * under it is lifted to cost + 1¢). EDDM® saturation postage is included
+ * (`postageCents`). 0 when the variant is unknown. With the defaults this is
+ * the list price for a single piece.
  */
 export function getUnitPriceCents(
   layoutVariant: string,
@@ -709,6 +710,14 @@ export function getUnitPriceCents(
 ): number {
   const row = getPricingRow(layoutVariant);
   if (!row) return 0;
+  return printUnitCents(row, quantity, isMember) + postageCents(row);
+}
+
+function printUnitCents(
+  row: ProductSpec,
+  quantity: number,
+  isMember: boolean,
+): number {
   const tiers = volumeTiers(row.id);
   if (!tiers) return row.retailPriceCents;
   const effective = isMember
@@ -719,6 +728,18 @@ export function getUnitPriceCents(
     if (effective >= min) price = tiers[i];
   });
   return price > row.baseCostCents ? price : row.baseCostCents + 1;
+}
+
+/**
+ * USPS EDDM® Retail saturation postage per piece (the rate from 12 July
+ * 2026). An EDDM row's ledger price is print only, so every EDDM piece is
+ * charged this on top. Mirrors `PricingLib.eddmPostageCents`.
+ */
+export const EDDM_POSTAGE_CENTS = 26;
+
+/** Postage charged per piece on top of the ledger price (EDDM® only). */
+export function postageCents(row: ProductSpec): number {
+  return isEddm(row) ? EDDM_POSTAGE_CENTS : 0;
 }
 
 /** `getUnitPriceCents` in dollars, for callers that work in dollars. */
@@ -809,8 +830,8 @@ export function hasAddressSide(layoutVariant: string): boolean {
   return getPricingRow(layoutVariant)?.hasAddressBlock ?? false;
 }
 
-/** EDDM® rows price print only; saturation postage is added per carrier route. */
-export function isBaseRateOnly(row: ProductSpec): boolean {
+/** EDDM® rows: their ledger price is print only (see `postageCents`). */
+export function isEddm(row: ProductSpec): boolean {
   return row.productType === ProductType.Eddm;
 }
 

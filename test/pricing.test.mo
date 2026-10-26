@@ -66,11 +66,16 @@ for ((variant, schedule) in [
   expect(variant # " list price", r.retailPriceCents, schedule[0]);
 };
 
-// Formats competitors do not sell keep their flat price at any volume.
+// Formats competitors do not sell keep their flat price at any volume;
+// EDDM adds USPS saturation postage to its print-only ledger price.
 for (variant in ["certified_letter", "priority_express_letter", "8.5x11_secure", "eddm_6.5x9", "3.5x5", "8.5x11_flyer"].vals()) {
   let r = row(variant);
-  expect(variant # " flat", PricingLib.calculateUnitPrice(r, 50_000, true), r.retailPriceCents);
+  expect(variant # " flat", PricingLib.calculateUnitPrice(r, 50_000, true), r.retailPriceCents + PricingLib.postageCents(r));
 };
+expect("EDDM postage", PricingLib.eddmPostageCents, 26);
+expect("EDDM 6.5 x 9, print 40¢ + postage 26¢", PricingLib.calculateUnitPrice(row("eddm_6.5x9"), 1, false), 66);
+expect("EDDM 8.5 x 12, print 55¢ + postage 26¢", PricingLib.calculateUnitPrice(row("eddm_8.5x12"), 5_000, true), 81);
+expect("no postage on top for a postcard", PricingLib.postageCents(row("6x9")), 0);
 
 // Card payments start at $0.50 (checked by createCampaign and checkout).
 expect("minimum order", PricingLib.minOrderCents, 50);

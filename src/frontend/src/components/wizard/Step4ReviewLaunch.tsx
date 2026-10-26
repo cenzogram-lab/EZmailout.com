@@ -24,11 +24,7 @@ import {
   canvasForStorage,
   recipientChunkEnd,
 } from "@/lib/inputLimits";
-import {
-  catalogMailClassLabel,
-  catalogMailClassToWire,
-  isBaseRateOnly,
-} from "@/lib/pricing";
+import { catalogMailClassLabel, catalogMailClassToWire } from "@/lib/pricing";
 import {
   MIN_ORDER_CENTS,
   SUBSCRIPTION_PRICE_CENTS,
@@ -807,15 +803,6 @@ export function Step4ReviewLaunch() {
                   <span>{row.note}</span>
                   <span className="shrink-0">Included</span>
                 </div>
-              ) : null}
-              {row && isBaseRateOnly(row) ? (
-                <p
-                  className="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground"
-                  data-ocid="review.invoice.eddm_note"
-                >
-                  EDDM® is billed at the print base rate above; USPS saturation
-                  postage is added per carrier route once the routes are bound.
-                </p>
               ) : null}
               <Separator />
               <div className="flex items-baseline justify-between">

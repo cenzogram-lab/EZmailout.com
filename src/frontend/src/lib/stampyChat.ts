@@ -7,13 +7,14 @@ import {
 import { AI_COSTS, CREDIT_VALUE_CENTS, MONTHLY_ALLOWANCE } from "@/lib/credits";
 import { formatNumber } from "@/lib/format";
 import {
+  EDDM_POSTAGE_CENTS,
   PRICING_LEDGER,
   type ProductSpec,
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
   getPricingRow,
   getUnitPriceCents,
-  isBaseRateOnly,
+  isEddm,
   startingPriceCents,
   volumeTierSteps,
   volumeTiers,
@@ -195,16 +196,11 @@ const PRICE_WORDS =
   /\b(price\w*|cost\w*|how much|rate|rates|cheap\w*|fee|per piece)\b|\$/i;
 const MEMBERSHIP_WORDS = /\b(membership|member|subscri\w*|minimum\w*)\b|\$9\b/i;
 const INCLUDED = "printing, postage and CASS address verification included";
-const EDDM_INCLUDED =
-  "printing included; EDDM® saturation postage is added per carrier route";
+const EDDM_INCLUDED = `printing, USPS EDDM® saturation postage (${formatCents(EDDM_POSTAGE_CENTS)} a piece) and CASS address verification included`;
 
-/** What the prices of `rows` include, in words (EDDM® prices are print only). */
+/** What the prices of `rows` include, in words (EDDM® names its postage). */
 function includedFor(rows: ProductSpec[]): string {
-  const eddm = rows.filter(isBaseRateOnly).length;
-  if (eddm === rows.length) return EDDM_INCLUDED;
-  return eddm > 0
-    ? `${INCLUDED} (EDDM® prices are printing only; saturation postage is added per carrier route)`
-    : INCLUDED;
+  return rows.length > 0 && rows.every(isEddm) ? EDDM_INCLUDED : INCLUDED;
 }
 /** A shared size lists at most this many formats, cheapest first. */
 const MAX_LISTED = 5;
@@ -253,7 +249,8 @@ const sameSize = (row: ProductSpec, [a, b]: [number, number]) => {
 
 /** One format's price in words: its volume tiers, or its flat price. */
 function rowPrice(row: ProductSpec): string {
-  if (!volumeTiers(row.id)) return `${usd(row.retailPriceCents)} per piece`;
+  if (!volumeTiers(row.id))
+    return `${usd(getUnitPriceCents(row.id))} per piece`;
   const steps = volumeTierSteps(row.id).map(({ minimum, cents }) =>
     minimum === 0
       ? `${usd(cents)} per piece under 1,000 pieces`

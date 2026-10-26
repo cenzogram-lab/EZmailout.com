@@ -110,11 +110,28 @@ module {
     };
   };
 
-  /// Cents per piece for `qty` pieces of `row`. A member is priced as at
-  /// least `memberTierQuantity` pieces. A tier never sells below the print
-  /// cost: one under it is lifted to cost + 1¢ (4.25 × 6 and 6 × 11 at
-  /// 50,000, the brochure from 1,000).
+  /// USPS EDDM® Retail saturation postage per piece (the rate from 12 July
+  /// 2026). An EDDM row's ledger price is print only, so every EDDM piece is
+  /// charged this on top. Mirrored by `EDDM_POSTAGE_CENTS` in
+  /// `src/frontend/src/lib/pricing.ts`.
+  public let eddmPostageCents : Nat = 26;
+
+  /// Postage charged per piece on top of the ledger price: EDDM's saturation
+  /// postage; every other row's price already includes postage.
+  public func postageCents(row : Types.PricingRow) : Nat {
+    switch (row.productType) { case (#Eddm) eddmPostageCents; case _ 0 };
+  };
+
+  /// Cents per piece for `qty` pieces of `row`, as checkout charges it
+  /// (`postageCents` included). A member is priced as at least
+  /// `memberTierQuantity` pieces. A tier never sells below the print cost:
+  /// one under it is lifted to cost + 1¢ (4.25 × 6 and 6 × 11 at 50,000, the
+  /// brochure from 1,000).
   public func calculateUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
+    printUnitPrice(row, qty, isMember) + postageCents(row);
+  };
+
+  func printUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
     switch (volumeTiers(row.layoutVariant)) {
       case null row.retailPriceCents;
       case (?tiers) {
