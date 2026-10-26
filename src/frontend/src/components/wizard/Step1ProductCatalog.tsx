@@ -29,6 +29,7 @@ import {
   type PricingRowUi,
   SUBSCRIPTION_PRICE_CENTS,
   catalogMailClassLabel,
+  classSurchargeCents,
   formatCents,
   getPricingRow,
   getUnitPriceCents,
@@ -195,6 +196,9 @@ function SizeRow({
               data-ocid={`catalog.size.${row.id}.class.${option}`}
             >
               {catalogMailClassLabel(option)} · {mailClassDelivery(option)}
+              {classSurchargeCents(row.id, option) > 0
+                ? ` · +${formatCents(classSurchargeCents(row.id, option))}/pc`
+                : ""}
             </button>
           );
         })}
@@ -486,11 +490,16 @@ export function Step1ProductCatalog() {
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
               {tierSummary(selectedRow.id) ??
-                `${formatCents(getUnitPriceCents(selectedRow.id))} per piece`}{" "}
+                `${formatCents(getUnitPriceCents(selectedRow.id, 1, false, selectedSpec?.mailClass))} per piece`}{" "}
               (
               {catalogMailClassLabel(
                 selectedSpec?.mailClass ?? selectedRow.defaultMailClass,
               )}
+              {tierSummary(selectedRow.id) &&
+              selectedSpec?.mailClass &&
+              classSurchargeCents(selectedRow.id, selectedSpec.mailClass) > 0
+                ? `: +${formatCents(classSurchargeCents(selectedRow.id, selectedSpec.mailClass))} a piece`
+                : ""}
               )
             </span>
           ) : (

@@ -80,6 +80,23 @@ expect("no postage on top for a postcard", PricingLib.postageCents(row("6x9")), 
 // Card payments start at $0.50 (checked by createCampaign and checkout).
 expect("minimum order", PricingLib.minOrderCents, 50);
 
+// First-Class on a format priced for Marketing Mail that cannot absorb the
+// dearer postage adds 24¢ a piece; nothing else changes with the class.
+expect("first-class surcharge", PricingLib.firstClassSurchargeCents, 24);
+expect("6x9 first-class x 500", PricingLib.unitPriceFor(row("6x9"), 500, false, #FirstClass), 122);
+expect("6x9 marketing mail x 500", PricingLib.unitPriceFor(row("6x9"), 500, false, #MarketingMail), 98);
+expect("6x11 first-class member", PricingLib.unitPriceFor(row("6x11"), 10, true, #FirstClass), 98);
+expect("brochure first-class x 1,000", PricingLib.unitPriceFor(row("11x8.5_brochure"), 1_000, false, #FirstClass), 132);
+expect("flyer first-class, no surcharge", PricingLib.unitPriceFor(row("8.5x11_flyer"), 1, false, #FirstClass), 145);
+expect("4.25x6 is First-Class already", PricingLib.unitPriceFor(row("4.25x6"), 500, false, #FirstClass), 79);
+for (variant in ["6x9", "6x11", "11x8.5_brochure"].vals()) {
+  let r = row(variant);
+  for (min in PricingLib.tierMinimums.vals()) {
+    // First-Class never sells below the Marketing Mail cost plus the extra postage.
+    assert PricingLib.unitPriceFor(r, min, false, #FirstClass) > r.baseCostCents + PricingLib.firstClassSurchargeCents;
+  };
+};
+
 // An empty order or one over the checkout limit has no total.
 assert PricingLib.campaignCostCents(79, 0) == null;
 assert PricingLib.campaignCostCents(100_000_000, 1) == null;

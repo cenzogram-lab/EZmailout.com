@@ -11,6 +11,7 @@ import {
   PRICING_LEDGER,
   type ProductSpec,
   SUBSCRIPTION_PRICE_CENTS,
+  classSurchargeCents,
   formatCents,
   getPricingRow,
   getUnitPriceCents,
@@ -257,7 +258,12 @@ function rowPrice(row: ProductSpec): string {
       : `${usd(cents)} from ${formatNumber(minimum)}`,
   );
   const member = usd(getUnitPriceCents(row.id, 1, true));
-  return `${steps.join(", ")}, and members pay no more than ${member} at any volume`;
+  const firstClass = classSurchargeCents(row.id, "FirstClass");
+  return `${steps.join(", ")}, and members pay no more than ${member} at any volume${
+    firstClass > 0
+      ? ` (Marketing Mail; First-Class adds ${usd(firstClass)} a piece)`
+      : ""
+  }`;
 }
 
 /** "from $0.56" for a volume-priced format, "$1.05" for a flat one. */

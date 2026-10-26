@@ -700,17 +700,51 @@ export function volumeTiers(layoutVariant: string): readonly number[] | null {
  * campaign (`PricingLib.calculateUnitPrice`): a member is priced as at least
  * `MEMBER_TIER_QUANTITY` pieces, and no tier sells below the print cost (one
  * under it is lifted to cost + 1¢). EDDM® saturation postage is included
- * (`postageCents`). 0 when the variant is unknown. With the defaults this is
+ * (`postageCents`), and with `mailClass` its surcharge (`classSurchargeCents`;
+ * without it, the row's default class). 0 when the variant is unknown. With the defaults this is
  * the list price for a single piece.
  */
 export function getUnitPriceCents(
   layoutVariant: string,
   quantity = 1,
   isMember = false,
+  mailClass?: CatalogMailClass,
 ): number {
   const row = getPricingRow(layoutVariant);
   if (!row) return 0;
-  return printUnitCents(row, quantity, isMember) + postageCents(row);
+  return (
+    printUnitCents(row, quantity, isMember) +
+    postageCents(row) +
+    (mailClass ? classSurchargeCents(row.id, mailClass) : 0)
+  );
+}
+
+/**
+ * Extra postage per piece when a format priced for Marketing Mail is sent
+ * First-Class: USPS First-Class presort letters less Marketing Mail letters
+ * at mixed sort (prices from 12 July 2026), on the formats whose volume
+ * prices cannot absorb it. Mirrors `PricingLib.firstClassSurchargeCents`.
+ */
+export const FIRST_CLASS_SURCHARGE_CENTS = 24;
+
+const FIRST_CLASS_SURCHARGED = new Set(["6x9", "6x11", "11x8.5_brochure"]);
+
+/**
+ * The surcharge `mailClass` adds to a piece of `layoutVariant` (First-Class
+ * on a surcharged format priced for Marketing Mail), as
+ * `PricingLib.classSurchargeCents` charges it.
+ */
+export function classSurchargeCents(
+  layoutVariant: string,
+  mailClass: CatalogMailClass,
+): number {
+  const row = getPricingRow(layoutVariant);
+  return row &&
+    mailClass === "FirstClass" &&
+    row.defaultMailClass === "StandardMarketing" &&
+    FIRST_CLASS_SURCHARGED.has(row.id)
+    ? FIRST_CLASS_SURCHARGE_CENTS
+    : 0;
 }
 
 function printUnitCents(

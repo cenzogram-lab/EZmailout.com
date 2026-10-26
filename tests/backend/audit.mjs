@@ -559,9 +559,13 @@ sections.pricing = async function pricing() {
   check(ledger.length === ts.PRICING_LEDGER.length, "both ledgers have the same rows", { canister: ledger.length, frontend: ts.PRICING_LEDGER.length });
   const moPostage = Number(/eddmPostageCents : Nat = ([\d_]+)/.exec(mo)[1]);
   check(moPostage === ts.EDDM_POSTAGE_CENTS, "EDDM postage matches", { moPostage, front: ts.EDDM_POSTAGE_CENTS });
-  const canisterUnit = (row, qty, member) => {
+  const moSurcharge = Number(/firstClassSurchargeCents : Nat = ([\d_]+)/.exec(mo)[1]);
+  const moSurcharged = [.../case \(("[^)]+)\) true;/.exec(mo.slice(mo.indexOf("func firstClassSurcharged")))[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  check(moSurcharge === ts.FIRST_CLASS_SURCHARGE_CENTS && ser(moSurcharged) === ser(["6x9", "6x11", "11x8.5_brochure"]), "the First-Class surcharge and its formats match", { moSurcharge, moSurcharged });
+  const canisterUnit = (row, qty, member, firstClass = false) => {
     const postage = row.productType.Eddm !== undefined ? moPostage : 0;
-    return canisterPrint(row, qty, member) + postage;
+    const surcharge = firstClass && row.printSpec.mailClass.MarketingMail !== undefined && moSurcharged.includes(row.layoutVariant) ? moSurcharge : 0;
+    return canisterPrint(row, qty, member) + postage + surcharge;
   };
   const canisterPrint = (row, qty, member) => {
     const tiers = moTiers[row.layoutVariant];
@@ -583,6 +587,9 @@ sections.pricing = async function pricing() {
         const want = canisterUnit(row, qty, member);
         const got = ts.getUnitPriceCents(row.layoutVariant, qty, member);
         if (want !== got) mismatches.push({ row: row.layoutVariant, qty, member, want, got });
+        const wantFc = canisterUnit(row, qty, member, true);
+        const gotFc = ts.getUnitPriceCents(row.layoutVariant, qty, member, "FirstClass");
+        if (wantFc !== gotFc) mismatches.push({ row: row.layoutVariant, qty, member, firstClass: true, want: wantFc, got: gotFc });
       }
     }
   }
@@ -597,6 +604,12 @@ sections.pricing = async function pricing() {
     const r = await buyer.createCampaign(campaignInput(n, { product: { colorOption: [], layoutVariant: variant, productType: { Postcard: null } } }));
     const unit = ts.getUnitPriceCents(variant, n, false);
     check(r.ok && r.unitPriceCents[0] === BigInt(unit) && r.totalCents[0] === BigInt(unit * n), `the canister prices ${n} × ${variant} at the frontend's ${unit}¢`, { error: r.error, unit: r.unitPriceCents, total: r.totalCents });
+    if (r.ok) await buyer.deleteCampaignDraft(r.campaignId[0]);
+  }
+  for (const [variant, productType, n] of [["6x9", "Postcard", 3], ["8.5x11_flyer", "Flyer", 1]]) {
+    const r = await buyer.createCampaign(campaignInput(n, { mailClass: [{ FirstClass: null }], product: { colorOption: [], layoutVariant: variant, productType: { [productType]: null } } }));
+    const unit = ts.getUnitPriceCents(variant, n, false, "FirstClass");
+    check(r.ok && r.unitPriceCents[0] === BigInt(unit), `First-Class ${variant} is priced at the frontend's ${unit}¢`, { error: r.error, unit: r.unitPriceCents });
     if (r.ok) await buyer.deleteCampaignDraft(r.campaignId[0]);
   }
 };

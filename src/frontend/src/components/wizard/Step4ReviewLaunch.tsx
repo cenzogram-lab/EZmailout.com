@@ -28,6 +28,7 @@ import { catalogMailClassLabel, catalogMailClassToWire } from "@/lib/pricing";
 import {
   MIN_ORDER_CENTS,
   SUBSCRIPTION_PRICE_CENTS,
+  classSurchargeCents,
   formatCents,
   getPricingRow,
   getUnitPriceCents,
@@ -194,9 +195,19 @@ export function Step4ReviewLaunch() {
   const running = useRef(false);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
+  const mailClass = selectedSpec?.mailClass;
+  const surchargeCents =
+    selectedLayout && mailClass
+      ? classSurchargeCents(selectedLayout, mailClass)
+      : 0;
   // Quoted as the canister prices a new campaign: by volume and membership.
   const quotedUnitCents = selectedLayout
-    ? getUnitPriceCents(selectedLayout, recipientCount, subscriptionActive)
+    ? getUnitPriceCents(
+        selectedLayout,
+        recipientCount,
+        subscriptionActive,
+        mailClass,
+      )
     : 0;
   // Once checkout is open the order is the launched campaign, priced by the
   // canister (what the card is charged), not this browser's quote.
@@ -209,16 +220,19 @@ export function Step4ReviewLaunch() {
   const dueCents = charged?.totalCents ?? quotedUnitCents * recipientCount;
   const belowMinimum = dueCents > 0 && dueCents < MIN_ORDER_CENTS;
   const tiered = selectedLayout ? volumeTiers(selectedLayout) !== null : false;
-  const listUnitCents = selectedLayout ? getUnitPriceCents(selectedLayout) : 0;
+  const listUnitCents = selectedLayout
+    ? getUnitPriceCents(selectedLayout, 1, false, mailClass)
+    : 0;
   const savedCents =
     tiered && unitCents < listUnitCents
       ? (listUnitCents - unitCents) * recipientCount
       : 0;
   const memberRateApplies =
     selectedLayout !== null &&
-    unitCents < getUnitPriceCents(selectedLayout, recipientCount, false);
+    unitCents <
+      getUnitPriceCents(selectedLayout, recipientCount, false, mailClass);
   const memberUnitCents = selectedLayout
-    ? getUnitPriceCents(selectedLayout, recipientCount, true)
+    ? getUnitPriceCents(selectedLayout, recipientCount, true, mailClass)
     : 0;
   const memberSavingsCents = (unitCents - memberUnitCents) * recipientCount;
   const productLabel = row
@@ -281,6 +295,7 @@ export function Step4ReviewLaunch() {
               state.selectedLayout,
               state.recipientCount,
               useAccountStore.getState().subscriptionActive,
+              state.selectedSpec?.mailClass,
             ) * state.recipientCount
           : 0;
         let id =
@@ -790,6 +805,18 @@ export function Step4ReviewLaunch() {
                   : {formatCents(unitCents)}/pc (saved {formatCents(savedCents)}
                   )
                 </p>
+              ) : null}
+              {surchargeCents > 0 ? (
+                <div
+                  className="flex justify-between gap-3 text-xs text-muted-foreground"
+                  data-ocid="review.invoice.first_class"
+                >
+                  <span>
+                    First-Class postage instead of Marketing Mail (
+                    {formatCents(surchargeCents)} a piece)
+                  </span>
+                  <span className="shrink-0">Included</span>
+                </div>
               ) : null}
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Printing, postage and CASS included</span>

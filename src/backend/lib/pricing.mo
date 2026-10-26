@@ -131,6 +131,35 @@ module {
     printUnitPrice(row, qty, isMember) + postageCents(row);
   };
 
+  /// Extra postage per piece when a format priced for Marketing Mail is sent
+  /// First-Class: USPS First-Class presort letters less Marketing Mail letters
+  /// at mixed sort (70.7¢ − 46.7¢, prices from 12 July 2026). Charged only on
+  /// the formats whose volume prices cannot absorb it (`firstClassSurcharged`);
+  /// the flyer's flat price can. Mirrored by `FIRST_CLASS_SURCHARGE_CENTS` in
+  /// `src/frontend/src/lib/pricing.ts`.
+  public let firstClassSurchargeCents : Nat = 24;
+
+  /// Rows that pay `firstClassSurchargeCents` when sent First-Class.
+  public func firstClassSurcharged(layoutVariant : Text) : Bool {
+    switch (normalizeVariant(layoutVariant)) {
+      case ("6x9" or "6x11" or "11x8.5_brochure") true;
+      case _ false;
+    };
+  };
+
+  /// The surcharge `mailClass` adds to a piece of `row`: First-Class on a
+  /// row priced for Marketing Mail that `firstClassSurcharged` lists.
+  public func classSurchargeCents(row : Types.PricingRow, mailClass : Types.MailClass) : Nat {
+    if (mailClass == #FirstClass and row.printSpec.mailClass == #MarketingMail and firstClassSurcharged(row.layoutVariant)) firstClassSurchargeCents else 0;
+  };
+
+  /// `calculateUnitPrice` for a piece mailed at `mailClass` (the class the
+  /// print job uses, from `printSpecFor`): what `createCampaign` stores and
+  /// checkout charges.
+  public func unitPriceFor(row : Types.PricingRow, qty : Nat, isMember : Bool, mailClass : Types.MailClass) : Nat {
+    calculateUnitPrice(row, qty, isMember) + classSurchargeCents(row, mailClass);
+  };
+
   func printUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
     switch (volumeTiers(row.layoutVariant)) {
       case null row.retailPriceCents;

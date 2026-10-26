@@ -307,7 +307,9 @@ mixin (
       case (?a) AccountLib.isSubscriptionLive(a, Time.now());
       case null false;
     };
-    let unitCents = PricingLib.calculateUnitPrice(row, count, isMember);
+    // Sent First-Class, the formats priced for Marketing Mail that cannot
+    // absorb the dearer postage carry its surcharge (`classSurchargeCents`).
+    let unitCents = PricingLib.unitPriceFor(row, count, isMember, printSpec.mailClass);
     if (unitCents * count < PricingLib.minOrderCents) {
       return fail("Card payments start at $0.50, so this order needs a few more pieces");
     };
