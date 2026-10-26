@@ -265,7 +265,7 @@ function rowPrice(row: ProductSpec): string {
   }`;
 }
 
-/** "from $0.58" for a volume-priced format, "$1.05" for a flat one. */
+/** "from $0.59" for a volume-priced format, "$1.05" for a flat one. */
 const fromPrice = (row: ProductSpec) =>
   `${volumeTiers(row.id) ? "from " : ""}${usd(startingPriceCents(row.id))}`;
 

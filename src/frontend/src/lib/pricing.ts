@@ -710,11 +710,13 @@ export function volumeTiers(layoutVariant: string): readonly number[] | null {
 }
 
 /**
- * The card fee the payment processor keeps from every charge: 2.9% + 30¢
- * (its standard US card rate). Prices never fall below what covers it.
+ * The card fee the payment processor keeps from every charge, at its dearest
+ * card rate: 4.4% + 30¢ (2.9% for a US card plus 1.5% for an international
+ * one), so a card from anywhere is covered. Prices never fall below what
+ * covers it.
  * Mirrors `PricingLib.cardFeeBasisPoints` / `cardFeeFixedCents`.
  */
-export const CARD_FEE_BASIS_POINTS = 290;
+export const CARD_FEE_BASIS_POINTS = 440;
 export const CARD_FEE_FIXED_CENTS = 30;
 
 const ceilDiv = (a: number, b: number) => Math.floor((a + b - 1) / b);
@@ -883,7 +885,7 @@ export function startingPriceCents(layoutVariant: string): number {
 
 /**
  * Every tier of a volume-priced format, in words ("$0.79 under 1,000 ·
- * $0.71 from 1,000 · $0.62 from 10,000 · $0.58 from 50,000 · members
+ * $0.71 from 1,000 · $0.62 from 10,000 · $0.59 from 50,000 · members
  * $0.62"), or null for a flat-priced format. A tier the cost floor lifts to
  * the previous tier's price is left out.
  */

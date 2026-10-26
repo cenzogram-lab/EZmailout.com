@@ -575,7 +575,7 @@ sections.pricing = async function pricing() {
   check(moSurcharge === ts.FIRST_CLASS_SURCHARGE_CENTS && ser(moSurcharged) === ser(["6x9", "6x11", "11x8.5_brochure"]), "the First-Class surcharge and its formats match", { moSurcharge, moSurcharged });
   const moFeeBp = Number(/cardFeeBasisPoints : Nat = ([\d_]+)/.exec(mo)[1]);
   const moFeeFixed = Number(/cardFeeFixedCents : Nat = ([\d_]+)/.exec(mo)[1]);
-  check(moFeeBp === ts.CARD_FEE_BASIS_POINTS && moFeeFixed === ts.CARD_FEE_FIXED_CENTS && moFeeBp === 290 && moFeeFixed === 30, "the card fee (2.9% + 30¢) matches", { moFeeBp, moFeeFixed });
+  check(moFeeBp === ts.CARD_FEE_BASIS_POINTS && moFeeFixed === ts.CARD_FEE_FIXED_CENTS && moFeeBp === 440 && moFeeFixed === 30, "the card fee (4.4% + 30¢) matches", { moFeeBp, moFeeFixed });
   // The canister's rule, written out independently: the tier plus postage and
   // surcharge, never below what keeps 1¢ a piece over cost after the card fee
   // (its percentage on every piece, its fixed 30¢ on the order).
@@ -618,9 +618,9 @@ sections.pricing = async function pricing() {
     }
   }
   check(mismatches.length === 0, "the frontend prices every row, quantity and membership as the canister does", mismatches.slice(0, 5));
-  check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 58 && ts.getUnitPriceCents("4.25x6", 10, true) === 62 && ts.getUnitPriceCents("4.25x6", 1) === 89, "the frontend's 4×6 tiers: 79¢, 71¢, floored 58¢, member 62¢, a single piece 89¢");
-  check(ts.startingPriceCents("4.25x6") === 58 && ts.startingPriceCents("11x8.5_brochure") === 112 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the last tier for tiered formats (campaigns have no size limit) and the flat price otherwise");
-  check(ts.tierSummary("4.25x6") === "$0.79 under 1,000 · $0.71 from 1,000 · $0.62 from 10,000 · $0.58 from 50,000 · members $0.62" && ts.tierSummary("11x8.5_brochure") === "$1.32 under 1,000 · $1.12 from 1,000 · members $1.12", "tier summaries list every distinct tier", [ts.tierSummary("4.25x6"), ts.tierSummary("11x8.5_brochure")]);
+  check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 59 && ts.getUnitPriceCents("4.25x6", 10, true) === 62 && ts.getUnitPriceCents("4.25x6", 1) === 90, "the frontend's 4×6 tiers: 79¢, 71¢, floored 59¢, member 62¢, a single piece 90¢");
+  check(ts.startingPriceCents("4.25x6") === 59 && ts.startingPriceCents("11x8.5_brochure") === 113 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the last tier for tiered formats (campaigns have no size limit) and the flat price otherwise");
+  check(ts.tierSummary("4.25x6") === "$0.79 under 1,000 · $0.71 from 1,000 · $0.62 from 10,000 · $0.59 from 50,000 · members $0.62" && ts.tierSummary("11x8.5_brochure") === "$1.32 under 1,000 · $1.13 from 1,000 · members $1.13", "tier summaries list every distinct tier", [ts.tierSummary("4.25x6"), ts.tierSummary("11x8.5_brochure")]);
 
   // And the canister's own campaign prices agree with the frontend's quote.
   const buyer = env.as(ident(162));
@@ -825,10 +825,10 @@ sections.auditFixes = async function auditFixes() {
   check(packPaid.ok && after - before === 1600n, "the Growth pack grants its advertised 1,600 credits, bonus included once", { before, after, error: packPaid.error });
 
   // EDDM is charged its USPS saturation postage on top of the print price
-  // (40¢ + 26¢ = 66¢ a piece); one piece alone is lifted to 75¢ so the order
+  // (40¢ + 26¢ = 66¢ a piece); one piece alone is lifted to 76¢ so the order
   // also covers the card fee's fixed 30¢.
   const eddm = await b.createCampaign(campaignInput(1, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
-  check(eddm.ok && eddm.unitPriceCents[0] === 75n && eddm.totalCents[0] === 75n, "one EDDM 6.5 × 9 piece costs 75¢: the 66¢ rate lifted to cover the card fee", { error: eddm.error, unit: eddm.unitPriceCents });
+  check(eddm.ok && eddm.unitPriceCents[0] === 76n && eddm.totalCents[0] === 76n, "one EDDM 6.5 × 9 piece costs 76¢: the 66¢ rate lifted to cover the card fee", { error: eddm.error, unit: eddm.unitPriceCents });
   if (eddm.ok) await b.deleteCampaignDraft(eddm.campaignId[0]);
   const eddm2 = await b.createCampaign(campaignInput(2, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
   check(eddm2.ok && eddm2.unitPriceCents[0] === 66n, "two EDDM 6.5 × 9 pieces cost 66¢ each: 40¢ print + 26¢ USPS saturation postage", { error: eddm2.error, unit: eddm2.unitPriceCents });

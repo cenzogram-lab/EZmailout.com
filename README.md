@@ -21,11 +21,11 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 | Family | Print document class | Trim | Cost | Rate (under 1,000) | Volume prices | Mail class |
 | --- | --- | --- | ---: | ---: | --- | --- |
 | Postcards | `Postcard 3.5 x 5` | 3.5″ × 5″ | $0.53 | **$1.10** | — | First-Class |
-| Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$0.79** | 1,000+: $0.71 · 10,000+: $0.62 · 50,000+: $0.58 | First-Class |
+| Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$0.79** | 1,000+: $0.71 · 10,000+: $0.62 · 50,000+: $0.59 | First-Class |
 | Postcards | `Postcard 4 x 9` | 4″ × 9″ | $0.55 | **$1.20** | — | First-Class |
 | Postcards | `Postcard 5 x 8` | 5″ × 8″ | $0.54 | **$1.25** | — | First-Class |
 | Postcards | `Postcard 6 x 9` | 6″ × 9″ | $0.57 | **$0.98** | 1,000+: $0.72 · 10,000+: $0.68 · 50,000+: $0.65 | Marketing Mail / First-Class |
-| Postcards | `Postcard 6 x 11` | 6″ × 11″ | $0.73 | **$0.92** | 1,000+: $0.83 · 10,000+: $0.77 | Marketing Mail / First-Class |
+| Postcards | `Postcard 6 x 11` | 6″ × 11″ | $0.73 | **$0.92** | 1,000+: $0.83 · 10,000+: $0.78 | Marketing Mail / First-Class |
 | Letters | `Letter 8.5 x 11` | 8.5″ × 11″ | $0.59 | **$0.93** | 1,000+: $0.81 · 10,000+: $0.74 · 50,000+: $0.69 | First-Class |
 | Letters | `Letter 8.5 x 14` | 8.5″ × 14″ | $0.61 | **$1.65** | — | First-Class |
 | Certified Mail™ | `Certified Self Mailer 8.5 x 11` | 8.5″ × 11″ | $6.45 | **$12.90** | — | First-Class |
@@ -38,7 +38,7 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 | Priority Mail® Plus | `Priority Letter 8.5 x 11` | 8.5″ × 11″ | $11.66 | **$22.50** | — | Priority |
 | Priority Mail® Express | `Priority Mail® Express Letters 8.5 x 11` | 8.5″ × 11″ | $32.06 | **$55.00** | — | Priority Express |
 | Flyers | `Flyer 8.5 x 11` | 8.5″ × 11″ | $0.57 | **$1.45** | — | Marketing Mail / First-Class |
-| Brochures | `Brochure 11 x 8.5` | 11″ × 8.5″ | $1.07 | **$1.32** | 1,000+: $1.12 | Marketing Mail / First-Class |
+| Brochures | `Brochure 11 x 8.5` | 11″ × 8.5″ | $1.07 | **$1.32** | 1,000+: $1.13 | Marketing Mail / First-Class |
 | Secure Mailers | `Secure Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.58 | **$1.95** | — | First-Class |
 | Notecards | `Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $0.87 | **$1.85** | — | First-Class |
 | Notecards | `Folded Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $1.04 | **$2.25** | — | First-Class |
@@ -52,10 +52,10 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 
 Rates are per piece and include printing and postage, generated from `PRICING_LEDGER` (`src/frontend/src/lib/pricing.ts`,
 mirrored in `src/backend/lib/pricing.mo`). Volume prices apply from the quantity shown; a live member pays at most the
-10,000-piece rate on those five formats, and no price sells under cost + 1¢ a piece once the card fee (2.9% + 30¢)
+10,000-piece rate on those five formats, and no price sells under cost + 1¢ a piece once the card fee (4.4% + 30¢, the international card rate, so any card is covered)
 is paid: the percentage sets the per-piece floor, and an order of only a few pieces of a thin-margin format is priced a
-little higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.89, members included; the lift reaches a
-few hundred pieces only for a member's First-Class 6x11 or brochure, at 1¢ a piece). EDDM® prices include USPS EDDM Retail
+little higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.90, members included; past a few pieces the lift is at most 1¢ a piece, and
+it reaches about 1,070 pieces only on the brochure). EDDM® prices include USPS EDDM Retail
 saturation postage ($0.26 a piece; the Cost column is print only). The 6x9 and 6x11 postcards and the brochure are priced
 for Marketing Mail; First-Class adds $0.24 a piece. An order is at most $999,999.99 (and at least $0.50, the smallest card charge,
 which the floor already keeps every order above).

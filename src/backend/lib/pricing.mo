@@ -129,11 +129,13 @@ module {
     unitPriceFor(row, qty, isMember, row.printSpec.mailClass);
   };
 
-  /// The card fee the payment processor keeps from every charge: 2.9% + 30¢
-  /// (its standard US card rate). Prices never fall below what covers it.
+  /// The card fee the payment processor keeps from every charge, at its
+  /// dearest card rate: 4.4% + 30¢ (2.9% for a US card plus 1.5% for an
+  /// international one), so a card from anywhere is covered. Prices never fall
+  /// below what covers it.
   /// Mirrored by `CARD_FEE_BASIS_POINTS` / `CARD_FEE_FIXED_CENTS` in
   /// `src/frontend/src/lib/pricing.ts`.
-  public let cardFeeBasisPoints : Nat = 290;
+  public let cardFeeBasisPoints : Nat = 440;
   public let cardFeeFixedCents : Nat = 30;
 
   func ceilDiv(a : Nat, b : Nat) : Nat { (a + b - 1) / b };
