@@ -21,7 +21,7 @@ import {
 } from "@/lib/canvas";
 import { draftStorage } from "@/lib/draftStorage";
 import type { CatalogMailClass } from "@/lib/pricing";
-import { getPricingRow, getUnitPriceCents } from "@/lib/pricing";
+import { getPricingRow, pieceRateCents } from "@/lib/pricing";
 import {
   type Orientation,
   canvasDims,
@@ -539,7 +539,7 @@ export const useWizardStore = create<WizardStore>()(
                   documentClass: row.documentClass,
                   widthInches: row.widthInches,
                   heightInches: row.heightInches,
-                  unitPriceCents: getUnitPriceCents(row.id),
+                  unitPriceCents: pieceRateCents(row.id),
                   mailClass: row.defaultMailClass,
                   supportedMailClasses: row.supportedMailClasses,
                 }

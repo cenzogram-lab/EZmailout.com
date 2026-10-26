@@ -14,8 +14,8 @@ import {
   classSurchargeCents,
   formatCents,
   getPricingRow,
-  getUnitPriceCents,
   isEddm,
+  pieceRateCents,
   startingPriceCents,
   volumeTierSteps,
   volumeTiers,
@@ -250,14 +250,13 @@ const sameSize = (row: ProductSpec, [a, b]: [number, number]) => {
 
 /** One format's price in words: its volume tiers, or its flat price. */
 function rowPrice(row: ProductSpec): string {
-  if (!volumeTiers(row.id))
-    return `${usd(getUnitPriceCents(row.id))} per piece`;
+  if (!volumeTiers(row.id)) return `${usd(pieceRateCents(row.id))} per piece`;
   const steps = volumeTierSteps(row.id).map(({ minimum, cents }) =>
     minimum === 0
       ? `${usd(cents)} per piece under 1,000 pieces`
       : `${usd(cents)} from ${formatNumber(minimum)}`,
   );
-  const member = usd(getUnitPriceCents(row.id, 1, true));
+  const member = usd(pieceRateCents(row.id, 1, true));
   const firstClass = classSurchargeCents(row.id, "FirstClass");
   return `${steps.join(", ")}, and members pay no more than ${member} at any volume${
     firstClass > 0
@@ -266,7 +265,7 @@ function rowPrice(row: ProductSpec): string {
   }`;
 }
 
-/** "from $0.56" for a volume-priced format, "$1.05" for a flat one. */
+/** "from $0.58" for a volume-priced format, "$1.05" for a flat one. */
 const fromPrice = (row: ProductSpec) =>
   `${volumeTiers(row.id) ? "from " : ""}${usd(startingPriceCents(row.id))}`;
 

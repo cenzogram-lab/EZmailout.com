@@ -32,8 +32,8 @@ import {
   classSurchargeCents,
   formatCents,
   getPricingRow,
-  getUnitPriceCents,
   mailClassDelivery,
+  pieceRateCents,
   startingPriceCents,
   supportsBlackAndWhite,
   tierSummary,
@@ -506,7 +506,7 @@ export function Step1ProductCatalog() {
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
               {tierSummary(selectedRow.id) ??
-                `${formatCents(getUnitPriceCents(selectedRow.id, 1, false, selectedSpec?.mailClass))} per piece`}{" "}
+                `${formatCents(pieceRateCents(selectedRow.id, 1, false, selectedSpec?.mailClass))} per piece`}{" "}
               (
               {catalogMailClassLabel(
                 selectedSpec?.mailClass ?? selectedRow.defaultMailClass,

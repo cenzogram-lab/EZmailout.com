@@ -20,6 +20,7 @@ import {
   getPricingRow,
   getUnitPriceCents,
   mailClassLabel,
+  pieceRateCents,
   startingPriceCents,
   tierSummary,
   volumeTiers,
@@ -47,6 +48,8 @@ function clampQty(value: number): number {
 
 interface Quote {
   retailCents: number;
+  /** How much the card fee's fixed part lifts this order's per-piece price. */
+  smallOrderCents: number;
   memberCents: number;
   benchmarkCents: number;
   ezTotalCents: number;
@@ -78,6 +81,7 @@ function buildQuote(layoutVariant: string, qty: number): Quote {
       : null;
   return {
     retailCents,
+    smallOrderCents: Math.max(0, retailCents - pieceRateCents(row.id, qty)),
     memberCents,
     benchmarkCents,
     ezTotalCents,
@@ -252,6 +256,15 @@ export function PricingCalculator() {
               <div className="mt-1 text-xs text-muted-foreground">
                 {formatNumber(qty)} × {formatCents(quote.retailCents)}
               </div>
+              {quote.smallOrderCents > 0 ? (
+                <div
+                  className="mt-2 text-xs text-muted-foreground"
+                  data-ocid="pricing_calc.small_order.note"
+                >
+                  Includes {formatCents(quote.smallOrderCents)} a piece toward
+                  the fixed card fee on small orders.
+                </div>
+              ) : null}
               {quote.ezTotalCents > MAX_ORDER_CENTS ? (
                 <div
                   className="mt-2 text-xs text-muted-foreground"

@@ -32,6 +32,7 @@ import {
   formatCents,
   getPricingRow,
   getUnitPriceCents,
+  pieceRateCents,
   volumeTiers,
 } from "@/lib/pricing";
 import { normalizeRedirectUrl } from "@/lib/qr";
@@ -221,7 +222,21 @@ export function Step4ReviewLaunch() {
   const belowMinimum = dueCents > 0 && dueCents < MIN_ORDER_CENTS;
   const tiered = selectedLayout ? volumeTiers(selectedLayout) !== null : false;
   const listUnitCents = selectedLayout
-    ? getUnitPriceCents(selectedLayout, 1, false, mailClass)
+    ? pieceRateCents(selectedLayout, 1, false, mailClass)
+    : 0;
+  // The card fee has a fixed part per payment, so an order of a few pieces of
+  // a thin-margin format is lifted above the per-piece rate to cover it.
+  const smallOrderCents = selectedLayout
+    ? Math.max(
+        0,
+        unitCents -
+          pieceRateCents(
+            selectedLayout,
+            recipientCount,
+            subscriptionActive,
+            mailClass,
+          ),
+      )
     : 0;
   const savedCents =
     tiered && unitCents < listUnitCents
@@ -814,6 +829,19 @@ export function Step4ReviewLaunch() {
                   <span>
                     First-Class postage instead of Marketing Mail (
                     {formatCents(surchargeCents)} a piece)
+                  </span>
+                  <span className="shrink-0">Included</span>
+                </div>
+              ) : null}
+              {smallOrderCents > 0 ? (
+                <div
+                  className="flex justify-between gap-3 text-xs text-muted-foreground"
+                  data-ocid="review.invoice.small_order"
+                >
+                  <span>
+                    Small-order rate: each card payment carries a fixed fee, so
+                    this order costs {formatCents(smallOrderCents)} more a piece
+                    (more pieces bring it down)
                   </span>
                   <span className="shrink-0">Included</span>
                 </div>

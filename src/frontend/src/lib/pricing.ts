@@ -710,13 +710,87 @@ export function volumeTiers(layoutVariant: string): readonly number[] | null {
 }
 
 /**
- * Cents per piece for `quantity` pieces, exactly as the canister prices a new
- * campaign (`PricingLib.calculateUnitPrice`): a member is priced as at least
- * `MEMBER_TIER_QUANTITY` pieces, and no tier sells below the print cost (one
- * under it is lifted to cost + 1¢). EDDM® saturation postage is included
- * (`postageCents`), and with `mailClass` its surcharge (`classSurchargeCents`;
- * without it, the row's default class). 0 when the variant is unknown. With the defaults this is
- * the list price for a single piece.
+ * The card fee the payment processor keeps from every charge: 2.9% + 30¢
+ * (its standard US card rate). Prices never fall below what covers it.
+ * Mirrors `PricingLib.cardFeeBasisPoints` / `cardFeeFixedCents`.
+ */
+export const CARD_FEE_BASIS_POINTS = 290;
+export const CARD_FEE_FIXED_CENTS = 30;
+
+const ceilDiv = (a: number, b: number) => Math.floor((a + b - 1) / b);
+
+/** What the processor keeps from a charge of `totalCents` (percentage rounded up). */
+export function cardFeeCents(totalCents: number): number {
+  return (
+    ceilDiv(totalCents * CARD_FEE_BASIS_POINTS, 10_000) + CARD_FEE_FIXED_CENTS
+  );
+}
+
+/**
+ * What one piece costs at `mailClass` (default: the row's own): print
+ * (postage included, except EDDM), EDDM postage and the First-Class
+ * surcharge. Mirrors `PricingLib.pieceCostCents`.
+ */
+export function pieceCostCents(
+  row: ProductSpec,
+  mailClass?: CatalogMailClass,
+): number {
+  return (
+    row.baseCostCents +
+    postageCents(row) +
+    (mailClass ? classSurchargeCents(row.id, mailClass) : 0)
+  );
+}
+
+/** The lowest per-piece rate that keeps 1¢ a piece over `cost` after the fee's percentage. */
+export function rateFloorCents(cost: number): number {
+  return ceilDiv((cost + 1) * 10_000, 10_000 - CARD_FEE_BASIS_POINTS);
+}
+
+/**
+ * The lowest unit price at which an order of `quantity` pieces keeps 1¢ a
+ * piece over `cost` after the whole card fee, its fixed part included.
+ * Mirrors `PricingLib.orderFloorCents`.
+ */
+export function orderFloorCents(cost: number, quantity: number): number {
+  const n = Math.max(quantity, 1);
+  const need = (cost + 1) * n;
+  let unit = ceilDiv(
+    (need + CARD_FEE_FIXED_CENTS) * 10_000,
+    (10_000 - CARD_FEE_BASIS_POINTS) * n,
+  );
+  while (unit * n < need + cardFeeCents(unit * n)) unit += 1;
+  return unit;
+}
+
+/**
+ * The per-piece rate for `quantity` pieces, as price lists show it
+ * (`PricingLib.pieceRateCents`): the volume tier (a member is priced as at
+ * least `MEMBER_TIER_QUANTITY` pieces) plus EDDM® saturation postage and,
+ * with `mailClass`, its surcharge (without it, the row's default class),
+ * never below `rateFloorCents` of the piece's cost. 0 when the variant is
+ * unknown.
+ */
+export function pieceRateCents(
+  layoutVariant: string,
+  quantity = 1,
+  isMember = false,
+  mailClass?: CatalogMailClass,
+): number {
+  const row = getPricingRow(layoutVariant);
+  if (!row) return 0;
+  const listed =
+    tierUnitCents(row, quantity, isMember) +
+    postageCents(row) +
+    (mailClass ? classSurchargeCents(row.id, mailClass) : 0);
+  return Math.max(listed, rateFloorCents(pieceCostCents(row, mailClass)));
+}
+
+/**
+ * Cents per piece for an order of `quantity` pieces, exactly as the canister
+ * prices a new campaign (`PricingLib.unitPriceFor`): `pieceRateCents`, lifted
+ * on a small order so the order also covers the card fee's fixed part. Use
+ * it to quote an order; price lists use `pieceRateCents`.
  */
 export function getUnitPriceCents(
   layoutVariant: string,
@@ -726,10 +800,9 @@ export function getUnitPriceCents(
 ): number {
   const row = getPricingRow(layoutVariant);
   if (!row) return 0;
-  return (
-    printUnitCents(row, quantity, isMember) +
-    postageCents(row) +
-    (mailClass ? classSurchargeCents(row.id, mailClass) : 0)
+  return Math.max(
+    pieceRateCents(layoutVariant, quantity, isMember, mailClass),
+    orderFloorCents(pieceCostCents(row, mailClass), quantity),
   );
 }
 
@@ -761,7 +834,7 @@ export function classSurchargeCents(
     : 0;
 }
 
-function printUnitCents(
+function tierUnitCents(
   row: ProductSpec,
   quantity: number,
   isMember: boolean,
@@ -775,7 +848,7 @@ function printUnitCents(
   TIER_MINIMUMS.forEach((min, i) => {
     if (effective >= min) price = tiers[i];
   });
-  return price > row.baseCostCents ? price : row.baseCostCents + 1;
+  return price;
 }
 
 /**
@@ -805,12 +878,12 @@ export function getProductTierPrice(
  * price. What "from $X" means anywhere in the app.
  */
 export function startingPriceCents(layoutVariant: string): number {
-  return getUnitPriceCents(layoutVariant, TOP_TIER_PIECES, false);
+  return pieceRateCents(layoutVariant, TOP_TIER_PIECES, false);
 }
 
 /**
  * Every tier of a volume-priced format, in words ("$0.79 under 1,000 ·
- * $0.71 from 1,000 · $0.62 from 10,000 · $0.56 from 50,000 · members
+ * $0.71 from 1,000 · $0.62 from 10,000 · $0.58 from 50,000 · members
  * $0.62"), or null for a flat-priced format. A tier the cost floor lifts to
  * the previous tier's price is left out.
  */
@@ -822,7 +895,7 @@ export function tierSummary(layoutVariant: string): string | null {
         ? `${formatCents(cents)} under ${TIER_MINIMUMS[1].toLocaleString("en-US")}`
         : `${formatCents(cents)} from ${minimum.toLocaleString("en-US")}`,
     ),
-    `members ${formatCents(getUnitPriceCents(layoutVariant, 1, true))}`,
+    `members ${formatCents(pieceRateCents(layoutVariant, 1, true))}`,
   ].join(" · ");
 }
 
@@ -836,7 +909,7 @@ export function volumeTierSteps(
   if (!volumeTiers(layoutVariant)) return [];
   const steps: { minimum: number; cents: number }[] = [];
   for (const minimum of TIER_MINIMUMS) {
-    const cents = getUnitPriceCents(layoutVariant, minimum, false);
+    const cents = pieceRateCents(layoutVariant, minimum, false);
     if (steps.at(-1)?.cents !== cents) steps.push({ minimum, cents });
   }
   return steps;
@@ -844,12 +917,12 @@ export function volumeTierSteps(
 
 /** Retail unit price in dollars for one piece (0 when the variant is unknown). */
 export function getPrice(layoutVariant: string): number {
-  return getUnitPriceCents(layoutVariant) / 100;
+  return pieceRateCents(layoutVariant) / 100;
 }
 
 /** Print-shop benchmark price in cents for the savings calculator. */
 export function getBenchmarkCents(layoutVariant: string): number {
-  return Math.round(getUnitPriceCents(layoutVariant) * PRINT_SHOP_MULTIPLIER);
+  return Math.round(pieceRateCents(layoutVariant) * PRINT_SHOP_MULTIPLIER);
 }
 
 /** Gross margin in cents for a ledger row. */

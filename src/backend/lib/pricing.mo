@@ -3,6 +3,7 @@
 /// Mirrored by src/frontend/src/lib/pricing.ts.
 import Types "../types/campaign";
 import Array "mo:core/Array";
+import Nat "mo:core/Nat";
 
 module {
   let bothSides = "Printing both sides";
@@ -122,13 +123,49 @@ module {
     switch (row.productType) { case (#Eddm) eddmPostageCents; case _ 0 };
   };
 
-  /// Cents per piece for `qty` pieces of `row`, as checkout charges it
-  /// (`postageCents` included). A member is priced as at least
-  /// `memberTierQuantity` pieces. A tier never sells below the print cost:
-  /// one under it is lifted to cost + 1¢ (4.25 × 6 and 6 × 11 at 50,000, the
-  /// brochure from 1,000).
+  /// `unitPriceFor` at the row's own mail class: cents per piece for an
+  /// order of `qty` pieces of `row`, as checkout charges it.
   public func calculateUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
-    printUnitPrice(row, qty, isMember) + postageCents(row);
+    unitPriceFor(row, qty, isMember, row.printSpec.mailClass);
+  };
+
+  /// The card fee the payment processor keeps from every charge: 2.9% + 30¢
+  /// (its standard US card rate). Prices never fall below what covers it.
+  /// Mirrored by `CARD_FEE_BASIS_POINTS` / `CARD_FEE_FIXED_CENTS` in
+  /// `src/frontend/src/lib/pricing.ts`.
+  public let cardFeeBasisPoints : Nat = 290;
+  public let cardFeeFixedCents : Nat = 30;
+
+  func ceilDiv(a : Nat, b : Nat) : Nat { (a + b - 1) / b };
+
+  /// What the processor keeps from a charge of `totalCents` (its percentage
+  /// rounded up).
+  public func cardFeeCents(totalCents : Nat) : Nat {
+    ceilDiv(totalCents * cardFeeBasisPoints, 10_000) + cardFeeFixedCents;
+  };
+
+  /// What one piece of `row` mailed at `mailClass` costs: print (postage
+  /// included, except EDDM), EDDM saturation postage and the First-Class
+  /// surcharge.
+  public func pieceCostCents(row : Types.PricingRow, mailClass : Types.MailClass) : Nat {
+    row.baseCostCents + postageCents(row) + classSurchargeCents(row, mailClass);
+  };
+
+  /// The lowest per-piece rate that keeps 1¢ a piece over `cost` once the
+  /// card fee's percentage is taken.
+  public func rateFloorCents(cost : Nat) : Nat {
+    ceilDiv((cost + 1) * 10_000, 10_000 - cardFeeBasisPoints);
+  };
+
+  /// The lowest unit price at which an order of `qty` pieces keeps 1¢ a piece
+  /// over `cost` after the whole card fee, its fixed part included (which
+  /// only a small order notices).
+  public func orderFloorCents(cost : Nat, qty : Nat) : Nat {
+    let n = Nat.max(qty, 1);
+    let need = (cost + 1) * n;
+    var unit = ceilDiv((need + cardFeeFixedCents) * 10_000, (10_000 - cardFeeBasisPoints) * n);
+    while (unit * n < need + cardFeeCents(unit * n)) { unit += 1 };
+    unit;
   };
 
   /// Extra postage per piece when a format priced for Marketing Mail is sent
@@ -153,14 +190,25 @@ module {
     if (mailClass == #FirstClass and row.printSpec.mailClass == #MarketingMail and firstClassSurcharged(row.layoutVariant)) firstClassSurchargeCents else 0;
   };
 
-  /// `calculateUnitPrice` for a piece mailed at `mailClass` (the class the
-  /// print job uses, from `printSpecFor`): what `createCampaign` stores and
-  /// checkout charges.
-  public func unitPriceFor(row : Types.PricingRow, qty : Nat, isMember : Bool, mailClass : Types.MailClass) : Nat {
-    calculateUnitPrice(row, qty, isMember) + classSurchargeCents(row, mailClass);
+  /// The per-piece rate for `qty` pieces mailed at `mailClass`, as price
+  /// lists show it: the volume tier (a member is priced as at least
+  /// `memberTierQuantity` pieces) plus EDDM postage and the class surcharge,
+  /// never below `rateFloorCents` of the piece's cost (4.25 × 6 at 50,000,
+  /// 6 × 11 from 10,000, the brochure from 1,000).
+  public func pieceRateCents(row : Types.PricingRow, qty : Nat, isMember : Bool, mailClass : Types.MailClass) : Nat {
+    let listed = tierPrice(row, qty, isMember) + postageCents(row) + classSurchargeCents(row, mailClass);
+    Nat.max(listed, rateFloorCents(pieceCostCents(row, mailClass)));
   };
 
-  func printUnitPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
+  /// What `createCampaign` stores and checkout charges per piece for an order
+  /// of `qty` pieces mailed at `mailClass` (the class the print job uses,
+  /// from `printSpecFor`): `pieceRateCents`, lifted on a small order to
+  /// `orderFloorCents` so the order also covers the card fee's fixed part.
+  public func unitPriceFor(row : Types.PricingRow, qty : Nat, isMember : Bool, mailClass : Types.MailClass) : Nat {
+    Nat.max(pieceRateCents(row, qty, isMember, mailClass), orderFloorCents(pieceCostCents(row, mailClass), qty));
+  };
+
+  func tierPrice(row : Types.PricingRow, qty : Nat, isMember : Bool) : Nat {
     switch (volumeTiers(row.layoutVariant)) {
       case null row.retailPriceCents;
       case (?tiers) {
@@ -169,7 +217,7 @@ module {
         for (i in tiers.keys()) {
           if (effective >= tierMinimums[i]) { price := tiers[i] };
         };
-        if (price > row.baseCostCents) price else row.baseCostCents + 1;
+        price;
       };
     };
   };

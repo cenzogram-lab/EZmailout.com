@@ -473,13 +473,13 @@ sections.orders = async function orders() {
   check(few.ok && few.unitPriceCents[0] === 98n && few.totalCents[0] === 294n, "a non-member's 3 × 6×9 postcards cost 98¢ each", { unit: few.unitPriceCents, total: few.totalCents });
   const many = await o.createCampaign(campaignInput(1000));
   check(many.ok && many.unitPriceCents[0] === 72n && many.totalCents[0] === 72_000n, "1,000 × 6×9 postcards cost 72¢ each", { unit: many.unitPriceCents, total: many.totalCents });
-  const mem = await r.createCampaign(campaignInput(3));
-  check(mem.ok && mem.unitPriceCents[0] === 68n, "a member's 3 × 6×9 postcards cost the 10,000-piece 68¢", mem.unitPriceCents);
+  const mem = await r.createCampaign(campaignInput(5));
+  check(mem.ok && mem.unitPriceCents[0] === 68n, "a member's 5 × 6×9 postcards cost the 10,000-piece 68¢", mem.unitPriceCents);
   await r.uploadDocumentChunk(mem.campaignId[0], 0n, 1n, "application/pdf", "art.pdf", pdf(3));
   await env.pic.advanceTime(3_000); await env.pic.tick(); // the per-identity checkout gap
   const memIntent = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ CampaignOrder: null }, [mem.campaignId[0]], []));
   const charged = pay.intents.get(memIntent.paymentIntentId?.[0])?.amount;
-  check(memIntent.ok && memIntent.amountCents[0] === 204n && charged === 204, "checkout charges the stored tier total (3 × 68¢)", { amount: memIntent.amountCents, charged, error: memIntent.error });
+  check(memIntent.ok && memIntent.amountCents[0] === 340n && charged === 340, "checkout charges the stored tier total (5 × 68¢)", { amount: memIntent.amountCents, charged, error: memIntent.error });
 
   const referee = ident(153);
   await env.as(referee).ensureAccount([code], []);
@@ -562,10 +562,23 @@ sections.pricing = async function pricing() {
   const moSurcharge = Number(/firstClassSurchargeCents : Nat = ([\d_]+)/.exec(mo)[1]);
   const moSurcharged = [.../case \(("[^)]+)\) true;/.exec(mo.slice(mo.indexOf("func firstClassSurcharged")))[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
   check(moSurcharge === ts.FIRST_CLASS_SURCHARGE_CENTS && ser(moSurcharged) === ser(["6x9", "6x11", "11x8.5_brochure"]), "the First-Class surcharge and its formats match", { moSurcharge, moSurcharged });
+  const moFeeBp = Number(/cardFeeBasisPoints : Nat = ([\d_]+)/.exec(mo)[1]);
+  const moFeeFixed = Number(/cardFeeFixedCents : Nat = ([\d_]+)/.exec(mo)[1]);
+  check(moFeeBp === ts.CARD_FEE_BASIS_POINTS && moFeeFixed === ts.CARD_FEE_FIXED_CENTS && moFeeBp === 290 && moFeeFixed === 30, "the card fee (2.9% + 30¢) matches", { moFeeBp, moFeeFixed });
+  // The canister's rule, written out independently: the tier plus postage and
+  // surcharge, never below what keeps 1¢ a piece over cost after the card fee
+  // (its percentage on every piece, its fixed 30¢ on the order).
+  const cardFee = (total) => Math.ceil((total * moFeeBp) / 10_000) + moFeeFixed;
   const canisterUnit = (row, qty, member, firstClass = false) => {
     const postage = row.productType.Eddm !== undefined ? moPostage : 0;
     const surcharge = firstClass && row.printSpec.mailClass.MarketingMail !== undefined && moSurcharged.includes(row.layoutVariant) ? moSurcharge : 0;
-    return canisterPrint(row, qty, member) + postage + surcharge;
+    const cost = Number(row.baseCostCents) + postage + surcharge;
+    const listed = canisterPrint(row, qty, member) + postage + surcharge;
+    const rate = Math.ceil(((cost + 1) * 10_000) / (10_000 - moFeeBp));
+    const n = Math.max(qty, 1);
+    let unit = 1;
+    while (unit * n < (cost + 1) * n + cardFee(unit * n)) unit += 1;
+    return Math.max(listed, rate, unit);
   };
   const canisterPrint = (row, qty, member) => {
     const tiers = moTiers[row.layoutVariant];
@@ -573,7 +586,7 @@ sections.pricing = async function pricing() {
     const effective = member && qty < moMember ? moMember : qty;
     let price = tiers[0];
     moMinimums.forEach((min, i) => { if (effective >= min) price = tiers[i]; });
-    return price > Number(row.baseCostCents) ? price : Number(row.baseCostCents) + 1;
+    return price;
   };
   const mismatches = [];
   for (const row of ledger) {
@@ -582,7 +595,7 @@ sections.pricing = async function pricing() {
       mismatches.push({ row: row.layoutVariant, retail: [row.retailPriceCents, f?.retailPriceCents], cost: [row.baseCostCents, f?.baseCostCents] });
       continue;
     }
-    for (const qty of [1, 500, 999, 1_000, 2_000, 5_000, 9_999, 10_000, 49_999, 50_000, 55_000]) {
+    for (const qty of [1, 2, 3, 7, 39, 500, 999, 1_000, 2_000, 5_000, 9_999, 10_000, 49_999, 50_000, 55_000]) {
       for (const member of [false, true]) {
         const want = canisterUnit(row, qty, member);
         const got = ts.getUnitPriceCents(row.layoutVariant, qty, member);
@@ -594,9 +607,9 @@ sections.pricing = async function pricing() {
     }
   }
   check(mismatches.length === 0, "the frontend prices every row, quantity and membership as the canister does", mismatches.slice(0, 5));
-  check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 56 && ts.getUnitPriceCents("4.25x6", 10, true) === 62, "the frontend's 4×6 tiers: 79¢, 71¢, floored 56¢, member 62¢");
-  check(ts.startingPriceCents("4.25x6") === 56 && ts.startingPriceCents("11x8.5_brochure") === 108 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the last tier for tiered formats (campaigns have no size limit) and the flat price otherwise");
-  check(ts.tierSummary("4.25x6") === "$0.79 under 1,000 · $0.71 from 1,000 · $0.62 from 10,000 · $0.56 from 50,000 · members $0.62" && ts.tierSummary("11x8.5_brochure") === "$1.32 under 1,000 · $1.08 from 1,000 · members $1.08", "tier summaries list every distinct tier", [ts.tierSummary("4.25x6"), ts.tierSummary("11x8.5_brochure")]);
+  check(ts.getUnitPriceCents("4x6", 500) === 79 && ts.getUnitPriceCents("4.25x6", 2_000) === 71 && ts.getUnitPriceCents("4.25x6", 55_000) === 58 && ts.getUnitPriceCents("4.25x6", 10, true) === 62 && ts.getUnitPriceCents("4.25x6", 1) === 89, "the frontend's 4×6 tiers: 79¢, 71¢, floored 58¢, member 62¢, a single piece 89¢");
+  check(ts.startingPriceCents("4.25x6") === 58 && ts.startingPriceCents("11x8.5_brochure") === 112 && ts.startingPriceCents("certified_letter") === ts.getPricingRow("certified_letter").retailPriceCents, "a \"from\" price is the last tier for tiered formats (campaigns have no size limit) and the flat price otherwise");
+  check(ts.tierSummary("4.25x6") === "$0.79 under 1,000 · $0.71 from 1,000 · $0.62 from 10,000 · $0.58 from 50,000 · members $0.62" && ts.tierSummary("11x8.5_brochure") === "$1.32 under 1,000 · $1.12 from 1,000 · members $1.12", "tier summaries list every distinct tier", [ts.tierSummary("4.25x6"), ts.tierSummary("11x8.5_brochure")]);
 
   // And the canister's own campaign prices agree with the frontend's quote.
   const buyer = env.as(ident(162));
@@ -800,10 +813,15 @@ sections.auditFixes = async function auditFixes() {
   const after = (await b.getMyAccount())[0].creditBalance;
   check(packPaid.ok && after - before === 1600n, "the Growth pack grants its advertised 1,600 credits, bonus included once", { before, after, error: packPaid.error });
 
-  // EDDM is charged its USPS saturation postage on top of the print price,
-  // so even one piece clears the $0.50 card minimum.
+  // EDDM is charged its USPS saturation postage on top of the print price
+  // (40¢ + 26¢ = 66¢ a piece); one piece alone is lifted to 75¢ so the order
+  // also covers the card fee's fixed 30¢.
   const eddm = await b.createCampaign(campaignInput(1, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
-  check(eddm.ok && eddm.unitPriceCents[0] === 66n && eddm.totalCents[0] === 66n, "one EDDM 6.5 × 9 piece costs 66¢: 40¢ print + 26¢ USPS saturation postage", { error: eddm.error, unit: eddm.unitPriceCents });
+  check(eddm.ok && eddm.unitPriceCents[0] === 75n && eddm.totalCents[0] === 75n, "one EDDM 6.5 × 9 piece costs 75¢: the 66¢ rate lifted to cover the card fee", { error: eddm.error, unit: eddm.unitPriceCents });
+  if (eddm.ok) await b.deleteCampaignDraft(eddm.campaignId[0]);
+  const eddm2 = await b.createCampaign(campaignInput(2, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
+  check(eddm2.ok && eddm2.unitPriceCents[0] === 66n, "two EDDM 6.5 × 9 pieces cost 66¢ each: 40¢ print + 26¢ USPS saturation postage", { error: eddm2.error, unit: eddm2.unitPriceCents });
+  if (eddm2.ok) await b.deleteCampaignDraft(eddm2.campaignId[0]);
 
   // Declared recipient counts do not fill the canister-wide budget: six
   // identities each pricing a 1,000,000-piece draft leave room for others.

@@ -183,14 +183,15 @@ mixin (
               return intentFail("This campaign's total doesn't add up; please contact support");
             };
             // A draft keeps the price it was created at, so a price change
-            // (new postage, a surcharge, a cost) must not let an older draft
-            // be paid below what the order now costs to print and mail.
-            let costCents = switch (PricingLib.find(c.product.layoutVariant)) {
-              case (?row) ?(row.baseCostCents + PricingLib.postageCents(row) + PricingLib.classSurchargeCents(row, c.printSpec.mailClass));
+            // (new postage, a surcharge, a cost, the card fee) must not let an
+            // older draft be paid below what the order now costs to print,
+            // mail and charge.
+            let floorCents = switch (PricingLib.find(c.product.layoutVariant)) {
+              case (?row) ?PricingLib.orderFloorCents(PricingLib.pieceCostCents(row, c.printSpec.mailClass), c.recipientCount);
               case null null;
             };
-            switch (costCents) {
-              case (?cost) if (c.unitPriceCents <= cost) {
+            switch (floorCents) {
+              case (?floor) if (c.unitPriceCents < floor) {
                 return intentFail("Prices for this format have changed since this draft was created. Re-run it from Campaigns to launch it again at today's price, then delete this draft.");
               };
               case null { return intentFail("This format is no longer offered. Re-run the campaign from Campaigns in another size, then delete this draft.") };
