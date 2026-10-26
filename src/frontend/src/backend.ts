@@ -482,6 +482,7 @@ export interface CampaignSummary {
     createdAt: bigint;
     draftExpiresAt?: bigint;
     id: string;
+    mailClass: MailClass;
     name: string;
     ownerId: string;
     paymentStatus: PaymentStatus;

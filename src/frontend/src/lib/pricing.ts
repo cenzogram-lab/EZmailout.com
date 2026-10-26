@@ -87,6 +87,20 @@ export function catalogMailClassToWire(mailClass: CatalogMailClass): MailClass {
   }
 }
 
+/** The canister's wire enum → catalog mail class. */
+export function wireMailClassToCatalog(mailClass: MailClass): CatalogMailClass {
+  switch (mailClass) {
+    case MailClass.MarketingMail:
+      return "StandardMarketing";
+    case MailClass.Priority:
+      return "Priority";
+    case MailClass.PriorityExpress:
+      return "PriorityExpress";
+    default:
+      return "FirstClass";
+  }
+}
+
 type SpecInput = Omit<
   ProductSpec,
   | "baseCostCents"

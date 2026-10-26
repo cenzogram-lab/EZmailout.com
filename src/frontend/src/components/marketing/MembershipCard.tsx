@@ -30,7 +30,7 @@ const PERKS: Perk[] = [
     icon: Layers,
     title: "No minimum volume",
     description:
-      "Test a single postcard or mail a whole city. There is no floor and no ceiling on your order.",
+      "Test a single postcard or mail a whole city. Volume-priced sizes cost their 10,000-piece price at any quantity.",
   },
   {
     icon: Sparkles,
@@ -48,7 +48,7 @@ const PERKS: Perk[] = [
     icon: Gift,
     title: "Referral rewards",
     description:
-      "Earn one free month for every referred user who makes their first payment.",
+      "Earn one free month for every referred user who makes their first payment while your membership is active.",
   },
 ];
 

@@ -182,6 +182,19 @@ mixin (
             if (c.totalAmountChargedCents != c.unitPriceCents * c.recipientCount or c.totalAmountChargedCents > PricingLib.maxOrderCents) {
               return intentFail("This campaign's total doesn't add up; please contact support");
             };
+            // A draft keeps the price it was created at, so a price change
+            // (new postage, a surcharge, a cost) must not let an older draft
+            // be paid below what the order now costs to print and mail.
+            let costCents = switch (PricingLib.find(c.product.layoutVariant)) {
+              case (?row) ?(row.baseCostCents + PricingLib.postageCents(row) + PricingLib.classSurchargeCents(row, c.printSpec.mailClass));
+              case null null;
+            };
+            switch (costCents) {
+              case (?cost) if (c.unitPriceCents <= cost) {
+                return intentFail("Prices for this format have changed since this draft was created. Re-run it from Campaigns to launch it again at today's price, then delete this draft.");
+              };
+              case null { return intentFail("This format is no longer offered. Re-run the campaign from Campaigns in another size, then delete this draft.") };
+            };
             // Every priced recipient must be stored (a large list is staged in
             // chunks by `addCampaignRecipients`), so the order paid for is
             // exactly the one that prints.

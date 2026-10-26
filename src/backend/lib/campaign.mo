@@ -68,6 +68,7 @@ module {
       ownerId = self.ownerId;
       name = self.name;
       product = self.product;
+      mailClass = self.printSpec.mailClass;
       recipientCount = self.recipientCount;
       status = self.status;
       paymentStatus = self.paymentStatus;

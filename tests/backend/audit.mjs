@@ -610,6 +610,9 @@ sections.pricing = async function pricing() {
     const r = await buyer.createCampaign(campaignInput(n, { mailClass: [{ FirstClass: null }], product: { colorOption: [], layoutVariant: variant, productType: { [productType]: null } } }));
     const unit = ts.getUnitPriceCents(variant, n, false, "FirstClass");
     check(r.ok && r.unitPriceCents[0] === BigInt(unit), `First-Class ${variant} is priced at the frontend's ${unit}¢`, { error: r.error, unit: r.unitPriceCents });
+    // The list row carries the class, so a re-run keeps it (and its price).
+    const summary = (await buyer.getCampaigns()).find((c) => c.id === r.campaignId[0]);
+    check(summary?.mailClass?.FirstClass === null, `the campaign list shows First-Class ${variant} as First-Class`, summary?.mailClass);
     if (r.ok) await buyer.deleteCampaignDraft(r.campaignId[0]);
   }
 };

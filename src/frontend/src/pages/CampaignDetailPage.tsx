@@ -229,7 +229,7 @@ function PayNowDialog({
           amountLabel={formatCents(total)}
           title={campaign.name || "Campaign order"}
           description={`${formatNumber(campaign.recipientCount)} × ${layoutLabel(campaign.product.layoutVariant)}`}
-          submitLabel={`Pay ${formatCents(total)}`}
+          submitLabel="Pay"
           onSuccess={(result) => {
             if (result.ok) {
               toast.success(

@@ -147,6 +147,7 @@ export type CampaignStatus = { 'InTransit' : null } |
   { 'SortedAtLocalHub' : null };
 export interface CampaignSummary {
   'id' : string,
+  'mailClass' : MailClass,
   'status' : CampaignStatus,
   'paymentStatus' : PaymentStatus,
   'ownerId' : string,

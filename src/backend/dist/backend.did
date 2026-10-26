@@ -485,6 +485,7 @@ type CampaignSummary =
    createdAt: int;
    draftExpiresAt: opt int;
    id: text;
+   mailClass: MailClass;
    name: text;
    ownerId: text;
    paymentStatus: PaymentStatus;

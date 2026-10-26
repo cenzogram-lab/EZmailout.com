@@ -40,6 +40,7 @@ import {
   productTypeLabel,
 } from "@/lib/format";
 import { MAX_CAMPAIGN_NAME_CHARS } from "@/lib/inputLimits";
+import { wireMailClassToCatalog } from "@/lib/pricing";
 import { useWizardStore } from "@/store/wizard";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -185,6 +186,7 @@ export function CampaignsPage() {
   const setCampaignName = useWizardStore((s) => s.setCampaignName);
   const setProduct = useWizardStore((s) => s.setProduct);
   const setLayout = useWizardStore((s) => s.setLayout);
+  const setMailClass = useWizardStore((s) => s.setMailClass);
   const setAudienceType = useWizardStore((s) => s.setAudienceType);
   const setSourcePresetId = useWizardStore((s) => s.setSourcePresetId);
   const setVerifiedAddresses = useWizardStore((s) => s.setVerifiedAddresses);
@@ -214,6 +216,9 @@ export function CampaignsPage() {
     );
     setProduct(rerunTarget.product);
     setLayout(rerunTarget.product.layoutVariant);
+    // The same class as the original (ignored when the format no longer
+    // offers it, so the format's default stands).
+    setMailClass(wireMailClassToCatalog(rerunTarget.mailClass));
     setAudienceType("preset");
     setSourcePresetId(null);
     setVerifiedAddresses(addresses);
@@ -241,6 +246,7 @@ export function CampaignsPage() {
     setCampaignName,
     setProduct,
     setLayout,
+    setMailClass,
     setAudienceType,
     setSourcePresetId,
     setVerifiedAddresses,

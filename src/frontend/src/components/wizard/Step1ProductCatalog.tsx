@@ -96,7 +96,8 @@ function SizeRow({
   row: PricingRowUi;
   selected: boolean;
   mailClass: CatalogMailClass;
-  onSelect: () => void;
+  /** Chooses this format, in `mailClass` when a class chip was pressed. */
+  onSelect: (mailClass?: CatalogMailClass) => void;
   onMailClass: (mailClass: CatalogMailClass) => void;
 }) {
   const multiClass = row.supportedMailClasses.length > 1;
@@ -116,7 +117,7 @@ function SizeRow({
     >
       <button
         type="button"
-        onClick={onSelect}
+        onClick={() => onSelect()}
         aria-pressed={selected}
         className="flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm"
         data-ocid={`catalog.format.${row.id}.button`}
@@ -176,8 +177,11 @@ function SizeRow({
               type="button"
               disabled={!multiClass}
               onClick={() => {
-                if (!selected) onSelect();
-                onMailClass(option);
+                // Another format's chip chooses that format in this class;
+                // a size change can wait on a dialog, so the class travels
+                // with it rather than landing on the current selection.
+                if (selected) onMailClass(option);
+                else onSelect(option);
               }}
               aria-pressed={active}
               title={
@@ -291,9 +295,14 @@ export function Step1ProductCatalog() {
   const [pendingFormat, setPendingFormat] = useState<{
     category: CatalogCategory;
     layoutVariant: string;
+    mailClass?: CatalogMailClass;
   } | null>(null);
 
-  function applyFormat(category: CatalogCategory, layoutVariant: string) {
+  function applyFormat(
+    category: CatalogCategory,
+    layoutVariant: string,
+    mailClass?: CatalogMailClass,
+  ) {
     const bw = supportsBlackAndWhite(category.productType);
     setProduct({
       productType: category.productType,
@@ -301,18 +310,23 @@ export function Step1ProductCatalog() {
       colorOption: bw ? colorOption : undefined,
     });
     setLayout(layoutVariant);
+    if (mailClass) setMailClass(mailClass);
   }
 
-  function chooseFormat(category: CatalogCategory, layoutVariant: string) {
+  function chooseFormat(
+    category: CatalogCategory,
+    layoutVariant: string,
+    mailClass?: CatalogMailClass,
+  ) {
     // A design is laid out for its size: another size starts a blank one.
     const { canvas } = useWizardStore.getState();
     const designed =
       sideHasContent(canvas.front) || sideHasContent(canvas.back);
     if (selectedLayout && selectedLayout !== layoutVariant && designed) {
-      setPendingFormat({ category, layoutVariant });
+      setPendingFormat({ category, layoutVariant, mailClass });
       return;
     }
-    applyFormat(category, layoutVariant);
+    applyFormat(category, layoutVariant, mailClass);
   }
 
   function chooseColor(value: string) {
@@ -449,7 +463,9 @@ export function Step1ProductCatalog() {
                     ? selectedSpec.mailClass
                     : row.defaultMailClass
                 }
-                onSelect={() => chooseFormat(expanded, row.id)}
+                onSelect={(mailClass) =>
+                  chooseFormat(expanded, row.id, mailClass)
+                }
                 onMailClass={setMailClass}
               />
             ))}
@@ -550,6 +566,7 @@ export function Step1ProductCatalog() {
                   applyFormat(
                     pendingFormat.category,
                     pendingFormat.layoutVariant,
+                    pendingFormat.mailClass,
                   );
                 setPendingFormat(null);
               }}

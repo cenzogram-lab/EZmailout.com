@@ -407,7 +407,7 @@ function StudioFeatures() {
 const FAQ: { q: string; a: string }[] = [
   {
     q: "Is there really no minimum order?",
-    a: "No. Members pay the same per-piece price for one postcard or ten thousand. Membership is billed monthly and can be cancelled any time.",
+    a: "No. You can send a single piece. Volume prices start at 1,000 pieces, and members pay the 10,000-piece price on those sizes at any quantity. Membership is a 30-day pass you renew when you choose: nothing is billed automatically, so there is nothing to cancel.",
   },
   {
     q: "Which formats can I send?",
@@ -812,8 +812,9 @@ function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm text-white/75 sm:text-base">
           Pick a format, upload a list or drop a pin, design it in the studio
-          and launch. Membership is {formatCents(SUBSCRIPTION_PRICE_CENTS)} a
-          month, and you only pay per piece for what you send.
+          and launch. You pay per piece, printing and postage included, and
+          membership ({formatCents(SUBSCRIPTION_PRICE_CENTS)} for 30 days) is
+          optional.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild size="lg" className="gap-2 px-8">

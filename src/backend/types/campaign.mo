@@ -237,6 +237,8 @@ module {
     ownerId : Text;
     name : Text;
     product : ProductSelection;
+    /// The USPS class it was priced and printed for (a re-run keeps it).
+    mailClass : MailClass;
     recipientCount : Nat;
     status : CampaignStatus;
     paymentStatus : PaymentStatus;

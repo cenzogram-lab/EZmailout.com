@@ -1,7 +1,8 @@
 # EZmailout.com
 
-Direct mail campaigns without minimums. A $9/month platform membership unlocks wholesale per-piece print rates,
-an AI design studio, saved audience presets and referral rewards. Printing and mailing run through our
+Direct mail campaigns without minimums: every price includes printing and postage, and volume prices drop from 1,000
+pieces. An optional $9 membership (a 30-day pass, never renewed automatically) prices any order at the 10,000-piece
+rate and adds monthly AI credits and referral rewards. Printing and mailing run through our
 print partner's REST API; the whole backend is a single Motoko canister on the Internet Computer.
 
 ## Stack
@@ -17,37 +18,43 @@ print partner's REST API; the whole backend is a single Motoko canister on the I
 14 product families, 29 document classes. `documentClass` is the exact print product name and the trim size
 follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 
-| Family | Print document class | Trim | Cost | Retail | Margin | Mail class |
-| --- | --- | --- | ---: | ---: | ---: | --- |
-| Postcards | `Postcard 3.5 x 5` | 3.5″ × 5″ | $0.53 | **$1.10** | 108% | First-Class |
-| Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$1.15** | 109% | First-Class |
-| Postcards | `Postcard 4 x 9` | 4″ × 9″ | $0.55 | **$1.20** | 118% | First-Class |
-| Postcards | `Postcard 5 x 8` | 5″ × 8″ | $0.54 | **$1.25** | 131% | First-Class |
-| Postcards | `Postcard 6 x 9` | 6″ × 9″ | $0.57 | **$1.35** | 137% | Standard / First-Class |
-| Postcards | `Postcard 6 x 11` | 6″ × 11″ | $0.73 | **$1.65** | 126% | Standard / First-Class |
-| Letters | `Letter 8.5 x 11` | 8.5″ × 11″ | $0.59 | **$1.50** | 154% | First-Class |
-| Letters | `Letter 8.5 x 14` | 8.5″ × 14″ | $0.61 | **$1.65** | 170% | First-Class |
-| Certified Mail™ | `Certified Self Mailer 8.5 x 11` | 8.5″ × 11″ | $6.45 | **$12.90** | 100% | First-Class |
-| Certified Mail™ | `Certified Letter 8.5 x 11` | 8.5″ × 11″ | $6.66 | **$13.50** | 103% | First-Class |
-| Certified Mail™ | `Certified Self Mailer With Green Card` | 8.5″ × 11″ | $11.04 | **$22.00** | 99% | First-Class |
-| EDDM® | `EDDM® Mailer 6.5 x 9` | 6.5″ × 9″ | $0.15 | **$0.40** | 167% | Standard |
-| EDDM® | `EDDM® Mailer 8.5 x 11` | 8.5″ × 11″ | $0.16 | **$0.42** | 162% | Standard |
-| EDDM® | `EDDM® Mailer 6.25 x 11` | 6.25″ × 11″ | $0.17 | **$0.45** | 165% | Standard |
-| EDDM® | `EDDM® Mailer 8.5 x 12` | 8.5″ × 12″ | $0.22 | **$0.55** | 150% | Standard |
-| Priority Mail® Plus | `Priority Letter 8.5 x 11` | 8.5″ × 11″ | $11.66 | **$22.50** | 93% | Priority |
-| Priority Mail® Express | `Priority Mail® Express Letters 8.5 x 11` | 8.5″ × 11″ | $32.06 | **$55.00** | 72% | Priority Express |
-| Flyers | `Flyer 8.5 x 11` | 8.5″ × 11″ | $0.57 | **$1.45** | 154% | Standard / First-Class |
-| Brochures | `Brochure 11 x 8.5` | 11″ × 8.5″ | $1.07 | **$2.25** | 110% | Standard / First-Class |
-| Secure Mailers | `Secure Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.58 | **$1.95** | 236% | First-Class |
-| Notecards | `Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $0.87 | **$1.85** | 113% | First-Class |
-| Notecards | `Folded Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $1.04 | **$2.25** | 116% | First-Class |
-| Rack Cards | `Rack Card 4 x 9` | 4″ × 9″ | $0.55 | **$1.25** | 127% | First-Class |
-| Reply Mail | `Reply Postcard 4.25 x 6` | 4.25″ × 6″ | $0.64 | **$1.50** | 134% | First-Class |
-| Reply Mail | `Reply Letter 8.5 x 11` | 8.5″ × 11″ | $0.65 | **$1.60** | 146% | First-Class |
-| Booklets | `Booklet Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.74 | **$2.10** | 184% | Standard |
-| Booklets | `Booklet Address Front Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
-| Booklets | `Booklet Address Back Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | 122% | Standard |
-| Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | 154% | Standard |
+| Family | Print document class | Trim | Cost | Price (1–999) | Volume prices | Mail class |
+| --- | --- | --- | ---: | ---: | --- | --- |
+| Postcards | `Postcard 3.5 x 5` | 3.5″ × 5″ | $0.53 | **$1.10** | — | First-Class |
+| Postcards | `Postcard 4.25 x 6` | 4.25″ × 6″ | $0.55 | **$0.79** | 1,000+: $0.71 · 10,000+: $0.62 · 50,000+: $0.56 | First-Class |
+| Postcards | `Postcard 4 x 9` | 4″ × 9″ | $0.55 | **$1.20** | — | First-Class |
+| Postcards | `Postcard 5 x 8` | 5″ × 8″ | $0.54 | **$1.25** | — | First-Class |
+| Postcards | `Postcard 6 x 9` | 6″ × 9″ | $0.57 | **$0.98** | 1,000+: $0.72 · 10,000+: $0.68 · 50,000+: $0.65 | Marketing Mail / First-Class |
+| Postcards | `Postcard 6 x 11` | 6″ × 11″ | $0.73 | **$0.92** | 1,000+: $0.83 · 10,000+: $0.74 | Marketing Mail / First-Class |
+| Letters | `Letter 8.5 x 11` | 8.5″ × 11″ | $0.59 | **$0.93** | 1,000+: $0.81 · 10,000+: $0.74 · 50,000+: $0.69 | First-Class |
+| Letters | `Letter 8.5 x 14` | 8.5″ × 14″ | $0.61 | **$1.65** | — | First-Class |
+| Certified Mail™ | `Certified Self Mailer 8.5 x 11` | 8.5″ × 11″ | $6.45 | **$12.90** | — | First-Class |
+| Certified Mail™ | `Certified Letter 8.5 x 11` | 8.5″ × 11″ | $6.66 | **$13.50** | — | First-Class |
+| Certified Mail™ | `Certified Self Mailer With Green Card` | 8.5″ × 11″ | $11.04 | **$22.00** | — | First-Class |
+| Every Door Direct Mail (EDDM®) | `EDDM® Mailer 6.5 x 9` | 6.5″ × 9″ | $0.15 | **$0.66** | — | Marketing Mail |
+| Every Door Direct Mail (EDDM®) | `EDDM® Mailer 8.5 x 11` | 8.5″ × 11″ | $0.16 | **$0.68** | — | Marketing Mail |
+| Every Door Direct Mail (EDDM®) | `EDDM® Mailer 6.25 x 11` | 6.25″ × 11″ | $0.17 | **$0.71** | — | Marketing Mail |
+| Every Door Direct Mail (EDDM®) | `EDDM® Mailer 8.5 x 12` | 8.5″ × 12″ | $0.22 | **$0.81** | — | Marketing Mail |
+| Priority Mail® Plus | `Priority Letter 8.5 x 11` | 8.5″ × 11″ | $11.66 | **$22.50** | — | Priority |
+| Priority Mail® Express | `Priority Mail® Express Letters 8.5 x 11` | 8.5″ × 11″ | $32.06 | **$55.00** | — | Priority Express |
+| Flyers | `Flyer 8.5 x 11` | 8.5″ × 11″ | $0.57 | **$1.45** | — | Marketing Mail / First-Class |
+| Brochures | `Brochure 11 x 8.5` | 11″ × 8.5″ | $1.07 | **$1.32** | 1,000+: $1.08 | Marketing Mail / First-Class |
+| Secure Mailers | `Secure Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.58 | **$1.95** | — | First-Class |
+| Notecards | `Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $0.87 | **$1.85** | — | First-Class |
+| Notecards | `Folded Notecard 4.25 x 5.5` | 4.25″ × 5.5″ | $1.04 | **$2.25** | — | First-Class |
+| Rack Cards | `Rack Card 4 x 9` | 4″ × 9″ | $0.55 | **$1.25** | — | First-Class |
+| Reply Mail | `Reply Postcard 4.25 x 6` | 4.25″ × 6″ | $0.64 | **$1.50** | — | First-Class |
+| Reply Mail | `Reply Letter 8.5 x 11` | 8.5″ × 11″ | $0.65 | **$1.60** | — | First-Class |
+| Booklets | `Booklet Self Mailer 8.5 x 11` | 8.5″ × 11″ | $0.74 | **$2.10** | — | Marketing Mail |
+| Booklets | `Booklet Address Front Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | — | Marketing Mail |
+| Booklets | `Booklet Address Back Page 8.5 x 11` | 8.5″ × 11″ | $1.62 | **$3.60** | — | Marketing Mail |
+| Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | — | Marketing Mail |
+
+Prices are per piece and include printing and postage, generated from `PRICING_LEDGER` (`src/frontend/src/lib/pricing.ts`,
+mirrored in `src/backend/lib/pricing.mo`). Volume prices apply from the quantity shown; a live member pays at most the
+10,000-piece price on those five formats, and no tier sells under cost + 1¢. EDDM® prices include USPS EDDM Retail
+saturation postage ($0.26 a piece; the Cost column is print only). The 6x9 and 6x11 postcards and the brochure are priced
+for Marketing Mail; First-Class adds $0.24 a piece. Orders run from $0.50 to $999,999.99.
 
 Costs and member prices are final. The spread is deliberate retail positioning — standardised letter pricing,
 carrier cost absorbed on Priority Mail® Express to stay competitive, and higher margin on self-mailers — so nothing
@@ -63,13 +70,13 @@ frontend, and `LEGACY_DOCUMENT_CLASSES` records the three renamed product string
 
 1 credit = $0.01. Copy assistant 1 credit · square art 7 · widescreen 14 · HD widescreen 20.
 Packs: Starter $5 → 500, Growth $15 → 1,600 (+100 bonus), Agency $35 → 4,000 (+500 bonus).
-Active members receive 50 credits on every activation/renewal. See `src/backend/lib/credits.mo`.
+Members receive 50 credits each time they activate or renew the 30-day membership. See `src/backend/lib/credits.mo`.
 
 ## Referral program
 
 Every account gets `https://ezmailout.com/ref/{code}`. When a referred user makes their first payment
-(membership or campaign) the referrer earns one free month ($9 credit), redeemable at the next renewal,
-as long as the referrer's membership is active.
+(membership or campaign) the referrer earns one free month, used the next time they renew (the 30-day pass at no charge),
+as long as the referrer's membership is active when the referred payment is confirmed.
 
 ## Campaign flow
 

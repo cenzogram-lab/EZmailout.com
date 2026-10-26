@@ -74,7 +74,7 @@ export function SubscriptionWidget() {
         <div className="flex items-center justify-between text-sm">
           <span className="inline-flex items-center gap-2 text-muted-foreground">
             <CalendarClock className="size-4" />
-            {subscriptionActive ? "Renews" : "Last renewal"}
+            {subscriptionActive ? "Active until" : "Ended"}
           </span>
           <span
             className="font-medium text-foreground"
@@ -100,7 +100,8 @@ export function SubscriptionWidget() {
           <p className="rounded-lg border border-emerald-brand/30 bg-emerald-brand/10 px-3 py-2 text-xs text-emerald-brand">
             <Sparkles className="mr-1 inline size-3.5" />
             {freeMonths} free month{freeMonths === 1 ? "" : "s"} available
-            (referral rewards). Your next renewal is waived automatically.
+            (referral rewards). Your next renewal is free: renew below and it is
+            used instead of a charge.
           </p>
         )}
 
@@ -111,7 +112,7 @@ export function SubscriptionWidget() {
             purpose={PaymentPurpose.Subscription}
             amountLabel={priceLabel}
             title="EZmailout membership"
-            description={`${priceLabel} per month. Cancel any time.`}
+            description={`${priceLabel} for 30 days. Nothing renews automatically.`}
             submitLabel="Subscribe"
             onSuccess={handleSuccess}
             onCancel={() => setCheckoutOpen(false)}

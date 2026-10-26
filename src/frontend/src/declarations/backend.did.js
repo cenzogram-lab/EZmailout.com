@@ -381,6 +381,7 @@ export const CampaignRecordShared = IDL.Record({
 });
 export const CampaignSummary = IDL.Record({
   'id' : IDL.Text,
+  'mailClass' : MailClass,
   'status' : CampaignStatus,
   'paymentStatus' : PaymentStatus,
   'ownerId' : IDL.Text,
@@ -1112,6 +1113,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const CampaignSummary = IDL.Record({
     'id' : IDL.Text,
+    'mailClass' : MailClass,
     'status' : CampaignStatus,
     'paymentStatus' : PaymentStatus,
     'ownerId' : IDL.Text,

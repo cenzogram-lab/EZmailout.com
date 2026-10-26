@@ -70,7 +70,7 @@ export function CreditTopUpModal() {
                 </span>
                 {p.bonus > 0 && (
                   <span className="mt-2 rounded-full bg-emerald-brand/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-brand">
-                    +{p.bonus} bonus
+                    includes {p.bonus} bonus
                   </span>
                 )}
               </button>
