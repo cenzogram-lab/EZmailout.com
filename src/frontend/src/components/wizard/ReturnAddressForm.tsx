@@ -127,6 +127,14 @@ export function ReturnAddressForm() {
     Partial<Record<keyof FormState, string>>
   >({});
   const [dirty, setDirty] = useState(false);
+  const setReturnAddressUnsaved = useWizardStore(
+    (s) => s.setReturnAddressUnsaved,
+  );
+  // The order sends the saved address, so unsaved edits hold the launch.
+  useEffect(() => {
+    setReturnAddressUnsaved(dirty);
+    return () => setReturnAddressUnsaved(false);
+  }, [dirty, setReturnAddressUnsaved]);
 
   useEffect(() => {
     if (returnAddress) return;

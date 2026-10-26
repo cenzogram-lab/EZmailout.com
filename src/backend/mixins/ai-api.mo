@@ -23,8 +23,10 @@ mixin (
 ) {
   transient let maxPromptChars : Nat = 1_000;
 
-  private func aiAccount(caller : Principal) : Account.UserAccount {
-    AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), null, null);
+  // Looked up, never created: an account comes from signing in
+  // (`ensureAccount`, budgeted), and one without credits cannot spend any.
+  private func aiAccount(caller : Principal) : ?Account.UserAccount {
+    accounts.get(caller.toText());
   };
 
   private func clip(t : Text, max : Nat) : Text {
@@ -42,7 +44,7 @@ mixin (
     let cleanPrompt = clip(prompt, maxPromptChars);
     if (cleanPrompt == "") { return fail("Describe the image you want", null) };
     let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("The AI studio isn't set up yet; please try again later", null) } };
-    let a = aiAccount(caller);
+    let a = switch (aiAccount(caller)) { case (?x) x; case null { return fail("Insufficient credits: this generation costs " # debug_show(cost) # " credits", ?0) } };
     if (a.creditBalance < cost) { return fail("Insufficient credits: this generation costs " # debug_show(cost) # " credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_image", null);
     // Settled once the result is known: kept on success, refunded on failure.
@@ -87,7 +89,7 @@ mixin (
     };
     if (clean.businessName == "" and clean.industry == "") { return fail("Tell us the business name or industry", null) };
     let apiKey = switch (adminKeysState.openAiKey) { case (?k) k; case null { return fail("The AI copywriter isn't set up yet; please try again later", null) } };
-    let a = aiAccount(caller);
+    let a = switch (aiAccount(caller)) { case (?x) x; case null { return fail("Insufficient credits", ?0) } };
     if (a.creditBalance < cost) { return fail("Insufficient credits", ?a.creditBalance) };
     ignore AccountLib.applyCredits(creditLedger, state, a, -cost, "ai_copy", null);
     var settled = false;

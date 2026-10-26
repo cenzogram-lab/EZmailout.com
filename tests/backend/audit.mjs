@@ -129,6 +129,14 @@ const sections = {
     });
     check(leaks.length === 0, "no outcall carries another service's key or the webhook secret", leaks.map((l) => l.url));
     check(print.every((l) => l.url.startsWith("https://rest.click2mail.com/molpro")), "a live (Stripe-paid) campaign goes to print-partner Production", print.map((l) => l.url));
+    // Its environment is fixed by that dispatch: switching the admin's
+    // setting afterwards does not send its tracking to the other one.
+    await env.admin.saveAdminKeys(keys({ fulfilmentEnvironment: { Staging: null } }));
+    const beforeSync = up.log.length;
+    await call(env.pic, up, env.deferred(env.controller).syncPrintTracking(cid));
+    const syncCalls = up.log.slice(beforeSync).filter((l) => l.url.includes("/molpro/"));
+    check(syncCalls.length > 0 && syncCalls.every((l) => l.url.startsWith("https://rest.click2mail.com/molpro")), "a dispatched campaign keeps its print environment after the admin switches it", syncCalls.map((l) => l.url));
+    await env.admin.saveAdminKeys(keys({ fulfilmentEnvironment: { Production: null } }));
     check(up.log.every((l) => l.url.startsWith("https://")), "every outcall is https");
 
     // Proxy: every outcall goes to the proxy with the real target in x-target-url.
@@ -413,6 +421,10 @@ const sections = {
     r = await hook(SECRETS.webhookSecret, { jobId: d.jobId[0], event: "Delivered", eventId: "evt-2" }, false, "/webhooks/click2mail");
     check(r.status_code === 200, "the legacy webhook path configured at the print partner still works", Buffer.from(r.body).toString());
     check((await env.admin.getAdminKeys()).webhookPath === "/webhooks/fulfilment", "the admin is shown the new webhook path");
+    // One piece's outcome does not settle a campaign of several pieces: the
+    // event is recorded and tracking (every piece's scans) decides.
+    const after = (await env.as(user).getCampaign(cid))[0];
+    check(after.status.Delivered === undefined && (await env.as(user).getTrackingEvents(cid)).some((e) => e.providerEventId === "evt-2"), "a Delivered webhook for a several-piece campaign is recorded without settling it", after.status);
   },
 
   // ─── 10. High traffic: concurrent copilot and verification ───────────────
@@ -460,6 +472,20 @@ sections.orders = async function orders() {
   check(!disguised.ok && /match its type/.test(disguised.error[0] ?? ""), "a PDF labelled as an image is refused", disguised.error);
   const stillEarly = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   check(!stillEarly.ok && /print file/.test(stillEarly.error[0] ?? ""), "a refused file leaves nothing staged to pay for", stillEarly.error);
+  // A re-upload starts a new file: its first chunk never completes the old
+  // file's second, so half a new file is never paid for or printed.
+  const first = printPdf(2, 2, 3000), second = printPdf(3, 2, 3000);
+  const half = Math.floor(first.length / 2);
+  await o.uploadDocumentChunk(cid, 0n, 2n, "application/pdf", "a.pdf", first.slice(0, half));
+  await o.uploadDocumentChunk(cid, 1n, 2n, "application/pdf", "a.pdf", first.slice(half));
+  await o.uploadDocumentChunk(cid, 0n, 2n, "application/pdf", "b.pdf", second.slice(0, half));
+  const mixed = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(!mixed.ok && /print file/.test(mixed.error[0] ?? ""), "a re-upload's first chunk starts a new file (old and new never mix)", mixed.error);
+  // A print job needs a return address, and a paid order's cannot change.
+  const noReturn = await o.createCampaign(campaignInput(1, { returnAddress: [] }));
+  check(!noReturn.ok && /return address/i.test(noReturn.error[0] ?? ""), "a campaign without a return address is refused", noReturn.error);
+  const badZip = await o.createCampaign(campaignInput(1, { returnAddress: [{ ...returnAddress, zip_code: "12" }] }));
+  check(!badZip.ok && /ZIP/.test(badZip.error[0] ?? ""), "a return address with a bad ZIP is refused", badZip.error);
   check((await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", pdf(1))).ok, "the print file is staged");
   const intent = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   const paid = await call(env.pic, up, env.deferred(owner).confirmPayment(intent.paymentIntentId[0]));

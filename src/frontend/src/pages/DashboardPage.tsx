@@ -8,6 +8,7 @@ import { SubscriptionWidget } from "@/components/dashboard/SubscriptionWidget";
 import { MascotEmptyState } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { GroupedList, GroupedListRow } from "@/components/ui/grouped-list";
+import { LoadError } from "@/components/ui/load-error";
 import { useAccountSync } from "@/hooks/use-account";
 import { useCampaigns } from "@/hooks/use-backend";
 import { formatNumber, formatTimestamp, layoutLabel } from "@/lib/format";
@@ -25,7 +26,13 @@ import { useEffect } from "react";
 const RECENT_LIMIT = 5;
 
 function RecentCampaigns() {
-  const { data: campaigns, isLoading } = useCampaigns();
+  const {
+    data: campaigns,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useCampaigns();
   const recent = [...(campaigns ?? [])]
     .sort((a, b) => Number(b.createdAt - a.createdAt))
     .slice(0, RECENT_LIMIT);
@@ -49,6 +56,21 @@ function RecentCampaigns() {
           </div>
         ))}
         <output className="sr-only">Loading campaigns…</output>
+      </GroupedList>
+    );
+  }
+  if (isError && !campaigns) {
+    return (
+      <GroupedList
+        title="Recent campaigns"
+        data-ocid="dashboard.recent_campaigns.card"
+      >
+        <LoadError
+          what="your recent campaigns"
+          onRetry={() => void refetch()}
+          retrying={isRefetching}
+          data-ocid="dashboard.recent_campaigns.error"
+        />
       </GroupedList>
     );
   }

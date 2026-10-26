@@ -1,4 +1,5 @@
 import { CatalogIcon } from "@/components/catalog/CatalogIcon";
+import { sideHasContent } from "@/components/wizard/usePrintDocument";
 import {
   CATALOG,
   CATALOG_SIZE_COUNT,
@@ -18,7 +19,12 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
 
   function start() {
     const store = useWizardStore.getState();
-    if (first) {
+    // A design in progress is laid out for its own size: a tile only
+    // preselects a format while there is nothing to lose, and otherwise
+    // opens Step 1, where changing size asks first.
+    const designed =
+      sideHasContent(store.canvas.front) || sideHasContent(store.canvas.back);
+    if (first && !(designed && store.selectedLayout !== first.id)) {
       store.setProduct({
         productType: category.productType,
         layoutVariant: first.id,

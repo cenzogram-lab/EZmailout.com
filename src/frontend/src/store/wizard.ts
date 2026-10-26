@@ -124,6 +124,14 @@ interface WizardData {
   campaignPrice: { unitCents: number; totalCents: number } | null;
   /** True once `campaignId` is paid: no later launch may reuse it. */
   campaignPaid: boolean;
+  /**
+   * A launch (create → stage → render → upload) is running. Not persisted:
+   * the stepper and Stampy's step chips wait for it, and a second launch
+   * cannot start until it ends, even from a remounted Step 4.
+   */
+  launchInFlight: boolean;
+  /** The return-address form holds unsaved edits (not persisted). */
+  returnAddressUnsaved: boolean;
   paymentIntentId: string | null;
 }
 
@@ -218,6 +226,10 @@ interface WizardActions {
   ) => void;
   /** Marks the launched campaign paid, so no later launch reuses it. */
   markCampaignPaid: () => void;
+  /** Forgets the launched campaign when it is `id` (deleted, or gone). */
+  forgetLaunchedCampaign: (id: string) => void;
+  setLaunchInFlight: (running: boolean) => void;
+  setReturnAddressUnsaved: (unsaved: boolean) => void;
   setPaymentIntentId: (id: string | null) => void;
   reset: () => void;
 }
@@ -249,6 +261,8 @@ function initialData(): WizardData {
     campaignOrderKey: null,
     campaignPrice: null,
     campaignPaid: false,
+    launchInFlight: false,
+    returnAddressUnsaved: false,
     paymentIntentId: null,
   };
 }
@@ -412,6 +426,13 @@ let pendingDraft: {
   value: StorageValue<Partial<WizardData>>;
 } | null = null;
 let draftTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * Draft writes wait until the saved draft has been read: a write while the
+ * read is still running (it can outlast the 1.5 s the app waits) stored an
+ * empty audience under `<draft>:addresses`, and the late read then marked
+ * the real list as already saved, so it was never written back.
+ */
+let draftRestored = false;
 
 /**
  * The audience is saved under its own key (`<name>:addresses`), written only
@@ -434,6 +455,7 @@ function isAddressesRef(v: unknown): boolean {
 function writeDraftNow(): void {
   if (draftTimer) clearTimeout(draftTimer);
   draftTimer = null;
+  if (!draftRestored) return;
   const pending = pendingDraft;
   pendingDraft = null;
   if (!pending || !draftSaving) return;
@@ -487,7 +509,7 @@ const draftJson: PersistStorage<Partial<WizardData>> = {
   setItem: (name, value) => {
     if (!draftSaving) return;
     pendingDraft = { name, value };
-    draftTimer ??= setTimeout(writeDraftNow, DRAFT_SAVE_MS);
+    if (draftRestored) draftTimer ??= setTimeout(writeDraftNow, DRAFT_SAVE_MS);
   },
   removeItem: (name) => {
     pendingDraft = null;
@@ -532,16 +554,20 @@ export const useWizardStore = create<WizardStore>()(
           const row = getPricingRow(layoutVariant);
           return {
             selectedLayout: layoutVariant,
-            selectedSpec: row
-              ? {
-                  layoutVariant: row.id,
-                  documentClass: row.documentClass,
-                  widthInches: row.widthInches,
-                  heightInches: row.heightInches,
-                  mailClass: row.defaultMailClass,
-                  supportedMailClasses: row.supportedMailClasses,
-                }
-              : null,
+            // Choosing the same size again keeps its chosen mail class.
+            selectedSpec:
+              s.selectedLayout === layoutVariant && s.selectedSpec
+                ? s.selectedSpec
+                : row
+                  ? {
+                      layoutVariant: row.id,
+                      documentClass: row.documentClass,
+                      widthInches: row.widthInches,
+                      heightInches: row.heightInches,
+                      mailClass: row.defaultMailClass,
+                      supportedMailClasses: row.supportedMailClasses,
+                    }
+                  : null,
             canvas:
               s.selectedLayout === layoutVariant
                 ? s.canvas
@@ -992,10 +1018,20 @@ export const useWizardStore = create<WizardStore>()(
         });
       },
       markCampaignPaid: () => set({ campaignPaid: true }),
+      forgetLaunchedCampaign: (id) =>
+        set((s) =>
+          s.campaignId === id
+            ? { campaignId: null, campaignOrderKey: null, campaignPrice: null }
+            : {},
+        ),
+      setLaunchInFlight: (launchInFlight) => set({ launchInFlight }),
+      setReturnAddressUnsaved: (returnAddressUnsaved) =>
+        set({ returnAddressUnsaved }),
       setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),
       reset: () => {
         draftSaving = true;
-        set(initialData());
+        // A launch still running keeps its flag until it ends.
+        set({ ...initialData(), launchInFlight: get().launchInFlight });
       },
     }),
     {
@@ -1042,7 +1078,14 @@ export const useWizardStore = create<WizardStore>()(
  */
 export function restoreWizardDraft(): Promise<void> {
   return Promise.race([
-    Promise.resolve(useWizardStore.persist.rehydrate()).catch(() => {}),
+    Promise.resolve(useWizardStore.persist.rehydrate())
+      .catch(() => {})
+      .finally(() => {
+        // Saving starts once the draft is read; the latest state goes first.
+        draftRestored = true;
+        if (pendingDraft)
+          draftTimer ??= setTimeout(writeDraftNow, DRAFT_SAVE_MS);
+      }),
     new Promise<void>((r) =>
       setTimeout(() => {
         // Rendering goes ahead without it; see `restoreGaveUp`.

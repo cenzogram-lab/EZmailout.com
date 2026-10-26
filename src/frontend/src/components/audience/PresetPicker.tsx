@@ -4,6 +4,7 @@ import { MascotEmptyState } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadError } from "@/components/ui/load-error";
 import { useAccountSync } from "@/hooks/use-account";
 import { usePresets } from "@/hooks/use-backend";
 import { formatNumber, formatTimestamp } from "@/lib/format";
@@ -42,6 +43,21 @@ export function PresetPicker({ selectedId, onSelect }: PresetPickerProps) {
       >
         <Loader2 className="size-4 animate-spin" /> Loading presets…
       </div>
+    );
+  }
+
+  if (presets.isError && !presets.data) {
+    return (
+      <Card>
+        <CardContent>
+          <LoadError
+            what="your saved audiences"
+            onRetry={() => void presets.refetch()}
+            retrying={presets.isRefetching}
+            data-ocid="audience.presets.error"
+          />
+        </CardContent>
+      </Card>
     );
   }
 

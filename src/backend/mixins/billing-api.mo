@@ -11,6 +11,7 @@ import Http "../lib/http";
 import Limits "../lib/limits";
 import PricingLib "../lib/pricing";
 import PrintFile "../lib/printfile";
+import Inputs "../lib/inputs";
 import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
@@ -61,6 +62,28 @@ mixin (
     AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), null, null);
   };
 
+  /// New accounts the whole canister opens in an hour. Identities are free
+  /// to mint and each account (with its referral code) is kept for good, so
+  /// creation has a canister-wide budget like every other per-identity cost.
+  transient let maxNewAccountsPerHour : Nat = 5_000;
+  transient let accountWindows = Map.empty<Text, Limits.Window>();
+
+  /// The caller's account, opened now if it does not exist and the hourly
+  /// budget has room; null when it would need opening and the budget is spent.
+  private func accountWithin(caller : Principal, email : ?Text, code : ?Text) : ?Account.UserAccount {
+    switch (accounts.get(caller.toText())) {
+      case (?a) ?a;
+      case null {
+        switch (Limits.admit(accountWindows, [{ key = "new"; limit = maxNewAccountsPerHour; minGapNs = 0 }], Time.now(), stripeWindowNs)) {
+          case (#ok) ?AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), email, code);
+          case _ null;
+        };
+      };
+    };
+  };
+
+  transient let accountsBusy = "EZmailout is opening a lot of new accounts right now; please try again in a few minutes";
+
   private func purposeText(p : Account.PaymentPurpose) : Text {
     switch (p) { case (#CampaignOrder) "campaign_order"; case (#CreditPack) "credit_pack"; case (#Subscription) "subscription" };
   };
@@ -80,7 +103,12 @@ mixin (
       case (?c) { let t = AddressLib.sanitizeText(c); if (t.size() > 0 and t.size() <= 32) ?t else null };
       case null null;
     };
-    let a = AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), cleanEmail, cleanCode);
+    let a = switch (accountWithin(caller, cleanEmail, cleanCode)) {
+      case (?x) x;
+      case null { return { ok = false; error = ?accountsBusy; account = null } };
+    };
+    // An existing account still takes the email and referral hints it lacks.
+    ignore AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), cleanEmail, cleanCode);
     { ok = true; error = null; account = ?AccountLib.toShared(a, Time.now()) };
   };
 
@@ -96,7 +124,7 @@ mixin (
     if (not signedIn(caller)) { return { ok = false; error = ?"Sign in required" } };
     let clean = AddressLib.sanitizeText(email);
     if (clean.size() > 200 or not clean.contains(#char '@')) { return { ok = false; error = ?"Enter a valid email address" } };
-    let a = account(caller);
+    let a = switch (accountWithin(caller, null, null)) { case (?x) x; case null { return { ok = false; error = ?accountsBusy } } };
     a.email := clean;
     a.updatedAt := Time.now();
     { ok = true; error = null };
@@ -162,7 +190,7 @@ mixin (
   /// Creates a Stripe PaymentIntent (or a sandbox/waived record) for an order, credit pack or subscription.
   public shared ({ caller }) func createPaymentIntent(purpose : Account.PaymentPurpose, reference : ?Text, pack : ?Account.CreditPack) : async Account.PaymentIntentResult {
     if (not signedIn(caller)) { return intentFail("Sign in with Internet Identity before checking out") };
-    let a = account(caller);
+    let a = switch (accountWithin(caller, null, null)) { case (?x) x; case null { return intentFail(accountsBusy) } };
     var amount : Nat = 0;
     var description = "";
     var refText = "";
@@ -203,6 +231,17 @@ mixin (
                 };
               };
               case null { return intentFail("This format is no longer offered. Re-run the campaign from Campaigns in another size, then delete this draft.") };
+            };
+            // Dispatch refuses an order without a usable return address, and a
+            // paid one can no longer be changed: never take payment for it.
+            switch (c.returnAddress) {
+              case null { return intentFail("This draft has no return address, so it can't be printed. Re-run it from Campaigns, add one in Step 4, then delete this draft.") };
+              case (?r) {
+                switch (Inputs.returnAddressError(r)) {
+                  case (?e) { return intentFail(e # ". Re-run the campaign from Campaigns with a complete return address, then delete this draft.") };
+                  case null {};
+                };
+              };
             };
             // Every priced recipient must be stored (a large list is staged in
             // chunks by `addCampaignRecipients`), so the order paid for is
@@ -283,6 +322,12 @@ mixin (
     switch (Stripe.parseIntent(resp.body)) {
       case null { intentFail("Unexpected response from the payment processor; please try again") };
       case (?intent) {
+        // The draft could have been evicted or expired while the processor
+        // answered: a checkout handed out now would take a payment for
+        // nothing, so the customer is told to launch again instead.
+        if (purpose == #CampaignOrder and not campaigns.containsKey(refText)) {
+          return intentFail("This draft was removed while checkout was opening (unpaid drafts expire after 14 days). Re-run it from Campaigns to launch it again; nothing was charged.");
+        };
         let stripeRecord : Account.PaymentRecord = { paymentIntentId = intent.id; userId = a.id; purpose; amountCents = amount; reference = ?refText; creditPack = pack; var state = #Created; createdAt = Time.now(); var confirmedAt = null; sandbox = false };
         payments.add(intent.id, stripeRecord);
         { ok = true; error = null; paymentIntentId = ?intent.id; clientSecret = intent.clientSecret; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };

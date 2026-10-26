@@ -57,7 +57,7 @@ import {
   Rocket,
   Truck,
 } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PreflightChecklist, computePreflight } from "./PreflightChecklist";
 import { ReturnAddressForm } from "./ReturnAddressForm";
@@ -138,6 +138,9 @@ class StageError extends Error {
 }
 
 /** Step 4: preflight, invoice, payment and print dispatch. */
+/** A launch is running (module level, so a remounted Step 4 sees it too). */
+let launchRunning = false;
+
 export function Step4ReviewLaunch() {
   const campaignName = useWizardStore((s) => s.campaignName);
   const selectedProduct = useWizardStore((s) => s.selectedProduct);
@@ -193,7 +196,9 @@ export function Step4ReviewLaunch() {
     null,
   );
   const [paidTestMode, setPaidTestMode] = useState(false);
-  const running = useRef(false);
+  const setLaunchInFlight = useWizardStore((s) => s.setLaunchInFlight);
+  const launchInFlight = useWizardStore((s) => s.launchInFlight);
+  const returnAddressUnsaved = useWizardStore((s) => s.returnAddressUnsaved);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
   const mailClass = selectedSpec?.mailClass;
@@ -277,6 +282,7 @@ export function Step4ReviewLaunch() {
         verifiedCount: verifiedAddresses.length,
         isAuthenticated,
         returnAddress,
+        returnAddressUnsaved,
         qrDestinationUrl,
       }),
     [
@@ -289,6 +295,7 @@ export function Step4ReviewLaunch() {
       verifiedAddresses.length,
       isAuthenticated,
       returnAddress,
+      returnAddressUnsaved,
       qrDestinationUrl,
     ],
   );
@@ -296,7 +303,6 @@ export function Step4ReviewLaunch() {
   const fail = useCallback(
     (stage: Exclude<Stage, "idle" | "done">, error: string) => {
       setMachine({ stage: "idle", failedStage: stage, error });
-      running.current = false;
     },
     [],
   );
@@ -304,9 +310,13 @@ export function Step4ReviewLaunch() {
   /** Runs creating → rendering → uploading, then parks at `paying`. */
   const runPreparation = useCallback(
     async (from: "creating" | "rendering" | "uploading") => {
-      if (running.current) return;
-      running.current = true;
+      // One launch at a time, even across a remounted Step 4: leaving the
+      // step mid-launch keeps the first run going.
+      if (launchRunning) return;
+      launchRunning = true;
+      setLaunchInFlight(true);
       setMachine({ stage: from, failedStage: null, error: null });
+      let reused = false;
       try {
         const state = useWizardStore.getState();
         const orderKey = launchOrderKey(state);
@@ -330,6 +340,7 @@ export function Step4ReviewLaunch() {
             ? state.campaignId
             : null;
         if (id) {
+          reused = true;
           // Keep the stored preview in step with the file about to replace it.
           void saveCanvas
             .mutateAsync({
@@ -416,6 +427,15 @@ export function Step4ReviewLaunch() {
             );
           });
         let stored = Number(stagedReply.stored);
+        if (!stagedReply.ok && reused) {
+          // The reused draft was deleted or paid elsewhere: forget it, so the
+          // next attempt creates the campaign afresh.
+          useWizardStore.getState().forgetLaunchedCampaign(id);
+          throw new StageError(
+            "creating",
+            "This order's earlier draft is no longer open. Launch again to create it afresh.",
+          );
+        }
         if (!stagedReply.ok) {
           throw new StageError(
             "creating",
@@ -500,13 +520,15 @@ export function Step4ReviewLaunch() {
 
         // 4. Hand off to Stripe.
         setMachine({ stage: "paying", failedStage: null, error: null });
-        running.current = false;
       } catch (error) {
         if (error instanceof StageError) {
           fail(error.stage, error.message);
         } else {
           fail(from, messageOf(error, "Something went wrong."));
         }
+      } finally {
+        launchRunning = false;
+        setLaunchInFlight(false);
       }
     },
     [
@@ -517,6 +539,7 @@ export function Step4ReviewLaunch() {
       addRecipients,
       deleteDraft,
       setLaunchedCampaign,
+      setLaunchInFlight,
       fail,
     ],
   );
@@ -568,6 +591,7 @@ export function Step4ReviewLaunch() {
   const launchDisabled =
     report.blocked ||
     busy ||
+    launchInFlight ||
     dueCents <= 0 ||
     belowMinimum ||
     (isAuthenticated && !accountReady);

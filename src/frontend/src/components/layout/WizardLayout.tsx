@@ -18,6 +18,7 @@ export function WizardLayout({
   children: React.ReactNode;
 }) {
   const setStep = useWizardStore((s) => s.setStep);
+  const launchInFlight = useWizardStore((s) => s.launchInFlight);
   const campaignName = useWizardStore((s) => s.campaignName);
   const wide = currentStep === 3;
   // Every step starts at the top: otherwise the previous step's scroll
@@ -48,8 +49,10 @@ export function WizardLayout({
               <li key={step.id} className="flex flex-1 items-center">
                 <button
                   type="button"
-                  onClick={() => isCompleted && setStep(step.id)}
-                  disabled={!isCompleted}
+                  onClick={() =>
+                    isCompleted && !launchInFlight && setStep(step.id)
+                  }
+                  disabled={!isCompleted || launchInFlight}
                   className="flex flex-col items-center gap-1.5 disabled:cursor-default"
                   data-ocid={`wizard.step.${step.id}.indicator`}
                 >

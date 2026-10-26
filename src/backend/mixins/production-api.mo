@@ -29,6 +29,7 @@ mixin (
   campaigns : Map.Map<Text, Types.CampaignRecord>,
   campaignRecipients : Map.Map<Text, [Common.VerifiedAddress]>,
   printBatches : Map.Map<Text, [Types.PrintBatch]>,
+  printEnvironments : Map.Map<Text, Common.FulfilmentEnvironment>,
   trackingEvents : List.List<Types.TrackingEvent>,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   state : Common.Counters,
@@ -81,11 +82,28 @@ mixin (
     CampaignLib.isOwnedBy(record, caller) or AdminLib.isAdmin(adminKeysState, caller);
   };
 
-  /// Where a campaign's print job lives. A test-mode campaign (paid
-  /// through sandbox checkout) always goes to Staging, whatever the admin's
-  /// environment setting, so it can never print or bill on Production.
+  /// Where a campaign's print job lives: the environment its first dispatch
+  /// used (`printEnvironments`), so a later switch of the admin's setting
+  /// cannot send its tracking or a retried batch to the other one. Before
+  /// that, a test-mode campaign (paid through sandbox checkout) always goes
+  /// to Staging, so it can never print or bill on Production, and any other
+  /// campaign to the admin's current setting.
   private func environmentFor(record : Types.CampaignRecord) : Common.FulfilmentEnvironment {
-    if (CampaignLib.isTestMode(record)) #Staging else adminKeysState.fulfilmentEnvironment;
+    switch (printEnvironments.get(record.id)) {
+      case (?pinned) pinned;
+      case null { if (CampaignLib.isTestMode(record)) #Staging else adminKeysState.fulfilmentEnvironment };
+    };
+  };
+
+  /// Whether the print partner already holds something of this campaign (its
+  /// document, or a batch's address list or job): from then on its
+  /// environment stays the one those were created in.
+  private func partnerHoldsAny(record : Types.CampaignRecord) : Bool {
+    if (record.printDocumentId != null or record.printAddressListId != null or record.printJobId != null) return true;
+    switch (printBatches.get(record.id)) {
+      case (?plan) plan.any(func(b : Types.PrintBatch) : Bool { b.addressListId != null or b.jobId != null });
+      case null false;
+    };
   };
 
   /// A file name that cannot break out of its multipart header.
@@ -114,8 +132,13 @@ mixin (
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
     if (chunkIndex >= totalChunks) { return { ok = false; error = ?"chunkIndex out of range" } };
     if (data.size() == 0 or data.size() > maxChunkBytes) { return { ok = false; error = ?"Chunk must be between 1 byte and 1.9 MB" } };
+    // Chunk 0, or any chunk after a complete file, begins a new file: a
+    // re-upload with the same chunk count must not mix with the old one (new
+    // chunk 0 + old chunk 1 still counted as complete, and could be paid).
     let existing : ?Types.DocumentUpload = switch (documentUploads.get(campaignId)) {
-      case (?u) { if (u.totalChunks == totalChunks and u.mimeType == mimeType) ?u else null };
+      case (?u) {
+        if (u.totalChunks == totalChunks and u.mimeType == mimeType and chunkIndex != 0 and u.receivedChunks < u.totalChunks) ?u else null;
+      };
       case null null;
     };
     // The staged file with this chunk in place must still fit one outcall.
@@ -267,6 +290,12 @@ mixin (
     recipients : [Common.VerifiedAddress],
     returnAddress : Common.ReturnAddress,
   ) : async* Types.DispatchResult {
+    // Fixed by the run that first reaches the print partner; until it holds
+    // anything, the current setting applies (and is recorded again).
+    if (not partnerHoldsAny(record)) {
+      printEnvironments.remove(campaignId);
+      printEnvironments.add(campaignId, environmentFor(record));
+    };
     let base = Fulfilment.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
     // The batches are planned before the first await: a plan that could not
@@ -661,12 +690,19 @@ mixin (
       case (?t) { if (t > 100_000_000_000_000) t else if (t > 100_000_000_000) t * 1_000_000 else if (t > 0) t * 1_000_000_000 else Time.now() };
       case null Time.now();
     };
-    let advanced = CampaignLib.advanceStatus(record, status);
+    // One webhook speaks for one piece (or one job). An outcome (delivered,
+    // undeliverable, returned) settles the campaign and ends its tracking,
+    // so for more than one piece or print job it is left to tracking, which
+    // weighs every piece's scans (`aggregateStage`) across every job.
+    let outcome = CampaignLib.stageIndex(status) >= CampaignLib.stageIndex(#Delivered);
+    let onePiece = record.recipientCount <= 1 and (switch (printBatches.get(record.id)) { case (?b) b.size() <= 1; case null true });
+    let deferred = outcome and not onePiece;
+    let advanced = if (deferred) false else CampaignLib.advanceStatus(record, status);
     let evtId = state.nextEventId;
     state.nextEventId += 1;
     // A job whose submission was never confirmed keeps the event as evidence
     // (a retried dispatch checks the job itself) without moving the timeline.
-    let note = if (advanced) "" else if (record.productionStatus != #Submitted) " (not applied: submission not confirmed)" else " (no stage change)";
+    let note = if (advanced) "" else if (record.productionStatus != #Submitted) " (not applied: submission not confirmed)" else if (deferred) " (recorded; the campaign's outcome follows its tracking across every piece)" else " (no stage change)";
     trackingEvents.add({ id = evtId; campaignId = record.id; status; eventType = "webhook." # CampaignLib.stageName(status); timestamp = ts; providerEventId; source = #Webhook; detail = ?(eventText # note) });
     { ok = true; error = null; campaignId = ?record.id; status = ?record.status };
   };

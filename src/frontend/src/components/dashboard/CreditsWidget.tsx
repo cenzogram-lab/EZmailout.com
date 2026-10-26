@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LoadError } from "@/components/ui/load-error";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -33,7 +34,7 @@ interface PriceRow {
 }
 
 export function CreditsWidget() {
-  const { isAuthenticated } = useAccountSync();
+  const { isAuthenticated, accountReady } = useAccountSync();
   const creditBalance = useAccountStore((s) => s.creditBalance);
   const setTopUpOpen = useAccountStore((s) => s.setTopUpOpen);
   const pricingQuery = useAiPricing();
@@ -102,12 +103,18 @@ export function CreditsWidget() {
               className="font-display text-3xl font-bold tracking-tight text-foreground"
               data-ocid="dashboard.credits.balance.text"
             >
-              {formatNumber(creditBalance)}
+              {accountReady ? (
+                formatNumber(creditBalance)
+              ) : (
+                <span className="inline-block h-8 w-20 animate-pulse rounded bg-muted align-middle" />
+              )}
             </p>
           </div>
-          <Badge variant="outline" className="font-mono">
-            ≈ {formatPrice(creditsToUsd(creditBalance))}
-          </Badge>
+          {accountReady ? (
+            <Badge variant="outline" className="font-mono">
+              ≈ {formatPrice(creditsToUsd(creditBalance))}
+            </Badge>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -140,6 +147,13 @@ export function CreditsWidget() {
             <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Loading ledger…
             </div>
+          ) : ledgerQuery.isError && !ledgerQuery.data ? (
+            <LoadError
+              what="your credit activity"
+              onRetry={() => void ledgerQuery.refetch()}
+              retrying={ledgerQuery.isRefetching}
+              data-ocid="dashboard.credits.ledger.error"
+            />
           ) : ledger.length === 0 ? (
             <p
               className="py-3 text-sm text-muted-foreground"

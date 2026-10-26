@@ -87,13 +87,21 @@ function PaymentForm({
     if (!stripe || !elements) return;
     setSubmitting(true);
     setError(null);
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-      // Intents are card-only, so nothing leaves the page; Stripe still
-      // requires a return address.
-      confirmParams: { return_url: `${window.location.origin}/dashboard` },
-    });
+    const confirmed = await stripe
+      .confirmPayment({
+        elements,
+        redirect: "if_required",
+        // Intents are card-only, so nothing leaves the page; Stripe still
+        // requires a return address.
+        confirmParams: { return_url: `${window.location.origin}/dashboard` },
+      })
+      .catch(() => null);
+    if (!confirmed) {
+      setError("Payment could not be completed. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+    const { error: stripeError, paymentIntent } = confirmed;
     if (stripeError) {
       setError(stripeError.message ?? "Payment was not completed.");
       setSubmitting(false);
@@ -135,6 +143,9 @@ function PaymentForm({
               type="button"
               variant="ghost"
               onClick={onCancel}
+              // Never while the card is being charged (3-D Secure included):
+              // leaving then invited a second checkout and a second charge.
+              disabled={submitting}
               data-ocid="checkout.cancel.button"
             >
               Cancel

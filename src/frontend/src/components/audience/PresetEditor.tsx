@@ -255,6 +255,9 @@ export function PresetEditor({
 
   const busy =
     updatePreset.isPending || savePreset.isPending || deletePreset.isPending;
+  // Until the saved list has loaded, an edit would replace it with what is
+  // on screen (an empty list after a failed read), so editing waits.
+  const listLoaded = addresses.data !== undefined;
 
   return (
     <div className="space-y-5" data-ocid="audience.preset_editor.panel">
@@ -302,7 +305,22 @@ export function PresetEditor({
             />
           </div>
 
-          {addresses.isLoading ? (
+          {addresses.isError && !listLoaded ? (
+            <div
+              className="flex flex-wrap items-center gap-3 py-4 text-sm text-muted-foreground"
+              data-ocid="audience.preset_editor.load_error"
+            >
+              We couldn't load this preset's recipients.
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void addresses.refetch()}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : !listLoaded ? (
             <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> Loading recipients…
             </div>
@@ -402,7 +420,7 @@ export function PresetEditor({
             type="button"
             variant="outline"
             onClick={() => void handleAdd()}
-            disabled={verify.isPending}
+            disabled={verify.isPending || !listLoaded}
             className="gap-2"
             data-ocid="audience.preset_editor.add.button"
           >
@@ -424,7 +442,7 @@ export function PresetEditor({
             type="button"
             variant="outline"
             onClick={() => void handleUpdate()}
-            disabled={busy || list.length === 0}
+            disabled={busy || !listLoaded || list.length === 0}
             className="gap-2"
             data-ocid="audience.preset_editor.update.button"
           >
@@ -442,7 +460,7 @@ export function PresetEditor({
               setSaveAsName(`${name.trim() || preset.name} copy`);
               setSaveAsOpen(true);
             }}
-            disabled={busy || list.length === 0}
+            disabled={busy || !listLoaded || list.length === 0}
             className="gap-2"
             data-ocid="audience.preset_editor.save_as.button"
           >
@@ -462,7 +480,7 @@ export function PresetEditor({
         <Button
           type="button"
           onClick={() => onRerun(list, preset.id)}
-          disabled={busy || list.length === 0}
+          disabled={busy || !listLoaded || list.length === 0}
           className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           data-ocid="audience.preset_editor.rerun.button"
         >

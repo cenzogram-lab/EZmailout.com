@@ -23,11 +23,15 @@ for (a in [
   { name = "Ada Lovelace"; address_line1 = "1600 Pennsylvania Ave NW"; address_line2 = ?"Suite 300"; city = "Washington"; state = "DC"; zip_code = "20500"; zip_plus4 = ?"0005" },
   { name = "O'Brien & Sons <HQ>"; address_line1 = "12 \"Main\" St"; address_line2 = null; city = "Zürich"; state = "ZH"; zip_code = "8001"; zip_plus4 = null },
   { name = "Señora José Núñez"; address_line1 = "5 Calle Ñandú"; address_line2 = ?"Piso 2º"; city = "San José"; state = "CA"; zip_code = "95110"; zip_plus4 = null },
+  // Controls XML forbids (a stray CSV byte) are left out, counted the same way.
+  { name = "Bad\u{01}Byte\u{1F}Name"; address_line1 = "7 Tab\tSt"; address_line2 = null; city = "Reno\u{0B}"; state = "NV"; zip_code = "89501"; zip_plus4 = null },
 ].vals()) {
   // buildAddressListXml sizes are characters; compare bytes of the UTF-8 text.
   let built = Nat.sub(Fulfilment.buildAddressListXml("", [a]).encodeUtf8().size(), Fulfilment.buildAddressListXml("", []).encodeUtf8().size());
   expect("address " # a.name, Fulfilment.addressXmlBytes(a), built);
 };
+
+assert not Fulfilment.buildAddressListXml("", [{ name = "A\u{01}B"; address_line1 = "1 St"; address_line2 = null; city = "C"; state = "NV"; zip_code = "89501"; zip_plus4 = null }]).contains(#char '\u{01}');
 
 // Batches cover every address once, in order, and each list fits the budget.
 let many = [

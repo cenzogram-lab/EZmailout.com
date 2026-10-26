@@ -60,6 +60,38 @@ module {
     tooLong(a.name, m) or optTooLong(a.organization, m) or tooLong(a.address_line1, m) or optTooLong(a.address_line2, m) or tooLong(a.city, m) or tooLong(a.state, m) or tooLong(a.zip_code, m);
   };
 
+  func blank(t : Text) : Bool {
+    for (c in t.chars()) { if (not c.isWhitespace()) return false };
+    true;
+  };
+
+  func digits(t : Text, n : Nat) : Bool {
+    var count = 0;
+    for (c in t.chars()) { if (not c.isDigit()) return false; count += 1 };
+    count == n;
+  };
+
+  /// Why a return address cannot go on a print job, if anything: the rules of
+  /// the review step's form (`validateReturnAddress`) — name, street and city
+  /// filled in, a 2-letter state, a 5-digit ZIP (or ZIP+4). The print partner
+  /// refuses a job without one, and a paid order's address cannot be changed.
+  public func returnAddressError(a : Common.ReturnAddress) : ?Text {
+    if (blank(a.name) or blank(a.address_line1) or blank(a.city)) return ?"The return address needs a sender name, street address and city";
+    let state = a.state.trim(#predicate(Char.isWhitespace));
+    var letters = 0;
+    for (c in state.chars()) { if (c < 'A' or c > 'Z') return ?"The return address needs a 2-letter state code"; letters += 1 };
+    if (letters != 2) return ?"The return address needs a 2-letter state code";
+    let zip = a.zip_code.trim(#predicate(Char.isWhitespace));
+    let parts = zip.split(#char '-').toArray();
+    let zipOk = switch (parts.size()) {
+      case 1 digits(parts[0], 5);
+      case 2 digits(parts[0], 5) and digits(parts[1], 4);
+      case _ false;
+    };
+    if (not zipOk) return ?"The return address needs a 5-digit ZIP code (or ZIP+4)";
+    null;
+  };
+
   /// Index of the first recipient with an over-long line, if any.
   public func firstLongRecipient(list : [Common.VerifiedAddress]) : ?Nat {
     var i = 0;

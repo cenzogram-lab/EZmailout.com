@@ -43,6 +43,8 @@ export interface PreflightInput {
   verifiedCount: number;
   isAuthenticated: boolean;
   returnAddress: ReturnAddress | null;
+  /** The return-address form has edits (or a clear) not yet saved. */
+  returnAddressUnsaved?: boolean;
   qrDestinationUrl: string;
 }
 
@@ -379,19 +381,27 @@ export function computePreflight(input: PreflightInput): PreflightReport {
 
   // 7. Return address
   items.push(
-    input.returnAddress
+    input.returnAddressUnsaved
       ? {
           id: "return",
           label: "Return address",
-          detail: `${input.returnAddress.name}, ${input.returnAddress.city}, ${input.returnAddress.state} ${input.returnAddress.zip_code}`,
-          level: "pass",
-        }
-      : {
-          id: "return",
-          label: "Return address",
-          detail: "Add and save a return address below.",
+          detail:
+            "Save the return address below (the order uses the saved one).",
           level: "fail",
-        },
+        }
+      : input.returnAddress
+        ? {
+            id: "return",
+            label: "Return address",
+            detail: `${input.returnAddress.name}, ${input.returnAddress.city}, ${input.returnAddress.state} ${input.returnAddress.zip_code}`,
+            level: "pass",
+          }
+        : {
+            id: "return",
+            label: "Return address",
+            detail: "Add and save a return address below.",
+            level: "fail",
+          },
   );
 
   // 8. Dynamic QR destination

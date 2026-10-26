@@ -95,6 +95,9 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   /** Rows verified so far while a list larger than one batch is checked. */
   const [verifyProgress, setVerifyProgress] = useState<number | null>(null);
+  // The whole run, waits and retries included: a second click must not start
+  // another loop into the same batches.
+  const [verifying, setVerifying] = useState(false);
   /** The batches verified for `rows` (the same array) so far. */
   const verifiedSoFar = useRef<{
     rows: AddressInput[];
@@ -170,6 +173,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
     }
     const done = verifiedSoFar.current.batches;
     const resumeAt = done.length * VERIFY_BATCH;
+    setVerifying(true);
     try {
       for (let start = resumeAt; start < rows.length; start += VERIFY_BATCH) {
         if (start > resumeAt) {
@@ -207,6 +211,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           : "Address verification failed. Please try again.",
       );
     } finally {
+      setVerifying(false);
       setVerifyProgress(null);
     }
   }
@@ -347,11 +352,13 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               type="button"
               variant="outline"
               onClick={() => void handleVerify()}
-              disabled={verify.isPending || verifyProgress !== null}
+              disabled={
+                verifying || verify.isPending || verifyProgress !== null
+              }
               className="gap-2"
               data-ocid="audience.csv.verify.button"
             >
-              {verify.isPending || verifyProgress !== null ? (
+              {verifying || verify.isPending || verifyProgress !== null ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <ShieldCheck className="size-4" />

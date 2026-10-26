@@ -870,6 +870,7 @@ type EmailDelivery__64481158 =
 type EmailState__327464745 = {#Failed; #Queued; #Sent};
 type EmailState__511702563 = {#Failed; #Queued; #Sent};
 type Environment__978232544 = {#Production; #Staging};
+type FulfilmentEnvironment__714397961 = {#Production; #Staging};
 type FulfilmentEnvironment__836962874 = {#Production; #Staging};
 type Internal__911059824<K, V> =
   {children : [var ?Node__809479745<K, V>]; data : Data__712079535<K, V>};
@@ -2865,7 +2866,13 @@ type VerifiedAddress__924635918 =
   "20261020_000000_FulfilmentNames" :
     (old : OldActor__905065025) -> NewActor__754755005;
   "20261025_000000_PrintBatches" :
-    {} -> {printBatches : Map__521176851<Text, [PrintBatch__885869486]>}
+    {} -> {printBatches : Map__521176851<Text, [PrintBatch__885869486]>};
+  "20261026_000000_PrintEnvironments" :
+    {} ->
+      {
+        printEnvironments :
+          Map__521176851<Text, FulfilmentEnvironment__714397961>
+      }
 }
 actor  {
   stable accounts :
@@ -2922,6 +2929,11 @@ actor  {
   stable printBatches :
     {
       var root : Node__809479745<Text, [PrintBatch__526880683]>;
+      var size : Nat__677858269
+    };
+  stable printEnvironments :
+    {
+      var root : Node__809479745<Text, FulfilmentEnvironment__836962874>;
       var size : Nat__677858269
     };
   stable qrScans :

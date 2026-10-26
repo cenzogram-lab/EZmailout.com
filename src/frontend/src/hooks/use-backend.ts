@@ -44,19 +44,56 @@ import type {
   VerifiedAddress,
 } from "@/backend";
 import { RECIPIENT_CHUNK_BYTES, recipientChunkEnd } from "@/lib/inputLimits";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { discardWizardDraft, useWizardStore } from "@/store/wizard";
+import {
+  createActorWithConfig,
+  useInternetIdentity,
+} from "@caffeineai/core-infrastructure";
 import { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
+const ACTOR_KEY = "actor";
+/** The caller the cached answers were last fetched as (module level). */
+let answersFetchedAs: string | null = null;
+
+/**
+ * The backend actor for the current caller, created once per caller and
+ * shared by every hook. The package's `useActor` re-read every cached query
+ * whenever any component using a backend hook mounted (opening the preset
+ * editor alone re-read every list five times, full recipient lists
+ * included); this re-reads them only when the caller changes.
+ */
 export function useBackendActor() {
-  const { actor, isFetching } = useActor(createActor);
   const { identity } = useInternetIdentity();
+  const queryClient = useQueryClient();
   /**
    * Who the actor calls as. Per-caller answers are cached under it, so one
    * person's account or admin view is never served to the next one to sign
    * in, nor an answer fetched before sign-in to the signed-in caller.
    */
   const caller = identity?.getPrincipal().toString() ?? "anonymous";
+  const actorQuery = useQuery({
+    queryKey: [ACTOR_KEY, caller],
+    queryFn: () =>
+      identity
+        ? createActorWithConfig(createActor, { agentOptions: { identity } })
+        : createActorWithConfig(createActor),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  const actor = actorQuery.data ?? null;
+  useEffect(() => {
+    if (!actor || answersFetchedAs === caller) return;
+    const switched = answersFetchedAs !== null;
+    answersFetchedAs = caller;
+    // Answers cached for the previous caller are read again as this one.
+    if (switched) {
+      void queryClient.invalidateQueries({
+        predicate: (query) => !query.queryKey.includes(ACTOR_KEY),
+      });
+    }
+  }, [actor, caller, queryClient]);
+  const isFetching = actorQuery.isFetching;
   return { actor, isFetching, ready: !!actor && !isFetching, caller };
 }
 
@@ -116,9 +153,12 @@ const ADDRESS_PAGE = 2000;
  */
 async function readAllPages(
   read: (offset: bigint, limit: bigint) => Promise<RecipientPage>,
+  signal?: AbortSignal,
 ): Promise<VerifiedAddress[]> {
   const out: VerifiedAddress[] = [];
   for (;;) {
+    // A cancelled read stops paging instead of finishing in the background.
+    if (signal?.aborted) throw new DOMException("Read cancelled", "AbortError");
     const page = await read(BigInt(out.length), BigInt(ADDRESS_PAGE));
     for (const a of page.addresses) out.push(a);
     if (page.addresses.length === 0 || out.length >= Number(page.total)) {
@@ -164,10 +204,12 @@ export function useCampaignRecipients(id: string | null) {
   const { actor, ready } = useBackendActor();
   return useQuery<VerifiedAddress[]>({
     queryKey: ["campaignRecipients", id],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       actor && id
-        ? readAllPages((offset, limit) =>
-            actor.getCampaignRecipientsPage(id, offset, limit),
+        ? readAllPages(
+            (offset, limit) =>
+              actor.getCampaignRecipientsPage(id, offset, limit),
+            signal,
           )
         : [],
     enabled: ready && !!id,
@@ -337,10 +379,12 @@ export function usePresetAddresses(presetId: string | null) {
   const { actor, ready } = useBackendActor();
   return useQuery<VerifiedAddress[]>({
     queryKey: ["presetAddresses", presetId],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       actor && presetId
-        ? readAllPages((offset, limit) =>
-            actor.getPresetAddressesPage(presetId, offset, limit),
+        ? readAllPages(
+            (offset, limit) =>
+              actor.getPresetAddressesPage(presetId, offset, limit),
+            signal,
           )
         : [],
     enabled: ready && !!presetId,
@@ -538,7 +582,18 @@ export function useConfirmPayment() {
       if (!actor) throw new Error(NO_BACKEND);
       return actor.confirmPayment(paymentIntentId);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // The wizard's own launch paid from elsewhere (the campaign page): no
+      // later launch may reuse it, and its design must not come back.
+      const wizard = useWizardStore.getState();
+      if (
+        result.ok &&
+        result.campaignId &&
+        result.campaignId === wizard.campaignId
+      ) {
+        wizard.markCampaignPaid();
+        discardWizardDraft();
+      }
       queryClient.invalidateQueries({ queryKey: ["myAccount"] });
       queryClient.invalidateQueries({ queryKey: ["creditLedger"] });
       queryClient.invalidateQueries({ queryKey: ["referralStats"] });
@@ -675,6 +730,8 @@ export function useDeleteCampaignDraft() {
     },
     onSuccess: (result, campaignId) => {
       if (!result.ok) return;
+      // A wizard launch must not reuse the draft it just lost.
+      useWizardStore.getState().forgetLaunchedCampaign(campaignId);
       queryClient.removeQueries({ queryKey: ["campaign", campaignId] });
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
     },

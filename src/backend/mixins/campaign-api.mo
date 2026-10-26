@@ -280,8 +280,13 @@ mixin (
       case null {};
     };
     switch (input.returnAddress) {
-      case (?r) { if (Inputs.returnAddressTooLong(r)) { return fail("Return address lines are limited to " # Inputs.maxAddressFieldChars.toText() # " characters") } };
-      case null {};
+      case (?r) {
+        if (Inputs.returnAddressTooLong(r)) { return fail("Return address lines are limited to " # Inputs.maxAddressFieldChars.toText() # " characters") };
+        switch (Inputs.returnAddressError(r)) { case (?e) { return fail(e) }; case null {} };
+      };
+      // Dispatch needs one and a paid order's address cannot be changed, so
+      // an order without one is never taken.
+      case null { return fail("A return address is required") };
     };
     let idTooLong = func(t : ?Text) : Bool { switch (t) { case (?v) v.size() > Inputs.maxIdChars; case null false } };
     if (idTooLong(input.designTemplateId) or idTooLong(input.sourcePresetId)) { return fail("The template or preset reference is too long") };

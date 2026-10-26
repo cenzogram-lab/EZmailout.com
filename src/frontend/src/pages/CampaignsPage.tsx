@@ -42,6 +42,7 @@ import {
 import { MAX_CAMPAIGN_NAME_CHARS } from "@/lib/inputLimits";
 import { wireMailClassToCatalog } from "@/lib/pricing";
 import { useWizardStore } from "@/store/wizard";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -166,6 +167,7 @@ function RowActions({
 
 export function CampaignsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const {
     data: campaigns,
     isLoading,
@@ -196,14 +198,16 @@ export function CampaignsPage() {
   // Once the recipients for the re-run target arrive, seed the wizard and go.
   useEffect(() => {
     if (!rerunTarget) return;
-    if (rerunRecipients.isError) {
+    // A retry of a read that failed before waits for its refetch.
+    if (rerunRecipients.isError && !rerunRecipients.isFetching) {
       toast.error("Could not load that campaign's audience.", {
         id: RERUN_TOAST_ID,
       });
       setRerunTarget(null);
       return;
     }
-    if (rerunRecipients.data === undefined) return;
+    if (rerunRecipients.data === undefined || rerunRecipients.isFetching)
+      return;
 
     const addresses = rerunRecipients.data;
     const count = addresses.length || Number(rerunTarget.recipientCount);
@@ -241,6 +245,7 @@ export function CampaignsPage() {
     rerunTarget,
     rerunRecipients.data,
     rerunRecipients.isError,
+    rerunRecipients.isFetching,
     navigate,
     resetWizard,
     setCampaignName,
@@ -280,6 +285,10 @@ export function CampaignsPage() {
 
   function handleRerun(campaign: CampaignSummary) {
     toast.loading("Loading audience…", { id: RERUN_TOAST_ID });
+    // Always a fresh read: the list may have changed, or the last read failed.
+    void queryClient.invalidateQueries({
+      queryKey: ["campaignRecipients", campaign.id],
+    });
     setRerunTarget(campaign);
   }
 

@@ -19,7 +19,14 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 export function SubscriptionWidget() {
-  const { account, subscriptionActive, refresh } = useAccountSync();
+  const { account, accountReady, subscriptionActive, refresh } =
+    useAccountSync();
+  // Until the account arrives nothing below is known: no made-up "Inactive".
+  const pulse = (width: string) => (
+    <span
+      className={`inline-block h-4 ${width} animate-pulse rounded bg-muted align-middle`}
+    />
+  );
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const freeMonths = account ? Number(account.freeMonthsAvailable) : 0;
@@ -56,31 +63,43 @@ export function SubscriptionWidget() {
               each pass.
             </CardDescription>
           </div>
-          <Badge
-            variant="outline"
-            className={
-              subscriptionActive
-                ? "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand"
-                : "border-border bg-muted text-muted-foreground"
-            }
-            data-ocid={`dashboard.subscription.${subscriptionActive ? "active" : "inactive"}.badge`}
-          >
-            {subscriptionActive ? <BadgeCheck className="size-3" /> : null}
-            {subscriptionActive ? "Active" : "Inactive"}
-          </Badge>
+          {accountReady ? (
+            <Badge
+              variant="outline"
+              className={
+                subscriptionActive
+                  ? "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand"
+                  : "border-border bg-muted text-muted-foreground"
+              }
+              data-ocid={`dashboard.subscription.${subscriptionActive ? "active" : "inactive"}.badge`}
+            >
+              {subscriptionActive ? <BadgeCheck className="size-3" /> : null}
+              {subscriptionActive ? "Active" : "Inactive"}
+            </Badge>
+          ) : (
+            pulse("w-16")
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between text-sm">
           <span className="inline-flex items-center gap-2 text-muted-foreground">
             <CalendarClock className="size-4" />
-            {subscriptionActive ? "Active until" : "Ended"}
+            {!accountReady
+              ? "Active until"
+              : subscriptionActive
+                ? "Active until"
+                : "Ended"}
           </span>
           <span
             className="font-medium text-foreground"
             data-ocid="dashboard.subscription.renews_at.text"
           >
-            {renewsAt > 0n ? formatTimestamp(renewsAt, false) : "—"}
+            {!accountReady
+              ? pulse("w-24")
+              : renewsAt > 0n
+                ? formatTimestamp(renewsAt, false)
+                : "—"}
           </span>
         </div>
 
@@ -93,7 +112,7 @@ export function SubscriptionWidget() {
             className="font-medium text-foreground"
             data-ocid="dashboard.subscription.free_months.text"
           >
-            {freeMonths} available
+            {accountReady ? `${freeMonths} available` : pulse("w-16")}
           </span>
         </div>
         {freeMonths > 0 && (

@@ -192,6 +192,14 @@ function StampyChatbotPanel() {
       return;
     }
     if (chip.step !== undefined) {
+      if (useWizardStore.getState().launchInFlight) {
+        push({
+          role: "assistant",
+          text: "Your campaign is launching right now. Let it finish on the review step, then I'll take you anywhere you like.",
+          chips: [],
+        });
+        return;
+      }
       const reachable = reachableWizardStep(chip.step);
       useWizardStore.getState().setCurrentStep(reachable);
       if (reachable !== chip.step) {
@@ -536,20 +544,26 @@ function useSupportOutboxFlush() {
       const queued = readOutbox();
       if (queued.length === 0) return;
       flushing.current = true;
-      const remaining = [...queued];
-      while (remaining.length > 0) {
+      const done: string[] = [];
+      for (const ticket of queued) {
         try {
-          const result = await submitRef.current(remaining[0]);
+          const result = await submitRef.current(ticket);
           // A rate limit or a busy inbox clears later ("try again …"): keep
           // the ticket. Anything else was refused on its merits and would be
           // refused again, so it leaves the outbox.
           if (!result.ok && /try again/i.test(result.error ?? "")) break;
-          remaining.shift();
+          done.push(JSON.stringify(ticket));
         } catch {
           break; // Still unreachable: keep the rest for next time.
         }
       }
-      writeOutbox(remaining);
+      // Tickets queued while this ran stay: only the ones handled leave.
+      const left = readOutbox();
+      for (const key of done) {
+        const at = left.findIndex((t) => JSON.stringify(t) === key);
+        if (at >= 0) left.splice(at, 1);
+      }
+      writeOutbox(left);
       flushing.current = false;
     };
     void flush();

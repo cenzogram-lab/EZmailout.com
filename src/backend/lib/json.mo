@@ -356,10 +356,18 @@ module {
 
   // ─── XML helpers ─────────────────────────────────────────────────────────
 
+  /// Characters XML 1.0 forbids (controls other than tab, newline and
+  /// carriage return). One in a recipient line made the print partner refuse
+  /// the whole address list, and a paid order's list cannot be edited, so
+  /// they are left out of every XML document.
+  func xmlForbidden(c : Char) : Bool {
+    c < ' ' and c != '\t' and c != '\n' and c != '\r';
+  };
+
   public func xmlEscape(s : Text) : Text {
     var out = "";
     for (c in s.chars()) {
-      if (c == '&') { out #= "&amp;" } else if (c == '<') { out #= "&lt;" } else if (c == '>') { out #= "&gt;" } else if (c == '\22') { out #= "&quot;" } else if (c == '\'') { out #= "&apos;" } else { out #= Text.fromChar(c) };
+      if (xmlForbidden(c)) {} else if (c == '&') { out #= "&amp;" } else if (c == '<') { out #= "&lt;" } else if (c == '>') { out #= "&gt;" } else if (c == '\22') { out #= "&quot;" } else if (c == '\'') { out #= "&apos;" } else { out #= Text.fromChar(c) };
     };
     out;
   };
@@ -369,7 +377,7 @@ module {
   public func xmlEscapedBytes(s : Text) : Nat {
     var n = s.encodeUtf8().size();
     for (c in s.chars()) {
-      if (c == '&') { n += 4 } else if (c == '<' or c == '>') { n += 3 } else if (c == '\22' or c == '\'') { n += 5 };
+      if (xmlForbidden(c)) { n := Nat.sub(n, 1) } else if (c == '&') { n += 4 } else if (c == '<' or c == '>') { n += 3 } else if (c == '\22' or c == '\'') { n += 5 };
     };
     n;
   };

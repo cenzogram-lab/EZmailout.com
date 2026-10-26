@@ -475,7 +475,9 @@ export function AdminPage() {
   // Anyone else, signed in or not, gets the same 404 as an unknown address,
   // so the page does not even reveal that it exists; the canister refuses
   // them every setting anyway (getAdminKeys answers only callerIsAdmin).
-  if (isInitializing || (isAuthenticated && keysQuery.isLoading)) {
+  // `isPending`, not `isLoading`: right after sign-in the actor is not ready
+  // yet, the query is disabled (so not loading), and the admin saw a 404.
+  if (isInitializing || (isAuthenticated && keysQuery.isPending)) {
     return (
       <output
         className="flex min-h-[60vh] items-center justify-center"
