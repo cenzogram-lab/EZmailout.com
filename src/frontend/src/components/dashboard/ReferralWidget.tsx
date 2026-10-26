@@ -185,12 +185,12 @@ export function ReferralWidget() {
                 ocid="dashboard.referral.count.stat"
               />
               <Stat
-                label="Credits earned"
+                label="Free months earned"
                 value={formatNumber(stats?.referralCreditsEarned ?? 0)}
                 ocid="dashboard.referral.earned.stat"
               />
               <Stat
-                label="Credits redeemed"
+                label="Free months used"
                 value={formatNumber(stats?.referralCreditsRedeemed ?? 0)}
                 ocid="dashboard.referral.redeemed.stat"
               />
@@ -240,8 +240,8 @@ export function ReferralWidget() {
                         <TableCell className="font-mono text-xs">
                           {shortId(reward.refereeId)}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm text-emerald-brand">
-                          +{formatCents(reward.amountCents)}
+                        <TableCell className="text-right text-sm text-emerald-brand">
+                          1 free month ({formatCents(reward.amountCents)} value)
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
                           {formatTimestamp(reward.timestamp)}

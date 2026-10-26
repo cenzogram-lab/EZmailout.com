@@ -48,6 +48,18 @@ refused("an encrypted file", [pdf(1, 0, "/Page", "1"), bytes("trailer\n<< /Encry
 refused("a second page tree", [pdf(2, 0, "/Page", "2"), bytes("9 0 obj\n<< /Type /Pages /Kids [5 0 R] /Count 1 >>\nendobj\n")].flatten());
 refused("not a PDF", bytes("GIF89a"));
 
+// Structure a reader follows but a byte scan cannot see (or could misread)
+// is refused outright.
+refused("an object stream without its /Type", [pdf(1, 0, "/Page", "1"), bytes("9 0 obj\n<< /N 4 /First 20 /Length 5 /Filter /FlateDecode >>\nstream\nxxxxx\nendstream\nendobj\n")].flatten());
+refused("a cross-reference stream", [pdf(1, 0, "/Page", "1"), bytes("9 0 obj\n<< /Type /XRef /W [1 2 1] /Size 10 /Length 0 >>\nstream\n\nendstream\nendobj\n")].flatten());
+refused("an incremental update", [pdf(1, 0, "/Page", "1"), bytes("trailer\n<< /Size 10 /Root 1 0 R /Prev 500 >>\n")].flatten());
+refused("a comment inside /Kids", bytes("%PDF-1.4\n2 0 obj\n<< /Type /Pages /Kids [4 0 R %]\n 5 0 R 6 0 R] /Count 1 >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n"));
+refused("a reference written 0R", bytes("%PDF-1.4\n2 0 obj\n<< /Type /Pages /Kids [4 0R] /Count 1 >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n"));
+refused("a nested array inside /Kids", bytes("%PDF-1.4\n2 0 obj\n<< /Type /Pages /Kids [4 0 R [5 0 R]] /Count 1 >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n"));
+refused("untyped pages and no count", bytes("%PDF-1.4\n2 0 obj\n<< /Type /Pages /Kids [4 0 R] >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n"));
+refused("a stray page object beside the tree", [pdf(1, 0, "/Page", "1"), bytes("9 0 obj\n<< /Type /Page >>\nendobj\n")].flatten());
+refused("two counts", [pdf(1, 0, "/Page", "1"), bytes("9 0 obj\n<< /Count 1 >>\nendobj\n")].flatten());
+
 // The bytes must be what the label says.
 assert PrintFile.typeError("application/pdf", pdf(1, 0, "/Page", "1")) == null;
 assert PrintFile.typeError("image/png", pdf(1, 0, "/Page", "1")) != null;

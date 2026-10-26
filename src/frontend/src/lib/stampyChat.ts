@@ -15,6 +15,7 @@ import {
   firstClassAddLabel,
   formatCents,
   getPricingRow,
+  getUnitPriceCents,
   isEddm,
   pieceRateCents,
   startingPriceCents,
@@ -263,8 +264,14 @@ function rowPrice(row: ProductSpec): string {
     firstClass > 0
       ? ` (Marketing Mail; First-Class adds ${firstClassAddLabel(row.id).slice(1)} a piece)`
       : ""
-  }. A small order costs more per piece because the card fee has a fixed part; Step 4 shows the exact price.`;
+  }`;
 }
+
+/** The small-order caveat, for a format whose single piece is lifted above its rate. */
+const smallOrderNote = (row: ProductSpec) =>
+  getUnitPriceCents(row.id, 1) > pieceRateCents(row.id, 1)
+    ? " A small order costs more per piece because the card fee has a fixed part; Step 4 shows the exact price."
+    : "";
 
 /** "from $0.59" for a volume-priced format, "$1.05" for a flat one. */
 const fromPrice = (row: ProductSpec) =>
@@ -281,7 +288,7 @@ function priceAnswer(question: string): string | null {
     const inFamily = all.filter((r) => r.category === family);
     const rows = inFamily.length ? inFamily : all;
     if (rows.length === 1) {
-      return `The ${rows[0].name} is ${rowPrice(rows[0])}, with ${includedFor(rows)}.`;
+      return `The ${rows[0].name} is ${rowPrice(rows[0])}, with ${includedFor(rows)}.${smallOrderNote(rows[0])}`;
     }
     if (rows.length > 1) {
       const cheapestFirst = [...rows].sort(
@@ -311,7 +318,7 @@ function priceAnswer(question: string): string | null {
       startingPriceCents(b.id) < startingPriceCents(a.id) ? b : a,
     );
     if (rows.length === 1) {
-      return `The ${low.name} is ${rowPrice(low)}, with ${includedFor([low])}.`;
+      return `The ${low.name} is ${rowPrice(low)}, with ${includedFor([low])}.${smallOrderNote(low)}`;
     }
     const memberNote = volumeTiers(low.id) ? ", from 50,000 pieces" : "";
     return `Prices for ${category.name} start at ${usd(startingPriceCents(low.id))} per piece (${low.name}${memberNote}), across ${rows.length} sizes. Every price has ${includedFor(rows)}.`;

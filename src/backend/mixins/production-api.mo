@@ -213,6 +213,12 @@ mixin (
           if (u.receivedChunks != u.totalChunks) { return dispatchResult(record, false, ?"Print document upload is incomplete") };
           // Files staged before the upload limit existed may still be too big.
           if (Limits.stagedBytes(u.chunks, u.totalChunks, 0) > maxDocumentBytes) { return dispatchResult(record, false, ?"The print file is larger than 1.9 MB and cannot be sent to print; upload a smaller export") };
+          // A file staged (and paid for) before uploads were checked must
+          // still be one front-and-back piece before it reaches the press.
+          switch (PrintFile.stagedError(u)) {
+            case (?e) { return dispatchResult(record, false, ?(e # " This order is paid, so contact support to have it corrected or refunded.")) };
+            case null {};
+          };
         };
       };
     };

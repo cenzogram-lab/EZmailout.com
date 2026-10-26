@@ -5,10 +5,14 @@
 /// to the canister would print at a loss. Pure, so the interpreter can run it
 /// (test/printfile.test.mo).
 ///
-/// The studio writes plain, uncompressed PDF structure. Anything this cannot
-/// count without doubt (escaped `#xx` structural names, object streams,
-/// encryption, an indirect `/Type`, `/Count` or `/Kids`, a second page tree)
-/// is refused rather than guessed: fail-closed.
+/// The studio writes plain, uncompressed PDF structure: one page tree whose
+/// single `/Kids` array lists every page, one direct `/Count`, and a
+/// `/Type /Page` object per page. A file must have exactly that shape, and
+/// anything that could hold pages outside it is refused rather than guessed
+/// (fail-closed): escaped `#xx` structural names, cross-reference and object
+/// streams (`XRef`, `First`, `ObjStm`), incremental updates (`Prev`),
+/// encryption, an indirect `/Type`/`/Count`/`/Kids`, anything but `N G R`
+/// references in `/Kids`, or a second page tree.
 import Types "../types/campaign";
 import Array "mo:core/Array";
 import Blob "mo:core/Blob";
@@ -24,7 +28,11 @@ module {
   public let unreadable = "The print file's page structure could not be read. Export it again from the studio and upload it.";
 
   // Names whose escaped spelling would hide page structure from this count.
-  let structural : [Text] = ["Type", "Page", "Pages", "Kids", "Count", "Parent", "ObjStm", "XRef", "Encrypt"];
+  let structural : [Text] = ["Type", "Page", "Pages", "Kids", "Count", "Parent", "ObjStm", "XRef", "Encrypt", "Prev", "First"];
+
+  // Names the studio's files never use, each of which can carry page
+  // structure outside the plain text this check reads.
+  let forbidden : [Text] = ["ObjStm", "XRef", "Prev", "First", "Encrypt"];
 
   func isSpace(c : Nat8) : Bool {
     c == 0x20 or c == 0x0A or c == 0x0D or c == 0x09 or c == 0x0C or c == 0x00;
@@ -114,54 +122,74 @@ module {
     var pageObjects = 0;
     var pageTrees = 0;
     var kidsArrays = 0;
-    var mostListed = 0;
+    var kidRefs = 0;
+    var counts = 0;
+    var countValue = 0;
     var i = 0;
     while (i < n) {
       if (b[i] != 0x2F) { i += 1 } else {
         let (name, escaped, end) = readName(i);
         if (escaped and structural.any(func(s : Text) : Bool { s == name })) return ?unreadable;
-        if (name == "ObjStm" or name == "Encrypt") return ?unreadable;
+        // Cross-reference streams, object streams (whose `/Type /ObjStm` is
+        // optional, but `/First` is not), incremental updates and encryption
+        // can all hold page structure this byte scan cannot see.
+        if (forbidden.any(func(s : Text) : Bool { s == name })) return ?unreadable;
         if (name == "Type") {
           let j = skipGap(end);
           if (j >= n or b[j] != 0x2F) return ?unreadable;
           let (value, _, _) = readName(j);
           if (value == "Page") { pageObjects += 1 } else if (value == "Pages") { pageTrees += 1 };
         } else if (name == "Count") {
+          // Exactly one, written as a plain number ("/Count 2 0 R" would
+          // point at the count elsewhere).
           var j = skipGap(end);
-          if (j < n and (b[j] == 0x2D or b[j] == 0x2B)) { j += 1 };
           if (j >= n or not isDigit(b[j])) return ?unreadable;
           var value = 0;
-          let negative = b[skipGap(end)] == 0x2D;
           while (j < n and isDigit(b[j])) {
             value := value * 10 + (b[j].toNat() - 0x30);
             if (value > 1_000_000) return ?unreadable;
             j += 1;
           };
-          // "/Count 2 0 R" would point at the count elsewhere.
           let k = skipGap(j);
           if (k < n and isDigit(b[k])) return ?unreadable;
-          if (not negative) { mostListed := Nat.max(mostListed, value) };
+          counts += 1;
+          countValue := value;
         } else if (name == "Kids") {
-          let j = skipGap(end);
-          if (j >= n or b[j] != 0x5B) return ?unreadable;
-          var k = j + 1;
+          // Only "N G R" references, separated by whitespace: a comment,
+          // string, nested array or "0R" could hide a reference from a
+          // looser count.
+          var k = skipGap(end);
+          if (k >= n or b[k] != 0x5B) return ?unreadable;
+          k += 1;
           var refs = 0;
-          while (k < n and b[k] != 0x5D) {
-            if (b[k] == 0x52 and isSpace(b[k - 1]) and (k + 1 >= n or isSpace(b[k + 1]) or isDelimiter(b[k + 1]))) { refs += 1 };
+          label kids loop {
+            while (k < n and isSpace(b[k])) { k += 1 };
+            if (k >= n) return ?unreadable;
+            if (b[k] == 0x5D) break kids;
+            // object number, generation, then "R"
+            for (part in [0, 1].vals()) {
+              if (k >= n or not isDigit(b[k])) return ?unreadable;
+              while (k < n and isDigit(b[k])) { k += 1 };
+              if (k >= n or not isSpace(b[k])) return ?unreadable;
+              while (k < n and isSpace(b[k])) { k += 1 };
+            };
+            if (k >= n or b[k] != 0x52) return ?unreadable;
             k += 1;
+            if (k >= n or not (isSpace(b[k]) or b[k] == 0x5D)) return ?unreadable;
+            refs += 1;
           };
-          if (k >= n) return ?unreadable;
           kidsArrays += 1;
-          mostListed := Nat.max(mostListed, refs);
+          kidRefs := refs;
         };
         i := end;
       };
     };
-    if (pageObjects == 0) return ?unreadable;
-    if (pageTrees > 1 or kidsArrays > 1) return ?"The print file has more than one page tree. Export it again from the studio and upload it.";
-    let pages = Nat.max(pageObjects, mostListed);
-    if (pages > maxPages) {
-      return ?("The print file has " # pages.toText() # " pages, and a piece prints from at most " # maxPages.toText() # " (its front and back). Export it again from the studio and upload it.");
+    // One page tree, as the studio writes it: one /Kids array, one /Count,
+    // and as many page objects as both say.
+    if (pageTrees != 1 or kidsArrays != 1 or counts != 1) return ?unreadable;
+    if (pageObjects != kidRefs or countValue != kidRefs or kidRefs == 0) return ?unreadable;
+    if (kidRefs > maxPages) {
+      return ?("The print file has " # kidRefs.toText() # " pages, and a piece prints from at most " # maxPages.toText() # " (its front and back). Export it again from the studio and upload it.");
     };
     null;
   };
