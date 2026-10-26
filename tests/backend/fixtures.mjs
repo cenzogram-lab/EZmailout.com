@@ -39,11 +39,12 @@ const isPrint = (r) => r.url.includes("/molpro/");
 /** Fake print-partner REST API (the real host names, answered locally) with a configurable failure plan. */
 export function fakePrintPartner(plan = {}) {
   let ids = 0;
+  let lists = 0;
   const submitted = new Set();
   const fail = (step) => plan[step] && plan[step]-- > 0;
   return [
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/documents"), () => fail("documents") ? { status: 500, body: { description: "doc storage down" } } : { body: { id: `doc${++ids}`, status: 0 } }],
-    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => fail("addressLists") ? { reject: "connection reset" } : fail("addressListsRefused") ? { status: 402, body: { status: 9, description: "Click2Mail account balance too low" } } : { body: { id: `list${++ids}`, status: 0 } }],
+    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => (++lists === plan.addressListFailsOnCall) ? { status: 500, body: { description: "list store busy" } } : fail("addressLists") ? { reject: "connection reset" } : fail("addressListsRefused") ? { status: 402, body: { status: 9, description: "Click2Mail account balance too low" } } : { body: { id: `list${++ids}`, status: 0 } }],
     [(r) => isPrint(r) && r.method === "GET" && /\/addressLists\/[^/]+$/.test(r.url), (r) => fail("addressListDetail") ? { status: 503, body: { description: "busy" } } : { body: (plan.detail ?? []) }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/jobs"), () => fail("jobs") ? { status: 400, body: { description: "bad job" } } : { body: { id: `job${++ids}`, status: 0 } }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/submit"), (r) => {
@@ -52,6 +53,7 @@ export function fakePrintPartner(plan = {}) {
       if (submitted.has(id)) return { status: 400, body: { description: "Job already submitted" } };
       submitted.add(id); return { body: { status: 0, description: "Success" } };
     }],
+    [(r) => isPrint(r) && r.method === "GET" && r.url.includes("/tracking") && plan.trackingDownFor && r.url.includes(`/jobs/${plan.trackingDownFor}/`), () => ({ status: 503, body: { description: "busy" } })],
     [(r) => isPrint(r) && r.method === "GET" && r.url.includes("/tracking"), () => ({ body: { tracking: (plan.scans ?? ["Accepted at USPS Origin Facility"]).map((s) => ({ scanDescription: s })) } })],
     [(r) => isPrint(r) && r.method === "GET" && /\/jobs\/[^/]+$/.test(r.url), (r) => {
       const id = r.url.split("/jobs/")[1];

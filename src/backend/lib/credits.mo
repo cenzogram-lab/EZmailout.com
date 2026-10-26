@@ -12,6 +12,8 @@ module {
   public let referralRewardCents : Nat = 900;
   public let thirtyDaysNs : Int = 2_592_000_000_000_000;
 
+  /// A pack's `credits` is what it grants, bonus included; `bonusCredits` is
+  /// the part of it shown as the bonus.
   public func packInfo(pack : Account.CreditPack) : Account.CreditPackInfo {
     switch (pack) {
       case (#Starter) { { pack = #Starter; name = "Starter Pack"; priceCents = 500; credits = 500; bonusCredits = 0 } };

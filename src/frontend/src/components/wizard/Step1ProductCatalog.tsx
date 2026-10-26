@@ -466,7 +466,8 @@ export function Step1ProductCatalog() {
             {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month membership
           </span>{" "}
           skips the volume tiers: members pay the 10,000-piece rate on
-          postcards, letters and brochures from the first piece. Next-day
+          volume-priced sizes (the 4.25 × 6, 6 × 9 and 6 × 11 postcards, the
+          letter and the trifold brochure) from the first piece. Next-day
           production by EZmailout, USPS IMb tracking included.
         </p>
       </div>

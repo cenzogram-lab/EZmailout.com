@@ -549,6 +549,9 @@ sections.pricing = async function pricing() {
   const moTiers = Object.fromEntries([...body.matchAll(/case \("([^"]+)"\) \?\[([^\]]+)\]/g)].map((m) => [m[1], nums(m[2])]));
   check(ser(moMinimums) === ser([...ts.TIER_MINIMUMS]) && moMember === ts.MEMBER_TIER_QUANTITY, "tier minimums and the member quantity match", { moMinimums, moMember });
   check(ser(moTiers) === ser(ts.VOLUME_TIERS), "every tier schedule matches", { moTiers, ts: ts.VOLUME_TIERS });
+  const moMin = Number(/minOrderCents : Nat = ([\d_]+)/.exec(mo)[1].replace(/_/g, ""));
+  const moMax = Number(/maxOrderCents : Nat = ([\d_]+)/.exec(mo)[1].replace(/_/g, ""));
+  check(moMin === ts.MIN_ORDER_CENTS && moMax === 99_999_999, "the order minimum and maximum match", { moMin, front: ts.MIN_ORDER_CENTS, moMax });
 
   // Every ledger row, priced by the canister's rule, at every tier edge.
   const env = await start();
@@ -636,7 +639,7 @@ sections.bigOrder = async function bigOrder() {
 
   await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(7));
   const early = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
-  check(!early.ok && /still uploading \(5000 of 12000\)/.test(early.error[0] ?? ""), "checkout waits until every priced recipient is stored", early.error);
+  check(!early.ok && /not fully uploaded \(5000 of 12000\)/.test(early.error[0] ?? ""), "checkout waits until every priced recipient is stored", early.error);
 
   let st = await u.addCampaignRecipients(cid, 0n, []);
   check(st.ok && st.stored === 5_000n && st.total === BigInt(N), "an empty chunk reports progress", st);
@@ -757,6 +760,71 @@ sections.bigAudience = async function bigAudience() {
   let denied = false;
   try { await env.as(ident(182)).getCampaignRecipientsPage(cid, 0n, 10n); } catch { denied = true; }
   check(denied, "another identity cannot read the campaign's recipients");
+};
+
+// ─── Regressions from the price and functionality audit ────────────────────────
+sections.auditFixes = async function auditFixes() {
+  const env = await setup({ sandboxCheckout: false });
+  const pay = { intents: new Map() };
+  const up = upstream([...fakeStripe(pay), ...fakePrintPartner({ addressListFailsOnCall: 2 })]);
+
+  // A credit pack grants exactly the credits it advertises (its bonus once).
+  const buyer = ident(191);
+  const b = env.as(buyer);
+  await b.ensureAccount([], []);
+  const before = (await b.getMyAccount())[0].creditBalance;
+  const packIntent = await call(env.pic, up, env.deferred(buyer).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+  const packPaid = await call(env.pic, up, env.deferred(buyer).confirmPayment(packIntent.paymentIntentId[0]));
+  const after = (await b.getMyAccount())[0].creditBalance;
+  check(packPaid.ok && after - before === 1600n, "the Growth pack grants its advertised 1,600 credits, bonus included once", { before, after, error: packPaid.error });
+
+  // Card payments start at $0.50: a smaller order is refused up front.
+  const tiny = await b.createCampaign(campaignInput(1, { product: { colorOption: [], layoutVariant: "eddm_6.5x9", productType: { Eddm: null } } }));
+  check(!tiny.ok && /\$0\.50/.test(tiny.error[0] ?? ""), "an order under $0.50 is refused when it is created, not at checkout", tiny.error);
+
+  // Declared recipient counts do not fill the canister-wide budget: six
+  // identities each pricing a 1,000,000-piece draft leave room for others.
+  let declared = 0;
+  for (let i = 0; i < 6; i++) {
+    const r = await env.as(ident(192 + i)).createCampaign(campaignInput(1, { recipientCount: 1_000_000n }));
+    if (r.ok) declared++;
+  }
+  const other = await env.as(ident(198)).createCampaign(campaignInput(3));
+  check(declared === 6 && other.ok, "drafts priced for millions of recipients they never stored do not block other customers", { declared, other: other.error });
+
+  // One batch failing after another went out reads as a partial send.
+  const owner = ident(199);
+  const o = env.as(owner);
+  const N = 12_000;
+  const all = Array.from({ length: N }, (_, i) => addr(i));
+  const created = await o.createCampaign(campaignInput(0, { recipients: all.slice(0, 5_000), recipientCount: BigInt(N) }));
+  const cid = created.campaignId[0];
+  await o.addCampaignRecipients(cid, 5_000n, all.slice(5_000, 10_000));
+  await o.addCampaignRecipients(cid, 10_000n, all.slice(10_000));
+  await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(5));
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  const intent = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  const paid = await call(env.pic, up, env.deferred(owner).confirmPayment(intent.paymentIntentId[0]));
+  const d = await call(env.pic, up, env.deferred(owner).dispatchPrintJob(cid));
+  const ownerMsg = d.error[0] ?? "";
+  const adminMsg = (await env.as(env.controller).getCampaign(cid))[0]?.lastError[0] ?? "";
+  check(paid.ok && !d.ok && /^Partly sent to print \(1 of \d+ print jobs in production\)/.test(ownerMsg) && !/nothing has been printed/.test(ownerMsg), "a run stopped after its first job tells the owner part is already in production", ownerMsg);
+  check(/^Partly in production \(1 of \d+ print jobs in production\): Address list submission failed \(batch 2/.test(adminMsg), "the admin sees which batch failed and why", adminMsg);
+  const retry = await call(env.pic, up, env.deferred(env.controller).dispatchPrintJob(cid));
+  const lists = up.log.filter((l) => l.url.endsWith("/addressLists") && l.method === "POST").length;
+  const submits = up.log.filter((l) => l.url.endsWith("/submit"));
+  check(retry.ok && retry.productionStatus[0]?.Submitted !== undefined && submits.length === lists - 1 && new Set(submits.map((l) => l.url)).size === submits.length, "the retry sends the remaining batches and submits each job exactly once", { error: retry.error, lists, submits: submits.length });
+
+  // Tracking moves only on the scans of every job.
+  const jobs = [...new Set(submits.map((l) => l.url.split("/jobs/")[1].split("/")[0]))];
+  const partial = upstream(fakePrintPartner({ trackingDownFor: jobs[1], scans: ["Delivered"] }));
+  const s1 = await call(env.pic, partial, env.deferred(env.controller).syncPrintTracking(cid));
+  const mid = (await o.getCampaign(cid))[0].status;
+  check(s1.ok && s1.newEvents === 0n && mid.InProduction !== undefined, "a job without tracking holds the campaign where it is", { status: mid, events: s1.newEvents });
+  const whole = upstream(fakePrintPartner({ scans: ["Delivered"] }));
+  const s2 = await call(env.pic, whole, env.deferred(env.controller).syncPrintTracking(cid));
+  const end = (await o.getCampaign(cid))[0].status;
+  check(s2.ok && s2.newEvents === 1n && end.Delivered !== undefined, "with every job answering, the campaign advances", { status: end, events: s2.newEvents });
 };
 
 // ─── 11. Upgrade from the deployed version: keys and campaigns carry over ───

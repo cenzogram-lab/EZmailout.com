@@ -814,12 +814,14 @@ export function CampaignDetailPage() {
                       {formatCents(invoiceTotal)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Charged</span>
-                    <span className="font-mono">
-                      {formatCents(campaign.totalAmountChargedCents)}
-                    </span>
-                  </div>
+                  {campaign.paymentStatus === PaymentStatus.Paid ? (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Charged</span>
+                      <span className="font-mono">
+                        {formatCents(campaign.totalAmountChargedCents)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
                       Status

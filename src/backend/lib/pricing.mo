@@ -131,6 +131,11 @@ module {
   /// The most a single checkout may charge (the payment processor's limit).
   public let maxOrderCents : Nat = 99_999_999;
 
+  /// The smallest order a card payment can take: the payment processor
+  /// refuses charges under $0.50. Mirrored by `MIN_ORDER_CENTS` in
+  /// `src/frontend/src/lib/pricing.ts`.
+  public let minOrderCents : Nat = 50;
+
   /// What `count` pieces at `unitCents` cost, or null when the order is empty
   /// or over `maxOrderCents`. Nat is unbounded, so the product cannot wrap.
   public func campaignCostCents(unitCents : Nat, count : Nat) : ?Nat {

@@ -13,6 +13,7 @@ import {
   formatCents,
   getPricingRow,
   getUnitPriceCents,
+  isBaseRateOnly,
   startingPriceCents,
   volumeTierSteps,
   volumeTiers,
@@ -167,7 +168,7 @@ const INTENTS: Intent[] = [
       /\b(price|pricing|cost|costs|how much|membership|member|subscri\w*|minimum|minimums|wholesale|cheap\w*|fee)\b|\$9/i,
     priceable: true,
     answer: () =>
-      `There are no batch minimums — mail one piece or thousands. Postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, with no limit on campaign size, and a ${membership}/month membership gets the 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
+      `There are no batch minimums — mail one piece or thousands. The volume-priced postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, and a ${membership}/month membership gets their 10,000-piece rate from the first piece. Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
     chips: ["catalog"],
   },
   {
@@ -194,6 +195,17 @@ const PRICE_WORDS =
   /\b(price\w*|cost\w*|how much|rate|rates|cheap\w*|fee|per piece)\b|\$/i;
 const MEMBERSHIP_WORDS = /\b(membership|member|subscri\w*|minimum\w*)\b|\$9\b/i;
 const INCLUDED = "printing, postage and CASS address verification included";
+const EDDM_INCLUDED =
+  "printing included; EDDM® saturation postage is added per carrier route";
+
+/** What the prices of `rows` include, in words (EDDM® prices are print only). */
+function includedFor(rows: ProductSpec[]): string {
+  const eddm = rows.filter(isBaseRateOnly).length;
+  if (eddm === rows.length) return EDDM_INCLUDED;
+  return eddm > 0
+    ? `${INCLUDED} (EDDM® prices are printing only; saturation postage is added per carrier route)`
+    : INCLUDED;
+}
 /** A shared size lists at most this many formats, cheapest first. */
 const MAX_LISTED = 5;
 
@@ -248,7 +260,7 @@ function rowPrice(row: ProductSpec): string {
       : `${usd(cents)} from ${formatNumber(minimum)}`,
   );
   const member = usd(getUnitPriceCents(row.id, 1, true));
-  return `${steps.join(", ")}, and members pay no more than ${member} at any volume (there is no limit on campaign size)`;
+  return `${steps.join(", ")}, and members pay no more than ${member} at any volume`;
 }
 
 /** "from $0.56" for a volume-priced format, "$1.05" for a flat one. */
@@ -266,7 +278,7 @@ function priceAnswer(question: string): string | null {
     const inFamily = all.filter((r) => r.category === family);
     const rows = inFamily.length ? inFamily : all;
     if (rows.length === 1) {
-      return `The ${rows[0].name} is ${rowPrice(rows[0])}, with ${INCLUDED}.`;
+      return `The ${rows[0].name} is ${rowPrice(rows[0])}, with ${includedFor(rows)}.`;
     }
     if (rows.length > 1) {
       const cheapestFirst = [...rows].sort(
@@ -280,7 +292,7 @@ function priceAnswer(question: string): string | null {
         rows.length > MAX_LISTED
           ? ` and ${rows.length - MAX_LISTED} more in Step 1`
           : "";
-      return `${size[0]} × ${size[1]} comes in ${rows.length} formats: ${list}${more}. Each price is per piece, with ${INCLUDED}.`;
+      return `${size[0]} × ${size[1]} comes in ${rows.length} formats: ${list}${more}. Each price is per piece, with ${includedFor(cheapestFirst.slice(0, MAX_LISTED))}.`;
     }
     return `We don't print a ${size[0]} × ${size[1]} piece. Step 1 of the wizard lists all ${CATALOG_SIZE_COUNT} sizes with their prices.`;
   }
@@ -296,10 +308,10 @@ function priceAnswer(question: string): string | null {
       startingPriceCents(b.id) < startingPriceCents(a.id) ? b : a,
     );
     if (rows.length === 1) {
-      return `The ${low.name} is ${rowPrice(low)}, with ${INCLUDED}.`;
+      return `The ${low.name} is ${rowPrice(low)}, with ${includedFor([low])}.`;
     }
     const memberNote = volumeTiers(low.id) ? ", from 50,000 pieces" : "";
-    return `Prices for ${category.name} start at ${usd(startingPriceCents(low.id))} per piece (${low.name}${memberNote}), across ${rows.length} sizes. Every price has ${INCLUDED}.`;
+    return `Prices for ${category.name} start at ${usd(startingPriceCents(low.id))} per piece (${low.name}${memberNote}), across ${rows.length} sizes. Every price has ${includedFor(rows)}.`;
   }
   return null;
 }

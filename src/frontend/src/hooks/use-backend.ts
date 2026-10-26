@@ -143,7 +143,15 @@ async function appendInChunks(
   let stored = start;
   while (stored < addresses.length) {
     const end = recipientChunkEnd(addresses, stored, RECIPIENT_CHUNK_BYTES);
-    const reply = await append(BigInt(stored), addresses.slice(stored, end));
+    let reply: RecipientStageResult;
+    try {
+      reply = await append(BigInt(stored), addresses.slice(stored, end));
+    } catch (e) {
+      // A dropped call is reported like a refusal, so callers always clean up.
+      return e instanceof Error && e.message
+        ? e.message
+        : "The address list could not be saved.";
+    }
     if (!reply.ok || Number(reply.stored) <= stored) {
       return reply.error ?? "The address list could not be saved.";
     }

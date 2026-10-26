@@ -364,6 +364,16 @@ module {
     out;
   };
 
+  /// Bytes `xmlEscape(s)` encodes to in UTF-8, counted without building it
+  /// (the escape rebuilds the text one character at a time).
+  public func xmlEscapedBytes(s : Text) : Nat {
+    var n = s.encodeUtf8().size();
+    for (c in s.chars()) {
+      if (c == '&') { n += 4 } else if (c == '<' or c == '>') { n += 3 } else if (c == '\22' or c == '\'') { n += 5 };
+    };
+    n;
+  };
+
   public func xmlUnescape(s : Text) : Text {
     s.replace(#text "&lt;", "<").replace(#text "&gt;", ">").replace(#text "&quot;", "\"").replace(#text "&apos;", "'").replace(#text "&amp;", "&");
   };

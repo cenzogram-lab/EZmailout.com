@@ -100,12 +100,32 @@ module {
 
   let addressListTail = "</addresses></addressList>";
 
-  /// One `<address>` element of an address list.
-  func addressXml(a : Common.VerifiedAddress) : Text {
+  /// The fields of one `<address>` element, in order.
+  func addressFields(a : Common.VerifiedAddress) : [Text] {
     let (first, last) = AddressLib.splitName(a.name);
     let line2 = switch (a.address_line2) { case (?v) v; case null "" };
     let zip = switch (a.zip_plus4) { case (?p) a.zip_code # "-" # p; case null a.zip_code };
-    "<address><Firstname>" # Json.xmlEscape(first) # "</Firstname><Lastname>" # Json.xmlEscape(last) # "</Lastname><Organization></Organization><Address1>" # Json.xmlEscape(a.address_line1) # "</Address1><Address2>" # Json.xmlEscape(line2) # "</Address2><City>" # Json.xmlEscape(a.city) # "</City><State>" # Json.xmlEscape(a.state) # "</State><Postalcode>" # Json.xmlEscape(zip) # "</Postalcode></address>";
+    [first, last, a.address_line1, line2, a.city, a.state, zip];
+  };
+
+  /// One `<address>` element of an address list.
+  func addressXml(a : Common.VerifiedAddress) : Text {
+    let f = addressFields(a);
+    "<address><Firstname>" # Json.xmlEscape(f[0]) # "</Firstname><Lastname>" # Json.xmlEscape(f[1]) # "</Lastname><Organization></Organization><Address1>" # Json.xmlEscape(f[2]) # "</Address1><Address2>" # Json.xmlEscape(f[3]) # "</Address2><City>" # Json.xmlEscape(f[4]) # "</City><State>" # Json.xmlEscape(f[5]) # "</State><Postalcode>" # Json.xmlEscape(f[6]) # "</Postalcode></address>";
+  };
+
+  /// The tags of one `<address>` element, without its field values (the
+  /// length of `addressXml` for an empty address; `test/fulfilment.test.mo`
+  /// checks it).
+  public let addressTagBytes : Nat = 187;
+
+  /// Bytes `addressXml(a)` takes, counted without building it, so planning
+  /// the batches of a very large list stays far inside one message's
+  /// instruction limit.
+  public func addressXmlBytes(a : Common.VerifiedAddress) : Nat {
+    var n = addressTagBytes;
+    for (f in addressFields(a).vals()) { n += Json.xmlEscapedBytes(f) };
+    n;
   };
 
   /// Largest address-list body one outcall sends: an outcall request (URL,
@@ -126,7 +146,7 @@ module {
     var count = 0;
     var bytes = frame;
     for (a in addresses.vals()) {
-      let size = addressXml(a).encodeUtf8().size();
+      let size = addressXmlBytes(a);
       if (count > 0 and bytes + size > maxBytes) {
         out.add((first, count));
         first += count;
@@ -315,12 +335,29 @@ module {
   /// (the admin and controllers still get that, through `providerError`).
   /// Any other message is already written for customers and is returned as is.
   public func customerError(detail : Text) : Text {
+    // A campaign sent as several print jobs can fail after some went out:
+    // those are in production, so "nothing has been printed" would be wrong.
+    if (detail.startsWith(#text partialPrefix)) {
+      let rest = detail.trimStart(#text partialPrefix);
+      let parts = rest.split(#text "): ").toArray();
+      if (parts.size() >= 2) {
+        return "Partly sent to print (" # parts[0] # "). The remaining print jobs were not accepted just now; send the campaign to print again to finish it.";
+      };
+    };
     for (step in partnerSteps.vals()) {
       if (detail.startsWith(#text step)) {
         return step # ": the print service did not accept the request just now, so nothing has been printed yet.";
       };
     };
     detail;
+  };
+
+  let partialPrefix = "Partly in production (";
+
+  /// The error of a run that stopped after `submitted` of `total` print jobs
+  /// had gone out: "Partly in production (2 of 5 print jobs in production): <detail>".
+  public func partialFailure(submitted : Nat, total : Nat, detail : Text) : Text {
+    partialPrefix # submitted.toText() # " of " # total.toText() # " print jobs in production): " # detail;
   };
 
   /// The print partner refused a submit because the job was submitted already.

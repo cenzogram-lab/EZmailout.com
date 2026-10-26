@@ -117,6 +117,12 @@ interface WizardData {
    * campaign, so a design can never be uploaded onto someone else's order.
    */
   campaignOrderKey: string | null;
+  /**
+   * What the canister priced `campaignId` at (`createCampaign`'s unit price
+   * and total): checkout charges this, so Step 4 shows it, and a launch
+   * reuses the campaign only while today's price is the same.
+   */
+  campaignPrice: { unitCents: number; totalCents: number } | null;
   /** True once `campaignId` is paid: no later launch may reuse it. */
   campaignPaid: boolean;
   paymentIntentId: string | null;
@@ -205,8 +211,12 @@ interface WizardActions {
   setQrDestinationUrl: (url: string) => void;
   setReturnAddress: (address: ReturnAddress | null) => void;
   setCampaignId: (id: string | null) => void;
-  /** Records the campaign a launch created and the order it was made for. */
-  setLaunchedCampaign: (id: string, orderKey: string) => void;
+  /** Records the campaign a launch created, its order and its price. */
+  setLaunchedCampaign: (
+    id: string,
+    orderKey: string,
+    price: { unitCents: number; totalCents: number },
+  ) => void;
   /** Marks the launched campaign paid, so no later launch reuses it. */
   markCampaignPaid: () => void;
   setPaymentIntentId: (id: string | null) => void;
@@ -238,6 +248,7 @@ function initialData(): WizardData {
     returnAddress: null,
     campaignId: null,
     campaignOrderKey: null,
+    campaignPrice: null,
     campaignPaid: false,
     paymentIntentId: null,
   };
@@ -403,15 +414,48 @@ let pendingDraft: {
 } | null = null;
 let draftTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * The audience is saved under its own key (`<name>:addresses`), written only
+ * when the list itself changes: a campaign can hold hundreds of thousands of
+ * recipients, and re-serialising them with every studio edit froze the editor.
+ * The draft holds `ADDRESSES_REF` in their place.
+ */
+const ADDRESSES_REF = { __ezAddresses: true } as const;
+let savedAddresses: unknown = null;
+const addressesKey = (name: string) => `${name}:addresses`;
+
+function isAddressesRef(v: unknown): boolean {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    (v as { __ezAddresses?: unknown }).__ezAddresses === true
+  );
+}
+
 function writeDraftNow(): void {
   if (draftTimer) clearTimeout(draftTimer);
   draftTimer = null;
   const pending = pendingDraft;
   pendingDraft = null;
   if (!pending || !draftSaving) return;
+  const state = pending.value.state;
+  const addresses = state.verifiedAddresses;
+  if (addresses !== savedAddresses) {
+    savedAddresses = addresses;
+    void draftStorage.setItem(
+      addressesKey(pending.name),
+      JSON.stringify(addresses ?? [], draftReplacer),
+    );
+  }
   void draftStorage.setItem(
     pending.name,
-    JSON.stringify(pending.value, draftReplacer),
+    JSON.stringify(
+      {
+        ...pending.value,
+        state: { ...state, verifiedAddresses: ADDRESSES_REF },
+      },
+      draftReplacer,
+    ),
   );
 }
 
@@ -425,9 +469,21 @@ if (typeof window !== "undefined") {
 const draftJson: PersistStorage<Partial<WizardData>> = {
   getItem: async (name) => {
     const raw = await draftStorage.getItem(name);
-    return raw
-      ? (JSON.parse(raw, draftReviver) as StorageValue<Partial<WizardData>>)
-      : null;
+    if (!raw) return null;
+    const value = JSON.parse(raw, draftReviver) as StorageValue<
+      Partial<WizardData>
+    >;
+    // Drafts saved before the audience had its own key hold it inline.
+    if (isAddressesRef(value.state.verifiedAddresses)) {
+      const list = await draftStorage.getItem(addressesKey(name));
+      const addresses = list
+        ? (JSON.parse(list, draftReviver) as WizardData["verifiedAddresses"])
+        : [];
+      // Already stored as it is: the next save need not write it again.
+      savedAddresses = addresses;
+      value.state = { ...value.state, verifiedAddresses: addresses };
+    }
+    return value;
   },
   setItem: (name, value) => {
     if (!draftSaving) return;
@@ -438,6 +494,8 @@ const draftJson: PersistStorage<Partial<WizardData>> = {
     pendingDraft = null;
     if (draftTimer) clearTimeout(draftTimer);
     draftTimer = null;
+    savedAddresses = null;
+    void draftStorage.removeItem(addressesKey(name));
     return draftStorage.removeItem(name);
   },
 };
@@ -925,10 +983,15 @@ export const useWizardStore = create<WizardStore>()(
       setQrDestinationUrl: (qrDestinationUrl) => set({ qrDestinationUrl }),
       setReturnAddress: (returnAddress) => set({ returnAddress }),
       setCampaignId: (campaignId) => set({ campaignId }),
-      setLaunchedCampaign: (campaignId, campaignOrderKey) => {
+      setLaunchedCampaign: (campaignId, campaignOrderKey, campaignPrice) => {
         // A new order is in progress: its design is saved again.
         draftSaving = true;
-        set({ campaignId, campaignOrderKey, campaignPaid: false });
+        set({
+          campaignId,
+          campaignOrderKey,
+          campaignPrice,
+          campaignPaid: false,
+        });
       },
       markCampaignPaid: () => set({ campaignPaid: true }),
       setPaymentIntentId: (paymentIntentId) => set({ paymentIntentId }),

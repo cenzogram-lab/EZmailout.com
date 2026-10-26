@@ -95,6 +95,11 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   /** Rows verified so far while a list larger than one batch is checked. */
   const [verifyProgress, setVerifyProgress] = useState<number | null>(null);
+  /** The batches verified for `rows` (the same array) so far. */
+  const verifiedSoFar = useRef<{
+    rows: AddressInput[];
+    batches: VerificationBatchResult[];
+  } | null>(null);
   const [presetOpen, setPresetOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
 
@@ -157,11 +162,17 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
     if (rows.length === 0) return;
     setVerifyError(null);
     setResult(null);
-    // Fail-closed: a list is usable only when every batch verified.
-    const done: VerificationBatchResult[] = [];
+    // Fail-closed: a list is usable only when every batch verified. Batches
+    // already verified for this same list are kept, so a list stopped by the
+    // hourly quota continues where it stopped instead of starting over.
+    if (verifiedSoFar.current?.rows !== rows) {
+      verifiedSoFar.current = { rows, batches: [] };
+    }
+    const done = verifiedSoFar.current.batches;
+    const resumeAt = done.length * VERIFY_BATCH;
     try {
-      for (let start = 0; start < rows.length; start += VERIFY_BATCH) {
-        if (start > 0) {
+      for (let start = resumeAt; start < rows.length; start += VERIFY_BATCH) {
+        if (start > resumeAt) {
           setVerifyProgress(start);
           await sleep(VERIFY_GAP_MS);
         }
@@ -177,7 +188,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
             batch.error ?? "EZmailout could not verify these addresses.";
           setVerifyError(
             start > 0
-              ? `${reason} (${formatNumber(start)} of ${formatNumber(rows.length)} were verified before this; verify again to finish the list.)`
+              ? `${reason} ${formatNumber(start)} of ${formatNumber(rows.length)} addresses are verified; verify again to continue from there.`
               : reason,
           );
           return;

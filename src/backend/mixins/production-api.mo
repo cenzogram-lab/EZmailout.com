@@ -253,6 +253,9 @@ mixin (
   ) : async* Types.DispatchResult {
     let base = Fulfilment.baseUrl(environmentFor(record));
     let opts = AdminLib.outcallOptions(adminKeysState, 256_000);
+    // The batches are planned before the first await: a plan that could not
+    // be made then fails only this call, never after the document is sent.
+    let plan = batchPlan(record, campaignId, recipients);
     // 1. Document
     if (record.printDocumentId == null) {
       let upload = switch (documentUploads.get(campaignId)) { case (?u) u; case null { return markFailed(record, "Print document has not been uploaded") } };
@@ -276,7 +279,6 @@ mixin (
     // listed, created and submitted in turn; a batch already submitted is
     // skipped, so a retry resumes at the first unfinished one.
     let documentId = switch (record.printDocumentId) { case (?d) d; case null "" };
-    let plan = batchPlan(record, campaignId, recipients);
     let batches = plan.size();
     var alreadySubmitted = 0;
     for (i in plan.keys()) {
@@ -291,7 +293,7 @@ mixin (
           let listName = record.name # " " # campaignId # (if (batches == 1) "" else " " # (i + 1).toText() # "/" # batches.toText());
           let xml = Fulfilment.buildAddressListXml(listName, recipients.sliceToArray(b.first, b.first + b.count));
           let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Address list submission failed" # which, resp)) };
+          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markBatchFailed(record, campaignId, batches, responseError("Address list submission failed" # which, resp)) };
           switch (Fulfilment.parseId(resp.body)) {
             case (?id) {
               b := { b with addressListId = ?id };
@@ -300,7 +302,7 @@ mixin (
               ignore CampaignLib.moveProduction(record, #AddressListReady);
               record.updatedAt := Time.now();
             };
-            case null { return markFailed(record, "Address list returned no id" # which) };
+            case null { return markBatchFailed(record, campaignId, batches, "Address list returned no id" # which) };
           };
         };
 
@@ -308,7 +310,7 @@ mixin (
           let addressListId = switch (b.addressListId) { case (?a) a; case null "" };
           let form = Fulfilment.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
           let resp = await* Http.postText(base # "/jobs", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
-          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markFailed(record, responseError("Job creation failed" # which, resp)) };
+          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markBatchFailed(record, campaignId, batches, responseError("Job creation failed" # which, resp)) };
           switch (Fulfilment.parseId(resp.body)) {
             case (?id) {
               b := { b with jobId = ?id };
@@ -317,7 +319,7 @@ mixin (
               ignore CampaignLib.moveProduction(record, #JobCreated);
               record.updatedAt := Time.now();
             };
-            case null { return markFailed(record, "Job creation returned no id" # which) };
+            case null { return markBatchFailed(record, campaignId, batches, "Job creation returned no id" # which) };
           };
         };
 
@@ -334,7 +336,7 @@ mixin (
             if (jobFromEarlierRun and Fulfilment.submittedAlready(submit.body)) {
               alreadySubmitted += 1;
             } else {
-              return markFailed(record, responseError("Job submission failed" # which, submit));
+              return markBatchFailed(record, campaignId, batches, responseError("Job submission failed" # which, submit));
             };
           };
         };
@@ -349,6 +351,17 @@ mixin (
       batches.toText() # " print jobs submitted for production (" # recipients.size().toText() # " pieces)" # (if (alreadySubmitted > 0) "; " # alreadySubmitted.toText() # " had already been submitted and were not submitted again" else "");
     };
     markSubmitted(record, campaignId, firstJob, detail);
+  };
+
+  /// `markFailed` for a batch step: once earlier batches are in production
+  /// the error says so (`Fulfilment.partialFailure`).
+  private func markBatchFailed(record : Types.CampaignRecord, campaignId : Text, batches : Nat, msg : Text) : Types.DispatchResult {
+    var submitted = 0;
+    switch (printBatches.get(campaignId)) {
+      case (?p) { for (b in p.vals()) { if (b.submitted) { submitted += 1 } } };
+      case null {};
+    };
+    markFailed(record, if (submitted == 0) msg else Fulfilment.partialFailure(submitted, batches, msg));
   };
 
   /// The print batches of a campaign: the stored plan, or a new one from its
@@ -424,6 +437,7 @@ mixin (
     let statuses = List.empty<Text>();
     let pieces = List.empty<Text>();
     var answered = false;
+    var unanswered = 0;
     var firstFailure : ?Http.Response = null;
     for (job in jobIds.vals()) {
       let jobResp = await* Http.get(base # "/jobs/" # job, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
@@ -437,11 +451,18 @@ mixin (
       if (Http.isSuccess(trackResp)) {
         answered := true;
         for (p in Fulfilment.parseTrackingStatuses(trackResp.body).vals()) { pieces.add(p) };
-      };
+      } else { unanswered += 1 };
     };
     if (not answered) {
       let failed = switch (firstFailure) { case (?r) r; case null { { status = 0; body = "no answer" } } };
       return { ok = false; error = ?responseError("Tracking lookup failed", failed); status = ?record.status; newEvents = 0; cached = false };
+    };
+    // A campaign sent as several jobs moves only on the scans of all of
+    // them: a stage read from the jobs that answered could mark the whole
+    // campaign delivered (or returned) from a few of its pieces, and the
+    // timeline never moves back.
+    if (jobIds.size() > 1 and unanswered > 0) {
+      return { ok = true; error = null; status = ?record.status; newEvents = 0; cached = false };
     };
     let pieceStatuses = pieces.toArray();
     let stage = if (pieceStatuses.size() > 0) {

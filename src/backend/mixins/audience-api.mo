@@ -34,11 +34,13 @@ mixin (
   // Presets cost nothing to save, so what one identity can keep is bounded
   // like its unpaid drafts are.
   transient let maxPresetsPerOwner : Nat = 20;
-  transient let maxPresetAddressesPerOwner : Nat = 1_000_000;
+  transient let maxPresetAddressesPerOwner : Nat = 250_000;
   // Identities are free to mint, so the per-owner bounds need canister-wide
   // partners or stable memory could still grow without limit.
   transient let maxPresetsGlobal : Nat = 50_000;
-  transient let maxPresetAddressesGlobal : Nat = 5_000_000;
+  // About 300 B per stored address (~900 B with long lines): sized with the
+  // unpaid-draft budget so the heap stays well inside the canister's memory.
+  transient let maxPresetAddressesGlobal : Nat = 1_500_000;
   /// Rolling per-account verification quota (transient: a fresh window after upgrades).
   transient let verifyWindowNs : Int = 3_600_000_000_000;
   // Sized so one account can verify a 250,000-address list within the hour
@@ -299,7 +301,7 @@ mixin (
 
   private func presetQuotaError(t : { presets : Nat; addresses : Nat; allPresets : Nat; allAddresses : Nat }, adding : Nat) : ?Text {
     if (t.addresses + adding > maxPresetAddressesPerOwner) {
-      ?"Saved audiences may hold at most 1,000,000 addresses in total. Delete a preset you no longer need first.";
+      ?"Saved audiences may hold at most 250,000 addresses in total. Delete a preset you no longer need first.";
     } else if (t.allAddresses + adding > maxPresetAddressesGlobal) {
       ?"Saved audiences can't take more addresses right now. You can still mail this list; contact support if you need to keep it.";
     } else null;

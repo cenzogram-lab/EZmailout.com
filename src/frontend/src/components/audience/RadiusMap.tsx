@@ -377,8 +377,8 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
             </div>
             <p className="text-xs text-muted-foreground">
               About {formatNumber(estimate.densityPerSqMi)} households per
-              square mile. This sizes and prices the drop; the pieces are mailed
-              to the address list you attach next.
+              square mile. This sizes the drop; the address list you attach next
+              is what is mailed and priced.
             </p>
             <Button
               type="button"

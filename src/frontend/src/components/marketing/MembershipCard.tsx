@@ -24,7 +24,7 @@ const PERKS: Perk[] = [
     icon: Tag,
     title: "The 10,000-piece rate from piece one",
     description:
-      "Members pay the 10,000-piece price on postcards, letters and brochures whether they send 50 pieces or 5,000, and the 50,000 tier past that. No tiers to unlock.",
+      "On volume-priced sizes (4.25 × 6, 6 × 9 and 6 × 11 postcards, letters, trifold brochures) members pay the 10,000-piece price whether they send 50 pieces or 5,000, and the 50,000 tier past that.",
   },
   {
     icon: Layers,

@@ -174,6 +174,9 @@ mixin (
             if (c.ownerId != a.id and not AdminLib.isAdmin(adminKeysState, caller)) { return intentFail("You do not own this campaign") };
             if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
             if (c.totalAmountChargedCents == 0) { return intentFail("Campaign total is zero") };
+            if (c.totalAmountChargedCents < PricingLib.minOrderCents and not adminKeysState.sandboxCheckout) {
+              return intentFail("Card payments start at $0.50, and this order comes to less. Start a new campaign with a few more pieces.");
+            };
             // The total is the stored per-piece price (its volume tier, fixed
             // when the campaign was created) times its pieces, nothing else.
             if (c.totalAmountChargedCents != c.unitPriceCents * c.recipientCount or c.totalAmountChargedCents > PricingLib.maxOrderCents) {
@@ -184,7 +187,7 @@ mixin (
             // exactly the one that prints.
             let stored = switch (campaignRecipients.get(campaignId)) { case (?r) r.size(); case null 0 };
             if (stored != c.recipientCount) {
-              return intentFail("This campaign's recipient list is still uploading (" # stored.toText() # " of " # c.recipientCount.toText() # "). Finish the upload, then pay.");
+              return intentFail("This draft's recipient list was not fully uploaded (" # stored.toText() # " of " # c.recipientCount.toText() # "), so it can't be paid for. Re-run it from Campaigns to launch it again from the studio, then delete this draft.");
             };
             // Only an order that can go to print is paid for: its print file
             // must be fully staged (uploads close once the campaign is paid).
@@ -339,7 +342,7 @@ mixin (
       };
       case (#CreditPack) {
         let info = Credits.packInfo(switch (record.creditPack) { case (?p) p; case null #Starter });
-        let balance = AccountLib.applyCredits(creditLedger, state, a, info.credits + info.bonusCredits, "credit_pack:" # Credits.packName(info.pack), ?record.paymentIntentId);
+        let balance = AccountLib.applyCredits(creditLedger, state, a, info.credits, "credit_pack:" # Credits.packName(info.pack), ?record.paymentIntentId);
         (?balance, null, null);
       };
       case (#Subscription) {

@@ -72,6 +72,9 @@ for (variant in ["certified_letter", "priority_express_letter", "8.5x11_secure",
   expect(variant # " flat", PricingLib.calculateUnitPrice(r, 50_000, true), r.retailPriceCents);
 };
 
+// Card payments start at $0.50 (checked by createCampaign and checkout).
+expect("minimum order", PricingLib.minOrderCents, 50);
+
 // An empty order or one over the checkout limit has no total.
 assert PricingLib.campaignCostCents(79, 0) == null;
 assert PricingLib.campaignCostCents(100_000_000, 1) == null;

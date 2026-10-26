@@ -215,10 +215,10 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
           </h1>
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
             A Canva-style studio, {CATALOG_SIZE_COUNT} mail formats and
-            per-piece prices that drop with volume, or the best rate from the
-            first piece for {formatCents(SUBSCRIPTION_PRICE_CENTS)} a month.
-            Upload a list or draw a radius, design in the browser, and USPS
-            delivers with live IMb tracking.
+            per-piece prices that drop with volume, or the 10,000-piece rate
+            from the first piece for {formatCents(SUBSCRIPTION_PRICE_CENTS)} a
+            month. Upload a list or draw a radius, design in the browser, and
+            USPS delivers with live IMb tracking.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button
@@ -663,7 +663,7 @@ const FEATURES: FeatureRow[] = [
     us: "yes",
     generic: "no",
     traditional: "no",
-    note: "Usage tiers or minimum print runs elsewhere",
+    note: "Minimum print runs or quotes elsewhere",
   },
   {
     label: "CASS address verification",
@@ -900,7 +900,7 @@ export function StoreFront() {
         id="membership"
         eyebrow="Membership"
         title="One membership. The best volume rate."
-        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on postcards, letters and brochures from the first piece."
+        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on every volume-priced size from the first piece."
       >
         <MembershipCard />
       </Section>

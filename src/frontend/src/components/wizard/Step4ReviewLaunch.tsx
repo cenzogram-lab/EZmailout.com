@@ -30,6 +30,7 @@ import {
   isBaseRateOnly,
 } from "@/lib/pricing";
 import {
+  MIN_ORDER_CENTS,
   SUBSCRIPTION_PRICE_CENTS,
   formatCents,
   getPricingRow,
@@ -153,6 +154,7 @@ export function Step4ReviewLaunch() {
   const qrDestinationUrl = useWizardStore((s) => s.qrDestinationUrl);
   const campaignId = useWizardStore((s) => s.campaignId);
   const campaignPaid = useWizardStore((s) => s.campaignPaid);
+  const campaignPrice = useWizardStore((s) => s.campaignPrice);
   const setLaunchedCampaign = useWizardStore((s) => s.setLaunchedCampaign);
   const markCampaignPaid = useWizardStore((s) => s.markCampaignPaid);
   const setStep = useWizardStore((s) => s.setStep);
@@ -165,8 +167,13 @@ export function Step4ReviewLaunch() {
   const uploadChunk = useUploadDocumentChunk();
   const dispatchJob = useDispatchPrintJob();
   const { preflight, runPreflight, buildPdf } = usePrintDocument();
-  const { isAuthenticated, login, isLoggingIn, subscriptionActive } =
-    useAccountSync();
+  const {
+    isAuthenticated,
+    login,
+    isLoggingIn,
+    subscriptionActive,
+    accountReady,
+  } = useAccountSync();
 
   const [machine, setMachine] = useState<Machine>({
     stage: "idle",
@@ -188,24 +195,30 @@ export function Step4ReviewLaunch() {
     null,
   );
   const [paidTestMode, setPaidTestMode] = useState(false);
-  /** What the canister priced the launched campaign at (checkout charges it). */
-  const [launchedTotalCents, setLaunchedTotalCents] = useState<number | null>(
-    null,
-  );
   const running = useRef(false);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
-  // Priced as the canister prices the campaign: by volume and membership.
-  const unitCents = selectedLayout
+  // Quoted as the canister prices a new campaign: by volume and membership.
+  const quotedUnitCents = selectedLayout
     ? getUnitPriceCents(selectedLayout, recipientCount, subscriptionActive)
     : 0;
-  const totalCents = unitCents * recipientCount;
-  const dueCents = launchedTotalCents ?? totalCents;
+  // Once checkout is open the order is the launched campaign, priced by the
+  // canister (what the card is charged), not this browser's quote.
+  const inCheckout =
+    machine.stage === "paying" ||
+    machine.stage === "dispatching" ||
+    machine.stage === "done";
+  const charged = inCheckout && campaignPrice ? campaignPrice : null;
+  const unitCents = charged?.unitCents ?? quotedUnitCents;
+  const dueCents = charged?.totalCents ?? quotedUnitCents * recipientCount;
+  const belowMinimum = dueCents > 0 && dueCents < MIN_ORDER_CENTS;
   const tiered = selectedLayout ? volumeTiers(selectedLayout) !== null : false;
   const listUnitCents = selectedLayout ? getUnitPriceCents(selectedLayout) : 0;
-  const savedCents = tiered ? (listUnitCents - unitCents) * recipientCount : 0;
+  const savedCents =
+    tiered && unitCents < listUnitCents
+      ? (listUnitCents - unitCents) * recipientCount
+      : 0;
   const memberRateApplies =
-    subscriptionActive &&
     selectedLayout !== null &&
     unitCents < getUnitPriceCents(selectedLayout, recipientCount, false);
   const memberUnitCents = selectedLayout
@@ -278,7 +291,7 @@ export function Step4ReviewLaunch() {
           state.campaignId &&
           !state.campaignPaid &&
           state.campaignOrderKey === orderKey &&
-          (launchedTotalCents === null || launchedTotalCents === expectedTotal)
+          state.campaignPrice?.totalCents === expectedTotal
             ? state.campaignId
             : null;
         if (id) {
@@ -290,9 +303,10 @@ export function Step4ReviewLaunch() {
             })
             .catch(() => {});
         } else if (state.campaignId && !state.campaignPaid) {
-          // The order changed: its old draft goes (refused while a checkout
+          // The order changed: its old draft goes first, so it does not count
+          // against the account's unpaid budget (refused while a checkout
           // opened for it could still complete; it then expires on its own).
-          void deleteDraft.mutateAsync(state.campaignId).catch(() => {});
+          await deleteDraft.mutateAsync(state.campaignId).catch(() => {});
         }
 
         // 1. Create the campaign.
@@ -342,12 +356,16 @@ export function Step4ReviewLaunch() {
             );
           }
           id = created.campaignId;
-          setLaunchedCampaign(id, orderKey);
-          setLaunchedTotalCents(
-            created.totalCents !== undefined
-              ? Number(created.totalCents)
-              : expectedTotal,
-          );
+          setLaunchedCampaign(id, orderKey, {
+            unitCents:
+              created.unitPriceCents !== undefined
+                ? Number(created.unitPriceCents)
+                : expectedTotal / Math.max(1, state.recipientCount),
+            totalCents:
+              created.totalCents !== undefined
+                ? Number(created.totalCents)
+                : expectedTotal,
+          });
         }
 
         // 1b. Stage the rest of the recipient list (a campaign has no size
@@ -464,7 +482,6 @@ export function Step4ReviewLaunch() {
       addRecipients,
       deleteDraft,
       setLaunchedCampaign,
-      launchedTotalCents,
       fail,
     ],
   );
@@ -482,10 +499,13 @@ export function Step4ReviewLaunch() {
       setDispatchResult(res);
       if (res.ok) toast.success("Job submitted for printing.");
       else toast.warning("Paid, but the print hand-off needs a retry.");
-    } catch (error) {
+    } catch {
+      // No answer is not a failure: a campaign sent as many print jobs can
+      // take longer than the browser waits, and the canister keeps going.
       setDispatchResult({
         ok: false,
-        error: messageOf(error, "Dispatch failed."),
+        error:
+          "Your order is paid. The print hand-off is still running or was interrupted; open Campaigns to see its status, and send it to print again from there if it stopped.",
       });
     }
     setMachine({ stage: "done", failedStage: null, error: null });
@@ -509,7 +529,13 @@ export function Step4ReviewLaunch() {
     machine.stage === "rendering" ||
     machine.stage === "uploading" ||
     machine.stage === "dispatching";
-  const launchDisabled = report.blocked || busy || dueCents <= 0;
+  // Signed in, the price depends on membership, so it waits for the account.
+  const launchDisabled =
+    report.blocked ||
+    busy ||
+    dueCents <= 0 ||
+    belowMinimum ||
+    (isAuthenticated && !accountReady);
 
   if (machine.stage === "done") {
     const paidId = campaignId ?? "";
@@ -754,7 +780,7 @@ export function Step4ReviewLaunch() {
                   className="font-medium text-foreground"
                   data-ocid="review.invoice.line_total"
                 >
-                  {formatCents(totalCents)}
+                  {formatCents(dueCents)}
                 </span>
               </div>
               {savedCents > 0 ? (
@@ -801,6 +827,20 @@ export function Step4ReviewLaunch() {
                   {formatCents(dueCents)}
                 </span>
               </div>
+              {belowMinimum ? (
+                <p
+                  className="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground"
+                  data-ocid="review.invoice.minimum"
+                >
+                  Card payments start at {formatCents(MIN_ORDER_CENTS)}. Add a
+                  few more recipients to place this order.
+                </p>
+              ) : null}
+              {isAuthenticated && !accountReady ? (
+                <p className="text-xs text-muted-foreground">
+                  Loading your account to confirm your price…
+                </p>
+              ) : null}
               {subscriptionActive ? (
                 <p className="text-xs text-muted-foreground">
                   Your {formatCents(SUBSCRIPTION_PRICE_CENTS)}/month EZmailout
@@ -877,7 +917,7 @@ export function Step4ReviewLaunch() {
                 })}
               </ol>
 
-              {machine.stage === "creating" && recipientProgress && (
+              {recipientProgress && (
                 <div className="space-y-1">
                   <Progress
                     value={

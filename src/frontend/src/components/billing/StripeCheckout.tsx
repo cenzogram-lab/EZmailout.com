@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAccountSync } from "@/hooks/use-account";
 import { useConfirmPayment, useCreatePaymentIntent } from "@/hooks/use-backend";
+import { formatCents } from "@/lib/pricing";
 import { useAccountStore } from "@/store/account";
 import {
   Elements,
@@ -44,6 +45,8 @@ type Phase =
   | { kind: "creating" }
   | {
       kind: "elements";
+      /** What the canister will charge, from the payment intent itself. */
+      amountCents: bigint | undefined;
       clientSecret: string;
       paymentIntentId: string;
       publishableKey: string;
@@ -257,6 +260,7 @@ export function StripeCheckout({
       }
       setPhase({
         kind: "elements",
+        amountCents: intent.amountCents,
         clientSecret: intent.clientSecret,
         paymentIntentId: intent.paymentIntentId,
         publishableKey: intent.publishableKey,
@@ -326,7 +330,11 @@ export function StripeCheckout({
             }}
           >
             <PaymentForm
-              amountLabel={amountLabel}
+              amountLabel={
+                phase.amountCents !== undefined
+                  ? formatCents(phase.amountCents)
+                  : amountLabel
+              }
               submitLabel={submitLabel}
               onConfirmed={() => finish(phase.paymentIntentId)}
               onCancel={onCancel}

@@ -608,7 +608,8 @@ export const COLOR_BW = "Black and White";
 
 /**
  * Typical local print-shop + postage quote, used only by the savings
- * calculator. Derived as 1.3× the member rate rather than hand-maintained.
+ * calculator. Derived as 1.3× a format's single-piece list price rather
+ * than hand-maintained.
  */
 export const PRINT_SHOP_MULTIPLIER = 1.3;
 
@@ -664,6 +665,12 @@ export const TIER_MINIMUMS = [0, 1_000, 10_000, 50_000] as const;
 
 /** Members are priced as an order of at least this many pieces. */
 export const MEMBER_TIER_QUANTITY = 10_000;
+
+/**
+ * The smallest order a card payment can take: the payment processor refuses
+ * charges under $0.50. Mirrors `PricingLib.minOrderCents`.
+ */
+export const MIN_ORDER_CENTS = 50;
 
 /** The fewest pieces of the last (lowest) tier: every order from here on pays it. */
 export const TOP_TIER_PIECES = TIER_MINIMUMS[TIER_MINIMUMS.length - 1];

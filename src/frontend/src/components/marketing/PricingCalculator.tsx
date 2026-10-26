@@ -22,7 +22,11 @@ import {
   mailClassLabel,
   startingPriceCents,
   tierSummary,
+  volumeTiers,
 } from "@/lib/pricing";
+
+/** The most one card payment can take (`PricingLib.maxOrderCents`). */
+const MAX_ORDER_CENTS = 99_999_999;
 import { Calculator, TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -248,6 +252,15 @@ export function PricingCalculator() {
               <div className="mt-1 text-xs text-muted-foreground">
                 {formatNumber(qty)} × {formatCents(quote.retailCents)}
               </div>
+              {quote.ezTotalCents > MAX_ORDER_CENTS ? (
+                <div
+                  className="mt-2 text-xs text-muted-foreground"
+                  data-ocid="pricing_calc.split.note"
+                >
+                  Over the {formatCents(MAX_ORDER_CENTS)} one card payment can
+                  take: send it as several campaigns.
+                </div>
+              ) : null}
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -334,7 +347,9 @@ export function PricingCalculator() {
               ? `Membership pays for itself after ${formatNumber(quote.breakEvenPieces)} ${
                   quote.breakEvenPieces === 1 ? "piece" : "pieces"
                 }.`
-              : "This format costs the same for everyone; members save on volume-priced formats."}
+              : volumeTiers(row.id)
+                ? "At this volume members pay the same as everyone."
+                : "This format costs the same for everyone; members save on volume-priced formats."}
           </p>
           <p className="mt-1 text-center text-[11px] text-muted-foreground">
             Print-shop benchmark is a typical local quote including postage.
