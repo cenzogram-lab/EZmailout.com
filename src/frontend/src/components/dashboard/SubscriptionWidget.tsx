@@ -128,7 +128,7 @@ export function SubscriptionWidget() {
             <Crown className="size-4" />
             {subscriptionActive
               ? "Renew"
-              : `Start membership — ${priceLabel}/mo`}
+              : `Start membership — ${priceLabel} for 30 days`}
           </Button>
         )}
       </CardContent>

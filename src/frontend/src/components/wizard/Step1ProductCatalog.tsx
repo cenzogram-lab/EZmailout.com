@@ -30,6 +30,7 @@ import {
   SUBSCRIPTION_PRICE_CENTS,
   catalogMailClassLabel,
   classSurchargeCents,
+  firstClassAddLabel,
   formatCents,
   getPricingRow,
   mailClassDelivery,
@@ -201,7 +202,7 @@ function SizeRow({
             >
               {catalogMailClassLabel(option)} · {mailClassDelivery(option)}
               {classSurchargeCents(row.id, option) > 0
-                ? ` · +${formatCents(classSurchargeCents(row.id, option))}/pc`
+                ? ` · ${firstClassAddLabel(row.id)}/pc`
                 : ""}
             </button>
           );
@@ -488,9 +489,9 @@ export function Step1ProductCatalog() {
           </span>{" "}
           skips the volume tiers: members pay the 10,000-piece rate on
           volume-priced sizes (the 4.25 × 6, 6 × 9 and 6 × 11 postcards, the
-          letter and the trifold brochure) however small the batch; only an
-          order of a few pieces costs a little more, to cover the card fee.
-          Next-day production by EZmailout, USPS IMb tracking included.
+          letter and the trifold brochure); smaller orders cost more per piece,
+          because each card payment carries a fixed fee. Next-day production by
+          EZmailout, USPS IMb tracking included.
         </p>
       </div>
 
@@ -506,17 +507,12 @@ export function Step1ProductCatalog() {
                 {selectedRow.documentClass}
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
-              {tierSummary(selectedRow.id) ??
+              {tierSummary(selectedRow.id, selectedSpec?.mailClass) ??
                 `${formatCents(pieceRateCents(selectedRow.id, 1, false, selectedSpec?.mailClass))} per piece`}{" "}
               (
               {catalogMailClassLabel(
                 selectedSpec?.mailClass ?? selectedRow.defaultMailClass,
               )}
-              {tierSummary(selectedRow.id) &&
-              selectedSpec?.mailClass &&
-              classSurchargeCents(selectedRow.id, selectedSpec.mailClass) > 0
-                ? `: +${formatCents(classSurchargeCents(selectedRow.id, selectedSpec.mailClass))} a piece`
-                : ""}
               )
             </span>
           ) : (

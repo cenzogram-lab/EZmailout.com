@@ -24,7 +24,7 @@ const PERKS: Perk[] = [
     icon: Tag,
     title: "The 10,000-piece rate on small batches",
     description:
-      "On volume-priced sizes (4.25 × 6, 6 × 9 and 6 × 11 postcards, letters, trifold brochures) members pay the 10,000-piece price whether they send 50 pieces or 5,000, and any lower 50,000-piece price past that. Only an order of a few pieces costs a little more, to cover the card fee.",
+      "On volume-priced sizes (4.25 × 6, 6 × 9 and 6 × 11 postcards, letters, trifold brochures) members pay the 10,000-piece price, and any lower 50,000-piece price past that. Smaller orders cost more per piece, because each card payment carries a fixed fee; Step 4 shows the exact price.",
   },
   {
     icon: Layers,
@@ -37,12 +37,6 @@ const PERKS: Perk[] = [
     title: `${MONTHLY_ALLOWANCE} AI credits with every pass`,
     description:
       "Generate backgrounds and copy in the AI Studio without buying a credit pack.",
-  },
-  {
-    icon: Users,
-    title: "Saved audience presets",
-    description:
-      "Store CASS-verified lists once and reuse them on every future campaign.",
   },
   {
     icon: Gift,

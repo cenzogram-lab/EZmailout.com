@@ -362,7 +362,7 @@ const STUDIO_FEATURES: {
   {
     icon: Sparkles,
     title: "AI Studio",
-    body: `AI backgrounds and AI copywriting, paid in credits (${MONTHLY_ALLOWANCE} included monthly).`,
+    body: `AI backgrounds and AI copywriting, paid in credits (${MONTHLY_ALLOWANCE} with each 30-day membership).`,
     bullets: [
       `Backgrounds from ${AI_COSTS.squareImage} credits`,
       `Copywriter at ${AI_COSTS.copy} credit per round`,
@@ -407,7 +407,7 @@ function StudioFeatures() {
 const FAQ: { q: string; a: string }[] = [
   {
     q: "Is there really no minimum order?",
-    a: "No. You can send a single piece. Volume prices start at 1,000 pieces, and members pay at most the 10,000-piece price on those sizes (only an order of a few pieces costs a little more, to cover the card fee). Membership is a 30-day pass you renew when you choose: nothing is billed automatically, so there is nothing to cancel.",
+    a: "No. You can send a single piece. Volume prices start at 1,000 pieces, and members pay the 10,000-piece price on those sizes (smaller orders cost more per piece, because each card payment carries a fixed fee). Membership is a 30-day pass you renew when you choose: nothing is billed automatically, so there is nothing to cancel.",
   },
   {
     q: "Which formats can I send?",
@@ -639,7 +639,7 @@ function AiStudioTeaser() {
           ))}
         </ul>
         <p className="mt-4 text-xs text-muted-foreground">
-          Credits never expire while your membership is active.
+          Credits never expire.
         </p>
       </div>
     </div>
@@ -659,7 +659,7 @@ interface FeatureRow {
 
 const FEATURES: FeatureRow[] = [
   {
-    label: `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}/mo no-minimum membership`,
+    label: `${formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")} 30-day membership, no minimums`,
     us: "yes",
     generic: "no",
     traditional: "no",
@@ -901,7 +901,7 @@ export function StoreFront() {
         id="membership"
         eyebrow="Membership"
         title="One membership. The best volume rate."
-        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on every volume-priced size, however small the batch (a few pieces cost a little more, to cover the card fee)."
+        subtitle="Skip the volume tiers and quote requests. Members pay the 10,000-piece rate on every volume-priced size; smaller orders cost more per piece, because each card payment carries a fixed fee."
       >
         <MembershipCard />
       </Section>

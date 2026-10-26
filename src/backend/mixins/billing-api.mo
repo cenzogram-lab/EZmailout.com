@@ -10,6 +10,7 @@ import Credits "../lib/credits";
 import Http "../lib/http";
 import Limits "../lib/limits";
 import PricingLib "../lib/pricing";
+import PrintFile "../lib/printfile";
 import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
@@ -216,6 +217,12 @@ mixin (
             if (not staged and c.printDocumentId == null) {
               return intentFail("This draft's print file was never uploaded, so it can't be paid for. Re-run it from Campaigns to launch it again from the studio, then delete this draft.");
             };
+            // The price covers one front-and-back piece; a file staged before
+            // uploads were checked is checked here (`PrintFile.stagedError`).
+            switch (documentUploads.get(campaignId)) {
+              case (?u) { switch (PrintFile.stagedError(u)) { case (?e) { return intentFail(e) }; case null {} } };
+              case null {};
+            };
             amount := c.totalAmountChargedCents;
             description := "EZmailout campaign " # c.id # " (" # c.recipientCount.toText() # " pieces)";
             refText := campaignId;
@@ -240,7 +247,7 @@ mixin (
           return { ok = true; error = null; paymentIntentId = ?paymentId; clientSecret = null; amountCents = ?0; publishableKey = adminKeysState.stripePublishableKey; waived = true; sandbox = false };
         };
         amount := Credits.subscriptionPriceCents;
-        description := "EZmailout monthly membership";
+        description := "EZmailout 30-day membership";
         refText := "subscription";
       };
     };
@@ -283,10 +290,22 @@ mixin (
     };
   };
 
+  /// A campaign payment counts as a payment (for the first-payment referral
+  /// rule) only if it is the one that settled its campaign: a duplicate, or a
+  /// payment for a draft removed before it arrived, is refunded, and must not
+  /// stand in for the customer's real first payment.
+  private func settledItsCampaign(p : Account.PaymentRecord) : Bool {
+    if (p.purpose != #CampaignOrder) return true;
+    switch (p.reference) {
+      case (?id) switch (campaigns.get(id)) { case (?c) c.paymentIntentId == ?p.paymentIntentId; case null false };
+      case null false;
+    };
+  };
+
   private func isFirstPayment(userId : Text, paymentIntentId : Text) : Bool {
     var earliest : ?Account.PaymentRecord = null;
     for ((_, p) in payments.entries()) {
-      if (p.userId == userId and (p.state == #Succeeded or p.state == #Waived) and p.amountCents > 0 and not p.sandbox) {
+      if (p.userId == userId and (p.state == #Succeeded or p.state == #Waived) and p.amountCents > 0 and not p.sandbox and settledItsCampaign(p)) {
         switch (earliest) {
           case null { earliest := ?p };
           case (?e) { if (p.createdAt < e.createdAt) { earliest := ?p } };
@@ -314,13 +333,7 @@ mixin (
     // A campaign payment counts only if it is the one that paid the campaign:
     // not a duplicate for an already paid campaign, nor a payment for a draft
     // removed before it arrived (both are refunded).
-    if (record.purpose == #CampaignOrder) {
-      let settled = switch (record.reference) {
-        case (?id) switch (campaigns.get(id)) { case (?c) c.paymentIntentId == ?record.paymentIntentId; case null false };
-        case null false;
-      };
-      if (not settled) { return false };
-    };
+    if (not settledItsCampaign(record)) { return false };
     let payer = switch (accounts.get(record.userId)) { case (?p) p; case null { return false } };
     if (not isFirstPayment(payer.id, record.paymentIntentId)) { return false };
     let referrerId = switch (payer.referredBy) { case (?r) r; case null { return false } };
@@ -441,13 +454,16 @@ mixin (
     { ok = true; error = null; state = ?record.state; creditBalance = balance; campaignId; subscriptionActive = switch (subActive) { case (?s) ?s; case null ?AccountLib.isSubscriptionLive(a, Time.now()) }; referralRewardApplied = rewarded };
   };
 
-  /// Applies the referral reward for a completed payment (idempotent).
+  /// Applies the referral reward for a completed payment (idempotent). The
+  /// reward is decided when the payment is confirmed (`confirmPayment`), with
+  /// the referrer's membership as it is then; this manual retry is for the
+  /// admin and controllers only, or a customer could claim it later, once the
+  /// referrer had joined.
   public shared ({ caller }) func applyReferralReward(paymentIntentId : Text) : async Common.ApiResult {
-    if (not signedIn(caller)) { return { ok = false; error = ?"Sign in required" } };
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { return { ok = false; error = ?"Only the admin can apply a referral reward by hand" } };
     switch (payments.get(AddressLib.sanitizeText(paymentIntentId))) {
       case null { { ok = false; error = ?"Unknown payment" } };
       case (?record) {
-        if (record.userId != caller.toText() and not AdminLib.isAdmin(adminKeysState, caller)) { return { ok = false; error = ?"This payment belongs to another account" } };
         if (record.state != #Succeeded and record.state != #Waived) { return { ok = false; error = ?"Payment has not completed" } };
         if (tryReferralReward(record)) { { ok = true; error = null } } else { { ok = false; error = ?"No referral reward applies (already granted, no referrer, not the first payment, or referrer's subscription inactive)" } };
       };

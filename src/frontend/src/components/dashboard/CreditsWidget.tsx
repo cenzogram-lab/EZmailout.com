@@ -145,7 +145,7 @@ export function CreditsWidget() {
               className="py-3 text-sm text-muted-foreground"
               data-ocid="dashboard.credits.ledger.empty"
             >
-              No credit activity yet. Your monthly allowance and top-ups will
+              No credit activity yet. Your membership credits and top-ups will
               show here.
             </p>
           ) : (

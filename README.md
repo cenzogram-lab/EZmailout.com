@@ -51,14 +51,15 @@ follows it (`Postcard 4 x 9` is 4″ wide by 9″ tall).
 | Card Stock | `Card Stock Paper 12 x 4.5` | 12″ × 4.5″ | $0.65 | **$1.65** | — | Marketing Mail |
 
 Rates are per piece and include printing and postage, generated from `PRICING_LEDGER` (`src/frontend/src/lib/pricing.ts`,
-mirrored in `src/backend/lib/pricing.mo`). Volume prices apply from the quantity shown; a live member pays at most the
-10,000-piece rate on those five formats, and no price sells under cost + 1¢ a piece once the card fee (4.4% + 30¢, the international card rate, so any card is covered)
-is paid: the percentage sets the per-piece floor, and an order of only a few pieces of a thin-margin format is priced a
-little higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.90, members included; past a few pieces the lift is at most 1¢ a piece, and
-it reaches about 1,070 pieces only on the brochure). EDDM® prices include USPS EDDM Retail
+mirrored in `src/backend/lib/pricing.mo`). Volume prices apply from the quantity shown, and a live member pays the
+10,000-piece rate on those five formats. No price sells under cost + 1¢ a piece once the card fee (4.4% + 30¢, the
+international card rate, so any card is covered) is paid: the percentage sets the per-piece floor, and a smaller order
+is priced higher so it also covers the fixed 30¢ (a single 4.25x6 postcard is $0.90, members included; past a few pieces
+the lift is a cent or two, and it reaches about 1,070 pieces on the brochure). EDDM® prices include USPS EDDM Retail
 saturation postage ($0.26 a piece; the Cost column is print only). The 6x9 and 6x11 postcards and the brochure are priced
-for Marketing Mail; First-Class adds $0.24 a piece. An order is at most $999,999.99 (and at least $0.50, the smallest card charge,
-which the floor already keeps every order above).
+for Marketing Mail; First-Class adds $0.24 a piece ($0.25 on the 6x11 from 10,000 and for members, $0.26 on the brochure
+from 1,000 and for members, where the dearer piece's cost floor sits above the tier). An order is at most $999,999.99
+(and at least $0.50, the smallest card charge, which the floor already keeps every order above).
 
 Costs and member prices are final. The spread is deliberate retail positioning — standardised letter pricing,
 carrier cost absorbed on Priority Mail® Express to stay competitive, and higher margin on self-mailers — so nothing
@@ -79,7 +80,7 @@ Members receive 50 credits each time they activate or renew the 30-day membershi
 ## Referral program
 
 Every account gets `https://ezmailout.com/ref/{code}`. When a referred user makes their first payment
-(membership or campaign) the referrer earns one free month, used the next time they renew (the 30-day pass at no charge),
+(membership, credit pack, or the payment that settles a campaign) the referrer earns one free month, used the next time they renew (the 30-day pass at no charge),
 as long as the referrer's membership is active when the referred payment is confirmed.
 
 ## Campaign flow

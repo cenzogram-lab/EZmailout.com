@@ -197,9 +197,18 @@ export function Step4ReviewLaunch() {
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
   const mailClass = selectedSpec?.mailClass;
+  // What First-Class adds to this order's per-piece rate: the surcharge, plus
+  // a cent or two where the dearer piece's cost floor sits above the tier.
   const surchargeCents =
-    selectedLayout && mailClass
-      ? classSurchargeCents(selectedLayout, mailClass)
+    selectedLayout &&
+    mailClass &&
+    classSurchargeCents(selectedLayout, mailClass) > 0
+      ? pieceRateCents(
+          selectedLayout,
+          recipientCount,
+          subscriptionActive,
+          mailClass,
+        ) - pieceRateCents(selectedLayout, recipientCount, subscriptionActive)
       : 0;
   // Quoted as the canister prices a new campaign: by volume and membership.
   const quotedUnitCents = selectedLayout

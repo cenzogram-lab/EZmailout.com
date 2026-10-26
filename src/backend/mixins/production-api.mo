@@ -11,6 +11,7 @@ import Json "../lib/json";
 import Limits "../lib/limits";
 import Secrets "../lib/secrets";
 import Inputs "../lib/inputs";
+import PrintFile "../lib/printfile";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
@@ -133,6 +134,15 @@ mixin (
     let wasEmpty = upload.chunks[chunkIndex].size() == 0;
     upload.chunks := Array.tabulate<Blob>(totalChunks, func(i) = if (i == chunkIndex) data else upload.chunks[i]);
     if (wasEmpty) { upload.receivedChunks += 1 };
+    // The order is priced for one front-and-back piece, and the print
+    // partner bills by the file's pages: a complete file is checked now, and
+    // one that fails is dropped so it can never be paid for.
+    if (upload.receivedChunks == totalChunks) {
+      switch (PrintFile.stagedError(upload)) {
+        case (?e) { documentUploads.remove(campaignId); return { ok = false; error = ?e } };
+        case null {};
+      };
+    };
     { ok = true; error = null };
   };
 

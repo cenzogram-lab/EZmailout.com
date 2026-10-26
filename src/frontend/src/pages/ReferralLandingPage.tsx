@@ -41,7 +41,7 @@ const PERKS = [
   },
   {
     icon: Wand2,
-    text: `AI copy and imagery with ${MONTHLY_ALLOWANCE} credits included every month of membership.`,
+    text: `AI copy and imagery with ${MONTHLY_ALLOWANCE} credits with each 30-day membership.`,
   },
   {
     icon: Sparkles,
@@ -49,7 +49,7 @@ const PERKS = [
   },
   {
     icon: Gift,
-    text: "Your first payment earns your referrer a free month — and you get your own referral link to share.",
+    text: "Your first payment earns your referrer a free month while their membership is active — and you get your own referral link to share.",
   },
 ];
 
@@ -173,7 +173,8 @@ export function ReferralLandingPage() {
                   <AlertDescription>
                     Your account is linked to referral code{" "}
                     <span className="font-mono">{referredBy ?? code}</span>.
-                    Your first payment will earn your referrer a free month.
+                    Your first payment will earn your referrer a free month if
+                    their membership is active then.
                   </AlertDescription>
                 </Alert>
               )}

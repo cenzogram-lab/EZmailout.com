@@ -836,6 +836,35 @@ export function classSurchargeCents(
     : 0;
 }
 
+/**
+ * What sending `layoutVariant` First-Class adds to its per-piece rate, as
+ * [least, most] over every tier and membership: the surcharge, plus a cent or
+ * two where the dearer piece's cost floor sits above the tier price (6x11
+ * from 10,000, the brochure from 1,000). [0, 0] for a format without one.
+ */
+export function firstClassAddRange(layoutVariant: string): [number, number] {
+  if (classSurchargeCents(layoutVariant, "FirstClass") === 0) return [0, 0];
+  let least = Number.POSITIVE_INFINITY;
+  let most = 0;
+  for (const quantity of TIER_MINIMUMS)
+    for (const member of [false, true]) {
+      const add =
+        pieceRateCents(layoutVariant, quantity, member, "FirstClass") -
+        pieceRateCents(layoutVariant, quantity, member, "StandardMarketing");
+      least = Math.min(least, add);
+      most = Math.max(most, add);
+    }
+  return [least, most];
+}
+
+/** "+$0.24" or "+$0.24–$0.26": `firstClassAddRange` in words. */
+export function firstClassAddLabel(layoutVariant: string): string {
+  const [least, most] = firstClassAddRange(layoutVariant);
+  return least === most
+    ? `+${formatCents(least)}`
+    : `+${formatCents(least)}–${formatCents(most)}`;
+}
+
 function tierUnitCents(
   row: ProductSpec,
   quantity: number,
@@ -889,15 +918,18 @@ export function startingPriceCents(layoutVariant: string): number {
  * $0.62"), or null for a flat-priced format. A tier the cost floor lifts to
  * the previous tier's price is left out.
  */
-export function tierSummary(layoutVariant: string): string | null {
+export function tierSummary(
+  layoutVariant: string,
+  mailClass?: CatalogMailClass,
+): string | null {
   if (!volumeTiers(layoutVariant)) return null;
   return [
-    ...volumeTierSteps(layoutVariant).map(({ minimum, cents }) =>
+    ...volumeTierSteps(layoutVariant, mailClass).map(({ minimum, cents }) =>
       minimum === 0
         ? `${formatCents(cents)} under ${TIER_MINIMUMS[1].toLocaleString("en-US")}`
         : `${formatCents(cents)} from ${minimum.toLocaleString("en-US")}`,
     ),
-    `members ${formatCents(pieceRateCents(layoutVariant, 1, true))}`,
+    `members ${formatCents(pieceRateCents(layoutVariant, 1, true, mailClass))}`,
   ].join(" · ");
 }
 
@@ -907,11 +939,12 @@ export function tierSummary(layoutVariant: string): string | null {
  */
 export function volumeTierSteps(
   layoutVariant: string,
+  mailClass?: CatalogMailClass,
 ): { minimum: number; cents: number }[] {
   if (!volumeTiers(layoutVariant)) return [];
   const steps: { minimum: number; cents: number }[] = [];
   for (const minimum of TIER_MINIMUMS) {
-    const cents = pieceRateCents(layoutVariant, minimum, false);
+    const cents = pieceRateCents(layoutVariant, minimum, false, mailClass);
     if (steps.at(-1)?.cents !== cents) steps.push({ minimum, cents });
   }
   return steps;

@@ -24,6 +24,29 @@ export const addr = (i) => ({ name: `Resident ${i}`, address_line1: `${100 + i} 
 export const rawAddr = (i) => ({ name: `Resident ${i}`, address_line1: `${100 + i} Main St`, address_line2: [], city: "Portland", state: "OR", zip_code: "97201" });
 export const returnAddress = { name: "Harbor Bakery", organization: ["Harbor Bakery LLC"], address_line1: "1 Harbor Way", address_line2: [], city: "Portland", state: "OR", zip_code: "97201" };
 
+/**
+ * A print PDF laid out like the studio's `buildPdfFromJpegs` (catalog, page
+ * tree, then image, content and page objects per page), each page's image
+ * `imageBytes` bytes of `fill`: what the canister's page check accepts.
+ */
+export function printPdf(fill = 1, pages = 2, imageBytes = 1024) {
+  const enc = new TextEncoder();
+  const parts = [];
+  const kids = Array.from({ length: pages }, (_, p) => `${5 + 3 * p} 0 R`).join(" ");
+  parts.push(enc.encode(`%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${pages} >>\nendobj\n`));
+  for (let p = 0; p < pages; p++) {
+    const image = 3 + 3 * p;
+    parts.push(enc.encode(`${image} 0 obj\n<< /Type /XObject /Subtype /Image /Width 10 /Height 10 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes} >>\nstream\n`));
+    parts.push(new Uint8Array(imageBytes).fill(fill));
+    parts.push(enc.encode(`\nendstream\nendobj\n${image + 1} 0 obj\n<< /Length 30 >>\nstream\nq 432 0 0 288 0 0 cm /Im${image} Do Q\nendstream\nendobj\n${image + 2} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 432 288] /Resources << /XObject << /Im${image} ${image} 0 R >> >> /Contents ${image + 1} 0 R >>\nendobj\n`));
+  }
+  parts.push(enc.encode("trailer\n<< /Root 1 0 R >>\n%%EOF\n"));
+  const out = new Uint8Array(parts.reduce((n, x) => n + x.length, 0));
+  let at = 0;
+  for (const x of parts) { out.set(x, at); at += x.length; }
+  return out;
+}
+
 export function campaignInput(n = 3, extra = {}) {
   return {
     audienceType: { CsvUpload: null }, canvasState: [], designTemplateId: [], mailClass: [], name: "Audit campaign",

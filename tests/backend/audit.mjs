@@ -3,7 +3,7 @@
 // records the exact request the canister sent.
 import { PocketIcServer } from "@dfinity/pic";
 import { start, upstream, drive, call, check, failures, ident, anon, EOP, WASM } from "./harness.mjs";
-import { keys, SECRETS, RAW_SECRETS, campaignInput, addr, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress } from "./fixtures.mjs";
+import { keys, SECRETS, RAW_SECRETS, campaignInput, addr, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress, printPdf } from "./fixtures.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
@@ -32,7 +32,7 @@ async function paidCampaign(env, user, up, { n = 3, stripe = false } = {}) {
   const cid = created.campaignId[0];
   // The print file is staged before checkout, as Step 4 does: the canister
   // takes no payment for a campaign without one.
-  const up1 = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(37));
+  const up1 = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(37));
   if (!up1.ok) throw new Error("upload: " + up1.error);
   const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   if (!intent.ok) throw new Error("createPaymentIntent: " + intent.error);
@@ -442,7 +442,7 @@ sections.orders = async function orders() {
   const env = await setup({ sandboxCheckout: false });
   const pay = { intents: new Map() };
   const up = upstream([...fakeStripe(pay), ...fakePrintPartner()]);
-  const pdf = (fill) => new Uint8Array(2048).fill(fill);
+  const pdf = (fill) => printPdf(fill);
 
   // A campaign is paid for only once its print file is staged, and that file
   // is the one that prints.
@@ -451,6 +451,15 @@ sections.orders = async function orders() {
   const cid = (await o.createCampaign(campaignInput(3))).campaignId[0];
   const early = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   check(!early.ok && /print file/.test(early.error[0] ?? ""), "checkout refuses a campaign whose print file was never uploaded", early.error);
+  // The price covers one front-and-back piece and the print partner bills by
+  // page, so a longer file, or one whose bytes are not what its label says,
+  // is refused and never staged.
+  const tooLong = await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(1, 3));
+  check(!tooLong.ok && /3 pages/.test(tooLong.error[0] ?? ""), "a 3-page print file is refused", tooLong.error);
+  const disguised = await o.uploadDocumentChunk(cid, 0n, 1n, "image/png", "art.png", printPdf(1, 3));
+  check(!disguised.ok && /match its type/.test(disguised.error[0] ?? ""), "a PDF labelled as an image is refused", disguised.error);
+  const stillEarly = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(!stillEarly.ok && /print file/.test(stillEarly.error[0] ?? ""), "a refused file leaves nothing staged to pay for", stillEarly.error);
   check((await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", pdf(1))).ok, "the print file is staged");
   const intent = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   const paid = await call(env.pic, up, env.deferred(owner).confirmPayment(intent.paymentIntentId[0]));
@@ -490,8 +499,12 @@ sections.orders = async function orders() {
   const c1 = await call(env.pic, up, env.deferred(referee).confirmPayment(p1.paymentIntentId[0]));
   const stats = (await r.getReferralStats())[0];
   check(c1.ok && c2.ok && stats.referralCreditsEarned === 1n, "two checkouts confirmed newest first earn the referrer one free month, not two", { earned: stats.referralCreditsEarned, c1: c1.referralRewardApplied, c2: c2.referralRewardApplied });
+  // The reward is decided at confirmation; a customer cannot claim one by hand
+  // later (say, once the referrer has joined), and the admin's retry is idempotent.
   const again = await env.as(referee).applyReferralReward(p1.paymentIntentId[0]);
-  check(!again.ok && (await r.getReferralStats())[0].referralCreditsEarned === 1n, "asking for the reward again grants nothing");
+  check(!again.ok && /admin/.test(again.error[0] ?? ""), "a customer cannot apply a referral reward by hand", again.error);
+  const adminAgain = await env.as(env.controller).applyReferralReward(p1.paymentIntentId[0]);
+  check(!adminAgain.ok && (await r.getReferralStats())[0].referralCreditsEarned === 1n, "the admin asking for the reward again grants nothing", adminAgain.error);
 
   // Verification fails closed when the per-address result does not line up
   // with the batch, and a customer sees plain advice, not network detail.
@@ -650,7 +663,7 @@ sections.scale = async function scale() {
   const created = await u.createCampaign(campaignInput(5000));
   check(created.ok, "a 5,000-recipient campaign is created", created.error);
   const cid = created.campaignId[0];
-  const big = new Uint8Array(1_890_000).fill(65);
+  const big = printPdf(65, 2, 944_600);
   const upl = await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "big.pdf", big);
   check(upl.ok, "a 1.89 MB print file is staged in one chunk", upl.error);
   const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
@@ -683,7 +696,7 @@ sections.bigOrder = async function bigOrder() {
   const tooMany = await u.createCampaign(campaignInput(0, { recipients: Array.from({ length: 5_001 }, (_, i) => addr(i)), recipientCount: 6_000n }));
   check(!tooMany.ok && /5,000/.test(tooMany.error[0] ?? ""), "one message carries at most 5,000 recipients", tooMany.error);
 
-  await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(7));
+  await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(7));
   const early = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   check(!early.ok && /not fully uploaded \(5000 of 12000\)/.test(early.error[0] ?? ""), "checkout waits until every priced recipient is stored", early.error);
 
@@ -853,7 +866,7 @@ sections.auditFixes = async function auditFixes() {
   const cid = created.campaignId[0];
   await o.addCampaignRecipients(cid, 5_000n, all.slice(5_000, 10_000));
   await o.addCampaignRecipients(cid, 10_000n, all.slice(10_000));
-  await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(4096).fill(5));
+  await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(5));
   await env.pic.advanceTime(3_000); await env.pic.tick();
   const intent = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   const paid = await call(env.pic, up, env.deferred(owner).confirmPayment(intent.paymentIntentId[0]));
@@ -899,7 +912,7 @@ sections.upgrade = async function upgrade() {
   const cid = created.campaignId[0];
   const intent = await call(env.pic, up, env.deferred(user).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   await call(env.pic, up, env.deferred(user).confirmPayment(intent.paymentIntentId[0]));
-  await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", new Uint8Array(2048).fill(1));
+  await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(1));
   const d = await call(env.pic, up, env.deferred(user).dispatchClick2MailJob(cid));
   check(d.ok, "a campaign is dispatched on the deployed version", d.error);
   const draft = await u.createCampaign(campaignInput(2));

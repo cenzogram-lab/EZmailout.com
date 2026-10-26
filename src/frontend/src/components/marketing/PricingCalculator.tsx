@@ -332,7 +332,7 @@ export function PricingCalculator() {
                 EZmailout membership
               </span>
               <span className="font-mono font-medium text-foreground">
-                {formatCents(SUBSCRIPTION_PRICE_CENTS)} / mo
+                {formatCents(SUBSCRIPTION_PRICE_CENTS)} / 30 days
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">

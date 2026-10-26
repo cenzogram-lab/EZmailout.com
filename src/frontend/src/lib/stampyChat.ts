@@ -12,6 +12,7 @@ import {
   type ProductSpec,
   SUBSCRIPTION_PRICE_CENTS,
   classSurchargeCents,
+  firstClassAddLabel,
   formatCents,
   getPricingRow,
   isEddm,
@@ -258,11 +259,11 @@ function rowPrice(row: ProductSpec): string {
   );
   const member = usd(pieceRateCents(row.id, 1, true));
   const firstClass = classSurchargeCents(row.id, "FirstClass");
-  return `${steps.join(", ")}, and members pay no more than ${member} on all but the smallest orders${
+  return `${steps.join(", ")}, and members pay ${member}${
     firstClass > 0
-      ? ` (Marketing Mail; First-Class adds ${usd(firstClass)} a piece)`
+      ? ` (Marketing Mail; First-Class adds ${firstClassAddLabel(row.id).slice(1)} a piece)`
       : ""
-  }`;
+  }. A small order costs more per piece because the card fee has a fixed part; Step 4 shows the exact price.`;
 }
 
 /** "from $0.59" for a volume-priced format, "$1.05" for a flat one. */
