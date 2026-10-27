@@ -164,6 +164,29 @@ type ReturnAddress =
    state: text;
    zip_code: text;
  };
+type RefundView = 
+ record {
+   amountCents: nat;
+   createdAt: int;
+   reason: text;
+   refundId: text;
+   status: text;
+ };
+type RefundResult = 
+ record {
+   creditBalance: opt nat;
+   error: opt text;
+   ok: bool;
+   refundId: opt text;
+   refundedCents: nat;
+ };
+type RefundInput = 
+ record {
+   amountCents: nat;
+   paymentIntentId: text;
+   reason: text;
+   revokeEffects: bool;
+ };
 type ReferralStats = 
  record {
    freeMonthsAvailable: nat;
@@ -305,6 +328,24 @@ type PresetResult =
    ok: bool;
    presetId: opt text;
  };
+type PaymentView = 
+ record {
+   amountCents: nat;
+   campaignId: opt text;
+   campaignInProduction: bool;
+   campaignName: opt text;
+   confirmedAt: opt int;
+   createdAt: int;
+   creditPack: opt CreditPack;
+   paymentIntentId: text;
+   purpose: PaymentPurpose;
+   refundedCents: nat;
+   refunds: vec RefundView;
+   settledCampaign: bool;
+   state: PaymentState;
+   testMode: bool;
+   userId: text;
+ };
 type PaymentStatus = 
  variant {
    Paid;
@@ -431,6 +472,12 @@ type CreditLedgerEntry =
    reference: opt text;
    timestamp: int;
    userId: text;
+ };
+type CreditAdjustResult = 
+ record {
+   creditBalance: opt nat;
+   error: opt text;
+   ok: bool;
  };
 type CreateCampaignResult = 
  record {
@@ -669,6 +716,10 @@ service : {
    vec VerifiedAddress) -> (RecipientStageResult);
   addPresetAddresses: (presetId: text, offset: nat, addresses:
    vec VerifiedAddress) -> (RecipientStageResult);
+  adminAdjustCredits: (userId: text, delta: int, note: text) ->
+   (CreditAdjustResult);
+  adminFindPayments: (searchText: text) -> (vec PaymentView) query;
+  adminRefundPayment: (input: RefundInput) -> (RefundResult);
   applyReferralReward: (paymentIntentId: text) -> (ApiResult);
   askStampy: (turns: vec StampyTurn) -> (StampyReply);
   assignAdmin: (newAdmin: principal) -> (ApiResult);
@@ -698,6 +749,7 @@ service : {
   getDocumentUploadStatus: (campaignId: text) ->
    (opt DocumentUploadStatus) query;
   getMyAccount: () -> (opt UserAccountShared) query;
+  getMyPayments: () -> (vec PaymentView) query;
   getPresetAddresses: (presetId: text) -> (vec VerifiedAddress) query;
   getPresetAddressesPage: (presetId: text, offset: nat, limit: nat) ->
    (RecipientPage) query;

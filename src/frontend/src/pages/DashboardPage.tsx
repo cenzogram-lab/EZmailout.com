@@ -2,6 +2,7 @@ import { SignInPrompt } from "@/components/billing/SignInPrompt";
 import { StatusBadge } from "@/components/campaigns/StatusBadge";
 import { AccountCard } from "@/components/dashboard/AccountCard";
 import { CreditsWidget } from "@/components/dashboard/CreditsWidget";
+import { PaymentHistory } from "@/components/dashboard/PaymentHistory";
 import { ReferralWidget } from "@/components/dashboard/ReferralWidget";
 import { RewardsBanner } from "@/components/dashboard/RewardsBanner";
 import { SubscriptionWidget } from "@/components/dashboard/SubscriptionWidget";
@@ -200,6 +201,7 @@ export function DashboardPage() {
               <QuickLinks />
               <RecentCampaigns />
               <CreditsWidget />
+              <PaymentHistory />
               <div id="referrals" className="scroll-mt-24">
                 <ReferralWidget />
               </div>

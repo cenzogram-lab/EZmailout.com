@@ -579,6 +579,49 @@ export const TransformationOutput = IDL.Record({
   'headers' : IDL.Vec(http_header),
 });
 
+export const RefundView = IDL.Record({
+  'status' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'refundId' : IDL.Text,
+  'amountCents' : IDL.Nat,
+  'reason' : IDL.Text,
+});
+export const PaymentView = IDL.Record({
+  'paymentIntentId' : IDL.Text,
+  'campaignName' : IDL.Opt(IDL.Text),
+  'refundedCents' : IDL.Nat,
+  'creditPack' : IDL.Opt(CreditPack),
+  'refunds' : IDL.Vec(RefundView),
+  'userId' : IDL.Text,
+  'purpose' : PaymentPurpose,
+  'createdAt' : IDL.Int,
+  'state' : PaymentState,
+  'campaignId' : IDL.Opt(IDL.Text),
+  'campaignInProduction' : IDL.Bool,
+  'testMode' : IDL.Bool,
+  'settledCampaign' : IDL.Bool,
+  'amountCents' : IDL.Nat,
+  'confirmedAt' : IDL.Opt(IDL.Int),
+});
+export const RefundInput = IDL.Record({
+  'paymentIntentId' : IDL.Text,
+  'revokeEffects' : IDL.Bool,
+  'amountCents' : IDL.Nat,
+  'reason' : IDL.Text,
+});
+export const RefundResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'refundId' : IDL.Opt(IDL.Text),
+  'error' : IDL.Opt(IDL.Text),
+  'creditBalance' : IDL.Opt(IDL.Nat),
+  'refundedCents' : IDL.Nat,
+});
+export const CreditAdjustResult = IDL.Record({
+  'ok' : IDL.Bool,
+  'error' : IDL.Opt(IDL.Text),
+  'creditBalance' : IDL.Opt(IDL.Nat),
+});
+
 export const idlService = IDL.Service({
   '_initialize_access_control' : IDL.Func([], [], []),
   '_internet_identity_sign_in_finish' : IDL.Func(
@@ -587,6 +630,13 @@ export const idlService = IDL.Service({
       [],
     ),
   '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+  'adminAdjustCredits' : IDL.Func(
+      [IDL.Text, IDL.Int, IDL.Text],
+      [CreditAdjustResult],
+      [],
+    ),
+  'adminFindPayments' : IDL.Func([IDL.Text], [IDL.Vec(PaymentView)], ['query']),
+  'adminRefundPayment' : IDL.Func([RefundInput], [RefundResult], []),
   'addCampaignRecipients' : IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
       [RecipientStageResult],
@@ -657,6 +707,7 @@ export const idlService = IDL.Service({
   'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
   'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
   'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
+  'getMyPayments' : IDL.Func([], [IDL.Vec(PaymentView)], ['query']),
   'getDocumentUploadStatus' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(DocumentUploadStatus)],
@@ -1310,6 +1361,49 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(http_header),
   });
+  const RefundView = IDL.Record({
+    'status' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'refundId' : IDL.Text,
+    'amountCents' : IDL.Nat,
+    'reason' : IDL.Text,
+  });
+  const PaymentView = IDL.Record({
+    'paymentIntentId' : IDL.Text,
+    'campaignName' : IDL.Opt(IDL.Text),
+    'refundedCents' : IDL.Nat,
+    'creditPack' : IDL.Opt(CreditPack),
+    'refunds' : IDL.Vec(RefundView),
+    'userId' : IDL.Text,
+    'purpose' : PaymentPurpose,
+    'createdAt' : IDL.Int,
+    'state' : PaymentState,
+    'campaignId' : IDL.Opt(IDL.Text),
+    'campaignInProduction' : IDL.Bool,
+    'testMode' : IDL.Bool,
+    'settledCampaign' : IDL.Bool,
+    'amountCents' : IDL.Nat,
+    'confirmedAt' : IDL.Opt(IDL.Int),
+  });
+  const RefundInput = IDL.Record({
+    'paymentIntentId' : IDL.Text,
+    'revokeEffects' : IDL.Bool,
+    'amountCents' : IDL.Nat,
+    'reason' : IDL.Text,
+  });
+  const RefundResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'refundId' : IDL.Opt(IDL.Text),
+    'error' : IDL.Opt(IDL.Text),
+    'creditBalance' : IDL.Opt(IDL.Nat),
+    'refundedCents' : IDL.Nat,
+  });
+  const CreditAdjustResult = IDL.Record({
+    'ok' : IDL.Bool,
+    'error' : IDL.Opt(IDL.Text),
+    'creditBalance' : IDL.Opt(IDL.Nat),
+  });
+
   return IDL.Service({
     '_initialize_access_control' : IDL.Func([], [], []),
     '_internet_identity_sign_in_finish' : IDL.Func(
@@ -1318,6 +1412,13 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+    'adminAdjustCredits' : IDL.Func(
+        [IDL.Text, IDL.Int, IDL.Text],
+        [CreditAdjustResult],
+        [],
+      ),
+    'adminFindPayments' : IDL.Func([IDL.Text], [IDL.Vec(PaymentView)], ['query']),
+    'adminRefundPayment' : IDL.Func([RefundInput], [RefundResult], []),
     'addCampaignRecipients' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Vec(VerifiedAddress)],
         [RecipientStageResult],
@@ -1388,6 +1489,7 @@ export const idlFactory = ({ IDL }) => {
     'getCampaigns' : IDL.Func([], [IDL.Vec(CampaignSummary)], ['query']),
     'getCanvasState' : IDL.Func([IDL.Text], [IDL.Opt(CanvasState)], ['query']),
     'getCreditLedger' : IDL.Func([], [IDL.Vec(CreditLedgerEntry)], ['query']),
+    'getMyPayments' : IDL.Func([], [IDL.Vec(PaymentView)], ['query']),
     'getDocumentUploadStatus' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(DocumentUploadStatus)],

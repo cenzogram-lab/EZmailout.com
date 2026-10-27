@@ -126,6 +126,71 @@ module {
     #Subscription;
   };
 
+  /// A refund the admin issued through the payment processor.
+  public type RefundRecord = {
+    refundId : Text;
+    amountCents : Nat;
+    reason : Text;
+    /// The processor's refund status ("succeeded", "pending", …).
+    status : Text;
+    createdAt : Int;
+    /// Who issued it (principal text).
+    by : Text;
+  };
+
+  public type RefundView = {
+    refundId : Text;
+    amountCents : Nat;
+    reason : Text;
+    status : Text;
+    createdAt : Int;
+  };
+
+  /// A payment as its owner (payment history, the invoice number is
+  /// `paymentIntentId`) and the admin (search, refunds) see it.
+  public type PaymentView = {
+    paymentIntentId : Text;
+    userId : Text;
+    purpose : PaymentPurpose;
+    amountCents : Nat;
+    refundedCents : Nat;
+    state : PaymentState;
+    createdAt : Int;
+    confirmedAt : ?Int;
+    testMode : Bool;
+    creditPack : ?CreditPack;
+    campaignId : ?Text;
+    campaignName : ?Text;
+    /// This payment is the one that paid its campaign (not a duplicate).
+    settledCampaign : Bool;
+    /// The campaign's print file is already with the print partner.
+    campaignInProduction : Bool;
+    refunds : [RefundView];
+  };
+
+  public type RefundInput = {
+    paymentIntentId : Text;
+    amountCents : Nat;
+    reason : Text;
+    /// Also take back what the payment granted (its campaign, credits or
+    /// membership days) where that is still possible.
+    revokeEffects : Bool;
+  };
+
+  public type RefundResult = {
+    ok : Bool;
+    error : ?Text;
+    refundId : ?Text;
+    refundedCents : Nat;
+    creditBalance : ?Nat;
+  };
+
+  public type CreditAdjustResult = {
+    ok : Bool;
+    error : ?Text;
+    creditBalance : ?Nat;
+  };
+
   public type PaymentState = {
     #Created;
     #Succeeded;

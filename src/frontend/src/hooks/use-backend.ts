@@ -18,12 +18,14 @@ import type {
   ConfirmPaymentResult,
   CreateCampaignInput,
   CreateCampaignResult,
+  CreditAdjustResult,
   CreditLedgerEntry,
   CreditPack,
   DispatchResult,
   DocumentUploadStatus,
   PaymentIntentResult,
   PaymentPurpose,
+  PaymentView,
   PresetResult,
   PricingRow,
   PublicConfig,
@@ -31,6 +33,8 @@ import type {
   RecipientPage,
   RecipientStageResult,
   ReferralStats,
+  RefundInput,
+  RefundResult,
   StampyReply,
   StampyTurn,
   SupportTicketInput,
@@ -550,6 +554,70 @@ export function useCreditLedger(enabled = true) {
   });
 }
 
+/** The caller's completed payments: their history and invoice numbers. */
+export function useMyPayments(enabled = true) {
+  const { actor, ready, caller } = useBackendActor();
+  return useQuery<PaymentView[]>({
+    queryKey: ["myPayments", caller],
+    queryFn: async () => (actor ? actor.getMyPayments() : []),
+    enabled: ready && enabled,
+  });
+}
+
+/**
+ * Admin: payments matching an invoice number, account id, campaign id or
+ * email (the newest when `search` is empty).
+ */
+export function useAdminPayments(search: string, enabled: boolean) {
+  const { actor, ready, caller } = useBackendActor();
+  return useQuery<PaymentView[]>({
+    queryKey: ["adminPayments", caller, search],
+    queryFn: async () => (actor ? actor.adminFindPayments(search) : []),
+    enabled: ready && enabled,
+  });
+}
+
+function invalidatePaymentViews(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.invalidateQueries({ queryKey: ["adminPayments"] });
+  queryClient.invalidateQueries({ queryKey: ["myPayments"] });
+  queryClient.invalidateQueries({ queryKey: ["myAccount"] });
+  queryClient.invalidateQueries({ queryKey: ["creditLedger"] });
+  queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+  queryClient.invalidateQueries({ queryKey: ["campaign"] });
+}
+
+/** Admin: refunds part or all of a payment to the customer's card. */
+export function useAdminRefundPayment() {
+  const queryClient = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation<RefundResult, Error, RefundInput>({
+    mutationFn: async (input) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.adminRefundPayment(input);
+    },
+    onSettled: () => invalidatePaymentViews(queryClient),
+  });
+}
+
+/** Admin: adds (or takes back) AI credits on an account, with a note. */
+export function useAdminAdjustCredits() {
+  const queryClient = useQueryClient();
+  const { actor } = useBackendActor();
+  return useMutation<
+    CreditAdjustResult,
+    Error,
+    { userId: string; delta: bigint; note: string }
+  >({
+    mutationFn: async ({ userId, delta, note }) => {
+      if (!actor) throw new Error(NO_BACKEND);
+      return actor.adminAdjustCredits(userId, delta, note);
+    },
+    onSettled: () => invalidatePaymentViews(queryClient),
+  });
+}
+
 export function useAiPricing() {
   const { actor, ready } = useBackendActor();
   return useQuery<AiPricing | null>({
@@ -599,6 +667,7 @@ export function useConfirmPayment() {
         discardWizardDraft();
       }
       queryClient.invalidateQueries({ queryKey: ["myAccount"] });
+      queryClient.invalidateQueries({ queryKey: ["myPayments"] });
       queryClient.invalidateQueries({ queryKey: ["creditLedger"] });
       queryClient.invalidateQueries({ queryKey: ["referralStats"] });
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });

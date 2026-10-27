@@ -21,6 +21,7 @@ import Time "mo:core/Time";
 import Int "mo:core/Int";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
+import Set "mo:core/Set";
 
 mixin (
   accounts : Map.Map<Text, Account.UserAccount>,
@@ -32,6 +33,7 @@ mixin (
   campaignRecipients : Map.Map<Text, [Common.VerifiedAddress]>,
   trackingEvents : List.List<Types.TrackingEvent>,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
+  paymentRefunds : Map.Map<Text, [Account.RefundRecord]>,
   state : Common.Counters,
   adminKeysState : Common.AdminState,
   transformFn : Http.TransformFn,
@@ -208,6 +210,7 @@ mixin (
           case (?c) {
             if (c.ownerId != a.id and not AdminLib.isAdmin(adminKeysState, caller)) { return intentFail("You do not own this campaign") };
             if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
+            if (c.paymentStatus == #Refunded) { return intentFail("This order was refunded. Re-run it from Campaigns to order it again.") };
             if (c.totalAmountChargedCents == 0) { return intentFail("Campaign total is zero") };
             if (c.totalAmountChargedCents < PricingLib.minOrderCents and not adminKeysState.sandboxCheckout) {
               return intentFail("Card payments start at $0.50, and this order comes to less. Start a new campaign with a few more pieces.");
@@ -529,11 +532,11 @@ mixin (
     switch (record.reference) {
       case (?id) {
         switch (campaigns.get(id)) {
-          case null ?"This draft was removed before the payment arrived (unpaid drafts expire after 14 days). The payment is recorded; contact support for a refund.";
-          case (?c) { if (c.paymentIntentId == ?record.paymentIntentId) null else ?"This campaign was already paid by another checkout, so this second payment bought nothing. It is recorded; contact support for a refund." };
+          case null ?("This draft was removed before the payment arrived (unpaid drafts expire after 14 days). The payment is recorded; contact support with your account ID and invoice " # record.paymentIntentId # " for a refund.");
+          case (?c) { if (c.paymentIntentId == ?record.paymentIntentId) null else ?("This campaign was already paid by another checkout, so this second payment bought nothing. It is recorded; contact support with your account ID and invoice " # record.paymentIntentId # " for a refund.") };
         };
       };
-      case null ?"This payment is not linked to a campaign. It is recorded; contact support for a refund.";
+      case null ?("This payment is not linked to a campaign. It is recorded; contact support with your account ID and invoice " # record.paymentIntentId # " for a refund.");
     };
   };
 
@@ -630,5 +633,216 @@ mixin (
         if (tryReferralReward(record)) { { ok = true; error = null } } else { { ok = false; error = ?"No referral reward applies (already granted, no referrer, not the first payment, or referrer's subscription inactive)" } };
       };
     };
+  };
+  // ─── Payment history and refunds ─────────────────────────────────────────
+
+  /// Payments with a refund running, so two clicks never refund twice.
+  transient let refundsInFlight = Set.empty<Text>();
+  transient let maxRefundReasonChars : Nat = 200;
+  transient let maxCreditAdjustment : Nat = 1_000_000;
+
+  private func refundDollars(cents : Nat) : Text {
+    let c = cents % 100;
+    "$" # (cents / 100).toText() # "." # (if (c < 10) "0" else "") # c.toText();
+  };
+
+  private func refundsOf(paymentIntentId : Text) : [Account.RefundRecord] {
+    switch (paymentRefunds.get(paymentIntentId)) { case (?r) r; case null [] };
+  };
+
+  /// What has been given back for a payment (refunds the processor did not
+  /// refuse).
+  private func refundedCents(paymentIntentId : Text) : Nat {
+    var total = 0;
+    for (r in refundsOf(paymentIntentId).vals()) {
+      if (r.status != "failed" and r.status != "canceled") { total += r.amountCents };
+    };
+    total;
+  };
+
+  private func paymentView(p : Account.PaymentRecord) : Account.PaymentView {
+    var campaignId : ?Text = null;
+    var campaignName : ?Text = null;
+    var settled = false;
+    var inProduction = false;
+    if (p.purpose == #CampaignOrder) {
+      campaignId := p.reference;
+      switch (p.reference) {
+        case (?id) {
+          switch (campaigns.get(id)) {
+            case (?c) {
+              campaignName := ?c.name;
+              settled := c.paymentIntentId == ?p.paymentIntentId;
+              inProduction := c.printDocumentId != null or c.productionStatus == #Submitted;
+            };
+            case null {};
+          };
+        };
+        case null {};
+      };
+    };
+    {
+      paymentIntentId = p.paymentIntentId;
+      userId = p.userId;
+      purpose = p.purpose;
+      amountCents = p.amountCents;
+      refundedCents = refundedCents(p.paymentIntentId);
+      state = p.state;
+      createdAt = p.createdAt;
+      confirmedAt = p.confirmedAt;
+      testMode = p.sandbox;
+      creditPack = p.creditPack;
+      campaignId;
+      campaignName;
+      settledCampaign = settled;
+      campaignInProduction = inProduction;
+      refunds = refundsOf(p.paymentIntentId).map(func(r : Account.RefundRecord) : Account.RefundView = { refundId = r.refundId; amountCents = r.amountCents; reason = r.reason; status = r.status; createdAt = r.createdAt });
+    };
+  };
+
+  private func newestFirst(list : List.List<Account.PaymentRecord>, max : Nat) : [Account.PaymentView] {
+    let at = func(p : Account.PaymentRecord) : Int = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
+    let sorted = list.toArray().sort(func(a : Account.PaymentRecord, b : Account.PaymentRecord) : Order.Order = Int.compare(at(b), at(a)));
+    sorted.sliceToArray(0, Nat.min(sorted.size(), max)).map(paymentView);
+  };
+
+  /// The caller's completed payments, newest first (at most 100): the
+  /// payment history, whose payment ids are the invoice numbers a customer
+  /// quotes to support.
+  public shared query ({ caller }) func getMyPayments() : async [Account.PaymentView] {
+    if (not signedIn(caller)) { return [] };
+    let id = caller.toText();
+    let mine = List.empty<Account.PaymentRecord>();
+    for ((_, p) in payments.entries()) {
+      if (p.userId == id and (p.state == #Succeeded or p.state == #Waived)) { mine.add(p) };
+    };
+    newestFirst(mine, 100);
+  };
+
+  /// Admin only: payments matching an invoice number (payment id), an
+  /// account id, a campaign id or an account email, newest first (at most
+  /// 50); an empty search lists the newest completed payments. Anyone else
+  /// gets nothing.
+  public shared query ({ caller }) func adminFindPayments(searchText : Text) : async [Account.PaymentView] {
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { return [] };
+    let q = AddressLib.sanitizeText(searchText).trim(#predicate(func(c : Char) : Bool { c.isWhitespace() }));
+    let email = q.toLower();
+    let found = List.empty<Account.PaymentRecord>();
+    for ((_, p) in payments.entries()) {
+      let matches = if (q == "") {
+        p.state == #Succeeded or p.state == #Waived;
+      } else {
+        p.paymentIntentId == q or p.userId == q or p.reference == ?q or (
+          switch (accounts.get(p.userId)) { case (?a) a.email != "" and a.email.toLower() == email; case null false }
+        );
+      };
+      if (matches) { found.add(p) };
+    };
+    newestFirst(found, 50);
+  };
+
+  /// Admin only: refunds `amountCents` of a completed payment to the card it
+  /// was paid with, through the payment processor, and records it. With
+  /// `revokeEffects`, what the payment granted is taken back where it still
+  /// can be: a fully refunded campaign that has not gone to print is marked
+  /// refunded (it can no longer be sent to print or paid again), a credit
+  /// pack's credits are deducted in proportion, and a fully refunded
+  /// membership loses its 30 days and its monthly allowance.
+  public shared ({ caller }) func adminRefundPayment(input : Account.RefundInput) : async Account.RefundResult {
+    let fail = func(msg : Text) : Account.RefundResult { { ok = false; error = ?msg; refundId = null; refundedCents = 0; creditBalance = null } };
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { return fail("Only the admin can refund payments") };
+    let id = AddressLib.sanitizeText(input.paymentIntentId);
+    let p = switch (payments.get(id)) { case (?r) r; case null { return fail("Unknown payment") } };
+    if (p.state != #Succeeded) { return fail("Only a completed payment can be refunded") };
+    if (p.sandbox) { return fail("A test-mode payment charged nothing, so there is nothing to refund") };
+    let already = refundedCents(id);
+    let remaining = Nat.sub(p.amountCents, Nat.min(already, p.amountCents));
+    if (remaining == 0) { return fail("This payment has already been refunded in full") };
+    if (input.amountCents == 0 or input.amountCents > remaining) {
+      return fail("Refund between $0.01 and " # refundDollars(remaining) # ", what is left of this payment");
+    };
+    let reason = Limits.clip(AddressLib.sanitizeText(input.reason), maxRefundReasonChars);
+    if (reason == "") { return fail("Give a reason for the refund") };
+    let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("The payment processor's secret key is not set") } };
+    if (refundsInFlight.contains(id)) { return fail("A refund for this payment is already running") };
+    refundsInFlight.add(id);
+    try {
+      // Keyed by the refunds recorded so far: a retry after a lost answer
+      // gets the same refund back instead of a second one.
+      let key = "ez-refund-" # id # "-" # refundsOf(id).size().toText();
+      let by = caller.toText();
+      let resp = await* Http.postText(Stripe.apiBase # "/refunds", Stripe.headers(secret, ?key), Stripe.refundBody(id, input.amountCents, reason, by), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      if (not Http.isSuccess(resp)) {
+        return fail("The payment processor refused the refund: " # (if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body)));
+      };
+      let refund = switch (Stripe.parseRefund(resp.body)) { case (?r) r; case null { return fail("Unexpected answer from the payment processor; check its dashboard before trying again") } };
+      if (refund.status == "failed" or refund.status == "canceled") {
+        return fail("The payment processor reports the refund " # refund.status);
+      };
+      let amount = if (refund.amount > 0) refund.amount else input.amountCents;
+      let now = Time.now();
+      paymentRefunds.add(id, refundsOf(id).concat([{ refundId = refund.id; amountCents = amount; reason; status = refund.status; createdAt = now; by }]));
+      let full = already + amount >= p.amountCents;
+      var balance : ?Nat = null;
+      switch (accounts.get(p.userId)) {
+        case (?a) {
+          switch (p.purpose) {
+            case (#CampaignOrder) {
+              switch (p.reference) {
+                case (?cid) {
+                  switch (campaigns.get(cid)) {
+                    case (?c) {
+                      let settles = c.paymentIntentId == ?id;
+                      let printing = c.printDocumentId != null or c.productionStatus == #Submitted;
+                      if (input.revokeEffects and settles and full and not printing and c.paymentStatus == #Paid) {
+                        c.paymentStatus := #Refunded;
+                        c.updatedAt := now;
+                      };
+                      CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.refunded", refund.id, #System, ?("Refunded " # refundDollars(amount) # ": " # reason));
+                    };
+                    case null {};
+                  };
+                };
+                case null {};
+              };
+            };
+            case (#CreditPack) {
+              if (input.revokeEffects) {
+                let info = Credits.packInfo(switch (p.creditPack) { case (?k) k; case null #Starter });
+                let take = info.credits * amount / p.amountCents;
+                if (take > 0) {
+                  balance := ?AccountLib.applyCredits(creditLedger, state, a, -take, "refund:" # Credits.packName(info.pack), ?id);
+                };
+              };
+            };
+            case (#Subscription) {
+              if (input.revokeEffects and full) {
+                a.subscriptionRenewsAt := Int.max(now, a.subscriptionRenewsAt - Credits.thirtyDaysNs);
+                if (a.subscriptionRenewsAt <= now) { a.subscriptionActive := false };
+                balance := ?AccountLib.applyCredits(creditLedger, state, a, -Credits.monthlyAllowance, "refund:membership", ?id);
+              };
+            };
+          };
+          if (balance == null) { balance := ?a.creditBalance };
+        };
+        case null {};
+      };
+      { ok = true; error = null; refundId = ?refund.id; refundedCents = already + amount; creditBalance = balance };
+    } finally {
+      refundsInFlight.remove(id);
+    };
+  };
+
+  /// Admin only: adds AI credits to an account (a goodwill credit) or takes
+  /// them away (never below zero), with a note on the account's ledger.
+  public shared ({ caller }) func adminAdjustCredits(userId : Text, delta : Int, note : Text) : async Account.CreditAdjustResult {
+    let fail = func(msg : Text) : Account.CreditAdjustResult { { ok = false; error = ?msg; creditBalance = null } };
+    if (not AdminLib.isAdmin(adminKeysState, caller)) { return fail("Only the admin can adjust credits") };
+    let a = switch (accounts.get(AddressLib.sanitizeText(userId))) { case (?x) x; case null { return fail("Unknown account") } };
+    if (delta == 0 or Int.abs(delta) > maxCreditAdjustment) { return fail("Adjust by between 1 and 1,000,000 credits") };
+    let clean = Limits.clip(AddressLib.sanitizeText(note), maxRefundReasonChars);
+    if (clean == "") { return fail("Add a note saying why") };
+    let balance = AccountLib.applyCredits(creditLedger, state, a, delta, "admin_adjustment: " # clean, null);
+    { ok = true; error = null; creditBalance = ?balance };
   };
 };

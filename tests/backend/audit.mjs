@@ -380,6 +380,37 @@ const sections = {
     const w3 = await call(env.pic, up, env.deferred(waiter).createPaymentIntent({ CreditPack: null }, [], [{ Agency: null }]));
     check(w3.ok && w3.paymentIntentId[0] !== w1.paymentIntentId[0] && w3.clientSecret.length === 1, "a cancelled checkout is replaced by a new one", w3);
     delete state.lookup;
+
+    // Payment history and refunds: the customer quotes the invoice number
+    // (payment id) from their history; the admin finds it and refunds it.
+    const history = await env.as(tester).getMyPayments();
+    const invoice = history.find((p) => p.paymentIntentId === ti.paymentIntentId[0]);
+    check(invoice && invoice.amountCents === 1500n && invoice.refundedCents === 0n && invoice.state.Succeeded !== undefined, "the customer's payment history lists the paid pack under its invoice number", history.map((p) => p.paymentIntentId));
+    check((await env.as(ident(102)).adminFindPayments(tester.getPrincipal().toText())).length === 0, "anyone but the admin finds no payments");
+    const byAccount = await env.as(env.controller).adminFindPayments(tester.getPrincipal().toText());
+    const byInvoice = await env.as(env.controller).adminFindPayments(ti.paymentIntentId[0]);
+    check(byAccount.some((p) => p.paymentIntentId === ti.paymentIntentId[0]) && byInvoice.length === 1, "the admin finds the payment by account id and by invoice number", { byAccount: byAccount.length, byInvoice: byInvoice.length });
+    const notAdmin = await call(env.pic, up, env.deferred(tester).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 100n, reason: "x", revokeEffects: false }));
+    check(!notAdmin.ok && (state.refunds ?? []).length === 0, "a customer cannot refund their own payment", notAdmin.error);
+    const balanceBefore = (await env.as(tester).getMyAccount())[0].creditBalance;
+    const part = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 500n, reason: "Requested by customer", revokeEffects: true }));
+    const afterPart = (await env.as(tester).getMyAccount())[0].creditBalance;
+    check(part.ok && part.refundedCents === 500n && state.refunds?.[0]?.amount === 500 && state.refunds[0].payment_intent === ti.paymentIntentId[0] && balanceBefore - afterPart === 533n, "a partial refund goes back to the card and takes back its share of the pack's credits", { error: part.error, balanceBefore, afterPart });
+    const tooMuch = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 1001n, reason: "x", revokeEffects: false }));
+    check(!tooMuch.ok && /\$10\.00/.test(tooMuch.error[0] ?? ""), "a refund can never exceed what is left of the payment", tooMuch.error);
+    state.refundFails = true;
+    const refundRefused = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 100n, reason: "x", revokeEffects: false }));
+    state.refundFails = false;
+    check(!refundRefused.ok && /already been refunded/.test(refundRefused.error[0] ?? "") && (await env.as(env.controller).adminFindPayments(ti.paymentIntentId[0]))[0].refundedCents === 500n, "a refund the processor refuses records nothing", refundRefused.error);
+    const rest = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 1000n, reason: "Requested by customer", revokeEffects: false }));
+    const done = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 1n, reason: "x", revokeEffects: false }));
+    const view = (await env.as(tester).getMyPayments()).find((p) => p.paymentIntentId === ti.paymentIntentId[0]);
+    check(rest.ok && rest.refundedCents === 1500n && !done.ok && /in full/.test(done.error[0] ?? "") && view.refunds.length === 2, "the rest is refunded once, and the history shows both refunds", { rest: rest.error, done: done.error });
+    // Goodwill credits, with a note on the customer's ledger.
+    const adj = await env.as(env.controller).adminAdjustCredits(tester.getPrincipal().toText(), 250n, "Sorry for the trouble");
+    const ledger2 = await env.as(tester).getCreditLedger();
+    check(adj.ok && adj.creditBalance[0] === afterPart + 250n && ledger2.some((e) => e.delta === 250n && e.reason.includes("Sorry for the trouble")), "the admin can credit an account, noted on its ledger", adj);
+    check(!(await env.as(tester).adminAdjustCredits(tester.getPrincipal().toText(), 1000n, "free")).ok, "a customer cannot credit themselves");
   },
 
   // ─── 7. OpenAI: credits charged before, refunded on failure ──────────────
@@ -557,6 +588,14 @@ sections.orders = async function orders() {
   check(intent.ok && paid.ok, "with its file staged the campaign is paid", { intent: intent.error, paid: paid.error });
   const swap = await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "other.pdf", pdf(9));
   check(!swap.ok && /paid/.test(swap.error[0] ?? ""), "a paid campaign's print file can no longer be replaced", swap.error);
+
+  // A full refund of a campaign that has not gone to print: it can no
+  // longer be sent to print or paid again.
+  const campaignRefund = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: intent.paymentIntentId[0], amountCents: BigInt(pay.intents.get(intent.paymentIntentId[0]).amount), reason: "Order cancelled before printing", revokeEffects: true }));
+  const refundedCampaign = (await o.getCampaign(cid))[0];
+  const noDispatch = await call(env.pic, up, env.deferred(owner).dispatchPrintJob(cid));
+  const noRepay = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
+  check(campaignRefund.ok && refundedCampaign.paymentStatus.Refunded !== undefined && !noDispatch.ok && !noRepay.ok && /refunded/.test(noRepay.error[0] ?? ""), "a refunded campaign can no longer be sent to print or paid again", { refund: campaignRefund.error, dispatch: noDispatch.error, repay: noRepay.error });
 
   // Deleting a draft closes its open checkout first; one that cannot be
   // closed (it may be paid) keeps the draft.

@@ -552,6 +552,48 @@ export interface http_request_result {
   'body' : Uint8Array,
   'headers' : Array<http_header>,
 }
+export interface RefundView {
+  'status' : string,
+  'createdAt' : bigint,
+  'refundId' : string,
+  'amountCents' : bigint,
+  'reason' : string,
+}
+export interface PaymentView {
+  'paymentIntentId' : string,
+  'campaignName' : [] | [string],
+  'refundedCents' : bigint,
+  'creditPack' : [] | [CreditPack],
+  'refunds' : Array<RefundView>,
+  'userId' : string,
+  'purpose' : PaymentPurpose,
+  'createdAt' : bigint,
+  'state' : PaymentState,
+  'campaignId' : [] | [string],
+  'campaignInProduction' : boolean,
+  'testMode' : boolean,
+  'settledCampaign' : boolean,
+  'amountCents' : bigint,
+  'confirmedAt' : [] | [bigint],
+}
+export interface RefundInput {
+  'paymentIntentId' : string,
+  'revokeEffects' : boolean,
+  'amountCents' : bigint,
+  'reason' : string,
+}
+export interface RefundResult {
+  'ok' : boolean,
+  'refundId' : [] | [string],
+  'error' : [] | [string],
+  'creditBalance' : [] | [bigint],
+  'refundedCents' : bigint,
+}
+export interface CreditAdjustResult {
+  'ok' : boolean,
+  'error' : [] | [string],
+  'creditBalance' : [] | [bigint],
+}
 export interface _SERVICE {
   '_initialize_access_control' : ActorMethod<[], undefined>,
   '_internet_identity_sign_in_finish' : ActorMethod<
@@ -603,7 +645,14 @@ export interface _SERVICE {
   >,
   'getCampaigns' : ActorMethod<[], Array<CampaignSummary>>,
   'getCanvasState' : ActorMethod<[string], [] | [CanvasState]>,
+  'adminAdjustCredits' : ActorMethod<
+    [string, bigint, string],
+    CreditAdjustResult
+  >,
+  'adminFindPayments' : ActorMethod<[string], Array<PaymentView>>,
+  'adminRefundPayment' : ActorMethod<[RefundInput], RefundResult>,
   'getCreditLedger' : ActorMethod<[], Array<CreditLedgerEntry>>,
+  'getMyPayments' : ActorMethod<[], Array<PaymentView>>,
   'getDocumentUploadStatus' : ActorMethod<
     [string],
     [] | [DocumentUploadStatus]

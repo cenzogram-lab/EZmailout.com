@@ -38,6 +38,7 @@ actor {
   let supportEmailOutbox : Map.Map<Text, Support.EmailDelivery>;
   let printBatches : Map.Map<Text, [Types.PrintBatch]>;
   let printEnvironments : Map.Map<Text, Common.FulfilmentEnvironment>;
+  let paymentRefunds : Map.Map<Text, [Account.RefundRecord]>;
 
   /// Transform callback required by the IC for HTTPS outcalls (strips headers).
   public query func transform(input : Http.TransformationInput) : async Http.TransformationOutput {
@@ -48,7 +49,7 @@ actor {
   include AdminApi(adminKeysState);
   include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments, accounts, transform);
   include AudienceApi(savedAudiencePresets, presetMeta, state, adminKeysState, transform);
-  include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
+  include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, campaignRecipients, trackingEvents, documentUploads, paymentRefunds, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
   include ProductionApi(campaigns, campaignRecipients, printBatches, printEnvironments, trackingEvents, documentUploads, state, adminKeysState, transform);
   include SupportApi(supportTickets, supportEmailOutbox, adminKeysState, transform);

@@ -176,6 +176,14 @@ const INTENTS: Intent[] = [
     chips: ["catalog"],
   },
   {
+    // Before the general support intent: a refund needs two details.
+    keywords:
+      /\b(refund\w*|charged twice|double charge\w*|money back|reimburs\w*)\b/i,
+    answer: () =>
+      "For a refund, open Contact Support and include your account ID (Dashboard → Account) and the invoice number of the payment (Dashboard → Payment history). Our team refunds it to the card you paid with.",
+    chips: ["support"],
+  },
+  {
     keywords:
       /\b(support|human|person|agent|contact|help me|problem|issue|bug|broken|refund|complain\w*|error)\b/i,
     answer: () =>

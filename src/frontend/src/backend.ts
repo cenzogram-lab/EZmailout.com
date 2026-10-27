@@ -638,10 +638,55 @@ export interface AccountResult {
     error?: string;
     ok: boolean;
 }
+export interface RefundView {
+    amountCents: bigint;
+    createdAt: bigint;
+    reason: string;
+    refundId: string;
+    status: string;
+}
+export interface PaymentView {
+    amountCents: bigint;
+    campaignId?: string;
+    campaignInProduction: boolean;
+    campaignName?: string;
+    confirmedAt?: bigint;
+    createdAt: bigint;
+    creditPack?: CreditPack;
+    paymentIntentId: string;
+    purpose: PaymentPurpose;
+    refundedCents: bigint;
+    refunds: Array<RefundView>;
+    settledCampaign: boolean;
+    state: PaymentState;
+    testMode: boolean;
+    userId: string;
+}
+export interface RefundInput {
+    amountCents: bigint;
+    paymentIntentId: string;
+    reason: string;
+    revokeEffects: boolean;
+}
+export interface RefundResult {
+    creditBalance?: bigint;
+    error?: string;
+    ok: boolean;
+    refundId?: string;
+    refundedCents: bigint;
+}
+export interface CreditAdjustResult {
+    creditBalance?: bigint;
+    error?: string;
+    ok: boolean;
+}
 export interface backendInterface {
     _initialize_access_control(): Promise<void>;
     _internet_identity_sign_in_finish(): Promise<{ err: {  } } | { ok: null }>;
     _internet_identity_sign_in_start(): Promise<Uint8Array>;
+    adminAdjustCredits(arg0: string, arg1: bigint, arg2: string): Promise<CreditAdjustResult>;
+    adminFindPayments(arg0: string): Promise<Array<PaymentView>>;
+    adminRefundPayment(arg0: RefundInput): Promise<RefundResult>;
     addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
     addPresetAddresses(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult>;
     applyReferralReward(arg0: string): Promise<ApiResult>;
@@ -668,6 +713,7 @@ export interface backendInterface {
     getCampaigns(): Promise<Array<CampaignSummary>>;
     getCanvasState(arg0: string): Promise<CanvasState | null>;
     getCreditLedger(): Promise<Array<CreditLedgerEntry>>;
+    getMyPayments(): Promise<Array<PaymentView>>;
     getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null>;
     getMyAccount(): Promise<UserAccountShared | null>;
     getPresetAddresses(arg0: string): Promise<Array<VerifiedAddress>>;
@@ -808,6 +854,15 @@ export class Backend implements backendInterface {
     async _internet_identity_sign_in_start(): Promise<Uint8Array> {
         return this._call("_internet_identity_sign_in_start", []) as Promise<Uint8Array>;
     }
+    async adminAdjustCredits(arg0: string, arg1: bigint, arg2: string): Promise<CreditAdjustResult> {
+        return this._call("adminAdjustCredits", [arg0, arg1, arg2]) as Promise<CreditAdjustResult>;
+    }
+    async adminFindPayments(arg0: string): Promise<Array<PaymentView>> {
+        return this._call("adminFindPayments", [arg0]) as Promise<Array<PaymentView>>;
+    }
+    async adminRefundPayment(arg0: RefundInput): Promise<RefundResult> {
+        return this._call("adminRefundPayment", [arg0]) as Promise<RefundResult>;
+    }
     async addCampaignRecipients(arg0: string, arg1: bigint, arg2: Array<VerifiedAddress>): Promise<RecipientStageResult> {
         return this._call("addCampaignRecipients", [arg0, arg1, arg2]) as Promise<RecipientStageResult>;
     }
@@ -885,6 +940,9 @@ export class Backend implements backendInterface {
     }
     async getCreditLedger(): Promise<Array<CreditLedgerEntry>> {
         return this._call("getCreditLedger", []) as Promise<Array<CreditLedgerEntry>>;
+    }
+    async getMyPayments(): Promise<Array<PaymentView>> {
+        return this._call("getMyPayments", []) as Promise<Array<PaymentView>>;
     }
     async getDocumentUploadStatus(arg0: string): Promise<DocumentUploadStatus | null> {
         return this._call("getDocumentUploadStatus", [arg0]) as Promise<DocumentUploadStatus | null>;

@@ -104,6 +104,14 @@ export function fakeStripe(state = {}) {
       intents.set(id, { id, amount, currency: "usd", status: state.status ?? "requires_payment_method", client_secret: `${id}_secret` });
       return { body: { object: "payment_intent", ...intents.get(id) } };
     }],
+    // Refunds: `state.refundFails` refuses one; each is recorded on `state.refunds`.
+    [(r) => r.url === "https://api.stripe.com/v1/refunds" && r.method === "POST", (r) => {
+      if (state.refundFails) return { status: 400, body: { error: { message: "Charge has already been refunded." } } };
+      const p = new URLSearchParams(r.body);
+      const refund = { id: `re_${(state.refunds ??= []).length + 1}`, object: "refund", status: "succeeded", amount: Number(p.get("amount")), payment_intent: p.get("payment_intent") };
+      state.refunds.push(refund);
+      return { body: refund };
+    }],
     // `state.cancelFails` refuses a cancel (as for a paid intent); a
     // cancelled intent reads as `canceled`; `state.lookup(id)` overrides the
     // status an intent reads with (e.g. "requires_payment_method").

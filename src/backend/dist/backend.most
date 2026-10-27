@@ -2245,6 +2245,24 @@ type ReferralReward__924831799 =
     referrerId : Text;
     timestamp : Int
   };
+type RefundRecord__16954350 =
+  {
+    amountCents : Nat;
+    by : Text;
+    createdAt : Int;
+    reason : Text;
+    refundId : Text;
+    status : Text
+  };
+type RefundRecord__676888573 =
+  {
+    amountCents : Nat;
+    by : Text;
+    createdAt : Int;
+    reason : Text;
+    refundId : Text;
+    status : Text
+  };
 type ReturnAddress__175299151 =
   {
     address_line1 : Text;
@@ -2872,7 +2890,9 @@ type VerifiedAddress__924635918 =
       {
         printEnvironments :
           Map__521176851<Text, FulfilmentEnvironment__714397961>
-      }
+      };
+  "20261027_000000_PaymentRefunds" :
+    {} -> {paymentRefunds : Map__521176851<Text, [RefundRecord__676888573]>}
 }
 actor  {
   stable accounts :
@@ -2914,6 +2934,11 @@ actor  {
   stable documentUploads :
     {
       var root : Node__809479745<Text, DocumentUpload__974961311>;
+      var size : Nat__677858269
+    };
+  stable paymentRefunds :
+    {
+      var root : Node__809479745<Text, [RefundRecord__16954350]>;
       var size : Nat__677858269
     };
   stable payments :

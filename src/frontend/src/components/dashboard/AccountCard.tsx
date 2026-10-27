@@ -84,12 +84,12 @@ export function AccountCard() {
   return (
     <GroupedList
       title="Account"
-      footer="Your Internet Identity principal and contact details."
+      footer="Your account ID (your Internet Identity principal) and contact details. Support asks for the account ID to find your payments."
       data-ocid="dashboard.account.card"
     >
       <GroupedListRow
         icon={Fingerprint}
-        label="Principal"
+        label="Account ID"
         description={
           <Tooltip>
             <TooltipTrigger asChild>

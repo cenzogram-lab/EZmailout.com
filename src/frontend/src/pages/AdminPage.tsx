@@ -3,6 +3,7 @@ import {
   type AdminKeysView,
   FulfilmentEnvironment,
 } from "@/backend";
+import { PaymentsCard } from "@/components/admin/PaymentsCard";
 import { MascotEmptyState } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -980,6 +981,7 @@ export function AdminPage() {
               </CardContent>
             </Card>
 
+            <PaymentsCard />
             <SupportInboxCard />
           </>
         ) : null}

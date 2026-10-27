@@ -74,6 +74,33 @@ module {
     };
   };
 
+  /// A refund of `amountCents` of a PaymentIntent, back to the card it was
+  /// paid with.
+  public func refundBody(paymentIntentId : Text, amountCents : Nat, reason : Text, by : Text) : Text {
+    Fulfilment.formEncode([
+      ("payment_intent", paymentIntentId),
+      ("amount", amountCents.toText()),
+      ("metadata[reason]", reason),
+      ("metadata[issuedBy]", by),
+      ("metadata[platform]", "ezmailout"),
+    ]);
+  };
+
+  public type RefundInfo = { id : Text; status : Text; amount : Nat };
+
+  public func parseRefund(body : Text) : ?RefundInfo {
+    switch (Json.topLevelString(body, "id")) {
+      case null null;
+      case (?id) {
+        ?{
+          id;
+          status = switch (Json.topLevelString(body, "status")) { case (?s) s; case null "" };
+          amount = switch (Json.topLevelNumber(body, "amount")) { case (?a) { if (a < 0) 0 else a.toNat() }; case null 0 };
+        };
+      };
+    };
+  };
+
   public func errorMessage(body : Text) : Text {
     switch (Json.getString(body, "message")) {
       case (?m) m;
