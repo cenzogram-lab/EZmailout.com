@@ -74,4 +74,24 @@ assert Fulfilment.jobSubmitted("{\"status\":\"Job not submitted\"}") != ?true;
 assert Fulfilment.jobSubmitted("{\"status\":\"Unsubmitted\"}") != ?true;
 assert Fulfilment.jobSubmitted("{\"status\":\"Submitted\"}") == ?true;
 
+// Records that name their piece count once per piece, at its furthest scan:
+// 2 of 10 pieces with three exception scans each do not close the campaign.
+let tally = Fulfilment.newTally();
+Fulfilment.addTrackingPage(tally, "{\"tracking\":[{\"barCode\":\"A\",\"status\":\"Undeliverable as addressed\"},{\"barCode\":\"A\",\"status\":\"Return to sender\"},{\"barCode\":\"A\",\"status\":\"Return to sender\"},{\"barCode\":\"B\",\"status\":\"Undeliverable as addressed\"},{\"barCode\":\"B\",\"status\":\"Return to sender\"},{\"barCode\":\"B\",\"status\":\"Return to sender\"}]}");
+assert Fulfilment.tallyStatuses(tally).size() == 2;
+assert Fulfilment.aggregateStage(Fulfilment.tallyStatuses(tally), 10) != ?#Returned;
+assert Fulfilment.aggregateStage(Fulfilment.tallyStatuses(tally), 10) != ?#Undeliverable;
+// A piece's records on two pages are still one piece.
+let paged = Fulfilment.newTally();
+Fulfilment.addTrackingPage(paged, "{\"tracking\":[{\"barCode\":\"P1\",\"status\":\"Accepted at USPS Origin Facility\"},{\"barCode\":\"P2\",\"status\":\"Delivered\"}]}");
+Fulfilment.addTrackingPage(paged, "{\"tracking\":[{\"barCode\":\"P1\",\"status\":\"Delivered\"}]}");
+assert Fulfilment.tallyStatuses(paged).size() == 2;
+assert Fulfilment.aggregateStage(Fulfilment.tallyStatuses(paged), 2) == ?#Delivered;
+// Records without a piece id keep every scan, as before.
+let plain = Fulfilment.newTally();
+Fulfilment.addTrackingPage(plain, "{\"tracking\":[{\"scanDescription\":\"Delivered\"},{\"scanDescription\":\"Delivered\"}]}");
+assert Fulfilment.tallyStatuses(plain).size() == 2;
+// The XML fallback reads one tag too.
+assert Fulfilment.parseTrackingStatuses("<scan><scanDescription>Delivered</scanDescription><status>Delivered</status></scan>").size() == 1;
+
 Debug.print("fulfilment: all checks passed");

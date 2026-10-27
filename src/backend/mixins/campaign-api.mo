@@ -10,11 +10,14 @@ import AdminLib "../lib/admin";
 import Fulfilment "../lib/fulfilment";
 import Limits "../lib/limits";
 import Inputs "../lib/inputs";
+import Http "../lib/http";
+import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Set "mo:core/Set";
 import Array "mo:core/Array";
 import Int "mo:core/Int";
+import Order "mo:core/Order";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
@@ -31,6 +34,7 @@ mixin (
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   payments : Map.Map<Text, Account.PaymentRecord>,
   accounts : Map.Map<Text, Account.UserAccount>,
+  transformFn : Http.TransformFn,
 ) {
   /// Recipients one message may carry (`createCampaign` or
   /// `addCampaignRecipients`): an ingress message is at most 2 MB. A campaign
@@ -49,6 +53,9 @@ mixin (
   transient let maxUnpaidRecipientsGlobal : Nat = 1_500_000;
   /// A draft with a checkout opened this recently may still be paid.
   transient let openCheckoutNs : Int = 86_400_000_000_000;
+  /// Drafts an open checkout alone may protect from eviction (half the
+  /// canister-wide draft cap), the most recently opened first.
+  transient let maxProtectedCheckouts : Nat = 250;
 
   // QR scans arrive from anyone, signed out. Only paid campaigns log them,
   // each campaign keeps its newest `maxStoredScans` (FIFO), and the free-text
@@ -112,18 +119,31 @@ mixin (
 
   /// Drafts an eviction must never touch: one with a confirmed payment, or
   /// with a live checkout opened in the last 24 hours that may still
-  /// complete (the same window `deleteCampaignDraft` respects).
+  /// complete (the same window `deleteCampaignDraft` respects). Open
+  /// checkouts protect at most `maxProtectedCheckouts` drafts, the most
+  /// recently opened: identities are free, and drafts each holding an open
+  /// checkout could otherwise fill the canister-wide cap with drafts nothing
+  /// may evict and turn every new campaign away for a day at a time.
   private func evictionProtected(now : Int) : Set.Set<Text> {
     let out = Set.empty<Text>();
+    let open = Map.empty<Text, Int>();
     for ((_, p) in payments.entries()) {
       switch (p.purpose, p.reference) {
         case (#CampaignOrder, ?id) {
-          let confirmed = p.state == #Succeeded or p.state == #Waived;
-          let openCheckout = p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs;
-          if (confirmed or openCheckout) { out.add(id) };
+          if (p.state == #Succeeded or p.state == #Waived) { out.add(id) } else if (p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {
+            switch (open.get(id)) {
+              case (?t) { if (p.createdAt > t) open.add(id, p.createdAt) };
+              case null { open.add(id, p.createdAt) };
+            };
+          };
         };
         case _ {};
       };
+    };
+    let newestFirst = open.entries().toArray().sort(func(a : (Text, Int), b : (Text, Int)) : Order.Order = Int.compare(b.1, a.1));
+    var kept = 0;
+    for ((id, _) in newestFirst.vals()) {
+      if (kept < maxProtectedCheckouts and not out.contains(id)) { out.add(id); kept += 1 };
     };
     out;
   };
@@ -508,11 +528,29 @@ mixin (
     };
     if (record.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } };
     if (record.printDocumentId != null) { return { ok = false; error = ?"This draft's document is already in production" } };
-    let now = Time.now();
+    // Its open checkouts are cancelled with the payment processor first, so
+    // none can take a payment for a draft that no longer exists. One that
+    // cannot be cancelled may already be paid: the draft then stays, so the
+    // payment can still be confirmed (Pay now finds it again).
+    let open = List.empty<Account.PaymentRecord>();
     for ((_, p) in payments.entries()) {
-      if (p.reference == ?campaignId and p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {
-        return { ok = false; error = ?"A checkout for this draft was opened in the last 24 hours; try again later" };
+      if (p.purpose == #CampaignOrder and p.reference == ?campaignId and p.state == #Created and not p.sandbox) { open.add(p) };
+    };
+    for (p in open.values()) {
+      let secret = switch (adminKeysState.stripeSecretKey) {
+        case (?s) s;
+        case null { return { ok = false; error = ?"A checkout for this draft is still open, and it can't be closed right now; try again later" } };
       };
+      let resp = await* Http.postText(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId # "/cancel", Stripe.headers(secret, null), "", AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      if (not Http.isSuccess(resp)) {
+        return { ok = false; error = ?"A checkout for this draft may already have been paid, so the draft was kept. Open it from Campaigns and choose Pay now to check the payment." };
+      };
+      p.state := #Failed;
+    };
+    // Re-read after the processor answered: a payment may have settled it.
+    switch (campaigns.get(campaignId)) {
+      case (?r) { if (r.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } } };
+      case null { return { ok = true; error = null } };
     };
     removeDrafts([campaignId]);
     { ok = true; error = null };
@@ -528,8 +566,10 @@ mixin (
       case (?record) {
         if (isPaid(record)) {
           let now = Time.now();
+          // Not an `updatedAt` change: that marks the timeline moving, and the
+          // tracking poll stops after 45 quiet days (`trackingQuietNs`); a
+          // scanned QR code must not keep an unscanned mailing polled for ever.
           record.qrScanCount += 1;
-          record.updatedAt := now;
           let agent = switch (userAgent) { case (?u) ?Limits.clip(AddressLib.sanitizeText(u), maxUserAgentChars); case null null };
           logScan({ campaignId; recipientId = trimmed; timestamp = now; userAgent = agent });
         };

@@ -6,6 +6,7 @@ import {
   checkImageResolution,
   rasterizeSide,
   toNativePage,
+  unloadableImageCount,
 } from "@/lib/rasterize";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasSideKey } from "@/types";
@@ -187,6 +188,14 @@ export function usePrintDocument() {
         sampleRecipientId: "preview",
       });
       const frontPreviewUrl = downscaleToDataUrl(front);
+      const missing =
+        (await unloadableImageCount(canvas.front)) +
+        (await unloadableImageCount(canvas.back));
+      if (missing > 0) {
+        throw new Error(
+          `${missing === 1 ? "An image" : `${missing} images`} in your design couldn't be loaded for printing (a generated image's link may have expired). Replace ${missing === 1 ? "it" : "them"} in the studio before launching.`,
+        );
+      }
       const images: ImageResolutionReport[] = [];
       const sides: CanvasSideKey[] = ["front", "back"];
       for (const sideKey of sides) {

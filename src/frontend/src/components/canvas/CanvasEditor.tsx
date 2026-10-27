@@ -339,6 +339,7 @@ function elementBox(el: CanvasElement): ElementBox {
     height: el.data.height,
     keepAspect: false,
     minSize: 24,
+    rotation: textExtras(el.data).rotation,
   };
 }
 

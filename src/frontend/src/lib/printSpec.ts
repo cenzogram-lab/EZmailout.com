@@ -166,6 +166,42 @@ export function insetRect(
 }
 
 /** Safe-zone rectangle (design px) — every element should sit inside it. */
+/**
+ * The largest strip of the sheet beside the USPS address zone (left, right,
+ * above or below it, whichever is biggest), or the whole sheet when the side
+ * has no zone: where anything added to an address side goes, so it never
+ * lands in the area the preflight requires clear. `dims` is returned resized
+ * to the strip, with `x`/`y` its offset on the sheet.
+ */
+export function clearOfAddressZone(
+  dims: LayoutDims,
+  side: "front" | "back",
+): { dims: LayoutDims; x: number; y: number } {
+  const zone = dims.addressZone;
+  if (side !== "back" || !zone) return { dims, x: 0, y: 0 };
+  const W = dims.designWidth;
+  const H = dims.designHeight;
+  const strips = [
+    { x: 0, y: 0, w: zone.x, h: H },
+    { x: zone.x + zone.w, y: 0, w: W - zone.x - zone.w, h: H },
+    { x: 0, y: 0, w: W, h: zone.y },
+    { x: 0, y: zone.y + zone.h, w: W, h: H - zone.y - zone.h },
+  ];
+  const best = strips.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
+  return {
+    dims: {
+      ...dims,
+      designWidth: best.w,
+      designHeight: best.h,
+      widthInches: best.w / DESIGN_PPI,
+      heightInches: best.h / DESIGN_PPI,
+      addressZone: undefined,
+    },
+    x: best.x,
+    y: best.y,
+  };
+}
+
 export function safeRect(dims: LayoutDims): {
   x: number;
   y: number;

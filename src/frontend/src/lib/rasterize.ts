@@ -19,6 +19,21 @@ export interface RasterizeOptions {
   requireImages?: boolean;
 }
 
+/**
+ * How many images on `side` (its background and image layers) the print
+ * renderer cannot load. The preflight runs it over both sides, so an image
+ * the editor still shows but the print file would leave out (an expired or
+ * cross-origin URL) blocks the launch before a campaign is created.
+ */
+export async function unloadableImageCount(side: CanvasSide): Promise<number> {
+  const urls = [
+    ...(side.backgroundImageUrl ? [side.backgroundImageUrl] : []),
+    ...side.logos.map((l) => l.url),
+  ];
+  const loaded = await Promise.all(urls.map((u) => loadImage(u)));
+  return loaded.filter((img) => img === null).length;
+}
+
 export const IMAGE_LOAD_ERROR =
   "An image in your design couldn't be loaded for printing (a generated image's link may have expired). Replace it in the studio, then launch again; nothing has been charged.";
 

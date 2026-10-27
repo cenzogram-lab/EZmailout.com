@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND, DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
+import { clearOfAddressZone, safeRect } from "@/lib/printSpec";
 import {
   normalizeDestinationUrl,
   normalizeRedirectUrl,
@@ -100,14 +101,28 @@ export function QrTool() {
       size,
       foreground: fg,
       background: bg,
-      x: Math.max(
-        20,
-        dims.designWidth - size - Math.round(dims.designWidth * 0.14),
-      ),
-      y: Math.max(
-        20,
-        dims.designHeight - size - Math.round(dims.designHeight * 0.14),
-      ),
+      // The lower-right corner of the free area: on an address side, beside
+      // the USPS zone rather than in it (the preflight requires it clear).
+      ...(() => {
+        const free = clearOfAddressZone(dims, target);
+        const safe = safeRect(free.dims);
+        const w = free.dims.designWidth;
+        const h = free.dims.designHeight;
+        return {
+          x:
+            free.x +
+            Math.max(
+              safe.x,
+              Math.min(w - size - Math.round(w * 0.14), safe.x + safe.w - size),
+            ),
+          y:
+            free.y +
+            Math.max(
+              safe.y,
+              Math.min(h - size - Math.round(h * 0.14), safe.y + safe.h - size),
+            ),
+        };
+      })(),
     });
     toast.success(`QR code added to the ${target} side`);
   }

@@ -46,7 +46,7 @@ actor {
 
   // Mixin composition — all public endpoints are delegated to mixins.
   include AdminApi(adminKeysState);
-  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments, accounts);
+  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments, accounts, transform);
   include AudienceApi(savedAudiencePresets, presetMeta, state, adminKeysState, transform);
   include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, campaignRecipients, trackingEvents, documentUploads, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
@@ -66,5 +66,7 @@ actor {
 
   // Unpaid drafts expire 14 days after their last activity; swept on the same
   // 6-hour cadence, on its own timer so a slow poll never delays it.
-  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now(), null) });
+  // Expired drafts go, and so do replacement print files nothing can use any
+  // more (their draft removed, paid or sent to print).
+  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now(), null); sweepPendingUploads() });
 };

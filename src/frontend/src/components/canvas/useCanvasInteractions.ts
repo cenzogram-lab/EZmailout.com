@@ -18,6 +18,8 @@ export interface ElementBox {
   keepAspect?: boolean;
   /** Smallest allowed width/height in design pixels. */
   minSize?: number;
+  /** Turn about the box centre in degrees (text boxes); handles turn with it. */
+  rotation?: number;
 }
 
 export interface ResizeResult {
@@ -78,6 +80,8 @@ export function computeResize(
   dy: number,
   dims: LayoutDims,
 ): ResizeResult {
+  const turn = (((initial.rotation ?? 0) % 360) + 360) % 360;
+  if (turn !== 0) return computeTurnedResize(initial, corner, dx, dy, turn);
   const min = initial.minSize ?? DEFAULT_MIN_SIZE;
   const right = initial.x + initial.width;
   const bottom = initial.y + initial.height;
@@ -115,6 +119,51 @@ export function computeResize(
   return {
     x: Math.round(Math.max(0, x)),
     y: Math.round(Math.max(0, y)),
+    width: Math.round(width),
+    height: Math.round(height),
+  };
+}
+
+/**
+ * Resize of a box turned `turn` degrees about its centre. Its handles are
+ * drawn turned, so the pointer's movement is read in the box's own frame,
+ * and the corner opposite the dragged one stays where it is on screen (the
+ * stored x/y are of the unturned box, so its centre moves to keep it there).
+ */
+function computeTurnedResize(
+  initial: ElementBox,
+  corner: ResizeCorner,
+  dx: number,
+  dy: number,
+  turn: number,
+): ResizeResult {
+  const min = initial.minSize ?? DEFAULT_MIN_SIZE;
+  const a = (turn * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const localDx = dx * cos + dy * sin;
+  const localDy = -dx * sin + dy * cos;
+  const signX = corner === "ne" || corner === "se" ? 1 : -1;
+  const signY = corner === "sw" || corner === "se" ? 1 : -1;
+  const width = Math.max(min, initial.width + signX * localDx);
+  const height = Math.max(min, initial.height + signY * localDy);
+  // The anchored corner on screen: centre + R·(its offset in the box frame).
+  const turned = (ox: number, oy: number) => ({
+    x: ox * cos - oy * sin,
+    y: ox * sin + oy * cos,
+  });
+  const cx = initial.x + initial.width / 2;
+  const cy = initial.y + initial.height / 2;
+  const before = turned(
+    (-signX * initial.width) / 2,
+    (-signY * initial.height) / 2,
+  );
+  const after = turned((-signX * width) / 2, (-signY * height) / 2);
+  const ncx = cx + before.x - after.x;
+  const ncy = cy + before.y - after.y;
+  return {
+    x: Math.round(ncx - width / 2),
+    y: Math.round(ncy - height / 2),
     width: Math.round(width),
     height: Math.round(height),
   };

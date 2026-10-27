@@ -104,11 +104,22 @@ export function fakeStripe(state = {}) {
       intents.set(id, { id, amount, currency: "usd", status: state.status ?? "requires_payment_method", client_secret: `${id}_secret` });
       return { body: { object: "payment_intent", ...intents.get(id) } };
     }],
+    // `state.cancelFails` refuses a cancel (as for a paid intent); a
+    // cancelled intent reads as `canceled`; `state.lookup(id)` overrides the
+    // status an intent reads with (e.g. "requires_payment_method").
+    [(r) => /\/v1\/payment_intents\/[^/]+\/cancel$/.test(r.url) && r.method === "POST", (r) => {
+      const id = r.url.split("/").slice(-2)[0];
+      const it = intents.get(id);
+      if (!it || state.cancelFails) return { status: 400, body: { error: { message: "This PaymentIntent's status is succeeded" } } };
+      it.canceled = true;
+      return { body: { id, object: "payment_intent", status: "canceled" } };
+    }],
     [(r) => r.url.startsWith("https://api.stripe.com/v1/payment_intents/") && r.method === "GET", (r) => {
       const id = r.url.split("/").pop();
       const it = intents.get(id);
       if (!it) return { status: 404, body: { error: { message: "No such payment_intent" } } };
-      return { body: { id: it.id, object: "payment_intent", amount: state.paidAmount ?? it.amount, currency: "usd", status: state.paid === false ? "processing" : "succeeded", charges: { data: [{ status: "failed", amount: 1 }] } } };
+      const status = it.canceled ? "canceled" : state.lookup?.(id) ?? (state.paid === false ? "processing" : "succeeded");
+      return { body: { id: it.id, object: "payment_intent", livemode: state.livemode ?? true, client_secret: it.client_secret, amount: state.paidAmount ?? it.amount, currency: "usd", status, charges: { data: [{ status: "failed", amount: 1 }] } } };
     }],
   ];
 }

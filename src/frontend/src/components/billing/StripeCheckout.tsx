@@ -208,10 +208,18 @@ export function StripeCheckout({
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const started = useRef(false);
   const [cardRunning, setCardRunning] = useState(false);
+  // Only a card actually submitted here can have been charged: test-mode
+  // and recovered checkouts confirm without one, and must stay closable.
+  const [cardRan, setCardRan] = useState(false);
+  const onSubmittingChange = useCallback((running: boolean) => {
+    setCardRunning(running);
+    if (running) setCardRan(true);
+  }, []);
   const locked =
     cardRunning ||
-    phase.kind === "confirming" ||
-    (phase.kind === "error" && phase.paymentIntentId !== undefined);
+    (cardRan &&
+      (phase.kind === "confirming" ||
+        (phase.kind === "error" && phase.paymentIntentId !== undefined)));
   const lockedRef = useRef(onLockedChange);
   lockedRef.current = onLockedChange;
   useEffect(() => {
@@ -374,7 +382,7 @@ export function StripeCheckout({
               submitLabel={submitLabel}
               onConfirmed={() => finish(phase.paymentIntentId)}
               onCancel={onCancel}
-              onSubmittingChange={setCardRunning}
+              onSubmittingChange={onSubmittingChange}
             />
           </Elements>
         )}

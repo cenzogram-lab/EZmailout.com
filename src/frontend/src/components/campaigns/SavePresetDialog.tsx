@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useAccountSync } from "@/hooks/use-account";
 import { useCampaignRecipients, useSavePreset } from "@/hooks/use-backend";
 import { formatNumber } from "@/lib/format";
+import { MAX_PRESET_NAME_CHARS } from "@/lib/inputLimits";
 import { cn } from "@/lib/utils";
 import { BookmarkPlus, Loader2, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -61,7 +62,14 @@ export function SavePresetDialog({
 
   useEffect(() => {
     if (!open) return;
-    setName(campaignName ? `${campaignName} audience` : "Saved audience");
+    // Prefilled within the canister's name limit: a long campaign name made
+    // the suggested name too long to save.
+    const suffix = " audience";
+    setName(
+      campaignName
+        ? `${campaignName.trim().slice(0, MAX_PRESET_NAME_CHARS - suffix.length)}${suffix}`
+        : "Saved audience",
+    );
     setFilter("");
     setRemoved(new Set());
   }, [open, campaignName]);

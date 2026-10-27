@@ -35,7 +35,7 @@ module {
     let buf = List.empty<Char>();
     while (i < chars.size()) {
       let c = chars[i];
-      if (c == '\22') { return ?(Text.fromArray(buf.toArray()), i + 1) };
+      if (c == '\22') { return ?(slice(buf.toArray(), 0, buf.size()), i + 1) };
       if (c == '\\' and i + 1 < chars.size()) {
         let n = chars[i + 1];
         if (n == 'n') { buf.add('\n'); i += 2 } else if (n == 't') { buf.add('\t'); i += 2 } else if (n == 'r') { buf.add('\r'); i += 2 } else if (n == 'b' or n == 'f') { buf.add(' '); i += 2 } else if (n == 'u' and i + 5 < chars.size()) {
@@ -121,6 +121,22 @@ module {
     if (i == start) null else ?i;
   };
 
+  /// `chars[from..to)` as text, built as a balanced tree. `Text.fromArray`
+  /// appends one character at a time, which nests the text as deep as it is
+  /// long, and measuring a long one (a tracking reply's array runs to
+  /// hundreds of kilobytes) then overflowed the stack.
+  public func slice(chars : [Char], from : Nat, to : Nat) : Text {
+    if (to <= from) return "";
+    if (Nat.sub(to, from) <= 256) {
+      var r = "";
+      var i = from;
+      while (i < to) { r #= Text.fromChar(chars[i]); i += 1 };
+      return r;
+    };
+    let mid = from + Nat.sub(to, from) / 2;
+    slice(chars, from, mid) # slice(chars, mid, to);
+  };
+
   /// The members of the outermost JSON object as (key, raw value text), in
   /// document order. Values nested inside other objects or arrays are never
   /// returned, so a key buried in them cannot shadow a top-level one — unlike
@@ -137,7 +153,7 @@ module {
       if (colon >= chars.size() or chars[colon] != ':') { return out.toArray() };
       let start = skipWs(chars, colon + 1);
       let end = switch (skipValue(chars, start)) { case (?e) e; case null { return out.toArray() } };
-      out.add((key, Text.fromArray(chars.sliceToArray(start, end))));
+      out.add((key, slice(chars, start, end)));
       i := skipWs(chars, end);
       if (i < chars.size() and chars[i] == ',') { i := skipWs(chars, i + 1) } else { break members };
     };
@@ -307,7 +323,7 @@ module {
           } else if (c == '\22') { inStr := true } else if (c == '[' or c == '{') { depth += 1 } else if (c == ']' or c == '}') {
             depth -= 1;
             if (depth == 0) {
-              return ?Text.fromArray(chars.sliceToArray(pos, i + 1));
+              return ?slice(chars, pos, i + 1);
             };
           };
           i += 1;
@@ -335,7 +351,7 @@ module {
       } else if (c == '}') {
         if (depth > 0) {
           depth -= 1;
-          if (depth == 0) { result.add(Text.fromArray(chars.sliceToArray(start, i + 1))) };
+          if (depth == 0) { result.add(slice(chars, start, i + 1)) };
         };
       };
       i += 1;

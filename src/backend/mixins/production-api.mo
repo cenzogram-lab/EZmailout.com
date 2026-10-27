@@ -530,7 +530,7 @@ mixin (
       // A job's tracking is read page by page (a large batch's scans outgrow
       // one reply) and counts only when every page was read: judging a job
       // on some of its pieces could settle the campaign wrongly.
-      let jobPieces = List.empty<Text>();
+      let jobPieces = Fulfilment.newTally();
       var page = 1;
       var pageCount = 1;
       var firstPage = "";
@@ -547,13 +547,13 @@ mixin (
           // job's pieces cannot be read.
           break pages;
         };
-        for (p in Fulfilment.parseTrackingStatuses(trackResp.body).vals()) { jobPieces.add(p) };
+        Fulfilment.addTrackingPage(jobPieces, trackResp.body);
         if (page >= pageCount) { complete := true; break pages };
         page += 1;
       };
       if (complete) {
         answered := true;
-        for (p in jobPieces.values()) { pieces.add(p) };
+        for (p in Fulfilment.tallyStatuses(jobPieces).vals()) { pieces.add(p) };
       } else { unanswered += 1 };
     };
     if (not answered) {

@@ -19,12 +19,14 @@ import {
 import { useAccountSync } from "@/hooks/use-account";
 import { useGenerateAiCopy } from "@/hooks/use-backend";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { DEFAULT_FONT_FAMILY } from "@/lib/canvas";
 import { AI_COSTS } from "@/lib/credits";
 import { safeRect } from "@/lib/printSpec";
+import { measuredHeight } from "@/lib/textFit";
 import { useAccountStore } from "@/store/account";
 import { useWizardStore } from "@/store/wizard";
 import { Loader2, PenLine, Plus, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 const INDUSTRIES = [
@@ -67,7 +69,8 @@ export function AiCopywriterDrawer({
   const [cta, setCta] = useState("");
   const [tone, setTone] = useState(TONES[0]);
   const [result, setResult] = useState<CopyResult | null>(null);
-  const [inserted, setInserted] = useState(0);
+  /** Where the next inserted block goes (below the previous one). */
+  const nextY = useRef<number | null>(null);
 
   async function handleGenerate() {
     if (!businessName.trim() && !industry) {
@@ -107,50 +110,57 @@ export function AiCopywriterDrawer({
       bullets: res.bullets,
       ctas: res.ctas,
     });
-    setInserted(0);
+    nextY.current = null;
     toast.success(`Copy ready · ${Number(res.creditsCharged)} credit used`);
   }
 
+  /**
+   * Places a block below the last one this drawer inserted, sized to its text
+   * (`measuredHeight`, as the studio hugs every box), so "Insert all" stacks
+   * the headline, bullets and call to action instead of piling them on one
+   * spot (each insert used to read the same stale count).
+   */
   function insert(kind: "headline" | "bullets" | "cta", text: string) {
     const safe = safeRect(dims);
-    const y = safe.y + 12 + inserted * 52;
-    const width = Math.round(safe.w * 0.62);
-    if (kind === "headline") {
-      addTextBlock(activeSide, {
-        text,
-        x: safe.x + 12,
-        y,
-        width,
-        height: 56,
-        fontSize: 34,
-        fontWeight: 800n,
-        color: "#0f172a",
-      });
-    } else if (kind === "bullets") {
-      const lines = text.split("\n");
-      addTextBlock(activeSide, {
-        text,
-        x: safe.x + 12,
-        y,
-        width,
-        height: 26 * Math.max(1, lines.length) + 12,
-        fontSize: 18,
-        fontWeight: 600n,
-        color: "#334155",
-      });
-    } else {
-      addTextBlock(activeSide, {
-        text,
-        x: safe.x + 12,
-        y,
-        width: Math.round(safe.w * 0.5),
-        height: 40,
-        fontSize: 22,
-        fontWeight: 700n,
-        color: "#f97316",
-      });
-    }
-    setInserted((n) => n + 1);
+    const y = nextY.current ?? safe.y + 12;
+    const style =
+      kind === "headline"
+        ? {
+            width: Math.round(safe.w * 0.62),
+            fontSize: 34,
+            fontWeight: 800 as const,
+            color: "#0f172a",
+          }
+        : kind === "bullets"
+          ? {
+              width: Math.round(safe.w * 0.62),
+              fontSize: 18,
+              fontWeight: 600 as const,
+              color: "#334155",
+            }
+          : {
+              width: Math.round(safe.w * 0.5),
+              fontSize: 22,
+              fontWeight: 700 as const,
+              color: "#f97316",
+            };
+    const height = measuredHeight(text, {
+      width: style.width,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      fontFamily: DEFAULT_FONT_FAMILY,
+    });
+    addTextBlock(activeSide, {
+      text,
+      x: safe.x + 12,
+      y,
+      width: style.width,
+      height,
+      fontSize: style.fontSize,
+      fontWeight: BigInt(style.fontWeight),
+      color: style.color,
+    });
+    nextY.current = y + height + 12;
   }
 
   function insertAll() {

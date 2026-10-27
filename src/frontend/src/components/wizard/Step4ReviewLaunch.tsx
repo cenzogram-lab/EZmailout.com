@@ -351,18 +351,20 @@ export function Step4ReviewLaunch() {
             : null;
         if (id) {
           reused = true;
-          // Keep the stored preview in step with the file about to replace it.
-          void saveCanvas
-            .mutateAsync({
-              campaignId: id,
-              canvas: canvasForStorage(state.canvas),
-            })
-            .catch(() => {});
         } else if (state.campaignId && !state.campaignPaid) {
           // The order changed: its old draft goes first, so it does not count
-          // against the account's unpaid budget (refused while a checkout
-          // opened for it could still complete; it then expires on its own).
-          await deleteDraft.mutateAsync(state.campaignId).catch(() => {});
+          // against the account's unpaid budget. Its open checkout is closed
+          // with it; one that may already have been paid keeps the draft, and
+          // the customer is told where to find it.
+          const removed = await deleteDraft
+            .mutateAsync(state.campaignId)
+            .catch(() => null);
+          if (removed && !removed.ok) {
+            toast.warning(
+              removed.error ??
+                "Your previous draft of this order couldn't be removed.",
+            );
+          }
         }
 
         // 1. Create the campaign.
@@ -527,6 +529,17 @@ export function Step4ReviewLaunch() {
           setUploadedBytes(done);
           setUploadProgress(Math.round((done / total) * 100));
         }
+        if (reused) {
+          // The stored preview follows the file only once the new file is in
+          // place: a re-upload that stops keeps the old file staged, and the
+          // campaign page must not show the new design over it.
+          void saveCanvas
+            .mutateAsync({
+              campaignId: id,
+              canvas: canvasForStorage(state.canvas),
+            })
+            .catch(() => {});
+        }
 
         // 4. Hand off to Stripe.
         setMachine({ stage: "paying", failedStage: null, error: null });
@@ -600,11 +613,31 @@ export function Step4ReviewLaunch() {
   // The order on screen was already paid (from here, or confirmed from its
   // campaign page): launching it again would create and charge a second
   // campaign for the same mailing. Any change to the order makes it new.
+  // Recomputed only when the order itself changes (a large audience makes the
+  // key costly), never on every render.
+  const sourcePresetId = useWizardStore((s) => s.sourcePresetId);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the key reads these fields from the store
+  const currentOrderKey = useMemo(
+    () => (campaignPaid ? launchOrderKey(useWizardStore.getState()) : null),
+    [
+      campaignPaid,
+      campaignName,
+      selectedProduct,
+      selectedSpec,
+      audienceType,
+      recipientCount,
+      verifiedAddresses,
+      qrDestinationUrl,
+      returnAddress,
+      sourcePresetId,
+    ],
+  );
   const paidOrderLoaded =
     machine.stage === "idle" &&
     campaignPaid &&
     campaignId !== null &&
-    campaignOrderKey === launchOrderKey(useWizardStore.getState());
+    currentOrderKey !== null &&
+    campaignOrderKey === currentOrderKey;
   // Signed in, the price depends on membership, so it waits for the account.
   const launchDisabled =
     report.blocked ||
@@ -1140,6 +1173,7 @@ export function Step4ReviewLaunch() {
                       disabled={
                         busy ||
                         launchInFlight ||
+                        paidOrderLoaded ||
                         (machine.failedStage !== "dispatching" &&
                           machine.failedStage !== "paying" &&
                           report.blocked)

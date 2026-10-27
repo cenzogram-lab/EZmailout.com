@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { LAYOUT_PRESETS } from "@/lib/layouts";
-import type { Orientation } from "@/lib/printSpec";
+import { type Orientation, clearOfAddressZone } from "@/lib/printSpec";
 import { loadTemplateFonts, templatesForLayout } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { claimTemplateApply, useWizardStore } from "@/store/wizard";
@@ -85,7 +85,14 @@ export function TemplatesPanel() {
   function applyLayout(id: string) {
     const preset = LAYOUT_PRESETS.find((p) => p.id === id);
     if (!preset) return;
-    for (const block of preset.blocks(dims)) addTextBlock(activeSide, block);
+    // On an address side the preset is laid out beside the USPS zone.
+    const free = clearOfAddressZone(dims, activeSide);
+    for (const block of preset.blocks(free.dims))
+      addTextBlock(activeSide, {
+        ...block,
+        x: (block.x ?? 0) + free.x,
+        y: (block.y ?? 0) + free.y,
+      });
     toast.success(`${preset.name} layout added to the ${activeSide} side`);
   }
 
@@ -164,7 +171,16 @@ export function TemplatesPanel() {
                 key={t.id}
                 type="button"
                 onClick={async () => {
+                  // Like a library template: a later choice, a format
+                  // change or an edit made while the fonts load wins.
+                  const stillCurrent = claimTemplateApply();
+                  const before = useWizardStore.getState().canvas;
                   await loadTemplateFonts();
+                  if (
+                    !stillCurrent() ||
+                    useWizardStore.getState().canvas !== before
+                  )
+                    return;
                   setDesignTemplate(t);
                   toast.success(`Applied “${t.name}”`);
                 }}

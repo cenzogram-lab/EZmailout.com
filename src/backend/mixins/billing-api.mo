@@ -18,6 +18,8 @@ import List "mo:core/List";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
+import Int "mo:core/Int";
+import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 
 mixin (
@@ -44,6 +46,10 @@ mixin (
   transient let stripeWindows = Map.empty<Text, Limits.Window>();
   transient let intentsPerHour : Nat = 10;
   transient let intentsPerHourGlobal : Nat = 1_000;
+  transient let intentsPerCampaignPerHour : Nat = 5;
+  /// How far back an earlier checkout for the same order is looked for before
+  /// a new one is opened (the window a draft's open checkout is protected).
+  transient let reuseCheckoutNs : Int = 86_400_000_000_000;
   transient let intentGapNs : Int = 2_000_000_000;
   transient let confirmsPerHour : Nat = 30;
   transient let confirmsPerHourGlobal : Nat = 2_000;
@@ -306,11 +312,68 @@ mixin (
     };
     let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return intentFail("Checkout isn't set up yet; please try again later") } };
     // Charged only now, once the call will reach Stripe.
+    // A campaign order already needs a fully staged draft (the canister-wide
+    // draft cap bounds them), so it is budgeted per campaign rather than
+    // against the shared hourly cap, which free identities buying nothing
+    // could otherwise use up and keep every customer from checking out.
+    let perOrder : Limits.Budget = if (purpose == #CampaignOrder) ({ key = "intent:campaign:" # refText; limit = intentsPerCampaignPerHour; minGapNs = 0 }) else ({ key = "intent:*"; limit = intentsPerHourGlobal; minGapNs = 0 });
     switch (stripeRefusal(Limits.admit(stripeWindows, [
-      { key = "intent:*"; limit = intentsPerHourGlobal; minGapNs = 0 },
+      perOrder,
       { key = "intent:" # a.id; limit = intentsPerHour; minGapNs = intentGapNs },
     ], Time.now(), stripeWindowNs), "starting checkout")) {
       case (?msg) { return intentFail(msg) };
+      case null {};
+    };
+    // An earlier checkout for the same order comes first. There is no payment
+    // webhook, so a card charged in a tab that closed before its confirmation
+    // is known only to the processor: opening a new checkout would charge the
+    // customer again. The newest few are looked up: one already paid (or
+    // paying) is handed back for confirmation, one still awaiting a card is
+    // reused, a cancelled one is closed, and only then is a new one opened.
+    // A failed lookup refuses rather than risk a second charge.
+    let now = Time.now();
+    let earlier = List.empty<Account.PaymentRecord>();
+    for ((_, p) in payments.entries()) {
+      if (p.userId == a.id and p.purpose == purpose and p.reference == ?refText and p.amountCents == amount and p.state == #Created and not p.sandbox and now - p.createdAt < reuseCheckoutNs) {
+        earlier.add(p);
+      };
+    };
+    let newestFirst = earlier.toArray().sort(func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(y.createdAt, x.createdAt));
+    var reusable : ?(Text, Text) = null;
+    var looked = 0;
+    label checking for (p in newestFirst.vals()) {
+      if (looked >= 3) break checking;
+      looked += 1;
+      let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      if (not Http.isSuccess(resp)) {
+        return intentFail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body), "We couldn't check your earlier checkout for this order; please try again in a minute"));
+      };
+      switch (Stripe.parseIntent(resp.body)) {
+        case null {};
+        case (?intent) {
+          if (intent.id == p.paymentIntentId) {
+            if (intent.status == "succeeded" or intent.status == "processing" or intent.status == "requires_capture") {
+              // Already paid: the checkout confirms it (no client secret).
+              return { ok = true; error = null; paymentIntentId = ?p.paymentIntentId; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
+            } else if (intent.status == "canceled") {
+              p.state := #Failed;
+            } else if (reusable == null) {
+              switch (intent.clientSecret) { case (?cs) { reusable := ?(p.paymentIntentId, cs) }; case null {} };
+            };
+          };
+        };
+      };
+    };
+    switch (reusable) {
+      case (?(id, cs)) {
+        if (purpose == #CampaignOrder) {
+          switch (campaigns.get(refText)) {
+            case (?c) { if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") } };
+            case null { return intentFail("This draft was removed while checkout was opening (unpaid drafts expire after 14 days). Re-run it from Campaigns to launch it again; nothing was charged.") };
+          };
+        };
+        return { ok = true; error = null; paymentIntentId = ?id; clientSecret = ?cs; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
+      };
       case null {};
     };
     let idem = "ez-" # purposeText(purpose) # "-" # refText # "-" # seq.toText();
@@ -455,6 +518,25 @@ mixin (
     };
   };
 
+  /// Why a received campaign payment bought nothing, or null when it paid its
+  /// campaign (or is not a campaign payment). A draft removed after 14 unpaid
+  /// days (or deleted) whose old checkout was paid anyway, or a second
+  /// payment for a campaign another payment already settled (two checkouts
+  /// open at once): the payment is recorded so support can refund it, and the
+  /// customer is told so, every time it is checked — never a plain success.
+  private func unsettledNotice(record : Account.PaymentRecord) : ?Text {
+    if (record.purpose != #CampaignOrder) return null;
+    switch (record.reference) {
+      case (?id) {
+        switch (campaigns.get(id)) {
+          case null ?"This draft was removed before the payment arrived (unpaid drafts expire after 14 days). The payment is recorded; contact support for a refund.";
+          case (?c) { if (c.paymentIntentId == ?record.paymentIntentId) null else ?"This campaign was already paid by another checkout, so this second payment bought nothing. It is recorded; contact support for a refund." };
+        };
+      };
+      case null ?"This payment is not linked to a campaign. It is recorded; contact support for a refund.";
+    };
+  };
+
   /// Verifies a PaymentIntent with Stripe (or sandbox) and applies its effects exactly once.
   public shared ({ caller }) func confirmPayment(paymentIntentId : Text) : async Account.ConfirmPaymentResult {
     let fail = func(msg : Text) : Account.ConfirmPaymentResult {
@@ -466,6 +548,10 @@ mixin (
     if (record.userId != callerId and not AdminLib.isAdmin(adminKeysState, caller)) { return fail("This payment belongs to another account") };
     let a = switch (accounts.get(record.userId)) { case (?x) x; case null { return fail("Account not found") } };
     if (record.state == #Succeeded or record.state == #Waived) {
+      switch (unsettledNotice(record)) {
+        case (?msg) { return { ok = false; error = ?msg; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = null; subscriptionActive = null; referralRewardApplied = false } };
+        case null {};
+      };
       return { ok = true; error = null; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = record.reference; subscriptionActive = ?AccountLib.isSubscriptionLive(a, Time.now()); referralRewardApplied = false };
     };
     if (record.sandbox) {
@@ -477,11 +563,16 @@ mixin (
       let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("Payments aren't set up yet; please try again later") } };
       // Every live lookup is a replicated outcall: budgeted per payment (a
       // short gap), per identity and for the canister, before the await.
-      switch (stripeRefusal(Limits.admit(stripeWindows, [
-        { key = "confirm:*"; limit = confirmsPerHourGlobal; minGapNs = 0 },
+      // A payment's first lookup in the window is never held by the shared
+      // cap: a customer whose card was just charged must not be kept waiting
+      // because other (free) identities used it up. Payment records are
+      // bounded by the checkout budgets, so neither is this.
+      let firstLookup = not stripeWindows.containsKey("confirm:" # record.paymentIntentId);
+      let budgets = [
         { key = "confirm:" # callerId; limit = confirmsPerHour; minGapNs = 0 },
         { key = "confirm:" # record.paymentIntentId; limit = confirmsPerHour; minGapNs = confirmGapNs },
-      ], Time.now(), stripeWindowNs), "checking this payment")) {
+      ];
+      switch (stripeRefusal(Limits.admit(stripeWindows, if (firstLookup) budgets else budgets.concat([{ key = "confirm:*"; limit = confirmsPerHourGlobal; minGapNs = 0 }]), Time.now(), stripeWindowNs), "checking this payment")) {
         case (?msg) { return fail(msg) };
         case null {};
       };
@@ -504,6 +595,11 @@ mixin (
           if (intent.id != record.paymentIntentId) { return fail("The payment processor returned a different payment") };
           if (intent.status != "succeeded") { return fail("Payment not completed yet (status: " # intent.status # ")") };
           if (intent.amount != record.amountCents or intent.currency != "usd") { return fail("Payment amount mismatch") };
+          // A test key's payment moved no money: it must never print mail
+          // for real or grant credits (test orders go through test mode).
+          if (not intent.livemode) {
+            return fail(AdminLib.providerError(adminKeysState, caller, "The payment processor reports a test-mode payment (livemode false) while live checkout is on: the secret key is a test key. Nothing was granted.", "This payment could not be accepted, and nothing was granted. Please contact support."));
+          };
         };
       };
       // Re-check after the await: another call may have confirmed meanwhile.
@@ -511,13 +607,10 @@ mixin (
         return { ok = true; error = null; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = record.reference; subscriptionActive = ?AccountLib.isSubscriptionLive(a, Time.now()); referralRewardApplied = false };
       };
     };
-    // A draft removed after 14 unpaid days (or deleted by its owner) whose
-    // old checkout was paid anyway: the payment is recorded as received, so
-    // support can refund it, but it buys nothing and earns no referral.
-    let orphaned = record.purpose == #CampaignOrder and (switch (record.reference) { case (?id) not campaigns.containsKey(id); case null true });
     let (balance, campaignId, subActive) = applyPaymentEffects(record, a);
-    if (orphaned) {
-      return { ok = false; error = ?"This draft was removed before the payment arrived (unpaid drafts expire after 14 days). The payment is recorded; contact support for a refund."; state = ?record.state; creditBalance = balance; campaignId = null; subscriptionActive = null; referralRewardApplied = false };
+    switch (unsettledNotice(record)) {
+      case (?msg) { return { ok = false; error = ?msg; state = ?record.state; creditBalance = balance; campaignId = null; subscriptionActive = null; referralRewardApplied = false } };
+      case null {};
     };
     let rewarded = tryReferralReward(record);
     { ok = true; error = null; state = ?record.state; creditBalance = balance; campaignId; subscriptionActive = switch (subActive) { case (?s) ?s; case null ?AccountLib.isSubscriptionLive(a, Time.now()) }; referralRewardApplied = rewarded };

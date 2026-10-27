@@ -1112,20 +1112,36 @@ export function discardWizardDraft(): void {
  * same key are the same order.
  */
 export function launchOrderKey(s: WizardData): string {
-  return JSON.stringify(
-    [
-      s.campaignName.trim(),
-      s.selectedProduct,
-      s.selectedSpec?.mailClass ?? null,
-      s.audienceType,
-      s.recipientCount,
-      s.verifiedAddresses,
-      s.qrDestinationUrl.trim(),
-      s.returnAddress,
-      s.sourcePresetId,
-    ],
-    (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+  // Kept as a short hash: the audience can run to a million recipients, and
+  // the store holds the key of the launched order.
+  return hashText(
+    JSON.stringify(
+      [
+        s.campaignName.trim(),
+        s.selectedProduct,
+        s.selectedSpec?.mailClass ?? null,
+        s.audienceType,
+        s.recipientCount,
+        s.verifiedAddresses,
+        s.qrDestinationUrl.trim(),
+        s.returnAddress,
+        s.sourcePresetId,
+      ],
+      (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+    ),
   );
+}
+
+/** Two independent 32-bit FNV-style hashes and the length, in base 36. */
+function hashText(text: string): string {
+  let a = 0x811c9dc5;
+  let b = 0x9747b28c ^ text.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    a = Math.imul(a ^ c, 16777619);
+    b = Math.imul(b ^ c, 2246822519);
+  }
+  return `${text.length.toString(36)}.${(a >>> 0).toString(36)}.${(b >>> 0).toString(36)}`;
 }
 
 /**

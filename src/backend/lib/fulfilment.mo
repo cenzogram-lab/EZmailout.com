@@ -14,6 +14,7 @@ import Nat8 "mo:core/Nat8";
 import Nat32 "mo:core/Nat32";
 import List "mo:core/List";
 import Nat "mo:core/Nat";
+import Map "mo:core/Map";
 
 module {
   public let addressMappingId : Text = "1";
@@ -310,13 +311,85 @@ module {
       if (out.size() > 0) break byKey;
     };
     if (out.size() == 0) {
-      for (tag in ["scanDescription", "status", "description", "event"].vals()) {
+      label byTag for (tag in ["scanDescription", "status", "description", "event"].vals()) {
         for (v in Json.xmlTags(body, tag).vals()) {
           if (v != "" and not v.toArray().all(func(c : Char) : Bool { c.isDigit() })) { out.add(v) };
         };
+        if (out.size() > 0) break byTag;
       };
     };
     out.toArray();
+  };
+
+  // ─── Per-piece tracking ──────────────────────────────────────────────────
+
+  /// Arrays a tracking reply may list its scan or piece records under.
+  let trackingListKeys : [Text] = ["tracking", "statuses", "scans", "pieces", "mailPieces", "trackingDetails", "trackingResults", "items", "results", "data"];
+
+  /// Members naming the mail piece a record belongs to (its IMb barcode).
+  let pieceIdKeys : [Text] = ["barCode", "barcode", "barCodeNumber", "imb", "IMB", "imbBarcode", "imbCode", "pieceId", "mailPieceId", "trackingNumber"];
+
+  /// One job's tracking, read page by page. Where records name their piece,
+  /// each piece keeps only its furthest scan, so a piece's history (several
+  /// scans past a stage) counts once; otherwise every scan is kept as before.
+  public type PieceTally = {
+    pieces : Map.Map<Text, (Nat, Text)>;
+    scans : List.List<Text>;
+    var named : Bool;
+    var unnamed : Nat;
+  };
+
+  public func newTally() : PieceTally {
+    { pieces = Map.empty<Text, (Nat, Text)>(); scans = List.empty<Text>(); var named = false; var unnamed = 0 };
+  };
+
+  func pieceIdOf(record : Text) : ?Text {
+    for (k in pieceIdKeys.vals()) {
+      switch (Json.topLevelString(record, k)) { case (?v) { if (v != "") return ?v }; case null {} };
+      switch (Json.topLevelNumber(record, k)) { case (?n) { return ?n.toText() }; case null {} };
+    };
+    null;
+  };
+
+  /// Adds one page of a job's tracking to `t`.
+  public func addTrackingPage(t : PieceTally, body : Text) {
+    for (s in parseTrackingStatuses(body).vals()) { t.scans.add(s) };
+    label lists for (listKey in trackingListKeys.vals()) {
+      let raw = switch (Json.getRawArray(body, listKey)) { case (?r) r; case null { continue lists } };
+      let records = Json.splitTopLevelObjects(raw);
+      // Records are alike: the first few show whether they name their piece.
+      if (not records.sliceToArray(0, Nat.min(records.size(), 20)).any(func(r : Text) : Bool { pieceIdOf(r) != null })) continue lists;
+      t.named := true;
+      for (r in records.vals()) {
+        var furthest : ?(Nat, Text) = null;
+        for (s in parseTrackingStatuses(r).vals()) {
+          switch (CampaignLib.statusFromText(s)) {
+            case (?st) {
+              let i = CampaignLib.stageIndex(st);
+              switch (furthest) { case (?(j, _)) { if (i > j) furthest := ?(i, s) }; case null { furthest := ?(i, s) } };
+            };
+            case null {};
+          };
+        };
+        switch (furthest) {
+          case (?(i, s)) {
+            let id = switch (pieceIdOf(r)) {
+              case (?x) x;
+              case null { t.unnamed += 1; "#" # t.unnamed.toText() };
+            };
+            switch (t.pieces.get(id)) { case (?(j, _)) { if (i > j) t.pieces.add(id, (i, s)) }; case null { t.pieces.add(id, (i, s)) } };
+          };
+          case null {};
+        };
+      };
+      return;
+    };
+  };
+
+  /// What a job's tracking says, one status per piece where the records name
+  /// their pieces, else every scan (for `aggregateStage`).
+  public func tallyStatuses(t : PieceTally) : [Text] {
+    if (t.named) t.pieces.values().map(func((_, s) : (Nat, Text)) : Text = s).toArray() else t.scans.toArray();
   };
 
   /// Highest stage reached by at least half of the pieces, on the ranking of

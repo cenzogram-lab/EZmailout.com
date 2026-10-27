@@ -177,7 +177,7 @@ export function parseAddressCsv(raw: string): CsvParseResult {
       address_line2: line2 ? line2 : undefined,
       city: get(col.city),
       state: get(col.state).toUpperCase(),
-      zip_code: get(col.zip),
+      zip_code: normalizeZip(get(col.zip)),
     };
     const key = recipientKey(row);
     if (seen.has(key)) {
@@ -188,6 +188,21 @@ export function parseAddressCsv(raw: string): CsvParseResult {
     rows.push(row);
   }
   return { rows, errors, headers, duplicatesRemoved };
+}
+
+/**
+ * A ZIP as the canister expects it. Spreadsheets store ZIPs as numbers, so a
+ * list saved from Excel has lost the leading zeros of New England, New
+ * Jersey and Puerto Rico ZIPs ("2134" for 02134), and writes ZIP+4 without
+ * its dash; those rows used to fail verification and drop out of the mailing.
+ */
+export function normalizeZip(raw: string): string {
+  const zip = raw.replace(/\s+/g, "");
+  if (/^\d{3,4}$/.test(zip)) return zip.padStart(5, "0");
+  if (/^\d{9}$/.test(zip)) return `${zip.slice(0, 5)}-${zip.slice(5)}`;
+  const plus4 = /^(\d{3,5})-(\d{4})$/.exec(zip);
+  if (plus4) return `${plus4[1].padStart(5, "0")}-${plus4[2]}`;
+  return zip;
 }
 
 function escapeCell(value: string): string {

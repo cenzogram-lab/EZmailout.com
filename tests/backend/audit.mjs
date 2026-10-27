@@ -347,6 +347,39 @@ const sections = {
     await drive(env.pic, up, confs);
     const lookups = up.log.length - b2;
     check(lookups <= 3, "polling confirmPayment cannot drain cycles with replicated Stripe lookups", { lookups });
+    state.paid = true;
+
+    // A test key's payment moved no money: it grants nothing.
+    const tester = ident(106);
+    const ti = await call(env.pic, up, env.deferred(tester).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+    state.livemode = false;
+    const tc = await call(env.pic, up, env.deferred(tester).confirmPayment(ti.paymentIntentId[0]));
+    const testGrants = (await env.as(tester).getCreditLedger()).filter((e) => e.delta > 0n && e.reason.includes("pack")).length;
+    check(!tc.ok && testGrants === 0 && !/stripe|livemode/i.test(tc.error[0] ?? ""), "a test-key payment grants nothing while live checkout is on", tc.error);
+    delete state.livemode;
+    // There is no payment webhook: a charge whose confirmation was lost is
+    // found again by the next checkout for the same order, never charged twice.
+    await env.pic.advanceTime(3_000); await env.pic.tick();
+    const posts = up.log.filter((l) => l.method === "POST" && l.url.endsWith("/payment_intents")).length;
+    const back = await call(env.pic, up, env.deferred(tester).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+    const postsAfter = up.log.filter((l) => l.method === "POST" && l.url.endsWith("/payment_intents")).length;
+    check(back.ok && back.paymentIntentId[0] === ti.paymentIntentId[0] && back.clientSecret.length === 0 && postsAfter === posts, "a paid but unconfirmed checkout is handed back for confirmation instead of a new charge", back);
+    await env.pic.advanceTime(6_000); await env.pic.tick();
+    const recovered = await call(env.pic, up, env.deferred(tester).confirmPayment(back.paymentIntentId[0]));
+    check(recovered.ok && recovered.creditBalance[0] >= 1600n, "confirming it grants the pack", recovered);
+    // An open checkout still waiting for a card is reused, not duplicated;
+    // a cancelled one is closed and a new one opened.
+    const waiter = ident(107);
+    const w1 = await call(env.pic, up, env.deferred(waiter).createPaymentIntent({ CreditPack: null }, [], [{ Agency: null }]));
+    state.lookup = () => "requires_payment_method";
+    await env.pic.advanceTime(3_000); await env.pic.tick();
+    const w2 = await call(env.pic, up, env.deferred(waiter).createPaymentIntent({ CreditPack: null }, [], [{ Agency: null }]));
+    check(w2.ok && w2.paymentIntentId[0] === w1.paymentIntentId[0] && w2.clientSecret[0] === w1.clientSecret[0], "an open checkout for the same order is reused", { w1: w1.paymentIntentId, w2: w2.paymentIntentId });
+    state.lookup = () => "canceled";
+    await env.pic.advanceTime(3_000); await env.pic.tick();
+    const w3 = await call(env.pic, up, env.deferred(waiter).createPaymentIntent({ CreditPack: null }, [], [{ Agency: null }]));
+    check(w3.ok && w3.paymentIntentId[0] !== w1.paymentIntentId[0] && w3.clientSecret.length === 1, "a cancelled checkout is replaced by a new one", w3);
+    delete state.lookup;
   },
 
   // ─── 7. OpenAI: credits charged before, refunded on failure ──────────────
@@ -524,6 +557,24 @@ sections.orders = async function orders() {
   check(intent.ok && paid.ok, "with its file staged the campaign is paid", { intent: intent.error, paid: paid.error });
   const swap = await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "other.pdf", pdf(9));
   check(!swap.ok && /paid/.test(swap.error[0] ?? ""), "a paid campaign's print file can no longer be replaced", swap.error);
+
+  // Deleting a draft closes its open checkout first; one that cannot be
+  // closed (it may be paid) keeps the draft.
+  const deleter = ident(158);
+  const d = env.as(deleter);
+  const dc = (await d.createCampaign(campaignInput(3))).campaignId[0];
+  await d.uploadDocumentChunk(dc, 0n, 1n, "application/pdf", "art.pdf", pdf(2));
+  const dIntent = await call(env.pic, up, env.deferred(deleter).createPaymentIntent({ CampaignOrder: null }, [dc], []));
+  const dGone = await call(env.pic, up, env.deferred(deleter).deleteCampaignDraft(dc));
+  check(dIntent.ok && dGone.ok && up.log.some((l) => l.url.endsWith(`/${dIntent.paymentIntentId[0]}/cancel`)), "deleting a draft cancels its open checkout, then removes it", dGone.error);
+  const kc = (await d.createCampaign(campaignInput(3))).campaignId[0];
+  await d.uploadDocumentChunk(kc, 0n, 1n, "application/pdf", "art.pdf", pdf(3));
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  await call(env.pic, up, env.deferred(deleter).createPaymentIntent({ CampaignOrder: null }, [kc], []));
+  pay.cancelFails = true;
+  const kept = await call(env.pic, up, env.deferred(deleter).deleteCampaignDraft(kc));
+  pay.cancelFails = false;
+  check(!kept.ok && (await d.getCampaign(kc)).length === 1, "a draft whose checkout cannot be cancelled is kept", kept.error);
 
   // A referred customer earns their referrer one free month, whichever
   // payment is confirmed first (newest-first confirmation earned one each).

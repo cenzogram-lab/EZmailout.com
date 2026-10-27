@@ -42,11 +42,11 @@ module {
     ]);
   };
 
-  public type IntentInfo = { id : Text; clientSecret : ?Text; status : Text; amount : Nat; currency : Text };
+  public type IntentInfo = { id : Text; clientSecret : ?Text; status : Text; amount : Nat; currency : Text; livemode : Bool };
 
   /// Members payment verification reads; the replicated verification call
   /// reduces Stripe's response to exactly these (`Http.jsonSummary`).
-  public let intentSummaryKeys : [Text] = ["id", "status", "amount", "currency"];
+  public let intentSummaryKeys : [Text] = ["id", "status", "amount", "currency", "livemode"];
 
   /// Reads the PaymentIntent's own top-level members. The any-depth getters
   /// would pick up a nested `status` or `amount` first — on older API versions
@@ -66,6 +66,9 @@ module {
           status = switch (Json.topLevelString(body, "status")) { case (?s) s; case null "" };
           amount;
           currency = switch (Json.topLevelString(body, "currency")) { case (?c) c; case null "" };
+          // Only an explicit `true` is live money: a test key's intents
+          // (`false`) or an answer without the field never are.
+          livemode = Json.topLevel(body).any(func((k, raw) : (Text, Text)) : Bool { k == "livemode" and raw == "true" });
         };
       };
     };

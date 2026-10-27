@@ -169,23 +169,40 @@ export function wrapText(
   return lines;
 }
 
-const HYPHENS = "-\u2010\u2013\u2014";
+const HYPHENS = "-\u2010\u2013";
+const EM_DASH = "\u2014";
+const ELLIPSIS = "\u2026";
+const WORDISH = /[\p{L}\p{N}]/u;
+const LETTER = /\p{L}/u;
 
 /**
- * A word cut after each hyphen or dash that the browser may wrap at: one
- * with a character before it and a letter or digit after it ("Award-" /
- * "winning", "555-" / "0123", as Chromium breaks them; a leading "-5" and
- * "1,000-$2,000" stay whole).
+ * A word cut where Chromium may wrap inside it (a UAX #14 subset): after a
+ * hyphen or en dash followed by a letter or digit ("Award-" / "winning",
+ * "555-" / "0123"), or by a letter when the hyphen starts the word ("-" /
+ * "bar", while "-5" stays whole); before and after an em dash ("local" /
+ * "—delivered"); and after an ellipsis ("20%…" / "limited"). "1,000-$2,000"
+ * stays whole.
  */
 function hyphenSegments(word: string): string[] {
   const chars = Array.from(word);
   const out: string[] = [];
   let start = 0;
-  for (let k = 1; k < chars.length - 1; k++) {
+  const cut = (at: number) => {
+    if (at > start && at < chars.length) {
+      out.push(chars.slice(start, at).join(""));
+      start = at;
+    }
+  };
+  for (let k = 0; k < chars.length - 1; k++) {
+    const c = chars[k];
     const next = chars[k + 1];
-    if (HYPHENS.includes(chars[k]) && /[\p{L}\p{N}]/u.test(next)) {
-      out.push(chars.slice(start, k + 1).join(""));
-      start = k + 1;
+    if (HYPHENS.includes(c)) {
+      if (k > 0 ? WORDISH.test(next) : LETTER.test(next)) cut(k + 1);
+    } else if (c === EM_DASH) {
+      if (k > 0 && chars[k - 1] !== EM_DASH) cut(k);
+      if (next !== EM_DASH) cut(k + 1);
+    } else if (c === ELLIPSIS && WORDISH.test(next)) {
+      cut(k + 1);
     }
   }
   out.push(chars.slice(start).join(""));
