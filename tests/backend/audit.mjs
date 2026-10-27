@@ -262,6 +262,29 @@ const sections = {
     const inFlight = ids.slice(1).map(([, , j]) => j);
     const missed = inFlight.filter((j) => !polled.has(j));
     check(missed.length === 0, "two 6-hourly polls reach all 12 in-flight campaigns (no starvation)", { missed });
+
+    // A job whose tracking comes in pages is judged on every page, and only
+    // once every page was read.
+    const pu = ident(95);
+    const pcid = await paidCampaign(env, pu, up);
+    const pd = await call(env.pic, up, env.deferred(pu).dispatchPrintJob(pcid));
+    if (!pd.ok) throw new Error("dispatch " + pd.error);
+    const pages = [["Accepted at USPS Origin Facility"], ["Returned to sender", "Returned to sender"]];
+    const statusOf = async () => (await env.as(pu).getCampaign(pcid))[0].status;
+    const ignored = upstream(fakePrintPartner({ trackingPages: pages, ignorePaging: true }));
+    await call(env.pic, ignored, env.deferred(env.controller).syncPrintTracking(pcid));
+    check((await statusOf()).Returned === undefined, "a partner that ignores the page parameter never settles the campaign on page 1 alone", await statusOf());
+    const down = upstream(fakePrintPartner({ trackingPages: pages, trackingPageDown: 2 }));
+    await call(env.pic, down, env.deferred(env.controller).syncPrintTracking(pcid));
+    check((await statusOf()).Returned === undefined, "a page that fails leaves the job unjudged", await statusOf());
+    const tooMany = upstream(fakePrintPartner({ trackingPages: Array.from({ length: 26 }, () => ["Returned to sender"]) }));
+    await call(env.pic, tooMany, env.deferred(env.controller).syncPrintTracking(pcid));
+    const tooManyReads = tooMany.log.filter((l) => l.url.includes("/tracking")).length;
+    check((await statusOf()).Returned === undefined && tooManyReads === 1, "more pages than the cap reads one page and judges nothing", { status: await statusOf(), tooManyReads });
+    const paged = upstream(fakePrintPartner({ trackingPages: pages }));
+    const ps = await call(env.pic, paged, env.deferred(env.controller).syncPrintTracking(pcid));
+    const urls = paged.log.filter((l) => l.url.includes("/tracking")).map((l) => l.url);
+    check(ps.ok && (await statusOf()).Returned !== undefined && urls.length === 2 && urls[0].endsWith("trackingType=IMB") && urls[1].endsWith("trackingType=IMB&page=2"), "every page is read and the scans of all of them decide the stage", { status: await statusOf(), urls });
   },
 
   // ─── 6. Stripe: intents, replicated confirmation, abuse limits ───────────

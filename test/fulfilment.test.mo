@@ -48,4 +48,13 @@ expect("first batch", batches[0].1, 2);
 expect("second batch start", batches[1].0, 2);
 expect("second batch size", batches[1].1, 1);
 
+// Tracking pages: page 1 is the plain request, the count is read from JSON or XML.
+assert Fulfilment.trackingPath("j1", 1) == "/jobs/j1/tracking?trackingType=IMB";
+assert Fulfilment.trackingPath("j1", 3) == "/jobs/j1/tracking?trackingType=IMB&page=3";
+assert Fulfilment.trackingPageCount("{\"totalPages\":4,\"tracking\":[]}") == ?4;
+assert Fulfilment.trackingPageCount("<tracking><numberOfPages> 2 </numberOfPages></tracking>") == ?2;
+assert Fulfilment.trackingPageCount("{\"tracking\":[{\"pageCount\":9}]}") == null;
+assert Fulfilment.trackingPageCount("{\"totalPages\":0}") == null;
+assert Fulfilment.trackingPageCount("{\"tracking\":[]}") == null;
+
 Debug.print("fulfilment: all checks passed");

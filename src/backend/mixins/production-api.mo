@@ -44,8 +44,9 @@ mixin (
   /// customer pays, so a file that cannot be sent is never charged for.
   transient let maxDocumentBytes : Nat = 1_900_000;
   transient let allowedMimeTypes : [Text] = ["application/pdf", "image/png", "image/jpeg"];
-  /// Print jobs one tracking poll looks up (two outcalls each), however
-  /// many campaigns or batches they belong to.
+  /// Print jobs one tracking poll looks up (the job, then its tracking page
+  /// by page: usually two outcalls, at most `Fulfilment.maxTrackingPages` + 1),
+  /// however many campaigns or batches they belong to.
   transient let maxPollJobsPerTick : Nat = 10;
 
   /// Campaigns with a print dispatch running. Taken before the first
@@ -486,16 +487,39 @@ mixin (
     var firstFailure : ?Http.Response = null;
     for (job in jobIds.vals()) {
       let jobResp = await* Http.get(base # "/jobs/" # job, headers, AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
-      let trackResp = await* Http.get(base # "/jobs/" # job # "/tracking?trackingType=IMB", headers, AdminLib.outcallOptions(adminKeysState, 1_900_000), transformFn);
       if (Http.isSuccess(jobResp)) {
         answered := true;
         switch (Json.getString(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
         switch (Json.xmlTag(jobResp.body, "status")) { case (?s) statuses.add(s); case null {} };
         statuses.add(Fulfilment.parseDescription(jobResp.body));
       } else if (firstFailure == null) { firstFailure := ?jobResp };
-      if (Http.isSuccess(trackResp)) {
+      // A job's tracking is read page by page (a large batch's scans outgrow
+      // one reply) and counts only when every page was read: judging a job
+      // on some of its pieces could settle the campaign wrongly.
+      let jobPieces = List.empty<Text>();
+      var page = 1;
+      var pageCount = 1;
+      var firstPage = "";
+      var complete = false;
+      label pages loop {
+        let trackResp = await* Http.get(base # Fulfilment.trackingPath(job, page), headers, AdminLib.outcallOptions(adminKeysState, Fulfilment.maxTrackingPageBytes), transformFn);
+        if (not Http.isSuccess(trackResp)) break pages;
+        if (page == 1) {
+          firstPage := trackResp.body;
+          pageCount := switch (Fulfilment.trackingPageCount(trackResp.body)) { case (?n) n; case null 1 };
+          if (pageCount > Fulfilment.maxTrackingPages) break pages;
+        } else if (trackResp.body == firstPage) {
+          // The page was not served (the same reply again): the rest of the
+          // job's pieces cannot be read.
+          break pages;
+        };
+        for (p in Fulfilment.parseTrackingStatuses(trackResp.body).vals()) { jobPieces.add(p) };
+        if (page >= pageCount) { complete := true; break pages };
+        page += 1;
+      };
+      if (complete) {
         answered := true;
-        for (p in Fulfilment.parseTrackingStatuses(trackResp.body).vals()) { pieces.add(p) };
+        for (p in jobPieces.values()) { pieces.add(p) };
       } else { unanswered += 1 };
     };
     if (not answered) {

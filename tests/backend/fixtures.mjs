@@ -77,6 +77,14 @@ export function fakePrintPartner(plan = {}) {
       submitted.add(id); return { body: { status: 0, description: "Success" } };
     }],
     [(r) => isPrint(r) && r.method === "GET" && r.url.includes("/tracking") && plan.trackingDownFor && r.url.includes(`/jobs/${plan.trackingDownFor}/`), () => ({ status: 503, body: { description: "busy" } })],
+    // Paged tracking: `trackingPages` holds each page's scans and the reply
+    // names `totalPages`; `ignorePaging` serves page 1 for every page, and
+    // `trackingPageDown` makes that page unavailable.
+    [(r) => isPrint(r) && r.method === "GET" && r.url.includes("/tracking") && plan.trackingPages, (r) => {
+      const page = plan.ignorePaging ? 1 : Number(new URL(r.url).searchParams.get("page") ?? 1);
+      if (page === plan.trackingPageDown) return { status: 503, body: { description: "busy" } };
+      return { body: { totalPages: plan.trackingPages.length, tracking: (plan.trackingPages[page - 1] ?? []).map((s) => ({ scanDescription: s })) } };
+    }],
     [(r) => isPrint(r) && r.method === "GET" && r.url.includes("/tracking"), () => ({ body: { tracking: (plan.scans ?? ["Accepted at USPS Origin Facility"]).map((s) => ({ scanDescription: s })) } })],
     [(r) => isPrint(r) && r.method === "GET" && /\/jobs\/[^/]+$/.test(r.url), (r) => {
       const id = r.url.split("/jobs/")[1];

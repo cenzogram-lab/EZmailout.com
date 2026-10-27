@@ -13,6 +13,7 @@ import Char "mo:core/Char";
 import Nat8 "mo:core/Nat8";
 import Nat32 "mo:core/Nat32";
 import List "mo:core/List";
+import Nat "mo:core/Nat";
 
 module {
   public let addressMappingId : Text = "1";
@@ -251,6 +252,48 @@ module {
         };
       };
     };
+  };
+
+  // ─── Tracking pages ───────────────────────────────────────────────────────
+
+  /// Bytes one tracking reply may take (an outcall's response cap).
+  public let maxTrackingPageBytes : Nat64 = 1_900_000;
+
+  /// Pages of one print job's tracking a lookup reads. A batch holds up to
+  /// 1.8 MB of address XML, and its per-piece scans can outgrow one reply, so
+  /// tracking is read page by page; a job with more pages than this counts
+  /// as unanswered rather than being judged on part of its pieces.
+  public let maxTrackingPages : Nat = 25;
+
+  /// The names a tracking reply may give its page count under (a top-level
+  /// JSON number or an XML element).
+  let trackingPageKeys : [Text] = ["totalPages", "numberOfPages", "totalNumberOfPages", "pageCount", "pages"];
+
+  /// Path of page `page` (from 1) of a job's IMb tracking: page 1 is the
+  /// plain request; later pages add `page=`.
+  public func trackingPath(jobId : Text, page : Nat) : Text {
+    "/jobs/" # jobId # "/tracking?trackingType=IMB" # (if (page > 1) "&page=" # page.toText() else "");
+  };
+
+  /// How many pages a tracking reply says the job's tracking has, or null when
+  /// it does not say (the reply is then the whole of it).
+  public func trackingPageCount(body : Text) : ?Nat {
+    for (key in trackingPageKeys.vals()) {
+      switch (Json.topLevelNumber(body, key)) {
+        case (?n) { if (n >= 1) return ?n.toNat() };
+        case null {};
+      };
+      switch (Json.xmlTag(body, key)) {
+        case (?t) {
+          switch (Nat.fromText(t.trim(#predicate(func(c : Char) : Bool { c.isWhitespace() })))) {
+            case (?n) { if (n >= 1) return ?n };
+            case null {};
+          };
+        };
+        case null {};
+      };
+    };
+    null;
   };
 
   /// Collects every status-like string from a tracking response (JSON or XML),
