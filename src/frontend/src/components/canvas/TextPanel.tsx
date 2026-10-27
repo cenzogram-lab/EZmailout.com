@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { DEFAULT_FONT_FAMILY } from "@/lib/canvas";
 import { freeSafeRect } from "@/lib/printSpec";
+import { measuredHeight } from "@/lib/textFit";
 import { useWizardStore } from "@/store/wizard";
 import { Heading1, Heading2, PenLine, Pilcrow } from "lucide-react";
+import { useRef } from "react";
 
 const PRESETS = [
   {
@@ -12,7 +15,6 @@ const PRESETS = [
     text: "Your headline here",
     fontSize: 36,
     fontWeight: 700n,
-    height: 56,
     className: "text-xl font-bold",
   },
   {
@@ -22,7 +24,6 @@ const PRESETS = [
     text: "A short supporting line",
     fontSize: 22,
     fontWeight: 600n,
-    height: 40,
     className: "text-base font-semibold",
   },
   {
@@ -32,7 +33,6 @@ const PRESETS = [
     text: "Tell your neighbours what you offer, when, and how to reach you.",
     fontSize: 15,
     fontWeight: 400n,
-    height: 64,
     className: "text-sm",
   },
 ] as const;
@@ -45,26 +45,47 @@ export function TextPanel({
 }) {
   const activeSide = useWizardStore((s) => s.activeSide);
   const dims = useCanvasDims();
-  const canvas = useWizardStore((s) => s.canvas);
   const addTextBlock = useWizardStore((s) => s.addTextBlock);
-  const side = activeSide === "front" ? canvas.front : canvas.back;
+  const stackFor = useRef("");
+  const nextY = useRef<number | null>(null);
 
+  /**
+   * Adds the preset beside the USPS zone on an address side, sized to its
+   * text (`measuredHeight`, as the studio hugs every box: a heading in a
+   * narrow strip wraps to several lines) and below the last block this panel
+   * added on the same side and sheet, starting again at the top rather than
+   * running past the safe area.
+   */
   function add(preset: (typeof PRESETS)[number]) {
-    // Beside the USPS zone on an address side, never in it.
     const safe = freeSafeRect(dims, activeSide);
-    const count = side.textBlocks.length;
+    const stackKey = `${activeSide}:${dims.designWidth}x${dims.designHeight}`;
+    if (stackFor.current !== stackKey) {
+      stackFor.current = stackKey;
+      nextY.current = null;
+    }
+    const width = Math.max(
+      80,
+      Math.min(Math.round(safe.w * 0.62), safe.w - 24),
+    );
+    const height = measuredHeight(preset.text, {
+      width,
+      fontSize: preset.fontSize,
+      fontWeight: Number(preset.fontWeight),
+      fontFamily: DEFAULT_FONT_FAMILY,
+    });
+    let y = nextY.current ?? safe.y + 12;
+    if (y + height > safe.y + safe.h) y = safe.y + 12;
+    y = Math.max(safe.y, Math.min(y, safe.y + safe.h - height));
     addTextBlock(activeSide, {
       text: preset.text,
       x: safe.x + 12,
-      y: Math.max(
-        safe.y,
-        Math.min(safe.y + 12 + count * 56, safe.y + safe.h - preset.height),
-      ),
-      width: Math.max(80, Math.min(Math.round(safe.w * 0.62), safe.w - 24)),
-      height: preset.height,
+      y,
+      width,
+      height,
       fontSize: preset.fontSize,
       fontWeight: preset.fontWeight,
     });
+    nextY.current = y + height + 12;
   }
 
   return (

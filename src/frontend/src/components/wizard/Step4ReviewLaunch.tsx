@@ -358,7 +358,14 @@ export function Step4ReviewLaunch() {
           // the customer is told where to find it.
           const removed = await deleteDraft
             .mutateAsync(state.campaignId)
-            .catch(() => null);
+            .catch(() => {
+              // No answer: the old draft may hold a charged checkout, so no
+              // second order is opened until it could be checked.
+              throw new StageError(
+                "creating",
+                "We couldn't check your previous draft of this order just now. Try again in a moment.",
+              );
+            });
           const mayBePaid =
             removed &&
             !removed.ok &&

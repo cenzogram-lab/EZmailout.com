@@ -51,6 +51,20 @@ export interface FontSpec {
   italic?: boolean;
 }
 
+/**
+ * The font as the editor (`textBlockStyle`) and the rasterizer (`canvasFont`)
+ * set it, Geist as the fallback: a face missing on the device (Georgia on
+ * Linux) or a character outside its range is measured in what is drawn.
+ */
+function measureFont(
+  italic: boolean,
+  fontWeight: number,
+  fontSize: number,
+  fontFamily: string,
+): string {
+  return `${italic ? "italic " : ""}${fontWeight} ${fontSize}px "${fontFamily}", "Geist", sans-serif`;
+}
+
 function widthOf(text: string, spec: FontSpec): number {
   const {
     fontSize,
@@ -62,7 +76,16 @@ function widthOf(text: string, spec: FontSpec): number {
   const tracking = letterSpacing * fontSize * [...text].length;
   const ctx = context();
   if (!ctx) return text.length * fontSize * FALLBACK_CHAR_RATIO + tracking;
-  ctx.font = `${italic ? "italic " : ""}${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  ctx.font = measureFont(italic, fontWeight, fontSize, fontFamily);
+  // Tracking turns ligatures off ("ff", "fi" are two glyphs again), in the
+  // page and in a canvas that letter-spaces natively, so it is measured that
+  // way where the context can; added by hand only where it cannot.
+  if (tracking !== 0 && "letterSpacing" in ctx) {
+    ctx.letterSpacing = `${letterSpacing * fontSize}px`;
+    const width = ctx.measureText(text).width;
+    ctx.letterSpacing = "0px";
+    return width;
+  }
   return ctx.measureText(text).width + tracking;
 }
 
@@ -93,7 +116,7 @@ export function contentAreaRatio(spec: FontSpec): number {
     fontFamily = DEFAULT_FAMILY,
     italic = false,
   } = spec;
-  ctx.font = `${italic ? "italic " : ""}${fontWeight} ${fontSize}px "${fontFamily}", sans-serif`;
+  ctx.font = measureFont(italic, fontWeight, fontSize, fontFamily);
   const m = ctx.measureText("Hgjpq");
   const ascent = m.fontBoundingBoxAscent;
   const descent = m.fontBoundingBoxDescent;
@@ -162,14 +185,16 @@ export function wrapText(
           current = candidate;
           continue;
         }
-        if (current !== null && current.trim() !== "") {
+        // Spaces before a word that does not fit stay on their own line,
+        // as Chromium leaves them (an indented continuation line).
+        if (current !== null) {
           lines.push(current.trimEnd());
           current = null;
         }
         // A piece that cannot fit on its own line is broken character by
         // character.
         let chunk = "";
-        for (const char of word) {
+        for (const char of graphemes(word)) {
           if (chunk === "" || fits(chunk + char)) {
             chunk += char;
             continue;
@@ -191,6 +216,18 @@ export function wrapText(
     lines.push((current ?? "").trimEnd());
   }
   return lines;
+}
+
+const segmenter =
+  typeof Intl !== "undefined" && "Segmenter" in Intl
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+
+/** User-perceived characters: an emoji sequence or an accent stays whole. */
+function graphemes(word: string): string[] {
+  return segmenter
+    ? Array.from(segmenter.segment(word), (s) => s.segment)
+    : Array.from(word);
 }
 
 const HYPHEN = "-";

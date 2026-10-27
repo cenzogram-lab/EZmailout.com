@@ -599,6 +599,45 @@ sections.orders = async function orders() {
   const noRepay = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
   check(campaignRefund.ok && refundedCampaign.paymentStatus.Refunded !== undefined && !noDispatch.ok && !noRepay.ok && /refunded/.test(noRepay.error[0] ?? ""), "a refunded campaign can no longer be sent to print or paid again", { refund: campaignRefund.error, dispatch: noDispatch.error, repay: noRepay.error });
 
+  // A real-money order prints only in Production: with the print setting on
+  // Staging, dispatch refuses it, and the customer is told plainly.
+  const payer = ident(165);
+  const pz = env.as(payer);
+  const paidOrder = async (fill) => {
+    const c = (await pz.createCampaign(campaignInput(3))).campaignId[0];
+    await pz.uploadDocumentChunk(c, 0n, 1n, "application/pdf", "art.pdf", pdf(fill));
+    await env.pic.advanceTime(3_000); await env.pic.tick();
+    const it = await call(env.pic, up, env.deferred(payer).createPaymentIntent({ CampaignOrder: null }, [c], []));
+    const done = await call(env.pic, up, env.deferred(payer).confirmPayment(it.paymentIntentId[0]));
+    if (!done.ok) throw new Error("pay: " + done.error);
+    return [c, it.paymentIntentId[0]];
+  };
+  check((await env.admin.saveAdminKeys(keys({ fulfilmentEnvironment: { Staging: null } }))).ok, "the print setting is switched to Staging");
+  const [live1] = await paidOrder(11);
+  const stagingRun = await call(env.pic, up, env.deferred(payer).dispatchPrintJob(live1));
+  const stagingAdmin = await call(env.pic, up, env.deferred(env.controller).dispatchPrintJob(live1));
+  check(!stagingRun.ok && !/staging|production/i.test(stagingRun.error[0] ?? "") && /Production/.test(stagingAdmin.error[0] ?? "") && (await pz.getCampaign(live1))[0].productionStatus.ReadyToDispatch === null,
+    "a paid order is never sent to the print partner's Staging; the customer is told printing is unavailable", { owner: stagingRun.error, admin: stagingAdmin.error });
+  const closedDraft = await pz.addCampaignRecipients(live1, 0n, []);
+  check(!closedDraft.ok, "a paid campaign's progress call reports it closed, so a client reusing it starts afresh", closedDraft);
+  check((await env.admin.saveAdminKeys(keys({ fulfilmentEnvironment: { Production: null } }))).ok, "the print setting is switched back to Production");
+  // A full refund holds the order before the processor answers, so a
+  // dispatch started meanwhile is refused and a refunded order never prints.
+  const [live2, live2Pay] = await paidOrder(12);
+  const refundExec = await env.deferred(env.controller).adminRefundPayment({ paymentIntentId: live2Pay, amountCents: BigInt(pay.intents.get(live2Pay).amount), reason: "Cancelled before printing", revokeEffects: true });
+  await env.pic.tick(); await env.pic.tick();
+  const during = await call(env.pic, up, env.deferred(payer).dispatchPrintJob(live2));
+  const [heldRefund] = await drive(env.pic, up, [refundExec]);
+  const live2After = (await pz.getCampaign(live2))[0];
+  check(!during.ok && heldRefund.ok && live2After.paymentStatus.Refunded === null && live2After.productionStatus.Submitted === undefined, "a dispatch started while a full refund is being made is refused", { dispatch: during.error, refund: heldRefund.error, status: live2After.paymentStatus });
+  // A refund the processor refuses releases the hold: the order still prints.
+  const [live3, live3Pay] = await paidOrder(13);
+  pay.refundFails = true;
+  const refusedRefund = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: live3Pay, amountCents: BigInt(pay.intents.get(live3Pay).amount), reason: "x", revokeEffects: true }));
+  pay.refundFails = false;
+  const printed = await call(env.pic, up, env.deferred(payer).dispatchPrintJob(live3));
+  check(!refusedRefund.ok && (await pz.getCampaign(live3))[0].paymentStatus.Paid === null && printed.ok, "a refused refund leaves the order paid, and it prints in Production", { refund: refusedRefund.error, dispatch: printed.error });
+
   // Deleting a draft closes its open checkout first; one that cannot be
   // closed (it may be paid) keeps the draft.
   const deleter = ident(158);
@@ -662,7 +701,8 @@ sections.orders = async function orders() {
   const adminAgain = await env.as(env.controller).applyReferralReward(p1.paymentIntentId[0]);
   check(!adminAgain.ok && (await r.getReferralStats())[0].referralCreditsEarned === 1n, "the admin asking for the reward again grants nothing", adminAgain.error);
   // A refund takes the month back once what is kept of the payment no
-  // longer covers it; another qualifying payment can then earn it again.
+  // longer covers it; the referral stays decided, so a later payment by the
+  // same customer earns nothing.
   const refundAll = (id, amount) => call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: id, amountCents: BigInt(amount), reason: "Requested by customer", revokeEffects: true }));
   const earnedNow = async () => (await r.getReferralStats())[0];
   // (The second checkout was the first handed back: one intent, paid once.)
@@ -672,17 +712,25 @@ sections.orders = async function orders() {
   await env.pic.advanceTime(3_000); await env.pic.tick();
   const p3 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
   const c3 = await call(env.pic, up, env.deferred(referee).confirmPayment(p3.paymentIntentId[0]));
-  check(c3.ok && c3.referralRewardApplied && (await earnedNow()).referralCreditsEarned === 1n, "the referred customer's next qualifying payment can then earn it", { error: c3.error, applied: c3.referralRewardApplied });
+  check(c3.ok && !c3.referralRewardApplied && (await earnedNow()).referralCreditsEarned === 0n, "the referral stays decided: the same customer's later payment earns nothing", { error: c3.error, applied: c3.referralRewardApplied });
+  // A used free month gives back only what is left of its own 30 days.
+  const referee2 = ident(162);
+  await env.as(referee2).ensureAccount([code], []);
+  const q1 = await call(env.pic, up, env.deferred(referee2).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+  const q1Paid = await call(env.pic, up, env.deferred(referee2).confirmPayment(q1.paymentIntentId[0]));
+  check(q1Paid.ok && q1Paid.referralRewardApplied && (await earnedNow()).referralCreditsEarned === 1n, "another referred customer's first payment earns a month", q1Paid.error);
+  await env.pic.advanceTime(3_000); await env.pic.tick();
   const renewsBefore = (await r.getMyAccount())[0].subscriptionRenewsAt;
   const redeem = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ Subscription: null }, [], []));
   const renewsRedeemed = (await r.getMyAccount())[0].subscriptionRenewsAt;
   check(redeem.ok && redeem.waived && renewsRedeemed - renewsBefore === 30n * 86_400_000_000_000n, "the referrer uses the free month (30 more days)", redeem.error);
-  await refundAll(p3.paymentIntentId[0], 500);
+  await refundAll(q1.paymentIntentId[0], 500);
   check((await earnedNow()).referralCreditsEarned === 1n, "a partial refund that still leaves the month's price paid keeps the month");
-  await refundAll(p3.paymentIntentId[0], 1000);
+  await refundAll(q1.paymentIntentId[0], 1000);
   const usedBack = await earnedNow();
   const renewsAfter = (await r.getMyAccount())[0].subscriptionRenewsAt;
-  check(usedBack.referralCreditsEarned === 0n && usedBack.referralCreditsRedeemed === 0n && renewsAfter === renewsBefore, "refunding below the month's price takes a used free month's days back", { usedBack, renewsBefore, renewsAfter });
+  const keptNs = renewsAfter - renewsBefore;
+  check(usedBack.referralCreditsEarned === 0n && usedBack.referralCreditsRedeemed === 0n && keptNs >= 0n && keptNs < 3_600_000_000_000n, "refunding below the month's price takes back what is left of the used free month, nothing more", { usedBack, renewsBefore, renewsAfter });
 
   // Verification fails closed when the per-address result does not line up
   // with the batch, and a customer sees plain advice, not network detail.
@@ -725,22 +773,37 @@ sections.orders = async function orders() {
   const lapsed = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ CampaignOrder: null }, [late.campaignId[0]], []));
   check(!lapsed.ok && /membership/i.test(lapsed.error[0] ?? ""), "once the membership has ended, checkout refuses the member-priced draft", lapsed.error);
 
-  // Payment records stay bounded: a checkout left open for a week is closed
-  // with the processor (looked up first; one already paid stays open for its
-  // customer to confirm), and closed records a month old are forgotten.
+  // Open checkouts are looked up as they age: a campaign order after an hour
+  // (a charge whose confirmation was lost is settled before its draft can
+  // expire or be evicted), every checkout after a week (paid: settled; still
+  // waiting for a card: cancelled). Closed records a month old are forgotten
+  // once the processor confirms them cancelled, and a checkout it does not
+  // know is closed only after staying unknown for a week (a wrong key for an
+  // hour must not close a paid one).
+  const lostOwner = ident(163);
+  const lc = (await env.as(lostOwner).createCampaign(campaignInput(3))).campaignId[0];
+  await env.as(lostOwner).uploadDocumentChunk(lc, 0n, 1n, "application/pdf", "art.pdf", pdf(5));
+  const lcIntent = await call(env.pic, up, env.deferred(lostOwner).createPaymentIntent({ CampaignOrder: null }, [lc], []));
   const abandoned = await call(env.pic, up, env.deferred(ident(160)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
   const lost = await call(env.pic, up, env.deferred(ident(161)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
-  const [abandonedId, lostId] = [abandoned.paymentIntentId[0], lost.paymentIntentId[0]];
+  const unknown = await call(env.pic, up, env.deferred(ident(164)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const [abandonedId, lostId, unknownId] = [abandoned.paymentIntentId[0], lost.paymentIntentId[0], unknown.paymentIntentId[0]];
+  pay.intents.delete(unknownId);
   pay.lookup = (id) => (id === abandonedId ? "requires_payment_method" : undefined);
   const found = async (id) => (await env.as(env.controller).adminFindPayments(id)).find((p) => p.paymentIntentId === id);
-  await env.pic.advanceTime(7 * day + 2 * HOUR); await drive(env.pic, up, []);
-  const [closed, keptOpen] = [await found(abandonedId), await found(lostId)];
-  check(closed?.state.Failed === null && up.log.some((l) => l.url.endsWith(`/${abandonedId}/cancel`)) && keptOpen?.state.Created === null && !up.log.some((l) => l.url.endsWith(`/${lostId}/cancel`)),
-    "a week-old open checkout is cancelled with the processor; one the processor reports paid is kept for recovery", { closed: closed?.state, kept: keptOpen?.state });
+  await env.pic.advanceTime(2 * HOUR); await drive(env.pic, up, []);
+  check((await env.as(lostOwner).getCampaign(lc))[0].paymentStatus.Paid === null && (await found(lcIntent.paymentIntentId[0]))?.state.Succeeded === null,
+    "a campaign checkout charged but never confirmed is settled within the hour");
+  await env.pic.advanceTime(7 * day); await drive(env.pic, up, []);
+  const [closed, settled, stillOpen] = [await found(abandonedId), await found(lostId), await found(unknownId)];
+  check(closed?.state.Failed === null && up.log.some((l) => l.url.endsWith(`/${abandonedId}/cancel`)) && settled?.state.Succeeded === null && (await env.as(ident(161)).getMyAccount())[0].creditBalance === 500n && !up.log.some((l) => l.url.endsWith(`/${lostId}/cancel`)),
+    "a week-old checkout still waiting for a card is cancelled; one the processor reports paid is settled and its credits granted", { closed: closed?.state, settled: settled?.state });
+  check(stillOpen?.state.Created === null, "a checkout the processor does not know is not closed on first sight", stillOpen?.state);
+  await env.pic.advanceTime(8 * day); await drive(env.pic, up, []);
+  check((await found(unknownId))?.state.Failed === null, "it is closed once it has stayed unknown for a week");
   await env.pic.advanceTime(24 * day); await drive(env.pic, up, []);
-  check(!(await found(abandonedId)) && (await found(lostId))?.state.Created === null, "a closed checkout a month old is forgotten; the paid-but-unconfirmed one stays");
-  const recovered = await call(env.pic, up, env.deferred(ident(161)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
-  check(recovered.ok && recovered.paymentIntentId[0] === lostId && recovered.clientSecret.length === 0, "its customer's next checkout hands the paid one back for confirmation", recovered);
+  check(!(await found(abandonedId)) && (await found(unknownId))?.state.Failed === null && (await found(lostId))?.state.Succeeded === null,
+    "a month on, the cancelled checkout is forgotten; one never confirmed cancelled is kept, as is every payment");
   pay.lookup = undefined;
 };
 

@@ -380,8 +380,10 @@ mixin (
     let reply = func(ok : Bool, error : ?Text, now : Nat) : Types.RecipientStageResult {
       { ok; error; stored = now; total = record.recipientCount };
     };
-    if (recipients.size() == 0 or offset + recipients.size() <= stored) { return reply(true, null, stored) };
+    // Checked first, so even a progress call (an empty chunk) tells a client
+    // reusing this draft that it is no longer open.
     if (record.paymentStatus != #Unpaid) { return reply(false, ?"This campaign is paid, so its recipient list can no longer change", stored) };
+    if (recipients.size() == 0 or offset + recipients.size() <= stored) { return reply(true, null, stored) };
     if (recipients.size() > maxRecipientsPerCall) { return reply(false, ?"Send at most 5,000 recipients per call", stored) };
     if (offset > stored) { return reply(false, ?("Recipients are added in order; " # stored.toText() # " are stored"), stored) };
     // Only the part past what is stored is new (a retried chunk can overlap).

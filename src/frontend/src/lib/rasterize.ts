@@ -235,7 +235,12 @@ export async function rasterizeSide(
     });
   }
 
-  layers.sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : 0));
+  // Equal layers paint as the editor stacks them (`sortedElements`): text,
+  // then images, then QR codes.
+  const kindOrder = { text: 0, logo: 1, qr: 2 } as const;
+  layers.sort((a, b) =>
+    a.z < b.z ? -1 : a.z > b.z ? 1 : kindOrder[a.kind] - kindOrder[b.kind],
+  );
   for (const layer of layers) {
     await layer.draw();
   }

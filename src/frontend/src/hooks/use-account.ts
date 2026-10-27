@@ -33,10 +33,12 @@ export function useAccountSync() {
   const creditBalance = useAccountStore((s) => s.creditBalance);
   const subscriptionActive = useAccountStore((s) => s.subscriptionActive);
   const ensuredFor = useRef<string | null>(null);
+  const ensureTries = useRef(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
       ensuredFor.current = null;
+      ensureTries.current = 0;
       setAccount(null);
     }
   }, [isAuthenticated, setAccount]);
@@ -50,18 +52,28 @@ export function useAccountSync() {
   useEffect(() => {
     if (!isAuthenticated || !principal) return;
     if (accountQuery.isLoading) return;
-    if (ensuredFor.current === principal) return;
     if (accountQuery.data) {
       ensuredFor.current = principal;
+      ensureTries.current = 0;
       return;
     }
-    ensuredFor.current = principal;
+    // No account yet, or it was forgotten as idle (the canister keeps unused
+    // accounts only up to a limit): open it again whenever a read comes back
+    // empty, a few times at most per sign-in.
+    const key = `${principal}:${accountQuery.dataUpdatedAt}`;
+    if (ensuredFor.current === key || ensureTries.current >= 3) return;
+    ensuredFor.current = key;
+    ensureTries.current += 1;
     ensureAccount
       .mutateAsync({ referralCode: pendingReferralCode, email: null })
       .then((result) => {
         if (result.ok && result.account) {
           setAccount(result.account);
-          if (pendingReferralCode) setPendingReferralCode(null);
+          // Kept until it links: an account opened without it (forgotten and
+          // reopened) still takes it on the next opening.
+          if (pendingReferralCode && result.account.referredBy) {
+            setPendingReferralCode(null);
+          }
         }
       })
       .catch(() => {
@@ -72,6 +84,7 @@ export function useAccountSync() {
     principal,
     accountQuery.isLoading,
     accountQuery.data,
+    accountQuery.dataUpdatedAt,
     ensureAccount,
     pendingReferralCode,
     setAccount,

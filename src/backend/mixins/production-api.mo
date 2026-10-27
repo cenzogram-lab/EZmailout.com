@@ -258,6 +258,11 @@ mixin (
     // first await, so no interleaving call can get past it.
     if (dispatchInFlight.contains(campaignId)) { return dispatchResult(record, false, ?"Dispatch already in flight for this campaign") };
     let auth = switch (AdminLib.fulfilmentAuth(adminKeysState)) { case (?a) a; case null { return dispatchResult(record, false, ?AdminLib.providerError(adminKeysState, caller, "Print fulfilment credentials not configured (Admin → Print fulfilment)", "Printing isn't available right now. Your payment is recorded; send it to print again a little later.")) } };
+    // A real-money order prints only in Production: Staging takes the job
+    // but never mails it, and a submitted job cannot be sent again.
+    if (record.paymentStatus == #Paid and environmentFor(record) == #Staging) {
+      return dispatchResult(record, false, ?AdminLib.providerError(adminKeysState, caller, "Paid orders print only in Production, and the fulfilment environment is Staging (Admin → Print fulfilment). Test-mode orders use Staging.", "Printing isn't available right now. Your payment is recorded; send it to print again a little later."));
+    };
     let recipients = switch (campaignRecipients.get(campaignId)) { case (?r) r; case null [] };
     if (recipients.size() == 0) { return dispatchResult(record, false, ?"Campaign has no verified recipients") };
     if (recipients.size() != record.recipientCount) {

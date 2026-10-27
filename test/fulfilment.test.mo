@@ -94,4 +94,9 @@ assert Fulfilment.tallyStatuses(plain).size() == 2;
 // The XML fallback reads one tag too.
 assert Fulfilment.parseTrackingStatuses("<scan><scanDescription>Delivered</scanDescription><status>Delivered</status></scan>").size() == 1;
 
+// A failed tracking lookup never tells a customer nothing was printed; a
+// failed dispatch step still does.
+assert not Fulfilment.customerError("Tracking lookup failed: dns error").contains(#text "nothing has been printed");
+assert Fulfilment.customerError("Job submission failed: HTTP 500").contains(#text "nothing has been printed");
+
 Debug.print("fulfilment: all checks passed");

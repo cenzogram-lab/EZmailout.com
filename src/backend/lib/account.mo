@@ -102,7 +102,8 @@ module {
     a.updatedAt := Time.now();
     let id = state.nextLedgerId;
     state.nextLedgerId += 1;
-    ledger.add({ id; userId = a.id; delta; balanceAfter = balance; reason; reference; timestamp = Time.now() });
+    // The change actually made: a deduction stops at zero.
+    ledger.add({ id; userId = a.id; delta = Int.max(next, 0) - current; balanceAfter = balance; reason; reference; timestamp = Time.now() });
     balance;
   };
 

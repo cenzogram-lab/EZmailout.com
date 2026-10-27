@@ -60,7 +60,10 @@ mixin (
   transient let stripeWindowNs : Int = 3_600_000_000_000;
   transient let stripeWindows = Map.empty<Text, Limits.Window>();
   transient let intentsPerHour : Nat = 10;
-  transient let intentsPerHourGlobal : Nat = 1_000;
+  /// Credit-pack and membership checkouts the whole canister opens in an
+  /// hour (campaign checkouts are budgeted per campaign). `sweepPayments`
+  /// can close every one of them that is abandoned.
+  transient let intentsPerHourGlobal : Nat = 200;
   transient let intentsPerCampaignPerHour : Nat = 5;
   /// Earlier checkouts looked up by one call for a lost charge.
   transient let lookupsPerHour : Nat = 20;
@@ -250,6 +253,10 @@ mixin (
   private func addPayment(record : Account.PaymentRecord) {
     payments.add(record.paymentIntentId, record);
     PaymentIndex.add(paymentIndex, record);
+    // Its account may have been forgotten as idle during the processor call.
+    if (not accounts.containsKey(record.userId)) {
+      ignore AccountLib.openKeepingIdle(accounts, referralCodes, idleAccounts(), maxIdleAccounts, isIdleAccount, record.userId, null, null);
+    };
   };
 
   private func intentFail(msg : Text) : Account.PaymentIntentResult {
@@ -510,7 +517,7 @@ mixin (
   /// at least the month it earns (identities are free, so a smaller payment
   /// from a fresh account would buy months below their price).
   private func referralQualifying(p : Account.PaymentRecord) : Bool {
-    (p.state == #Succeeded or p.state == #Waived) and refundedCents(p.paymentIntentId) + Credits.referralRewardCents <= p.amountCents and not p.sandbox and settledItsCampaign(p);
+    (p.state == #Succeeded or p.state == #Waived) and p.amountCents >= Credits.referralRewardCents and not p.sandbox and settledItsCampaign(p);
   };
 
   /// Whether this is the customer's first qualifying payment to be
@@ -538,6 +545,9 @@ mixin (
     // Test-mode payments move no money, and a payment under the month it
     // would earn could buy months below their price (`referralQualifying`).
     if (not referralQualifying(record)) { return false };
+    // Refunded below the month's price: it earns nothing (a month already
+    // earned was taken back with the refund, `revokeReferralMonth`).
+    if (refundedCents(record.paymentIntentId) + Credits.referralRewardCents > record.amountCents) { return false };
     // One free month per referred customer, ever: whichever of their
     // payments is confirmed first. (Ordering by creation time alone let a
     // customer confirm several open checkouts newest first and earn one each.)
@@ -632,7 +642,9 @@ mixin (
     let record = switch (payments.get(AddressLib.sanitizeText(paymentIntentId))) { case (?r) r; case null { return fail("Unknown payment") } };
     let callerId = caller.toText();
     if (record.userId != callerId and not AdminLib.isAdmin(adminKeysState, caller)) { return fail("This payment belongs to another account") };
-    let a = switch (accounts.get(record.userId)) { case (?x) x; case null { return fail("Account not found") } };
+    // An account forgotten as idle while its checkout was being opened is
+    // opened again: the payment is what it now holds.
+    let a = switch (accounts.get(record.userId)) { case (?x) x; case null { AccountLib.openKeepingIdle(accounts, referralCodes, idleAccounts(), maxIdleAccounts, isIdleAccount, record.userId, null, null) } };
     if (record.state == #Succeeded or record.state == #Waived) {
       switch (unsettledNotice(record)) {
         case (?msg) { return { ok = false; error = ?msg; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = null; subscriptionActive = null; referralRewardApplied = false } };
@@ -735,6 +747,12 @@ mixin (
     "$" # (cents / 100).toText() # "." # (if (c < 10) "0" else "") # c.toText();
   };
 
+  /// Whether a campaign is past "ready to dispatch" (a run under way, its
+  /// file or a job with the print partner): a refund can no longer stop it.
+  private func isPrinting(c : Types.CampaignRecord) : Bool {
+    c.printDocumentId != null or c.printJobId != null or (c.productionStatus != #ReadyToDispatch and c.productionStatus != #Failed and c.productionStatus != #AwaitingPayment and c.productionStatus != #Draft);
+  };
+
   private func refundsOf(paymentIntentId : Text) : [Account.RefundRecord] {
     switch (paymentRefunds.get(paymentIntentId)) { case (?r) r; case null [] };
   };
@@ -762,7 +780,7 @@ mixin (
             case (?c) {
               campaignName := ?c.name;
               settled := c.paymentIntentId == ?p.paymentIntentId;
-              inProduction := c.printDocumentId != null or c.productionStatus == #Submitted;
+              inProduction := isPrinting(c);
             };
             case null {};
           };
@@ -880,25 +898,54 @@ mixin (
       // new refund.
       let key = "ez-refund-" # id # "-" # refundsOf(id).size().toText() # "-" # input.amountCents.toText() # "-" # textHash(reason);
       let by = caller.toText();
-      let resp = await* Http.postText(Stripe.apiBase # "/refunds", Stripe.headers(secret, ?key), Stripe.refundBody(id, input.amountCents, reason, by), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      // A campaign this refund will take back is marked refunded now, in the
+      // same message as the check and before the first await, so a dispatch
+      // started while the processor answers is refused (it checks the paid
+      // status before its first await and again before submitting). It goes
+      // back to paid if the processor refuses the refund.
+      var held : ?Types.CampaignRecord = null;
+      if (input.revokeEffects and p.purpose == #CampaignOrder and already + input.amountCents >= p.amountCents) {
+        switch (p.reference) {
+          case (?cid) {
+            switch (campaigns.get(cid)) {
+              case (?c) {
+                if (c.paymentIntentId == ?id and c.paymentStatus == #Paid and not isPrinting(c)) {
+                  c.paymentStatus := #Refunded;
+                  held := ?c;
+                };
+              };
+              case null {};
+            };
+          };
+          case null {};
+        };
+      };
+      let release = func(msg : Text) : Account.RefundResult {
+        switch (held) { case (?c) { if (c.paymentStatus == #Refunded) { c.paymentStatus := #Paid } }; case null {} };
+        fail(msg);
+      };
+      // The admin's id is recorded here, not sent: a retry by another admin
+      // must send the same request, or the processor refuses the reused key.
+      let resp = await* Http.postText(Stripe.apiBase # "/refunds", Stripe.headers(secret, ?key), Stripe.refundBody(id, input.amountCents, reason), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
       if (resp.status == 0) {
+        // Possibly refunded: the campaign stays held until a retry settles it.
         return fail("No answer from the payment processor, so the outcome is unknown. Check its dashboard, or retry with the same amount and reason: that cannot refund twice.");
       };
       if (not Http.isSuccess(resp)) {
-        return fail("The payment processor refused the refund: " # Stripe.errorMessage(resp.body));
+        return release("The payment processor refused the refund: " # Stripe.errorMessage(resp.body));
       };
       let made = switch (Stripe.parseRefund(resp.body)) { case (?r) r; case null { return fail("Unexpected answer from the payment processor; check its dashboard before trying again") } };
       // The create call is answered by one node: the refund is read back by
       // the whole subnet before anything is recorded or taken back.
       let refund = switch (await* readRefund(secret, made.id)) {
-        case (?r) { if (r.paymentIntent == id) r else { return fail("The payment processor's refund is for another payment; check its dashboard") } };
+        case (?r) { if (r.paymentIntent == id) r else { return release("The payment processor's refund is for another payment; check its dashboard") } };
         case null { return fail("The refund was sent but could not be confirmed. Check the processor's dashboard, or retry with the same amount and reason: that cannot refund twice.") };
       };
       if (refundsOf(id).any(func(r : Account.RefundRecord) : Bool { r.refundId == refund.id })) {
         return { ok = true; error = null; refundId = ?refund.id; refundedCents = refundedCents(id); creditBalance = null };
       };
       if (refund.status == "failed" or refund.status == "canceled") {
-        return fail("The payment processor reports the refund " # refund.status);
+        return release("The payment processor reports the refund " # refund.status);
       };
       let amount = if (refund.amount > 0) refund.amount else input.amountCents;
       let now = Time.now();
@@ -918,15 +965,17 @@ mixin (
                 case (?cid) {
                   switch (campaigns.get(cid)) {
                     case (?c) {
-                      let settles = c.paymentIntentId == ?id;
-                      // Anything past "ready to dispatch" (a run under way,
-                      // the file or a job with the print partner) is printing.
-                      let printing = c.printDocumentId != null or c.printJobId != null or (c.productionStatus != #ReadyToDispatch and c.productionStatus != #Failed and c.productionStatus != #AwaitingPayment and c.productionStatus != #Draft);
-                      if (input.revokeEffects and settles and full and not printing and c.paymentStatus == #Paid) {
-                        c.paymentStatus := #Refunded;
-                        c.updatedAt := now;
-                        // Nothing will print it: its staged file goes.
-                        documentUploads.remove(cid);
+                      // Held before the processor was called (`held`): taken
+                      // back for good once the refund covers the payment.
+                      switch (held) {
+                        case (?h) {
+                          if (h.id == c.id and full and c.paymentStatus == #Refunded) {
+                            c.updatedAt := now;
+                            // Nothing will print it: its staged file goes.
+                            documentUploads.remove(cid);
+                          } else if (c.paymentStatus == #Refunded) { c.paymentStatus := #Paid };
+                        };
+                        case null {};
                       };
                       // The customer sees this on the campaign's timeline: the
                       // amount only, never the admin's note.
@@ -992,10 +1041,11 @@ mixin (
 
   /// Takes back the free month a referred customer's payment earned their
   /// referrer: an unused month is removed, and one already used gives back
-  /// what is left of its 30 days (its credits stay). The reward record goes
-  /// too, so a later qualifying payment by the same customer can earn it
-  /// again (the refunded one no longer qualifies). False when the payment
-  /// earned nothing.
+  /// what is left of its own 30 days (counted from when it was used, so
+  /// membership the referrer paid for since is never cut; its credits stay).
+  /// The reward record goes, so it is never taken back twice; the referral
+  /// stays decided (the refunded payment is still the customer's first, so
+  /// no later payment earns a month). False when the payment earned nothing.
   private func revokeReferralMonth(paymentIntentId : Text, now : Int) : Bool {
     let reward = switch (referralRewards.find(func(r : Account.ReferralReward) : Bool { r.paymentIntentId == paymentIntentId })) {
       case (?r) r;
@@ -1006,7 +1056,18 @@ mixin (
       case (?ref) {
         if (AccountLib.freeMonths(ref) == 0 and ref.referralCreditsRedeemed > 0) {
           ref.referralCreditsRedeemed := Nat.sub(ref.referralCreditsRedeemed, 1);
-          let left = Int.min(Credits.thirtyDaysNs, ref.subscriptionRenewsAt - now);
+          // The newest free month used: what is left of its 30 days.
+          var usedAt : ?Int = null;
+          for (w in PaymentIndex.forUser(paymentIndex, payments, ref.id).vals()) {
+            if (w.state == #Waived and w.reference == ?"referral_free_month") {
+              let t = switch (w.confirmedAt) { case (?c) c; case null w.createdAt };
+              switch (usedAt) { case (?u) { if (t > u) { usedAt := ?t } }; case null { usedAt := ?t } };
+            };
+          };
+          let left = switch (usedAt) {
+            case (?u) Int.min(u + Credits.thirtyDaysNs - now, ref.subscriptionRenewsAt - now);
+            case null 0;
+          };
           if (left > 0) {
             ref.subscriptionRenewsAt -= left;
             if (ref.subscriptionRenewsAt <= now) { ref.subscriptionActive := false };
@@ -1028,66 +1089,166 @@ mixin (
   /// back to the customer, so the two never overlap.
   transient let staleCheckoutNs : Int = 7 * 86_400_000_000_000;
   transient let reuseCheckoutNs : Int = 6 * 86_400_000_000_000;
-  /// Closed checkouts (failed, cancelled, unknown to the processor) are
-  /// forgotten this long after they were opened.
+  /// Closed checkouts are forgotten this long after they were opened, once
+  /// the processor has confirmed them cancelled.
   transient let forgetClosedNs : Int = 30 * 86_400_000_000_000;
-  /// Processor lookups one sweep may make.
-  transient let maxSweepLookups : Nat = 50;
-  /// When the sweep last looked a checkout up: one the processor reports
-  /// paid is kept (its customer's next checkout recovers it) and looked at
-  /// again only after `staleCheckoutNs`.
+  /// Processor lookups one sweep may make: at least two (look up, cancel)
+  /// for every checkout the hourly intent caps let open (`intentsPerHourGlobal`
+  /// beside the per-campaign caps, whose drafts reuse their open checkout).
+  transient let maxSweepLookups : Nat = 500;
+  /// When the sweep last looked each open checkout up.
   transient let sweepLooked = Map.empty<Text, Int>();
+  /// When the processor first answered 404 for an open checkout: closed only
+  /// if it still does a week later (a wrong key for an hour must not close a
+  /// paid checkout, which would then be forgotten).
+  transient let sweepNotFound = Map.empty<Text, Int>();
+  /// Closed checkouts the processor confirmed cancelled, which may be
+  /// forgotten without another lookup (after an upgrade they are looked up).
+  transient let confirmedCancelled = Set.empty<Text>();
   transient var sweepRunning = false;
 
-  /// Hourly upkeep (timer in `main.mo`): open checkouts a week old are
-  /// closed with the processor (looked up first: one already paid is kept
-  /// for recovery, never cancelled), test-mode ones simply closed, and closed
-  /// records a month old are forgotten (never one with a refund), so the
-  /// payment records grow with real payments, not with abandoned checkouts.
-  /// Returns how many records it closed or forgot.
+  /// How far along an open checkout is: a campaign order is looked up after
+  /// an hour and a day (a charge whose confirmation was lost is settled
+  /// before its draft can expire or be evicted), every checkout after a week
+  /// (cancelled if it still waits for a card) and weekly after that.
+  private func checkoutStage(p : Account.PaymentRecord, age : Int) : Nat {
+    if (age >= staleCheckoutNs) 3 else if (p.purpose != #CampaignOrder) 0 else if (age >= 86_400_000_000_000) 2 else if (age >= 3_600_000_000_000) 1 else 0;
+  };
+
+  private func lookupDue(p : Account.PaymentRecord, now : Int) : Bool {
+    let stage = checkoutStage(p, now - p.createdAt);
+    if (stage == 0) return false;
+    switch (sweepLooked.get(p.paymentIntentId)) {
+      case null true;
+      case (?t) { checkoutStage(p, t - p.createdAt) < stage or (stage == 3 and now - t >= staleCheckoutNs) };
+    };
+  };
+
+  /// Settles an open checkout the processor reports paid, exactly as
+  /// `confirmPayment` would (replicated lookup, same checks, same effects),
+  /// for a customer who closed the tab before confirming. A campaign whose
+  /// draft is gone records the payment as received, so the admin can refund it.
+  private func settleLostCharge(p : Account.PaymentRecord, secret : Text) : async* Bool {
+    let opts = {
+      AdminLib.outcallOptions(adminKeysState, 32_000) with
+      isReplicated = true;
+      transformContext = Http.jsonSummary(Stripe.intentSummaryKeys);
+    };
+    let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), opts, transformFn);
+    if (not Http.isSuccess(resp)) return false;
+    switch (Stripe.parseIntent(resp.body)) {
+      case (?intent) {
+        if (intent.id != p.paymentIntentId or intent.status != "succeeded" or intent.amount != p.amountCents or intent.currency != "usd" or not intent.livemode) return false;
+      };
+      case null { return false };
+    };
+    // Confirmed meanwhile by its customer: nothing left to do.
+    if (p.state != #Created) return false;
+    let a = switch (accounts.get(p.userId)) { case (?x) x; case null { AccountLib.openKeepingIdle(accounts, referralCodes, idleAccounts(), maxIdleAccounts, isIdleAccount, p.userId, null, null) } };
+    ignore applyPaymentEffects(p, a);
+    ignore tryReferralReward(p);
+    true;
+  };
+
+  private func forgetPayment(p : Account.PaymentRecord) {
+    payments.remove(p.paymentIntentId);
+    PaymentIndex.remove(paymentIndex, p);
+    sweepLooked.remove(p.paymentIntentId);
+    sweepNotFound.remove(p.paymentIntentId);
+    confirmedCancelled.remove(p.paymentIntentId);
+    // An account left with no payment record may be idle again.
+    switch (accounts.get(p.userId)) {
+      case (?a) { if (isIdleAccount(a)) { idleAccounts().pushBack(a.id) } };
+      case null {};
+    };
+  };
+
+  /// Hourly upkeep (timer in `main.mo`), oldest first within
+  /// `maxSweepLookups`: open checkouts are looked up as `checkoutStage`
+  /// says — one the processor reports paid is settled (`settleLostCharge`),
+  /// one a week old still waiting for a card is cancelled, test-mode ones
+  /// are just closed — and closed records a month old are forgotten once
+  /// the processor confirms them cancelled (never one with a refund; one it
+  /// reports paid is reopened and settled). Payment records so grow with
+  /// real payments, not with abandoned checkouts. Returns how many records
+  /// it changed.
   private func sweepPayments() : async* Nat {
     if (sweepRunning) { return 0 };
     sweepRunning := true;
     try {
       let now = Time.now();
       var changed = 0;
-      let forget = List.empty<Account.PaymentRecord>();
-      let stale = List.empty<Account.PaymentRecord>();
+      let due = List.empty<Account.PaymentRecord>();
+      let closedOld = List.empty<Account.PaymentRecord>();
       for ((_, p) in payments.entries()) {
         if (p.state == #Failed and now - p.createdAt > forgetClosedNs and not paymentRefunds.containsKey(p.paymentIntentId)) {
-          forget.add(p);
-        } else if (p.state == #Created and now - p.createdAt > staleCheckoutNs) {
-          if (p.sandbox) { p.state := #Failed; changed += 1 } else {
-            let looked = switch (sweepLooked.get(p.paymentIntentId)) { case (?t) t; case null 0 };
-            if (now - looked > staleCheckoutNs) { stale.add(p) };
+          if (p.sandbox or confirmedCancelled.contains(p.paymentIntentId)) { forgetPayment(p); changed += 1 } else { closedOld.add(p) };
+        } else if (p.state == #Created) {
+          if (p.sandbox) {
+            if (now - p.createdAt > staleCheckoutNs) { p.state := #Failed; changed += 1 };
+          } else if (lookupDue(p, now)) { due.add(p) };
+        };
+      };
+      let secret = switch (adminKeysState.stripeSecretKey) { case (?k) k; case null { return changed } };
+      let byAge = func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(x.createdAt, y.createdAt);
+      var lookups = 0;
+      let look = func(p : Account.PaymentRecord) : async* (Nat, Text) {
+        lookups += 1;
+        let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+        let status = if (Http.isSuccess(resp)) {
+          switch (Stripe.parseIntent(resp.body)) { case (?i) { if (i.id == p.paymentIntentId) i.status else "" }; case null "" };
+        } else "";
+        (resp.status, status);
+      };
+      label open for (p in due.toArray().sort(byAge).vals()) {
+        if (lookups + 2 > maxSweepLookups) break open;
+        let (code, status) = await* look(p);
+        let at = Time.now();
+        sweepLooked.add(p.paymentIntentId, at);
+        if (p.state != #Created) continue open;
+        if (code == 404) {
+          // Unknown to the processor (another key): closed only once it has
+          // stayed unknown for a week.
+          switch (sweepNotFound.get(p.paymentIntentId)) {
+            case (?first) { if (at - first >= staleCheckoutNs) { p.state := #Failed; changed += 1 } };
+            case null { sweepNotFound.add(p.paymentIntentId, at) };
+          };
+          continue open;
+        };
+        sweepNotFound.remove(p.paymentIntentId);
+        if (status == "canceled") {
+          p.state := #Failed;
+          confirmedCancelled.add(p.paymentIntentId);
+          changed += 1;
+        } else if (status == "succeeded") {
+          lookups += 1;
+          if (await* settleLostCharge(p, secret)) { changed += 1 };
+        } else if (checkoutStage(p, at - p.createdAt) == 3 and (status == "requires_payment_method" or status == "requires_confirmation" or status == "requires_action")) {
+          // Only a checkout still waiting for a card is cancelled: one paying
+          // or authorised stays open until it settles.
+          lookups += 1;
+          let cancel = await* Http.postText(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId # "/cancel", Stripe.headers(secret, null), "", AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+          if (Http.isSuccess(cancel) and p.state == #Created) {
+            p.state := #Failed;
+            confirmedCancelled.add(p.paymentIntentId);
+            changed += 1;
           };
         };
       };
-      for (p in forget.values()) {
-        payments.remove(p.paymentIntentId);
-        PaymentIndex.remove(paymentIndex, p);
-        sweepLooked.remove(p.paymentIntentId);
-        changed += 1;
-      };
-      let secret = switch (adminKeysState.stripeSecretKey) { case (?k) k; case null { return changed } };
-      let oldest = stale.toArray().sort(func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(x.createdAt, y.createdAt));
-      var lookups = 0;
-      label closing for (p in oldest.vals()) {
-        if (lookups + 2 > maxSweepLookups) break closing;
-        lookups += 1;
-        let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
-        sweepLooked.add(p.paymentIntentId, Time.now());
-        if (p.state != #Created) continue closing;
-        if (resp.status == 404) { p.state := #Failed; changed += 1; continue closing };
-        if (not Http.isSuccess(resp)) continue closing;
-        let status = switch (Stripe.parseIntent(resp.body)) { case (?i) { if (i.id == p.paymentIntentId) i.status else "" }; case null "" };
-        if (status == "canceled") { p.state := #Failed; changed += 1; continue closing };
-        // Only a checkout still waiting for a card is cancelled: one paid,
-        // paying or authorised stays open until its customer confirms it.
-        if (status == "requires_payment_method" or status == "requires_confirmation" or status == "requires_action") {
-          lookups += 1;
-          let cancel = await* Http.postText(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId # "/cancel", Stripe.headers(secret, null), "", AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
-          if ((Http.isSuccess(cancel) or cancel.status == 404) and p.state == #Created) { p.state := #Failed; changed += 1 };
+      // Closed records not known to be cancelled (closed before an upgrade,
+      // or as unknown): forgotten only once the processor says cancelled. One
+      // it reports paid was closed in error and is settled now.
+      label closed for (p in closedOld.toArray().sort(byAge).vals()) {
+        if (lookups + 2 > maxSweepLookups) break closed;
+        let (_, status) = await* look(p);
+        if (p.state != #Failed) continue closed;
+        if (status == "canceled") {
+          forgetPayment(p);
+          changed += 1;
+        } else if (status == "succeeded" or status == "processing" or status == "requires_capture") {
+          p.state := #Created;
+          if (status == "succeeded") { lookups += 1; ignore await* settleLostCharge(p, secret) };
+          changed += 1;
         };
       };
       changed;

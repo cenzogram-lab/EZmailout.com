@@ -76,12 +76,11 @@ module {
 
   /// A refund of `amountCents` of a PaymentIntent, back to the card it was
   /// paid with.
-  public func refundBody(paymentIntentId : Text, amountCents : Nat, reason : Text, by : Text) : Text {
+  public func refundBody(paymentIntentId : Text, amountCents : Nat, reason : Text) : Text {
     Fulfilment.formEncode([
       ("payment_intent", paymentIntentId),
       ("amount", amountCents.toText()),
       ("metadata[reason]", reason),
-      ("metadata[issuedBy]", by),
       ("metadata[platform]", "ezmailout"),
     ]);
   };

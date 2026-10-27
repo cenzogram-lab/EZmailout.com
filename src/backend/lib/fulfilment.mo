@@ -470,6 +470,11 @@ module {
         return "Partly sent to print (" # parts[0] # "). The remaining print jobs were not accepted just now; send the campaign to print again to finish it.";
       };
     };
+    // Tracking is read after the mail went to print: its failure says
+    // nothing about printing.
+    if (detail.startsWith(#text "Tracking lookup failed")) {
+      return "We couldn't reach the print service to update tracking just now; your mailing is not affected. Try again later.";
+    };
     for (step in partnerSteps.vals()) {
       if (detail.startsWith(#text step)) {
         return step # ": the print service did not accept the request just now, so nothing has been printed yet.";
