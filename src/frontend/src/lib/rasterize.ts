@@ -3,7 +3,7 @@ import { QrMode } from "@/backend";
 import { DESIGN_PPI, type LayoutDims, RASTER_DPI } from "@/lib/printSpec";
 import { normalizeDestinationUrl, qrToCanvas } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
-import { wrapText } from "@/lib/textFit";
+import { textWidth, wrapText } from "@/lib/textFit";
 import { canvasFont, fontSpecOf, textExtras } from "@/lib/textStyle";
 
 export interface RasterizeOptions {
@@ -81,6 +81,8 @@ export async function rasterizeSide(
   canvas.height = Math.round(dims.heightInches * dpi);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("2D canvas context unavailable");
+  // Glyphs kerned as the editor's page text kerns them (canvas "auto" kerns less).
+  ctx.fontKerning = "normal";
 
   ctx.fillStyle = side.backgroundColor || "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -174,8 +176,12 @@ export async function rasterizeSide(
           ctx.rotate((rotation * Math.PI) / 180);
           ctx.translate(-(boxX + boxW / 2), -(boxY + boxH / 2));
         }
-        // Wrapped exactly as the editor and the height refit wrap it.
-        const lines = wrapText(block.text, boxW - 4 * scale, measure);
+        // Wrapped exactly as the editor and the height refit wrap it: at
+        // design size, where the editor lays it out (wrapping at print size
+        // rounds differently and could break a line elsewhere).
+        const lines = wrapText(block.text, block.width - 4, (line) =>
+          textWidth(line, spec),
+        );
         const lineHeight = fontSize * spec.lineHeight;
         const baselineOffset = cssBaseline
           ? (lineHeight - (ascent + descent)) / 2 + ascent

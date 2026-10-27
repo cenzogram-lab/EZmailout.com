@@ -47,7 +47,7 @@ actor {
 
   // Mixin composition — all public endpoints are delegated to mixins.
   include AdminApi(adminKeysState);
-  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, payments, accounts, transform);
+  include CampaignApi(campaigns, campaignRecipients, trackingEvents, qrScans, state, adminKeysState, documentUploads, func(id : Text) : [Account.PaymentRecord] = campaignPaymentsOf(id), accounts, transform);
   include AudienceApi(savedAudiencePresets, presetMeta, state, adminKeysState, transform);
   include BillingApi(accounts, referralCodes, creditLedger, payments, referralRewards, campaigns, campaignRecipients, trackingEvents, documentUploads, paymentRefunds, state, adminKeysState, transform);
   include AiApi(accounts, referralCodes, creditLedger, state, adminKeysState, transform);
@@ -70,4 +70,9 @@ actor {
   // Expired drafts go, and so do replacement print files nothing can use any
   // more (their draft removed, paid or sent to print).
   ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now(), null); sweepPendingUploads() });
+
+  // Checkouts left open for a week are closed with the payment processor,
+  // and closed ones a month old are forgotten, so payment records stay
+  // bounded by real payments (`sweepPayments` in the billing mixin).
+  ignore Timer.recurringTimer<system>(#seconds 3_600, func() : async () { ignore await* sweepPayments() });
 };

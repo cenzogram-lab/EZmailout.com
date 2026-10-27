@@ -3,6 +3,7 @@ import Types "../types/campaign";
 import Common "../types/common";
 import Account "../types/account";
 import AccountLib "../lib/account";
+import PaymentIndex "../lib/paymentIndex";
 import AddressLib "../lib/address";
 import AdminLib "../lib/admin";
 import CampaignLib "../lib/campaign";
@@ -23,6 +24,7 @@ import Int "mo:core/Int";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 import Set "mo:core/Set";
+import Queue "mo:core/Queue";
 
 mixin (
   accounts : Map.Map<Text, Account.UserAccount>,
@@ -40,6 +42,16 @@ mixin (
   transformFn : Http.TransformFn,
 ) {
   private func signedIn(caller : Principal) : Bool { not caller.isAnonymous() };
+
+  /// Lookups by customer and by campaign over `payments`, rebuilt from it on
+  /// every install and upgrade (`lib/paymentIndex.mo`); every new record goes
+  /// through `addPayment`.
+  transient let paymentIndex = PaymentIndex.build(payments);
+
+  /// A campaign's payments, for the campaign mixin (passed in by `main.mo`).
+  private func campaignPaymentsOf(campaignId : Text) : [Account.PaymentRecord] {
+    PaymentIndex.forCampaign(paymentIndex, payments, campaignId);
+  };
 
   // Checkout and confirmation each make a Stripe outcall (confirmation a
   // replicated one, paid by every node), and identities are free to mint, so
@@ -67,30 +79,40 @@ mixin (
   };
 
   private func account(caller : Principal) : Account.UserAccount {
-    AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), null, null);
+    openAccount(caller, null, null);
   };
 
-  /// New accounts the whole canister opens in an hour. Identities are free
-  /// to mint and each account (with its referral code) is kept for good, so
-  /// creation has a canister-wide budget like every other per-identity cost.
-  transient let maxNewAccountsPerHour : Nat = 5_000;
-  transient let accountWindows = Map.empty<Text, Limits.Window>();
+  /// Identities are free to mint, so accounts nobody has used are not kept
+  /// for ever: at most this many idle accounts (`isIdleAccount`), the oldest
+  /// forgotten first when a new one opens. Opening an account is never
+  /// refused (an hourly cap could be used up by fake sign-ups and keep real
+  /// customers from signing up or paying); a forgotten account is opened
+  /// again, with the same referral code, the next time its owner signs in.
+  transient let maxIdleAccounts : Nat = 250_000;
+  /// Accounts opened idle, oldest first; built from `accounts` on first use
+  /// after an upgrade. Entries for accounts used since are dropped as they
+  /// reach the front.
+  transient var idleQueue : ?Queue.Queue<Text> = null;
 
-  /// The caller's account, opened now if it does not exist and the hourly
-  /// budget has room; null when it would need opening and the budget is spent.
-  private func accountWithin(caller : Principal, email : ?Text, code : ?Text) : ?Account.UserAccount {
-    switch (accounts.get(caller.toText())) {
-      case (?a) ?a;
-      case null {
-        switch (Limits.admit(accountWindows, [{ key = "new"; limit = maxNewAccountsPerHour; minGapNs = 0 }], Time.now(), stripeWindowNs)) {
-          case (#ok) ?AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), email, code);
-          case _ null;
-        };
-      };
+  /// Untouched since it was opened: no email, no credits or membership, no
+  /// referral activity (all of which update it) and no payment record. Its
+  /// only possible content is the referrer it was opened with.
+  private func isIdleAccount(a : Account.UserAccount) : Bool {
+    a.updatedAt == a.createdAt and a.email == "" and not PaymentIndex.hasPayments(paymentIndex, a.id);
+  };
+
+  private func idleAccounts() : Queue.Queue<Text> {
+    switch (idleQueue) {
+      case (?q) q;
+      case null { let q = AccountLib.idleQueue(accounts, isIdleAccount); idleQueue := ?q; q };
     };
   };
 
-  transient let accountsBusy = "EZmailout is opening a lot of new accounts right now; please try again in a few minutes";
+  /// The caller's account, opened now if it does not exist (never refused;
+  /// may forget the oldest idle account, `AccountLib.openKeepingIdle`).
+  private func openAccount(caller : Principal, email : ?Text, code : ?Text) : Account.UserAccount {
+    AccountLib.openKeepingIdle(accounts, referralCodes, idleAccounts(), maxIdleAccounts, isIdleAccount, caller.toText(), email, code);
+  };
 
   private func purposeText(p : Account.PaymentPurpose) : Text {
     switch (p) { case (#CampaignOrder) "campaign_order"; case (#CreditPack) "credit_pack"; case (#Subscription) "subscription" };
@@ -111,12 +133,8 @@ mixin (
       case (?c) { let t = AddressLib.sanitizeText(c); if (t.size() > 0 and t.size() <= 32) ?t else null };
       case null null;
     };
-    let a = switch (accountWithin(caller, cleanEmail, cleanCode)) {
-      case (?x) x;
-      case null { return { ok = false; error = ?accountsBusy; account = null } };
-    };
-    // An existing account still takes the email and referral hints it lacks.
-    ignore AccountLib.getOrCreate(accounts, referralCodes, caller.toText(), cleanEmail, cleanCode);
+    // An existing account still takes the email hint it lacks.
+    let a = openAccount(caller, cleanEmail, cleanCode);
     { ok = true; error = null; account = ?AccountLib.toShared(a, Time.now()) };
   };
 
@@ -132,7 +150,7 @@ mixin (
     if (not signedIn(caller)) { return { ok = false; error = ?"Sign in required" } };
     let clean = AddressLib.sanitizeText(email);
     if (clean.size() > 200 or not clean.contains(#char '@')) { return { ok = false; error = ?"Enter a valid email address" } };
-    let a = switch (accountWithin(caller, null, null)) { case (?x) x; case null { return { ok = false; error = ?accountsBusy } } };
+    let a = openAccount(caller, null, null);
     a.email := clean;
     a.updatedAt := Time.now();
     { ok = true; error = null };
@@ -198,8 +216,8 @@ mixin (
   /// record exists, and budgeted per identity.
   private func recoverCharged(caller : Principal, userId : Text, campaignId : Text, amount : Nat, secret : Text) : async* ?Account.PaymentIntentResult {
     let open = List.empty<Account.PaymentRecord>();
-    for ((_, p) in payments.entries()) {
-      if (p.userId == userId and p.purpose == #CampaignOrder and p.reference == ?campaignId and p.amountCents == amount and p.state == #Created and not p.sandbox) { open.add(p) };
+    for (p in PaymentIndex.forCampaign(paymentIndex, payments, campaignId).vals()) {
+      if (p.userId == userId and p.amountCents == amount and p.state == #Created and not p.sandbox) { open.add(p) };
     };
     if (open.size() == 0) return null;
     switch (stripeRefusal(Limits.admit(stripeWindows, [{ key = "lookup:" # userId; limit = lookupsPerHour; minGapNs = 0 }], Time.now(), stripeWindowNs), "checking your earlier checkout")) {
@@ -228,6 +246,12 @@ mixin (
     null;
   };
 
+  /// Every new payment record goes through here, so the index stays complete.
+  private func addPayment(record : Account.PaymentRecord) {
+    payments.add(record.paymentIntentId, record);
+    PaymentIndex.add(paymentIndex, record);
+  };
+
   private func intentFail(msg : Text) : Account.PaymentIntentResult {
     { ok = false; error = ?msg; paymentIntentId = null; clientSecret = null; amountCents = null; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
   };
@@ -235,7 +259,7 @@ mixin (
   /// Creates a Stripe PaymentIntent (or a sandbox/waived record) for an order, credit pack or subscription.
   public shared ({ caller }) func createPaymentIntent(purpose : Account.PaymentPurpose, reference : ?Text, pack : ?Account.CreditPack) : async Account.PaymentIntentResult {
     if (not signedIn(caller)) { return intentFail("Sign in with Internet Identity before checking out") };
-    let a = switch (accountWithin(caller, null, null)) { case (?x) x; case null { return intentFail(accountsBusy) } };
+    let a = openAccount(caller, null, null);
     var amount : Nat = 0;
     var description = "";
     var refText = "";
@@ -343,7 +367,7 @@ mixin (
           state.nextPaymentId += 1;
           ignore AccountLib.activateSubscription(creditLedger, state, a, ?paymentId);
           let waivedRecord : Account.PaymentRecord = { paymentIntentId = paymentId; userId = a.id; purpose = #Subscription; amountCents = 0; reference = ?"referral_free_month"; creditPack = null; var state = #Waived; createdAt = Time.now(); var confirmedAt = ?Time.now(); sandbox = false };
-          payments.add(paymentId, waivedRecord);
+          addPayment(waivedRecord);
           return { ok = true; error = null; paymentIntentId = ?paymentId; clientSecret = null; amountCents = ?0; publishableKey = adminKeysState.stripePublishableKey; waived = true; sandbox = false };
         };
         amount := Credits.subscriptionPriceCents;
@@ -362,7 +386,7 @@ mixin (
     if (adminKeysState.sandboxCheckout) {
       let id = "sandbox_" # seq.toText();
       let sandboxRecord : Account.PaymentRecord = { paymentIntentId = id; userId = a.id; purpose; amountCents = amount; reference = ?refText; creditPack = pack; var state = #Created; createdAt = Time.now(); var confirmedAt = null; sandbox = true };
-      payments.add(id, sandboxRecord);
+      addPayment(sandboxRecord);
       return { ok = true; error = null; paymentIntentId = ?id; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = true };
     };
     let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return intentFail("Checkout isn't set up yet; please try again later") } };
@@ -388,8 +412,8 @@ mixin (
     // A failed lookup refuses rather than risk a second charge.
     let now = Time.now();
     let earlier = List.empty<Account.PaymentRecord>();
-    for ((_, p) in payments.entries()) {
-      if (p.userId == a.id and p.purpose == purpose and p.reference == ?refText and p.amountCents == amount and p.state == #Created and not p.sandbox) {
+    for (p in PaymentIndex.forUser(paymentIndex, payments, a.id).vals()) {
+      if (p.purpose == purpose and p.reference == ?refText and p.amountCents == amount and p.state == #Created and not p.sandbox) {
         earlier.add(p);
       };
     };
@@ -415,7 +439,10 @@ mixin (
               return { ok = true; error = null; paymentIntentId = ?p.paymentIntentId; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
             } else if (intent.status == "canceled") {
               p.state := #Failed;
-            } else if (reusable == null) {
+            } else if (reusable == null and now - p.createdAt < reuseCheckoutNs) {
+              // A checkout close to a week old is left for `sweepPayments` to
+              // close, never handed out again: the sweep could cancel it
+              // while the customer is entering their card.
               switch (intent.clientSecret) { case (?cs) { reusable := ?(p.paymentIntentId, cs) }; case null {} };
             };
           };
@@ -461,7 +488,7 @@ mixin (
           return intentFail("Unexpected response from the payment processor; please try again");
         };
         let stripeRecord : Account.PaymentRecord = { paymentIntentId = intent.id; userId = a.id; purpose; amountCents = amount; reference = ?refText; creditPack = pack; var state = #Created; createdAt = Time.now(); var confirmedAt = null; sandbox = false };
-        payments.add(intent.id, stripeRecord);
+        addPayment(stripeRecord);
         { ok = true; error = null; paymentIntentId = ?intent.id; clientSecret = intent.clientSecret; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
       };
     };
@@ -483,7 +510,7 @@ mixin (
   /// at least the month it earns (identities are free, so a smaller payment
   /// from a fresh account would buy months below their price).
   private func referralQualifying(p : Account.PaymentRecord) : Bool {
-    (p.state == #Succeeded or p.state == #Waived) and p.amountCents >= Credits.referralRewardCents and not p.sandbox and settledItsCampaign(p);
+    (p.state == #Succeeded or p.state == #Waived) and refundedCents(p.paymentIntentId) + Credits.referralRewardCents <= p.amountCents and not p.sandbox and settledItsCampaign(p);
   };
 
   /// Whether this is the customer's first qualifying payment to be
@@ -492,8 +519,8 @@ mixin (
   private func isFirstPayment(userId : Text, paymentIntentId : Text) : Bool {
     var earliest : ?Account.PaymentRecord = null;
     let confirmed = func(p : Account.PaymentRecord) : Int = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
-    for ((_, p) in payments.entries()) {
-      if (p.userId == userId and referralQualifying(p)) {
+    for (p in PaymentIndex.forUser(paymentIndex, payments, userId).vals()) {
+      if (referralQualifying(p)) {
         switch (earliest) {
           case null { earliest := ?p };
           case (?e) { if (confirmed(p) < confirmed(e)) { earliest := ?p } };
@@ -534,6 +561,7 @@ mixin (
   private func applyPaymentEffects(record : Account.PaymentRecord, a : Account.UserAccount) : (?Nat, ?Text, ?Bool) {
     record.state := #Succeeded;
     record.confirmedAt := ?Time.now();
+    PaymentIndex.markCompleted(paymentIndex, record.paymentIntentId);
     // A duplicate or orphaned campaign payment is refunded, so it is not the
     // customer's first payment.
     let settles = switch (record.purpose, record.reference) {
@@ -775,8 +803,8 @@ mixin (
     if (not signedIn(caller)) { return [] };
     let id = caller.toText();
     let mine = List.empty<Account.PaymentRecord>();
-    for ((_, p) in payments.entries()) {
-      if (p.userId == id and (p.state == #Succeeded or p.state == #Waived)) { mine.add(p) };
+    for (p in PaymentIndex.forUser(paymentIndex, payments, id).vals()) {
+      if (PaymentIndex.isCompleted(p)) { mine.add(p) };
     };
     newestFirst(mine, 100, false);
   };
@@ -790,15 +818,21 @@ mixin (
     let q = AddressLib.sanitizeText(searchText).trim(#predicate(func(c : Char) : Bool { c.isWhitespace() }));
     let email = q.toLower();
     let found = List.empty<Account.PaymentRecord>();
-    for ((_, p) in payments.entries()) {
-      let matches = if (q == "") {
-        p.state == #Succeeded or p.state == #Waived;
-      } else {
-        p.paymentIntentId == q or p.userId == q or p.reference == ?q or (
-          switch (accounts.get(p.userId)) { case (?a) a.email != "" and a.email.toLower() == email; case null false }
-        );
+    if (q == "") {
+      for (p in PaymentIndex.newestCompleted(paymentIndex, payments, 50).vals()) { found.add(p) };
+      return newestFirst(found, 50, true);
+    };
+    let seen = Set.empty<Text>();
+    let take = func(list : [Account.PaymentRecord]) {
+      for (p in list.vals()) { if (not seen.contains(p.paymentIntentId)) { seen.add(p.paymentIntentId); found.add(p) } };
+    };
+    switch (payments.get(q)) { case (?p) { take([p]) }; case null {} };
+    take(PaymentIndex.forUser(paymentIndex, payments, q));
+    take(PaymentIndex.forCampaign(paymentIndex, payments, q));
+    if (email.contains(#char '@')) {
+      for ((_, a) in accounts.entries()) {
+        if (a.email != "" and a.email.toLower() == email) { take(PaymentIndex.forUser(paymentIndex, payments, a.id)) };
       };
-      if (matches) { found.add(p) };
     };
     newestFirst(found, 50, true);
   };
@@ -870,6 +904,11 @@ mixin (
       let now = Time.now();
       paymentRefunds.add(id, refundsOf(id).concat([{ refundId = refund.id; amountCents = amount; reason; status = refund.status; createdAt = now; by }]));
       let full = already + amount >= p.amountCents;
+      // A free month this payment earned the customer's referrer goes once
+      // what is kept of the payment no longer covers it (`referralQualifying`).
+      if (input.revokeEffects and already + amount + Credits.referralRewardCents > p.amountCents) {
+        ignore revokeReferralMonth(id, now);
+      };
       var balance : ?Nat = null;
       switch (accounts.get(p.userId)) {
         case (?a) {
@@ -949,6 +988,112 @@ mixin (
 
   private func setRefundStatus(paymentIntentId : Text, refundId : Text, status : Text) {
     paymentRefunds.add(paymentIntentId, refundsOf(paymentIntentId).map(func(r : Account.RefundRecord) : Account.RefundRecord = if (r.refundId == refundId) { { r with status } } else r));
+  };
+
+  /// Takes back the free month a referred customer's payment earned their
+  /// referrer: an unused month is removed, and one already used gives back
+  /// what is left of its 30 days (its credits stay). The reward record goes
+  /// too, so a later qualifying payment by the same customer can earn it
+  /// again (the refunded one no longer qualifies). False when the payment
+  /// earned nothing.
+  private func revokeReferralMonth(paymentIntentId : Text, now : Int) : Bool {
+    let reward = switch (referralRewards.find(func(r : Account.ReferralReward) : Bool { r.paymentIntentId == paymentIntentId })) {
+      case (?r) r;
+      case null { return false };
+    };
+    referralRewards.retain(func(r : Account.ReferralReward) : Bool { r.id != reward.id });
+    switch (accounts.get(reward.referrerId)) {
+      case (?ref) {
+        if (AccountLib.freeMonths(ref) == 0 and ref.referralCreditsRedeemed > 0) {
+          ref.referralCreditsRedeemed := Nat.sub(ref.referralCreditsRedeemed, 1);
+          let left = Int.min(Credits.thirtyDaysNs, ref.subscriptionRenewsAt - now);
+          if (left > 0) {
+            ref.subscriptionRenewsAt -= left;
+            if (ref.subscriptionRenewsAt <= now) { ref.subscriptionActive := false };
+          };
+        };
+        if (ref.referralCreditsEarned > 0) { ref.referralCreditsEarned := Nat.sub(ref.referralCreditsEarned, 1) };
+        if (ref.referralCount > 0) { ref.referralCount := Nat.sub(ref.referralCount, 1) };
+        ref.updatedAt := now;
+      };
+      case null {};
+    };
+    true;
+  };
+
+  // ─── Payment record upkeep ───────────────────────────────────────────────
+
+  /// A checkout left open this long is closed with the processor by
+  /// `sweepPayments`; one younger than `reuseCheckoutNs` may still be handed
+  /// back to the customer, so the two never overlap.
+  transient let staleCheckoutNs : Int = 7 * 86_400_000_000_000;
+  transient let reuseCheckoutNs : Int = 6 * 86_400_000_000_000;
+  /// Closed checkouts (failed, cancelled, unknown to the processor) are
+  /// forgotten this long after they were opened.
+  transient let forgetClosedNs : Int = 30 * 86_400_000_000_000;
+  /// Processor lookups one sweep may make.
+  transient let maxSweepLookups : Nat = 50;
+  /// When the sweep last looked a checkout up: one the processor reports
+  /// paid is kept (its customer's next checkout recovers it) and looked at
+  /// again only after `staleCheckoutNs`.
+  transient let sweepLooked = Map.empty<Text, Int>();
+  transient var sweepRunning = false;
+
+  /// Hourly upkeep (timer in `main.mo`): open checkouts a week old are
+  /// closed with the processor (looked up first: one already paid is kept
+  /// for recovery, never cancelled), test-mode ones simply closed, and closed
+  /// records a month old are forgotten (never one with a refund), so the
+  /// payment records grow with real payments, not with abandoned checkouts.
+  /// Returns how many records it closed or forgot.
+  private func sweepPayments() : async* Nat {
+    if (sweepRunning) { return 0 };
+    sweepRunning := true;
+    try {
+      let now = Time.now();
+      var changed = 0;
+      let forget = List.empty<Account.PaymentRecord>();
+      let stale = List.empty<Account.PaymentRecord>();
+      for ((_, p) in payments.entries()) {
+        if (p.state == #Failed and now - p.createdAt > forgetClosedNs and not paymentRefunds.containsKey(p.paymentIntentId)) {
+          forget.add(p);
+        } else if (p.state == #Created and now - p.createdAt > staleCheckoutNs) {
+          if (p.sandbox) { p.state := #Failed; changed += 1 } else {
+            let looked = switch (sweepLooked.get(p.paymentIntentId)) { case (?t) t; case null 0 };
+            if (now - looked > staleCheckoutNs) { stale.add(p) };
+          };
+        };
+      };
+      for (p in forget.values()) {
+        payments.remove(p.paymentIntentId);
+        PaymentIndex.remove(paymentIndex, p);
+        sweepLooked.remove(p.paymentIntentId);
+        changed += 1;
+      };
+      let secret = switch (adminKeysState.stripeSecretKey) { case (?k) k; case null { return changed } };
+      let oldest = stale.toArray().sort(func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(x.createdAt, y.createdAt));
+      var lookups = 0;
+      label closing for (p in oldest.vals()) {
+        if (lookups + 2 > maxSweepLookups) break closing;
+        lookups += 1;
+        let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+        sweepLooked.add(p.paymentIntentId, Time.now());
+        if (p.state != #Created) continue closing;
+        if (resp.status == 404) { p.state := #Failed; changed += 1; continue closing };
+        if (not Http.isSuccess(resp)) continue closing;
+        let status = switch (Stripe.parseIntent(resp.body)) { case (?i) { if (i.id == p.paymentIntentId) i.status else "" }; case null "" };
+        if (status == "canceled") { p.state := #Failed; changed += 1; continue closing };
+        // Only a checkout still waiting for a card is cancelled: one paid,
+        // paying or authorised stays open until its customer confirms it.
+        if (status == "requires_payment_method" or status == "requires_confirmation" or status == "requires_action") {
+          lookups += 1;
+          let cancel = await* Http.postText(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId # "/cancel", Stripe.headers(secret, null), "", AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+          if ((Http.isSuccess(cancel) or cancel.status == 404) and p.state == #Created) { p.state := #Failed; changed += 1 };
+        };
+      };
+      changed;
+    } finally {
+      sweepRunning := false;
+    };
   };
 
   /// A short, stable hash of `t` (FNV-1a), for idempotency keys.

@@ -661,6 +661,28 @@ sections.orders = async function orders() {
   check(!again.ok && /admin/.test(again.error[0] ?? ""), "a customer cannot apply a referral reward by hand", again.error);
   const adminAgain = await env.as(env.controller).applyReferralReward(p1.paymentIntentId[0]);
   check(!adminAgain.ok && (await r.getReferralStats())[0].referralCreditsEarned === 1n, "the admin asking for the reward again grants nothing", adminAgain.error);
+  // A refund takes the month back once what is kept of the payment no
+  // longer covers it; another qualifying payment can then earn it again.
+  const refundAll = (id, amount) => call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: id, amountCents: BigInt(amount), reason: "Requested by customer", revokeEffects: true }));
+  const earnedNow = async () => (await r.getReferralStats())[0];
+  // (The second checkout was the first handed back: one intent, paid once.)
+  await refundAll(p2.paymentIntentId[0], 1500);
+  const afterRefund = await earnedNow();
+  check(afterRefund.referralCreditsEarned === 0n && afterRefund.freeMonthsAvailable === 0n && afterRefund.rewards.length === 0, "fully refunding the payment that earned a free month takes the unused month back", afterRefund);
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  const p3 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+  const c3 = await call(env.pic, up, env.deferred(referee).confirmPayment(p3.paymentIntentId[0]));
+  check(c3.ok && c3.referralRewardApplied && (await earnedNow()).referralCreditsEarned === 1n, "the referred customer's next qualifying payment can then earn it", { error: c3.error, applied: c3.referralRewardApplied });
+  const renewsBefore = (await r.getMyAccount())[0].subscriptionRenewsAt;
+  const redeem = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ Subscription: null }, [], []));
+  const renewsRedeemed = (await r.getMyAccount())[0].subscriptionRenewsAt;
+  check(redeem.ok && redeem.waived && renewsRedeemed - renewsBefore === 30n * 86_400_000_000_000n, "the referrer uses the free month (30 more days)", redeem.error);
+  await refundAll(p3.paymentIntentId[0], 500);
+  check((await earnedNow()).referralCreditsEarned === 1n, "a partial refund that still leaves the month's price paid keeps the month");
+  await refundAll(p3.paymentIntentId[0], 1000);
+  const usedBack = await earnedNow();
+  const renewsAfter = (await r.getMyAccount())[0].subscriptionRenewsAt;
+  check(usedBack.referralCreditsEarned === 0n && usedBack.referralCreditsRedeemed === 0n && renewsAfter === renewsBefore, "refunding below the month's price takes a used free month's days back", { usedBack, renewsBefore, renewsAfter });
 
   // Verification fails closed when the per-address result does not line up
   // with the batch, and a customer sees plain advice, not network detail.
@@ -702,6 +724,24 @@ sections.orders = async function orders() {
   await env.pic.advanceTime(6 * day); await env.pic.tick();
   const lapsed = await call(env.pic, up, env.deferred(referrer).createPaymentIntent({ CampaignOrder: null }, [late.campaignId[0]], []));
   check(!lapsed.ok && /membership/i.test(lapsed.error[0] ?? ""), "once the membership has ended, checkout refuses the member-priced draft", lapsed.error);
+
+  // Payment records stay bounded: a checkout left open for a week is closed
+  // with the processor (looked up first; one already paid stays open for its
+  // customer to confirm), and closed records a month old are forgotten.
+  const abandoned = await call(env.pic, up, env.deferred(ident(160)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const lost = await call(env.pic, up, env.deferred(ident(161)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const [abandonedId, lostId] = [abandoned.paymentIntentId[0], lost.paymentIntentId[0]];
+  pay.lookup = (id) => (id === abandonedId ? "requires_payment_method" : undefined);
+  const found = async (id) => (await env.as(env.controller).adminFindPayments(id)).find((p) => p.paymentIntentId === id);
+  await env.pic.advanceTime(7 * day + 2 * HOUR); await drive(env.pic, up, []);
+  const [closed, keptOpen] = [await found(abandonedId), await found(lostId)];
+  check(closed?.state.Failed === null && up.log.some((l) => l.url.endsWith(`/${abandonedId}/cancel`)) && keptOpen?.state.Created === null && !up.log.some((l) => l.url.endsWith(`/${lostId}/cancel`)),
+    "a week-old open checkout is cancelled with the processor; one the processor reports paid is kept for recovery", { closed: closed?.state, kept: keptOpen?.state });
+  await env.pic.advanceTime(24 * day); await drive(env.pic, up, []);
+  check(!(await found(abandonedId)) && (await found(lostId))?.state.Created === null, "a closed checkout a month old is forgotten; the paid-but-unconfirmed one stays");
+  const recovered = await call(env.pic, up, env.deferred(ident(161)).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  check(recovered.ok && recovered.paymentIntentId[0] === lostId && recovered.clientSecret.length === 0, "its customer's next checkout hands the paid one back for confirmation", recovered);
+  pay.lookup = undefined;
 };
 
 // ─── Pricing parity: src/frontend/src/lib/pricing.ts vs the canister ─────────
@@ -1097,6 +1137,7 @@ sections.upgrade = async function upgrade() {
     "each campaign's document, address list and job ids carry over", { new: [c.printDocumentId, c.printAddressListId, c.printJobId], old: [oldCampaign.c2mDocumentId, oldCampaign.c2mAddressListId, oldCampaign.c2mJobId] });
   check(ser(c.status) === ser(oldCampaign.status) && ser(c.paymentStatus) === ser(oldCampaign.paymentStatus) && c.recipientCount === oldCampaign.recipientCount, "status, payment and recipients carry over");
   check((await as(user).getCampaign(draft.campaignId[0]))[0]?.name === "Audit campaign", "unpaid drafts carry over");
+  check((await as(user).getMyPayments()).some((p) => p.paymentIntentId === intent.paymentIntentId[0]), "payments made before the upgrade are found by customer (the payment index is rebuilt)");
   const up2 = upstream([...fakePrintPartner(), ...fakeResend()]);
   const s = await call(env.pic, up2, deferred(adminId).syncPrintTracking(cid));
   check(s.ok && up2.log.length > 0 && up2.log.every((l) => l.headers.authorization === PRINT_AUTH && l.url.includes(oldCampaign.c2mJobId[0])),

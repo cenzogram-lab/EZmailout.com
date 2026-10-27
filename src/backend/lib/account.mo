@@ -8,6 +8,9 @@ import Text "mo:core/Text";
 import Nat32 "mo:core/Nat32";
 import Nat "mo:core/Nat";
 import Char "mo:core/Char";
+import Queue "mo:core/Queue";
+import Int "mo:core/Int";
+import Order "mo:core/Order";
 
 module {
   public let referralBase : Text = "https://ezmailout.com/ref/";
@@ -157,5 +160,54 @@ module {
         account;
       };
     };
+  };
+
+  /// The accounts `isIdle` holds idle, oldest first: the queue
+  /// `openKeepingIdle` keeps, rebuilt from `accounts` after an upgrade.
+  public func idleQueue(accounts : Map.Map<Text, Account.UserAccount>, isIdle : Account.UserAccount -> Bool) : Queue.Queue<Text> {
+    let idle = List.empty<Account.UserAccount>();
+    for ((_, a) in accounts.entries()) { if (isIdle(a)) { idle.add(a) } };
+    let q = Queue.empty<Text>();
+    for (a in idle.toArray().sort(func(x : Account.UserAccount, y : Account.UserAccount) : Order.Order = Int.compare(x.createdAt, y.createdAt)).vals()) { q.pushBack(a.id) };
+    q;
+  };
+
+  /// `getOrCreate`, never refused: a new account joins `idle` (accounts
+  /// opened idle, oldest first), and once it holds more than `maxIdle` the
+  /// oldest are forgotten if still idle (`isIdle`: nothing stored but the
+  /// account itself), their referral codes freed. Entries for accounts used
+  /// since are dropped as they reach the front. A forgotten account is
+  /// opened again on its owner's next sign-in, with the same referral code
+  /// unless another account has taken it meanwhile.
+  public func openKeepingIdle(
+    accounts : Map.Map<Text, Account.UserAccount>,
+    referralCodes : Map.Map<Text, Text>,
+    idle : Queue.Queue<Text>,
+    maxIdle : Nat,
+    isIdle : Account.UserAccount -> Bool,
+    userId : Text,
+    email : ?Text,
+    referralCode : ?Text,
+  ) : Account.UserAccount {
+    if (accounts.containsKey(userId)) { return getOrCreate(accounts, referralCodes, userId, email, referralCode) };
+    let a = getOrCreate(accounts, referralCodes, userId, email, referralCode);
+    idle.pushBack(userId);
+    while (idle.size() > maxIdle) {
+      switch (idle.popFront()) {
+        case (?old) {
+          switch (accounts.get(old)) {
+            case (?o) {
+              if (old != userId and isIdle(o)) {
+                accounts.remove(old);
+                if (referralCodes.get(o.referralCode) == ?old) { referralCodes.remove(o.referralCode) };
+              };
+            };
+            case null {};
+          };
+        };
+        case null {};
+      };
+    };
+    a;
   };
 };

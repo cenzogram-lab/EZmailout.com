@@ -32,7 +32,9 @@ mixin (
   state : Common.Counters,
   adminKeysState : Common.AdminState,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
-  payments : Map.Map<Text, Account.PaymentRecord>,
+  /// The campaign-order payments made for a campaign (the billing mixin's
+  /// payment index), so no lookup scans every payment.
+  paymentsForCampaign : Text -> [Account.PaymentRecord],
   accounts : Map.Map<Text, Account.UserAccount>,
   transformFn : Http.TransformFn,
 ) {
@@ -127,9 +129,10 @@ mixin (
   private func evictionProtected(now : Int) : Set.Set<Text> {
     let out = Set.empty<Text>();
     let open = Map.empty<Text, Int>();
-    for ((_, p) in payments.entries()) {
-      switch (p.purpose, p.reference) {
-        case (#CampaignOrder, ?id) {
+    // Only an expirable draft can be evicted, so only drafts' payments count.
+    for ((id, r) in campaigns.entries()) {
+      if (CampaignLib.isExpirableDraft(r)) {
+        for (p in paymentsForCampaign(id).vals()) {
           if (p.state == #Succeeded or p.state == #Waived) { out.add(id) } else if (p.state == #Created and not p.sandbox and now - p.createdAt < openCheckoutNs) {
             switch (open.get(id)) {
               case (?t) { if (p.createdAt > t) open.add(id, p.createdAt) };
@@ -137,7 +140,6 @@ mixin (
             };
           };
         };
-        case _ {};
       };
     };
     let newestFirst = open.entries().toArray().sort(func(a : (Text, Int), b : (Text, Int)) : Order.Order = Int.compare(b.1, a.1));
@@ -161,7 +163,6 @@ mixin (
     };
     if (not full()) { return true };
     ignore pruneExpiredDrafts(now, keep);
-    let checkouts = checkoutActivity();
     let isProtected = evictionProtected(now);
     // Chosen first and removed together, so the tracking log is swept once
     // (not once per draft), and nothing is evicted unless it makes room.
@@ -169,7 +170,7 @@ mixin (
     var stored = unpaidStoredRecipients();
     let evict = Set.empty<Text>();
     while ((newDraft and drafts >= CampaignLib.maxUnpaidDraftsGlobal) or stored + adding > maxUnpaidRecipientsGlobal) {
-      switch (CampaignLib.oldestIdleDraft(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), func(id : Text) : Bool = isProtected.contains(id) or ?id == keep or evict.contains(id))) {
+      switch (CampaignLib.oldestIdleDraft(campaigns, func(id : Text) : Int = lastDraftActivity(id), func(id : Text) : Bool = isProtected.contains(id) or ?id == keep or evict.contains(id))) {
         case (?id) {
           evict.add(id);
           switch (campaigns.get(id)) {
@@ -189,27 +190,19 @@ mixin (
     true;
   };
 
-  /// The newest checkout opened for each campaign.
-  private func checkoutActivity() : Map.Map<Text, Int> {
-    let latest = Map.empty<Text, Int>();
-    for ((_, p) in payments.entries()) {
-      switch (p.purpose, p.reference) {
-        case (#CampaignOrder, ?id) {
-          switch (latest.get(id)) {
-            case (?t) { if (p.createdAt > t) { latest.add(id, p.createdAt) } };
-            case null { latest.add(id, p.createdAt) };
-          };
-        };
-        case _ {};
-      };
+  /// When the newest checkout for a campaign was opened (0: none).
+  private func latestCheckout(id : Text) : Int {
+    var latest : Int = 0;
+    for (p in paymentsForCampaign(id).vals()) {
+      if (p.createdAt > latest) { latest := p.createdAt };
     };
     latest;
   };
 
   /// A campaign's latest activity outside its record: a staged print file
   /// or a checkout opened for it.
-  private func lastDraftActivity(id : Text, checkouts : Map.Map<Text, Int>) : Int {
-    let checkout : Int = switch (checkouts.get(id)) { case (?t) t; case null 0 };
+  private func lastDraftActivity(id : Text) : Int {
+    let checkout = latestCheckout(id);
     switch (documentUploads.get(id)) {
       case (?u) { if (u.createdAt > checkout) u.createdAt else checkout };
       case null checkout;
@@ -217,8 +210,9 @@ mixin (
   };
 
   /// When `record` expires if it stays unpaid (`CampaignLib.draftExpiresAt`).
-  private func draftExpiry(record : Types.CampaignRecord, checkouts : Map.Map<Text, Int>) : ?Int {
-    CampaignLib.draftExpiresAt(record, lastDraftActivity(record.id, checkouts));
+  private func draftExpiry(record : Types.CampaignRecord) : ?Int {
+    if (not CampaignLib.isExpirableDraft(record)) { return null };
+    CampaignLib.draftExpiresAt(record, lastDraftActivity(record.id));
   };
 
   /// Removes drafts with their recipients, staged print files and timeline.
@@ -239,9 +233,8 @@ mixin (
   /// Runs from the 6-hourly timer in `main.mo`, and from `createCampaign`
   /// before a draft cap refuses.
   private func pruneExpiredDrafts(now : Int, keep : ?Text) : Nat {
-    let checkouts = checkoutActivity();
     // `keep` is the draft being staged: it is in use, whatever its age.
-    let expired = CampaignLib.expiredDrafts(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), now).filter(func(id : Text) : Bool = ?id != keep);
+    let expired = CampaignLib.expiredDrafts(campaigns, func(id : Text) : Int = lastDraftActivity(id), now).filter(func(id : Text) : Bool = ?id != keep);
     removeDrafts(expired);
     expired.size();
   };
@@ -412,10 +405,9 @@ mixin (
   /// them, including unowned legacy records. Rows carry no design or
   /// recipients, so the reply stays small however many campaigns there are.
   public shared query ({ caller }) func getCampaigns() : async [Types.CampaignSummary] {
-    let checkouts = checkoutActivity();
     let result = List.empty<Types.CampaignSummary>();
     for ((_, r) in campaigns.entries()) {
-      if (canAccess(r, caller)) { result.add(r.toSummary(draftExpiry(r, checkouts))) };
+      if (canAccess(r, caller)) { result.add(r.toSummary(draftExpiry(r))) };
     };
     result.toArray().sort<Types.CampaignSummary>(func(a, b) = Int.compare(b.createdAt, a.createdAt));
   };
@@ -423,7 +415,7 @@ mixin (
   /// One campaign in full, stored canvas included.
   public shared query ({ caller }) func getCampaign(id : Text) : async ?Types.CampaignRecordShared {
     let record = requireAccess(id, caller);
-    let view = record.toShared(draftExpiry(record, checkoutActivity()));
+    let view = record.toShared(draftExpiry(record));
     // A dispatch failure quotes the print partner or the network; the owner
     // sees which step failed and what to do, the admin sees the detail.
     switch (view.lastError) {
@@ -533,8 +525,8 @@ mixin (
     // cannot be cancelled may already be paid: the draft then stays, so the
     // payment can still be confirmed (Pay now finds it again).
     let open = List.empty<Account.PaymentRecord>();
-    for ((_, p) in payments.entries()) {
-      if (p.purpose == #CampaignOrder and p.reference == ?campaignId and p.state == #Created and not p.sandbox) { open.add(p) };
+    for (p in paymentsForCampaign(campaignId).vals()) {
+      if (p.state == #Created and not p.sandbox) { open.add(p) };
     };
     for (p in open.values()) {
       let secret = switch (adminKeysState.stripeSecretKey) {
@@ -556,8 +548,8 @@ mixin (
     };
     // A checkout opened while the others were being cancelled must not be
     // left payable for a draft that is about to go.
-    for ((_, p) in payments.entries()) {
-      if (p.purpose == #CampaignOrder and p.reference == ?campaignId and p.state == #Created and not p.sandbox) {
+    for (p in paymentsForCampaign(campaignId).vals()) {
+      if (p.state == #Created and not p.sandbox) {
         return { ok = false; error = ?"A checkout for this draft was opened meanwhile; try deleting it again in a moment" };
       };
     };

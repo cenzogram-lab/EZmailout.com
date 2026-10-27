@@ -31,6 +31,9 @@ function context(): CanvasRenderingContext2D | null {
   if (measureCtx !== undefined) return measureCtx;
   try {
     measureCtx = document.createElement("canvas").getContext("2d");
+    // Kern as page text does: Chromium's canvas default ("auto") kerns
+    // less, which measured Playfair lines up to 0.5 px wider than the editor.
+    if (measureCtx) measureCtx.fontKerning = "normal";
   } catch {
     measureCtx = null;
   }
@@ -128,60 +131,121 @@ export function wrapText(
   advance: (s: string) => number,
 ): string[] {
   const lines: string[] = [];
+  // Chromium's line breaker measures in layout units (1/64 px), rounding a
+  // run's width down: a run up to 1/64 px wider than the line still fits.
+  // A run followed by a space is measured with it, as Chromium shapes the
+  // whole line: a face that kerns a letter against the space (Playfair's
+  // "r ") makes "foo -bar" narrower before " baz" than on its own.
+  const fits = (s: string, spaceFollows = false) => {
+    const t = s.trimEnd();
+    const width =
+      spaceFollows || t !== s ? advance(`${t} `) - advance(" ") : advance(t);
+    return Math.floor(width * 64) / 64 <= maxWidth;
+  };
   for (const paragraph of text.split(/\r?\n/)) {
     if (paragraph.trim() === "") {
       lines.push("");
       continue;
     }
     let current: string | null = null;
-    const pieces = paragraph.split(" ").flatMap((word, i) =>
-      hyphenSegments(word).map((text, j) => ({
-        text,
-        join: j > 0 ? "" : i > 0 ? " " : "",
-      })),
-    );
-    for (const { text: word, join } of pieces) {
-      const candidate: string =
-        current === null ? word : `${current}${join}${word}`;
-      // Spaces at a wrap point hang past the edge, as in the editor.
-      if (advance(candidate.trimEnd()) <= maxWidth) {
-        current = candidate;
-        continue;
-      }
-      if (current !== null && current.trim() !== "") {
-        lines.push(current.trimEnd());
-        current = null;
-      }
-      // A word that cannot fit on its own line is broken character by character.
-      let chunk = "";
-      for (const char of word) {
-        if (chunk === "" || advance(chunk + char) <= maxWidth) {
-          chunk += char;
+    const words = paragraph.split(" ");
+    for (let i = 0; i < words.length; i++) {
+      let pieces = hyphenSegments(words[i]);
+      let join = i > 0 ? " " : "";
+      for (let j = 0; j < pieces.length; j++) {
+        const word = pieces[j];
+        const candidate: string =
+          current === null ? word : `${current}${join}${word}`;
+        join = "";
+        // Spaces at a wrap point hang past the edge, as in the editor.
+        if (fits(candidate, j === pieces.length - 1 && i < words.length - 1)) {
+          current = candidate;
           continue;
         }
-        lines.push(chunk);
-        chunk = char;
+        if (current !== null && current.trim() !== "") {
+          lines.push(current.trimEnd());
+          current = null;
+        }
+        // A piece that cannot fit on its own line is broken character by
+        // character.
+        let chunk = "";
+        for (const char of word) {
+          if (chunk === "" || fits(chunk + char)) {
+            chunk += char;
+            continue;
+          }
+          lines.push(chunk);
+          chunk = char;
+        }
+        current = chunk;
+        if (chunk !== word) {
+          // The rest of the word now starts a line, and Chromium cuts it
+          // again from there: "pre-1990" in a narrow box is "pre" / "-19" /
+          // "90", since "-1990" at a line's start keeps its hyphen.
+          pieces = hyphenSegments([chunk, ...pieces.slice(j + 1)].join(""));
+          current = null;
+          j = -1;
+        }
       }
-      current = chunk;
     }
     lines.push((current ?? "").trimEnd());
   }
   return lines;
 }
 
-const HYPHENS = "-\u2010\u2013";
+const HYPHEN = "-";
+const DASHES = "\u2010\u2013";
 const EM_DASH = "\u2014";
 const ELLIPSIS = "\u2026";
-const WORDISH = /[\p{L}\p{N}]/u;
-const LETTER = /\p{L}/u;
+const ASCII_LETTER = /[A-Za-z]/;
+const ASCII_ALNUM = /[A-Za-z0-9]/;
+const DIGIT = /[0-9]/;
+const LETTER_OR_NUMBER = /[\p{L}\p{N}]/u;
+/** Ideographs and currency: Chromium breaks before them after any dash. */
+const ALWAYS_OPENS =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Sc}]/u;
+/** ASCII punctuation Chromium breaks before after a Unicode dash or ellipsis. */
+const OPENS_AFTER_DASH = "#$%&(*+<=>@[\\^_`{~";
+/** ...and after an ASCII hyphen (its own table: no `$`, but `-`, quotes, `|`). */
+const OPENS_AFTER_HYPHEN = "\"#%&'(*+-<=>@[\\^_`{|~";
+/** ...and after a U+2010 hyphen that starts a word. */
+const OPENS_AFTER_LEADING_DASH = "$%(+[\\{";
+/** Characters Chromium never breaks after when an em dash follows. */
+const HOLDS_EM_DASH = "\"'([{\u201c\u2018\u2014";
+
+/** Whether Chromium breaks between `dash` (at a word's start when `prev` is undefined) and `next`. */
+function breaksAfterDash(
+  dash: string,
+  prev: string | undefined,
+  next: string,
+): boolean {
+  if (dash === HYPHEN) {
+    if (next.charCodeAt(0) < 128) {
+      if (ASCII_LETTER.test(next) || OPENS_AFTER_HYPHEN.includes(next))
+        return true;
+      // "a-5", "5-6"; never "-5", "$-5", "--5".
+      return DIGIT.test(next) && prev !== undefined && ASCII_ALNUM.test(prev);
+    }
+    if (ALWAYS_OPENS.test(next)) return true;
+    // "a-é" breaks, "-é" and "--é" do not.
+    return LETTER_OR_NUMBER.test(next) && prev !== undefined && prev !== HYPHEN;
+  }
+  if (ALWAYS_OPENS.test(next) || DIGIT.test(next)) return true;
+  // A U+2010 hyphen that starts a word keeps a letter after it.
+  if (dash === "\u2010" && prev === undefined)
+    return OPENS_AFTER_LEADING_DASH.includes(next);
+  return LETTER_OR_NUMBER.test(next) || OPENS_AFTER_DASH.includes(next);
+}
 
 /**
- * A word cut where Chromium may wrap inside it (a UAX #14 subset): after a
- * hyphen or en dash followed by a letter or digit ("Award-" / "winning",
- * "555-" / "0123"), or by a letter when the hyphen starts the word ("-" /
- * "bar", while "-5" stays whole); before and after an em dash ("local" /
- * "—delivered"); and after an ellipsis ("20%…" / "limited"). "1,000-$2,000"
- * stays whole.
+ * A word cut where Chromium may wrap inside it, as measured from its line
+ * breaker (UAX #14 plus Blink's ASCII table): after a hyphen, U+2010 hyphen
+ * or en dash followed by a letter or digit ("Award-" / "winning",
+ * "555-" / "0123"), by another ASCII hyphen ("e-mail-" / "-and") or by
+ * opening punctuation, but not "-5", "$-5" or "1,000-$2,000"; before an em
+ * dash (unless it follows an opening bracket or quote) and after one
+ * followed by a letter, digit or opening punctuation ("local" /
+ * "—delivered"); and after an ellipsis likewise ("20%…" / "limited").
  */
 function hyphenSegments(word: string): string[] {
   const chars = Array.from(word);
@@ -195,14 +259,25 @@ function hyphenSegments(word: string): string[] {
   };
   for (let k = 0; k < chars.length - 1; k++) {
     const c = chars[k];
+    const prev = k > 0 ? chars[k - 1] : undefined;
     const next = chars[k + 1];
-    if (HYPHENS.includes(c)) {
-      if (k > 0 ? WORDISH.test(next) : LETTER.test(next)) cut(k + 1);
+    if (c === HYPHEN || DASHES.includes(c)) {
+      if (breaksAfterDash(c, prev, next)) cut(k + 1);
     } else if (c === EM_DASH) {
-      if (k > 0 && chars[k - 1] !== EM_DASH) cut(k);
-      if (next !== EM_DASH) cut(k + 1);
-    } else if (c === ELLIPSIS && WORDISH.test(next)) {
-      cut(k + 1);
+      if (prev !== undefined && !HOLDS_EM_DASH.includes(prev)) cut(k);
+      if (
+        ALWAYS_OPENS.test(next) ||
+        LETTER_OR_NUMBER.test(next) ||
+        OPENS_AFTER_DASH.includes(next)
+      )
+        cut(k + 1);
+    } else if (c === ELLIPSIS) {
+      if (
+        ALWAYS_OPENS.test(next) ||
+        LETTER_OR_NUMBER.test(next) ||
+        OPENS_AFTER_DASH.includes(next)
+      )
+        cut(k + 1);
     }
   }
   out.push(chars.slice(start).join(""));
