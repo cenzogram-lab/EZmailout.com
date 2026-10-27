@@ -112,6 +112,10 @@ export function fakeStripe(state = {}) {
       state.refunds.push(refund);
       return { body: refund };
     }],
+    [(r) => r.url.startsWith("https://api.stripe.com/v1/refunds/") && r.method === "GET", (r) => {
+      const refund = (state.refunds ?? []).find((x) => x.id === r.url.split("/").pop());
+      return refund ? { body: { ...refund, status: state.refundStatus ?? refund.status } } : { status: 404, body: { error: { message: "No such refund" } } };
+    }],
     // `state.cancelFails` refuses a cancel (as for a paid intent); a
     // cancelled intent reads as `canceled`; `state.lookup(id)` overrides the
     // status an intent reads with (e.g. "requires_payment_method").

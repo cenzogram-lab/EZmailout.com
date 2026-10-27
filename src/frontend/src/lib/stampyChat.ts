@@ -123,6 +123,15 @@ const CREDITS: Intent = {
 };
 
 const INTENTS: Intent[] = [
+  {
+    // First: a refund question names a topic too ("refund my credits"),
+    // and a tie goes to the earlier intent. A refund needs two details.
+    keywords:
+      /\b(refund\w*|charged twice|double charge\w*|money back|reimburs\w*)\b/i,
+    answer: () =>
+      "For a refund, open Contact Support and include your account ID (Dashboard → Account) and the invoice number of the payment (Dashboard → Payment history). Our team refunds it to the card you paid with.",
+    chips: ["support"],
+  },
   CREDITS,
   {
     keywords: /\b(refer\w*|invite\w*|friend\w*|free month|reward\w*)\b/i,
@@ -156,7 +165,7 @@ const INTENTS: Intent[] = [
     // alone, so Stampy never mentions or links it.
     keywords: /\b(settings|account|profile)\b/i,
     answer: () =>
-      "Your account lives on the Dashboard: your principal, credits, membership and referral link.",
+      "Your account lives on the Dashboard: your account ID, credits, membership, payment history and referral link.",
     chips: ["referrals"],
   },
   {
@@ -174,14 +183,6 @@ const INTENTS: Intent[] = [
     answer: () =>
       `There are no batch minimums — mail one piece or thousands. The volume-priced postcards, letters and brochures get cheaper at 1,000, 10,000 and 50,000 pieces, and a ${membership} 30-day membership gets their 10,000-piece rate on small batches (only an order of a few pieces costs a little more, to cover the card fee). Every price includes printing, postage and CASS address verification; postcards go as low as ${cheapest()} each.`,
     chips: ["catalog"],
-  },
-  {
-    // Before the general support intent: a refund needs two details.
-    keywords:
-      /\b(refund\w*|charged twice|double charge\w*|money back|reimburs\w*)\b/i,
-    answer: () =>
-      "For a refund, open Contact Support and include your account ID (Dashboard → Account) and the invoice number of the payment (Dashboard → Payment history). Our team refunds it to the card you paid with.",
-    chips: ["support"],
   },
   {
     keywords:

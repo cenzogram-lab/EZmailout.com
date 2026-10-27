@@ -410,6 +410,12 @@ mixin (
           let probe = await* Http.get(base # "/jobs/" # jobId, Fulfilment.jsonHeaders(auth, "application/json"), AdminLib.outcallOptions(adminKeysState, 64_000), transformFn);
           if (Http.isSuccess(probe) and Fulfilment.jobSubmitted(probe.body) == ?true) { done := true; alreadySubmitted += 1 };
         };
+        // A refund can land while the run waits on the print partner: a
+        // refunded order must not be submitted (submitting is what prints
+        // and bills it).
+        if (not done and record.paymentStatus != #Paid and record.paymentStatus != #Waived) {
+          return markBatchFailed(record, campaignId, batches, "This order was refunded while it was being sent to print, so it was not submitted");
+        };
         if (not done) {
           let submit = await* Http.postText(base # "/jobs/" # jobId # "/submit", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), Fulfilment.formEncode([("billingType", "User Credit")]), opts, transformFn);
           if (not Http.isSuccess(submit) or Fulfilment.reportedFailure(submit.body)) {

@@ -92,7 +92,11 @@ module {
   /// A campaign that may expire: never paid (or waived) and never sent to
   /// the print partner. Anything else is an order and is never removed.
   public func isExpirableDraft(r : Types.CampaignRecord) : Bool {
-    r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment) and r.printDocumentId == null and r.printJobId == null;
+    let unpaid = r.paymentStatus == #Unpaid and (r.productionStatus == #Draft or r.productionStatus == #AwaitingPayment);
+    // A refunded order that never reached the print partner is a draft
+    // again as far as storage goes: it expires like one, recipients and all.
+    let refunded = r.paymentStatus == #Refunded;
+    (unpaid or refunded) and r.printDocumentId == null and r.printJobId == null;
   };
 
   /// When a campaign was last touched: the later of its own last update and

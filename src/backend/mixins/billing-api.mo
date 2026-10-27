@@ -16,6 +16,7 @@ import Stripe "../lib/stripe";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Nat "mo:core/Nat";
+import Nat32 "mo:core/Nat32";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Int "mo:core/Int";
@@ -49,9 +50,8 @@ mixin (
   transient let intentsPerHour : Nat = 10;
   transient let intentsPerHourGlobal : Nat = 1_000;
   transient let intentsPerCampaignPerHour : Nat = 5;
-  /// How far back an earlier checkout for the same order is looked for before
-  /// a new one is opened (the window a draft's open checkout is protected).
-  transient let reuseCheckoutNs : Int = 86_400_000_000_000;
+  /// Earlier checkouts looked up by one call for a lost charge.
+  transient let lookupsPerHour : Nat = 20;
   transient let intentGapNs : Int = 2_000_000_000;
   transient let confirmsPerHour : Nat = 30;
   transient let confirmsPerHourGlobal : Nat = 2_000;
@@ -191,6 +191,43 @@ mixin (
 
   // ─── Payments ────────────────────────────────────────────────────────────
 
+  /// A campaign checkout this customer opened earlier (any age: payment
+  /// intents never expire) that the processor reports paid or paying: handed
+  /// back without a client secret, so the checkout confirms it instead of
+  /// charging again. Null when there is none. Looked up only when such a
+  /// record exists, and budgeted per identity.
+  private func recoverCharged(caller : Principal, userId : Text, campaignId : Text, amount : Nat, secret : Text) : async* ?Account.PaymentIntentResult {
+    let open = List.empty<Account.PaymentRecord>();
+    for ((_, p) in payments.entries()) {
+      if (p.userId == userId and p.purpose == #CampaignOrder and p.reference == ?campaignId and p.amountCents == amount and p.state == #Created and not p.sandbox) { open.add(p) };
+    };
+    if (open.size() == 0) return null;
+    switch (stripeRefusal(Limits.admit(stripeWindows, [{ key = "lookup:" # userId; limit = lookupsPerHour; minGapNs = 0 }], Time.now(), stripeWindowNs), "checking your earlier checkout")) {
+      case (?msg) { return ?intentFail(msg) };
+      case null {};
+    };
+    let newest = open.toArray().sort(func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(y.createdAt, x.createdAt));
+    for (p in newest.sliceToArray(0, Nat.min(newest.size(), 3)).vals()) {
+      let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      if (resp.status == 404) { p.state := #Failed } else if (not Http.isSuccess(resp)) {
+        return ?intentFail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body), "We couldn't check your earlier checkout for this order; please try again in a minute"));
+      } else {
+        switch (Stripe.parseIntent(resp.body)) {
+          case (?intent) {
+            if (intent.id == p.paymentIntentId) {
+              if (intent.status == "succeeded" or intent.status == "processing" or intent.status == "requires_capture") {
+                return ?{ ok = true; error = null; paymentIntentId = ?p.paymentIntentId; clientSecret = null; amountCents = ?amount; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
+              };
+              if (intent.status == "canceled") { p.state := #Failed };
+            };
+          };
+          case null {};
+        };
+      };
+    };
+    null;
+  };
+
   private func intentFail(msg : Text) : Account.PaymentIntentResult {
     { ok = false; error = ?msg; paymentIntentId = null; clientSecret = null; amountCents = null; publishableKey = adminKeysState.stripePublishableKey; waived = false; sandbox = false };
   };
@@ -211,6 +248,21 @@ mixin (
             if (c.ownerId != a.id and not AdminLib.isAdmin(adminKeysState, caller)) { return intentFail("You do not own this campaign") };
             if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
             if (c.paymentStatus == #Refunded) { return intentFail("This order was refunded. Re-run it from Campaigns to order it again.") };
+            // A charge whose confirmation was lost is found before anything
+            // below could refuse the order (a price or membership change
+            // since): the card was charged at this price already.
+            if (not adminKeysState.sandboxCheckout) {
+              switch (adminKeysState.stripeSecretKey) {
+                case (?secret) {
+                  switch (await* recoverCharged(caller, a.id, campaignId, c.totalAmountChargedCents, secret)) {
+                    case (?res) { return res };
+                    case null {};
+                  };
+                };
+                case null {};
+              };
+              if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") };
+            };
             if (c.totalAmountChargedCents == 0) { return intentFail("Campaign total is zero") };
             if (c.totalAmountChargedCents < PricingLib.minOrderCents and not adminKeysState.sandboxCheckout) {
               return intentFail("Card payments start at $0.50, and this order comes to less. Start a new campaign with a few more pieces.");
@@ -337,7 +389,7 @@ mixin (
     let now = Time.now();
     let earlier = List.empty<Account.PaymentRecord>();
     for ((_, p) in payments.entries()) {
-      if (p.userId == a.id and p.purpose == purpose and p.reference == ?refText and p.amountCents == amount and p.state == #Created and not p.sandbox and now - p.createdAt < reuseCheckoutNs) {
+      if (p.userId == a.id and p.purpose == purpose and p.reference == ?refText and p.amountCents == amount and p.state == #Created and not p.sandbox) {
         earlier.add(p);
       };
     };
@@ -348,6 +400,9 @@ mixin (
       if (looked >= 3) break checking;
       looked += 1;
       let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+      // Unknown to the processor (made with another key): it can never be
+      // paid, so it is closed rather than blocking the order.
+      if (resp.status == 404) { p.state := #Failed; continue checking };
       if (not Http.isSuccess(resp)) {
         return intentFail(AdminLib.providerError(adminKeysState, caller, if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body), "We couldn't check your earlier checkout for this order; please try again in a minute"));
       };
@@ -570,7 +625,9 @@ mixin (
       // cap: a customer whose card was just charged must not be kept waiting
       // because other (free) identities used it up. Payment records are
       // bounded by the checkout budgets, so neither is this.
-      let firstLookup = not stripeWindows.containsKey("confirm:" # record.paymentIntentId);
+      // Only a payment opened within the hour: older records would let free
+      // identities skip the shared cap once their windows were swept.
+      let firstLookup = not stripeWindows.containsKey("confirm:" # record.paymentIntentId) and Time.now() - record.createdAt < stripeWindowNs;
       let budgets = [
         { key = "confirm:" # callerId; limit = confirmsPerHour; minGapNs = 0 },
         { key = "confirm:" # record.paymentIntentId; limit = confirmsPerHour; minGapNs = confirmGapNs },
@@ -607,6 +664,10 @@ mixin (
       };
       // Re-check after the await: another call may have confirmed meanwhile.
       if (record.state == #Succeeded) {
+        switch (unsettledNotice(record)) {
+          case (?msg) { return { ok = false; error = ?msg; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = null; subscriptionActive = null; referralRewardApplied = false } };
+          case null {};
+        };
         return { ok = true; error = null; state = ?record.state; creditBalance = ?a.creditBalance; campaignId = record.reference; subscriptionActive = ?AccountLib.isSubscriptionLive(a, Time.now()); referralRewardApplied = false };
       };
     };
@@ -660,7 +721,7 @@ mixin (
     total;
   };
 
-  private func paymentView(p : Account.PaymentRecord) : Account.PaymentView {
+  private func paymentView(p : Account.PaymentRecord, forAdmin : Bool) : Account.PaymentView {
     var campaignId : ?Text = null;
     var campaignName : ?Text = null;
     var settled = false;
@@ -696,14 +757,15 @@ mixin (
       campaignName;
       settledCampaign = settled;
       campaignInProduction = inProduction;
-      refunds = refundsOf(p.paymentIntentId).map(func(r : Account.RefundRecord) : Account.RefundView = { refundId = r.refundId; amountCents = r.amountCents; reason = r.reason; status = r.status; createdAt = r.createdAt });
+      // The admin's reason is an internal note: customers see the refund only.
+      refunds = refundsOf(p.paymentIntentId).map(func(r : Account.RefundRecord) : Account.RefundView = { refundId = r.refundId; amountCents = r.amountCents; reason = if (forAdmin) r.reason else ""; status = r.status; createdAt = r.createdAt });
     };
   };
 
-  private func newestFirst(list : List.List<Account.PaymentRecord>, max : Nat) : [Account.PaymentView] {
+  private func newestFirst(list : List.List<Account.PaymentRecord>, max : Nat, forAdmin : Bool) : [Account.PaymentView] {
     let at = func(p : Account.PaymentRecord) : Int = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
     let sorted = list.toArray().sort(func(a : Account.PaymentRecord, b : Account.PaymentRecord) : Order.Order = Int.compare(at(b), at(a)));
-    sorted.sliceToArray(0, Nat.min(sorted.size(), max)).map(paymentView);
+    sorted.sliceToArray(0, Nat.min(sorted.size(), max)).map(func(p : Account.PaymentRecord) : Account.PaymentView = paymentView(p, forAdmin));
   };
 
   /// The caller's completed payments, newest first (at most 100): the
@@ -716,7 +778,7 @@ mixin (
     for ((_, p) in payments.entries()) {
       if (p.userId == id and (p.state == #Succeeded or p.state == #Waived)) { mine.add(p) };
     };
-    newestFirst(mine, 100);
+    newestFirst(mine, 100, false);
   };
 
   /// Admin only: payments matching an invoice number (payment id), an
@@ -738,7 +800,7 @@ mixin (
       };
       if (matches) { found.add(p) };
     };
-    newestFirst(found, 50);
+    newestFirst(found, 50, true);
   };
 
   /// Admin only: refunds `amountCents` of a completed payment to the card it
@@ -755,27 +817,52 @@ mixin (
     let p = switch (payments.get(id)) { case (?r) r; case null { return fail("Unknown payment") } };
     if (p.state != #Succeeded) { return fail("Only a completed payment can be refunded") };
     if (p.sandbox) { return fail("A test-mode payment charged nothing, so there is nothing to refund") };
-    let already = refundedCents(id);
-    let remaining = Nat.sub(p.amountCents, Nat.min(already, p.amountCents));
-    if (remaining == 0) { return fail("This payment has already been refunded in full") };
-    if (input.amountCents == 0 or input.amountCents > remaining) {
-      return fail("Refund between $0.01 and " # refundDollars(remaining) # ", what is left of this payment");
-    };
     let reason = Limits.clip(AddressLib.sanitizeText(input.reason), maxRefundReasonChars);
     if (reason == "") { return fail("Give a reason for the refund") };
+    if (input.amountCents == 0) { return fail("Enter an amount to refund") };
     let secret = switch (adminKeysState.stripeSecretKey) { case (?s) s; case null { return fail("The payment processor's secret key is not set") } };
     if (refundsInFlight.contains(id)) { return fail("A refund for this payment is already running") };
     refundsInFlight.add(id);
     try {
-      // Keyed by the refunds recorded so far: a retry after a lost answer
-      // gets the same refund back instead of a second one.
-      let key = "ez-refund-" # id # "-" # refundsOf(id).size().toText();
+      // A refund still pending may since have failed (it then gives nothing
+      // back) or gone through: read those again before counting what is left.
+      for (r in refundsOf(id).vals()) {
+        if (r.status == "pending" or r.status == "requires_action") {
+          switch (await* readRefund(secret, r.refundId)) {
+            case (?seen) { setRefundStatus(id, r.refundId, seen.status) };
+            case null {};
+          };
+        };
+      };
+      let already = refundedCents(id);
+      let remaining = Nat.sub(p.amountCents, Nat.min(already, p.amountCents));
+      if (remaining == 0) { return fail("This payment has already been refunded in full") };
+      if (input.amountCents > remaining) {
+        return fail("Refund between $0.01 and " # refundDollars(remaining) # ", what is left of this payment");
+      };
+      // The same request (amount and reason) after the same recorded refunds
+      // gets the same key, so a retry after a lost answer is answered with the
+      // refund already made, never a second one; a different request is a
+      // new refund.
+      let key = "ez-refund-" # id # "-" # refundsOf(id).size().toText() # "-" # input.amountCents.toText() # "-" # textHash(reason);
       let by = caller.toText();
       let resp = await* Http.postText(Stripe.apiBase # "/refunds", Stripe.headers(secret, ?key), Stripe.refundBody(id, input.amountCents, reason, by), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
-      if (not Http.isSuccess(resp)) {
-        return fail("The payment processor refused the refund: " # (if (resp.status == 0) resp.body else Stripe.errorMessage(resp.body)));
+      if (resp.status == 0) {
+        return fail("No answer from the payment processor, so the outcome is unknown. Check its dashboard, or retry with the same amount and reason: that cannot refund twice.");
       };
-      let refund = switch (Stripe.parseRefund(resp.body)) { case (?r) r; case null { return fail("Unexpected answer from the payment processor; check its dashboard before trying again") } };
+      if (not Http.isSuccess(resp)) {
+        return fail("The payment processor refused the refund: " # Stripe.errorMessage(resp.body));
+      };
+      let made = switch (Stripe.parseRefund(resp.body)) { case (?r) r; case null { return fail("Unexpected answer from the payment processor; check its dashboard before trying again") } };
+      // The create call is answered by one node: the refund is read back by
+      // the whole subnet before anything is recorded or taken back.
+      let refund = switch (await* readRefund(secret, made.id)) {
+        case (?r) { if (r.paymentIntent == id) r else { return fail("The payment processor's refund is for another payment; check its dashboard") } };
+        case null { return fail("The refund was sent but could not be confirmed. Check the processor's dashboard, or retry with the same amount and reason: that cannot refund twice.") };
+      };
+      if (refundsOf(id).any(func(r : Account.RefundRecord) : Bool { r.refundId == refund.id })) {
+        return { ok = true; error = null; refundId = ?refund.id; refundedCents = refundedCents(id); creditBalance = null };
+      };
       if (refund.status == "failed" or refund.status == "canceled") {
         return fail("The payment processor reports the refund " # refund.status);
       };
@@ -793,12 +880,18 @@ mixin (
                   switch (campaigns.get(cid)) {
                     case (?c) {
                       let settles = c.paymentIntentId == ?id;
-                      let printing = c.printDocumentId != null or c.productionStatus == #Submitted;
+                      // Anything past "ready to dispatch" (a run under way,
+                      // the file or a job with the print partner) is printing.
+                      let printing = c.printDocumentId != null or c.printJobId != null or (c.productionStatus != #ReadyToDispatch and c.productionStatus != #Failed and c.productionStatus != #AwaitingPayment and c.productionStatus != #Draft);
                       if (input.revokeEffects and settles and full and not printing and c.paymentStatus == #Paid) {
                         c.paymentStatus := #Refunded;
                         c.updatedAt := now;
+                        // Nothing will print it: its staged file goes.
+                        documentUploads.remove(cid);
                       };
-                      CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.refunded", refund.id, #System, ?("Refunded " # refundDollars(amount) # ": " # reason));
+                      // The customer sees this on the campaign's timeline: the
+                      // amount only, never the admin's note.
+                      CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.refunded", refund.id, #System, ?("Refunded " # refundDollars(amount) # " to the card"));
                     };
                     case null {};
                   };
@@ -816,8 +909,13 @@ mixin (
               };
             };
             case (#Subscription) {
-              if (input.revokeEffects and full) {
-                a.subscriptionRenewsAt := Int.max(now, a.subscriptionRenewsAt - Credits.thirtyDaysNs);
+              // Only what is left of this payment's own 30 days is taken back
+              // (a pass refunded months later leaves today's membership as
+              // it is), and its credits only while that window is open.
+              let paidAt = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
+              let unused = paidAt + Credits.thirtyDaysNs - now;
+              if (input.revokeEffects and full and unused > 0) {
+                a.subscriptionRenewsAt := Int.max(now, a.subscriptionRenewsAt - unused);
                 if (a.subscriptionRenewsAt <= now) { a.subscriptionActive := false };
                 balance := ?AccountLib.applyCredits(creditLedger, state, a, -Credits.monthlyAllowance, "refund:membership", ?id);
               };
@@ -831,6 +929,33 @@ mixin (
     } finally {
       refundsInFlight.remove(id);
     };
+  };
+
+  /// A refund as the whole subnet reads it from the payment processor
+  /// (replicated, reduced to the fields that decide anything), or null.
+  private func readRefund(secret : Text, refundId : Text) : async* ?Stripe.RefundInfo {
+    let opts = {
+      AdminLib.outcallOptions(adminKeysState, 32_000) with
+      isReplicated = true;
+      transformContext = Http.jsonSummary(Stripe.refundSummaryKeys);
+    };
+    let resp = await* Http.get(Stripe.apiBase # "/refunds/" # refundId, Stripe.headers(secret, null), opts, transformFn);
+    if (not Http.isSuccess(resp)) return null;
+    switch (Stripe.parseRefund(resp.body)) {
+      case (?r) { if (r.id == refundId) ?r else null };
+      case null null;
+    };
+  };
+
+  private func setRefundStatus(paymentIntentId : Text, refundId : Text, status : Text) {
+    paymentRefunds.add(paymentIntentId, refundsOf(paymentIntentId).map(func(r : Account.RefundRecord) : Account.RefundRecord = if (r.refundId == refundId) { { r with status } } else r));
+  };
+
+  /// A short, stable hash of `t` (FNV-1a), for idempotency keys.
+  private func textHash(t : Text) : Text {
+    var h : Nat32 = 2166136261;
+    for (c in t.chars()) { h := (h ^ c.toNat32()) *% 16777619 };
+    h.toText();
   };
 
   /// Admin only: adds AI credits to an account (a goodwill credit) or takes

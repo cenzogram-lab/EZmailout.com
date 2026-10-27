@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
-import { safeRect } from "@/lib/printSpec";
+import { freeSafeRect } from "@/lib/printSpec";
 import { useWizardStore } from "@/store/wizard";
 import { Heading1, Heading2, PenLine, Pilcrow } from "lucide-react";
 
@@ -50,13 +50,17 @@ export function TextPanel({
   const side = activeSide === "front" ? canvas.front : canvas.back;
 
   function add(preset: (typeof PRESETS)[number]) {
-    const safe = safeRect(dims);
+    // Beside the USPS zone on an address side, never in it.
+    const safe = freeSafeRect(dims, activeSide);
     const count = side.textBlocks.length;
     addTextBlock(activeSide, {
       text: preset.text,
       x: safe.x + 12,
-      y: Math.min(safe.y + 12 + count * 56, safe.y + safe.h - preset.height),
-      width: Math.round(safe.w * 0.62),
+      y: Math.max(
+        safe.y,
+        Math.min(safe.y + 12 + count * 56, safe.y + safe.h - preset.height),
+      ),
+      width: Math.max(80, Math.min(Math.round(safe.w * 0.62), safe.w - 24)),
       height: preset.height,
       fontSize: preset.fontSize,
       fontWeight: preset.fontWeight,

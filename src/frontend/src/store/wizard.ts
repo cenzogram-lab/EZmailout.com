@@ -1067,6 +1067,12 @@ export const useWizardStore = create<WizardStore>()(
         activeSide: s.activeSide,
         qrDestinationUrl: s.qrDestinationUrl,
         returnAddress: s.returnAddress,
+        // The launched order survives a reload, so the next launch reuses it
+        // and its checkout finds a charge whose confirmation was lost,
+        // instead of creating a second order and charging again.
+        campaignId: s.campaignId,
+        campaignOrderKey: s.campaignOrderKey,
+        campaignPrice: s.campaignPrice,
       }),
     },
   ),

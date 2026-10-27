@@ -226,6 +226,17 @@ export function StripeCheckout({
     lockedRef.current?.(locked);
   }, [locked]);
   useEffect(() => () => lockedRef.current?.(false), []);
+  // Closing or reloading the tab while a charged card is unconfirmed is the
+  // one way left to lose the payment: the browser asks first.
+  useEffect(() => {
+    if (!locked) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [locked]);
 
   const finish = useCallback(
     async (paymentIntentId: string, testMode = false) => {

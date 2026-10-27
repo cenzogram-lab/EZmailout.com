@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND, DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
-import { clearOfAddressZone, safeRect } from "@/lib/printSpec";
+import { freeSafeRect } from "@/lib/printSpec";
 import {
   normalizeDestinationUrl,
   normalizeRedirectUrl,
@@ -98,29 +98,21 @@ export function QrTool() {
         mode === QrMode.DynamicTracking
           ? DYNAMIC_QR_PLACEHOLDER
           : (normalized ?? ""),
-      size,
       foreground: fg,
       background: bg,
-      // The lower-right corner of the free area: on an address side, beside
-      // the USPS zone rather than in it (the preflight requires it clear).
+      // The lower-right of the free area: on an address side, beside the
+      // USPS zone rather than in it (the preflight requires it clear), and
+      // never larger than that area, so it always lands on the sheet.
       ...(() => {
-        const free = clearOfAddressZone(dims, target);
-        const safe = safeRect(free.dims);
-        const w = free.dims.designWidth;
-        const h = free.dims.designHeight;
+        const safe = freeSafeRect(dims, target);
+        const fit = Math.max(
+          40,
+          Math.min(size, Math.floor(Math.min(safe.w, safe.h))),
+        );
         return {
-          x:
-            free.x +
-            Math.max(
-              safe.x,
-              Math.min(w - size - Math.round(w * 0.14), safe.x + safe.w - size),
-            ),
-          y:
-            free.y +
-            Math.max(
-              safe.y,
-              Math.min(h - size - Math.round(h * 0.14), safe.y + safe.h - size),
-            ),
+          size: fit,
+          x: safe.x + Math.max(0, safe.w - fit - Math.round(safe.w * 0.1)),
+          y: safe.y + Math.max(0, safe.h - fit - Math.round(safe.h * 0.1)),
         };
       })(),
     });

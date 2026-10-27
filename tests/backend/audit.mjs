@@ -406,6 +406,8 @@ const sections = {
     const done = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: ti.paymentIntentId[0], amountCents: 1n, reason: "x", revokeEffects: false }));
     const view = (await env.as(tester).getMyPayments()).find((p) => p.paymentIntentId === ti.paymentIntentId[0]);
     check(rest.ok && rest.refundedCents === 1500n && !done.ok && /in full/.test(done.error[0] ?? "") && view.refunds.length === 2, "the rest is refunded once, and the history shows both refunds", { rest: rest.error, done: done.error });
+    check(view.refunds.every((r) => r.reason === "") && (await env.as(env.controller).adminFindPayments(ti.paymentIntentId[0]))[0].refunds.every((r) => r.reason !== ""), "the admin's refund notes are not shown to the customer", view.refunds);
+    check(up.log.some((l) => l.method === "GET" && /\/v1\/refunds\/re_/.test(l.url)), "each refund is read back from the processor before it is recorded");
     // Goodwill credits, with a note on the customer's ledger.
     const adj = await env.as(env.controller).adminAdjustCredits(tester.getPrincipal().toText(), 250n, "Sorry for the trouble");
     const ledger2 = await env.as(tester).getCreditLedger();

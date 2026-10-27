@@ -119,7 +119,15 @@ function toAddress(form: FormState): ReturnAddress {
  * Return address editor for the review step. Seeds from the wizard store or
  * localStorage, validates, and writes back to both on save.
  */
-export function ReturnAddressForm() {
+export function ReturnAddressForm({
+  disabled = false,
+}: {
+  /**
+   * While a launch or its checkout runs: the order was created with the
+   * saved address, so a change now would not reach the paid order.
+   */
+  disabled?: boolean;
+} = {}) {
   const returnAddress = useWizardStore((s) => s.returnAddress);
   const setReturnAddress = useWizardStore((s) => s.setReturnAddress);
   const [form, setForm] = useState<FormState>(() => fromAddress(returnAddress));
@@ -199,100 +207,102 @@ export function ReturnAddressForm() {
           Printed on every piece and used by USPS for undeliverable mail.
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field
-            id="ra-name"
-            label="Sender name"
-            value={form.name}
-            error={errors.name}
-            onChange={(v) => setField("name", v)}
-            placeholder="Jane Rivera"
-            ocid="review.return_address.name.input"
-          />
-          <Field
-            id="ra-org"
-            label="Organization (optional)"
-            value={form.organization}
-            onChange={(v) => setField("organization", v)}
-            placeholder="Rivera Realty"
-            ocid="review.return_address.organization.input"
-          />
-          <Field
-            id="ra-line1"
-            label="Address line 1"
-            value={form.address_line1}
-            error={errors.address_line1}
-            onChange={(v) => setField("address_line1", v)}
-            placeholder="120 Harbor View Dr"
-            ocid="review.return_address.line1.input"
-          />
-          <Field
-            id="ra-line2"
-            label="Address line 2 (optional)"
-            value={form.address_line2}
-            onChange={(v) => setField("address_line2", v)}
-            placeholder="Suite 200"
-            ocid="review.return_address.line2.input"
-          />
-          <Field
-            id="ra-city"
-            label="City"
-            value={form.city}
-            error={errors.city}
-            onChange={(v) => setField("city", v)}
-            placeholder="Austin"
-            ocid="review.return_address.city.input"
-          />
-          <div className="grid grid-cols-2 gap-3">
+      <CardContent>
+        <fieldset disabled={disabled} className="space-y-3 disabled:opacity-60">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field
-              id="ra-state"
-              label="State"
-              value={form.state}
-              error={errors.state}
-              onChange={(v) => setField("state", v)}
-              placeholder="TX"
-              maxLength={2}
-              ocid="review.return_address.state.input"
+              id="ra-name"
+              label="Sender name"
+              value={form.name}
+              error={errors.name}
+              onChange={(v) => setField("name", v)}
+              placeholder="Jane Rivera"
+              ocid="review.return_address.name.input"
             />
             <Field
-              id="ra-zip"
-              label="ZIP"
-              value={form.zip_code}
-              error={errors.zip_code}
-              onChange={(v) => setField("zip_code", v)}
-              placeholder="78701"
-              maxLength={10}
-              ocid="review.return_address.zip.input"
+              id="ra-org"
+              label="Organization (optional)"
+              value={form.organization}
+              onChange={(v) => setField("organization", v)}
+              placeholder="Rivera Realty"
+              ocid="review.return_address.organization.input"
             />
+            <Field
+              id="ra-line1"
+              label="Address line 1"
+              value={form.address_line1}
+              error={errors.address_line1}
+              onChange={(v) => setField("address_line1", v)}
+              placeholder="120 Harbor View Dr"
+              ocid="review.return_address.line1.input"
+            />
+            <Field
+              id="ra-line2"
+              label="Address line 2 (optional)"
+              value={form.address_line2}
+              onChange={(v) => setField("address_line2", v)}
+              placeholder="Suite 200"
+              ocid="review.return_address.line2.input"
+            />
+            <Field
+              id="ra-city"
+              label="City"
+              value={form.city}
+              error={errors.city}
+              onChange={(v) => setField("city", v)}
+              placeholder="Austin"
+              ocid="review.return_address.city.input"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                id="ra-state"
+                label="State"
+                value={form.state}
+                error={errors.state}
+                onChange={(v) => setField("state", v)}
+                placeholder="TX"
+                maxLength={2}
+                ocid="review.return_address.state.input"
+              />
+              <Field
+                id="ra-zip"
+                label="ZIP"
+                value={form.zip_code}
+                error={errors.zip_code}
+                onChange={(v) => setField("zip_code", v)}
+                placeholder="78701"
+                maxLength={10}
+                ocid="review.return_address.zip.input"
+              />
+            </div>
           </div>
-        </div>
-        {Object.keys(errors).length > 0 && (
-          <Alert variant="destructive">
-            <AlertCircle className="size-4" />
-            <AlertDescription>
-              Please correct the highlighted fields before launching.
-            </AlertDescription>
-          </Alert>
-        )}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleClear}
-            data-ocid="review.return_address.clear.button"
-          >
-            Clear
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            className="gap-2"
-            data-ocid="review.return_address.save.button"
-          >
-            <Save className="size-4" /> Save return address
-          </Button>
-        </div>
+          {Object.keys(errors).length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" />
+              <AlertDescription>
+                Please correct the highlighted fields before launching.
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleClear}
+              data-ocid="review.return_address.clear.button"
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSave}
+              className="gap-2"
+              data-ocid="review.return_address.save.button"
+            >
+              <Save className="size-4" /> Save return address
+            </Button>
+          </div>
+        </fieldset>
       </CardContent>
     </Card>
   );

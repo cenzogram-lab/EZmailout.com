@@ -200,6 +200,12 @@ export function normalizeZip(raw: string): string {
   const zip = raw.replace(/\s+/g, "");
   if (/^\d{3,4}$/.test(zip)) return zip.padStart(5, "0");
   if (/^\d{9}$/.test(zip)) return `${zip.slice(0, 5)}-${zip.slice(5)}`;
+  // ZIP+4 saved as a number loses its dash and leading zeros too
+  // (02134-1234 → 21341234).
+  if (/^\d{7,8}$/.test(zip)) {
+    const full = zip.padStart(9, "0");
+    return `${full.slice(0, 5)}-${full.slice(5)}`;
+  }
   const plus4 = /^(\d{3,5})-(\d{4})$/.exec(zip);
   if (plus4) return `${plus4[1].padStart(5, "0")}-${plus4[2]}`;
   return zip;

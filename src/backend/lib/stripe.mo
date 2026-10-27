@@ -86,7 +86,10 @@ module {
     ]);
   };
 
-  public type RefundInfo = { id : Text; status : Text; amount : Nat };
+  public type RefundInfo = { id : Text; status : Text; amount : Nat; paymentIntent : Text };
+
+  /// What a replicated read of a refund agrees on (`Http.jsonSummary`).
+  public let refundSummaryKeys : [Text] = ["id", "status", "amount", "payment_intent"];
 
   public func parseRefund(body : Text) : ?RefundInfo {
     switch (Json.topLevelString(body, "id")) {
@@ -96,6 +99,7 @@ module {
           id;
           status = switch (Json.topLevelString(body, "status")) { case (?s) s; case null "" };
           amount = switch (Json.topLevelNumber(body, "amount")) { case (?a) { if (a < 0) 0 else a.toNat() }; case null 0 };
+          paymentIntent = switch (Json.topLevelString(body, "payment_intent")) { case (?pi) pi; case null "" };
         };
       };
     };

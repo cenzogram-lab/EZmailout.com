@@ -526,7 +526,7 @@ mixin (
       case (?r) { if (canAccess(r, caller)) r else { return { ok = false; error = ?CampaignLib.accessDenied } } };
       case null { return { ok = false; error = ?CampaignLib.accessDenied } };
     };
-    if (record.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } };
+    if (record.paymentStatus != #Unpaid and record.paymentStatus != #Refunded) { return { ok = false; error = ?"Only unpaid or refunded drafts can be deleted" } };
     if (record.printDocumentId != null) { return { ok = false; error = ?"This draft's document is already in production" } };
     // Its open checkouts are cancelled with the payment processor first, so
     // none can take a payment for a draft that no longer exists. One that
@@ -542,14 +542,28 @@ mixin (
         case null { return { ok = false; error = ?"A checkout for this draft is still open, and it can't be closed right now; try again later" } };
       };
       let resp = await* Http.postText(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId # "/cancel", Stripe.headers(secret, null), "", AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
-      if (not Http.isSuccess(resp)) {
-        return { ok = false; error = ?"A checkout for this draft may already have been paid, so the draft was kept. Open it from Campaigns and choose Pay now to check the payment." };
+      if (not Http.isSuccess(resp) and resp.status != 404) {
+        // Refused: already cancelled (a lost earlier answer) is fine; paid
+        // or paying keeps the draft.
+        let check = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);
+        let closed = check.status == 404 or (Http.isSuccess(check) and (switch (Stripe.parseIntent(check.body)) { case (?i) i.status == "canceled"; case null false }));
+        if (not closed) {
+          return { ok = false; error = ?"A checkout for this draft may already have been paid, so the draft was kept. Open it from Campaigns and choose Pay now to check the payment." };
+        };
       };
+      // Cancelled, or unknown to the processor (made with another key).
       p.state := #Failed;
+    };
+    // A checkout opened while the others were being cancelled must not be
+    // left payable for a draft that is about to go.
+    for ((_, p) in payments.entries()) {
+      if (p.purpose == #CampaignOrder and p.reference == ?campaignId and p.state == #Created and not p.sandbox) {
+        return { ok = false; error = ?"A checkout for this draft was opened meanwhile; try deleting it again in a moment" };
+      };
     };
     // Re-read after the processor answered: a payment may have settled it.
     switch (campaigns.get(campaignId)) {
-      case (?r) { if (r.paymentStatus != #Unpaid) { return { ok = false; error = ?"Only unpaid drafts can be deleted" } } };
+      case (?r) { if (r.paymentStatus != #Unpaid and r.paymentStatus != #Refunded) { return { ok = false; error = ?"Only unpaid or refunded drafts can be deleted" } } };
       case null { return { ok = true; error = null } };
     };
     removeDrafts([campaignId]);

@@ -640,7 +640,9 @@ export function CampaignDetailPage() {
                           ? undefined
                           : isPaidOrWaived
                             ? "Already submitted"
-                            : "Pay first to enable dispatch"
+                            : campaign?.paymentStatus === PaymentStatus.Refunded
+                              ? "This order was refunded and won't be printed"
+                              : "Pay first to enable dispatch"
                       }
                       data-ocid="campaign_detail.dispatch.button"
                     >

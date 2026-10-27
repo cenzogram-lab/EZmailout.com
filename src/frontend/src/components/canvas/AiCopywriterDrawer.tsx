@@ -21,7 +21,7 @@ import { useGenerateAiCopy } from "@/hooks/use-backend";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { DEFAULT_FONT_FAMILY } from "@/lib/canvas";
 import { AI_COSTS } from "@/lib/credits";
-import { safeRect } from "@/lib/printSpec";
+import { freeSafeRect } from "@/lib/printSpec";
 import { measuredHeight } from "@/lib/textFit";
 import { useAccountStore } from "@/store/account";
 import { useWizardStore } from "@/store/wizard";
@@ -71,6 +71,8 @@ export function AiCopywriterDrawer({
   const [result, setResult] = useState<CopyResult | null>(null);
   /** Where the next inserted block goes (below the previous one). */
   const nextY = useRef<number | null>(null);
+  /** The side and sheet size the current stack belongs to. */
+  const stackFor = useRef("");
 
   async function handleGenerate() {
     if (!businessName.trim() && !industry) {
@@ -121,25 +123,36 @@ export function AiCopywriterDrawer({
    * spot (each insert used to read the same stale count).
    */
   function insert(kind: "headline" | "bullets" | "cta", text: string) {
-    const safe = safeRect(dims);
-    const y = nextY.current ?? safe.y + 12;
+    // Beside the USPS zone on an address side; the stack follows the side
+    // and sheet it was started on, and starts again at the top rather than
+    // running past the safe area.
+    const safe = freeSafeRect(dims, activeSide);
+    const stackKey = `${activeSide}:${dims.designWidth}x${dims.designHeight}`;
+    if (stackFor.current !== stackKey) {
+      stackFor.current = stackKey;
+      nextY.current = null;
+    }
+    const wide = Math.max(80, Math.min(Math.round(safe.w * 0.62), safe.w - 24));
     const style =
       kind === "headline"
         ? {
-            width: Math.round(safe.w * 0.62),
+            width: wide,
             fontSize: 34,
             fontWeight: 800 as const,
             color: "#0f172a",
           }
         : kind === "bullets"
           ? {
-              width: Math.round(safe.w * 0.62),
+              width: wide,
               fontSize: 18,
               fontWeight: 600 as const,
               color: "#334155",
             }
           : {
-              width: Math.round(safe.w * 0.5),
+              width: Math.max(
+                80,
+                Math.min(Math.round(safe.w * 0.5), safe.w - 24),
+              ),
               fontSize: 22,
               fontWeight: 700 as const,
               color: "#f97316",
@@ -150,6 +163,9 @@ export function AiCopywriterDrawer({
       fontWeight: style.fontWeight,
       fontFamily: DEFAULT_FONT_FAMILY,
     });
+    let y = nextY.current ?? safe.y + 12;
+    if (y + height > safe.y + safe.h) y = safe.y + 12;
+    y = Math.max(safe.y, Math.min(y, safe.y + safe.h - height));
     addTextBlock(activeSide, {
       text,
       x: safe.x + 12,

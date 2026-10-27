@@ -305,6 +305,33 @@ if (done) {
   const detail = await p2.textContent("main");
   check(/Submitted|In Production|In Transit|Test mode/i.test(detail ?? ""), "the campaign page shows the dispatched campaign", (detail ?? "").slice(0, 200));
   await p2.screenshot({ path: `${OUT}06-campaign.png`, fullPage: true });
+
+  step("Payment history and the admin's payments card");
+  // The customer's Dashboard lists the payment under its invoice number.
+  const paid = (await cust.getMyPayments()).find((p) => p.campaignId?.[0] === campaignId);
+  await p2.goto(`${site}/dashboard`, { waitUntil: "networkidle" });
+  await p2.waitForTimeout(2500);
+  const dash = (await p2.textContent("main")) ?? "";
+  check(paid && dash.includes("Payment history") && dash.includes(`Invoice ${paid.paymentIntentId}`) && dash.includes("Account ID"), "the Dashboard lists the payment under its invoice number, beside the account ID", { invoice: paid?.paymentIntentId, text: dash.slice(0, 300) });
+  await p2.screenshot({ path: `${OUT}07-dashboard-payments.png`, fullPage: true });
+  // On a phone the long invoice number must not widen the page.
+  await p2.setViewportSize({ width: 390, height: 844 });
+  await p2.waitForTimeout(500);
+  const wide = await p2.evaluate(() => document.documentElement.scrollWidth);
+  check(wide <= 390, "the payment history fits a 390 px phone", { scrollWidth: wide });
+  await p2.screenshot({ path: `${OUT}07-dashboard-payments-phone.png`, fullPage: true });
+  await p2.setViewportSize({ width: 1440, height: 900 });
+  // The admin finds the same payment by its invoice number.
+  await admin.assignAdmin(customer.getPrincipal());
+  await p2.goto(`${site}/admin`, { waitUntil: "networkidle" });
+  await p2.waitForTimeout(2500);
+  await p2.fill('[data-ocid="admin.payments.search.input"]', paid?.paymentIntentId ?? "");
+  await p2.click('[data-ocid="admin.payments.search.button"]');
+  await p2.waitForTimeout(1500);
+  const card = (await p2.textContent('[data-ocid="admin.payments.card"]').catch(() => "")) ?? "";
+  const refundDisabled = await p2.isDisabled(`[data-ocid="admin.payments.refund.${paid?.paymentIntentId}"]`).catch(() => null);
+  check(card.includes(paid?.paymentIntentId ?? "-") && card.includes("Test mode") && refundDisabled === true, "the admin finds the payment by invoice; a test-mode payment cannot be refunded", { refundDisabled, text: card.slice(0, 300) });
+  await p2.screenshot({ path: `${OUT}08-admin-payments.png`, fullPage: true });
   await b2.close();
 }
 await browser.close().catch(() => {});

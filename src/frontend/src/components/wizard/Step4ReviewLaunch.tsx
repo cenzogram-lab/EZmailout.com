@@ -359,10 +359,24 @@ export function Step4ReviewLaunch() {
           const removed = await deleteDraft
             .mutateAsync(state.campaignId)
             .catch(() => null);
-          if (removed && !removed.ok) {
-            toast.warning(
+          const mayBePaid =
+            removed &&
+            !removed.ok &&
+            /may already have been paid|opened meanwhile|can't be closed/i.test(
+              removed.error ?? "",
+            );
+          if (removed && !removed.ok && !mayBePaid) {
+            // Paid elsewhere, or already gone: it is not this order's draft
+            // any more.
+            useWizardStore.getState().forgetLaunchedCampaign(state.campaignId);
+          }
+          if (mayBePaid && removed) {
+            // Its checkout may have been paid: launching another order now
+            // could charge twice. The customer checks that draft first.
+            throw new StageError(
+              "creating",
               removed.error ??
-                "Your previous draft of this order couldn't be removed.",
+                "Your previous draft of this order couldn't be removed. Open it from Campaigns and choose Pay now to check its payment.",
             );
           }
         }
@@ -833,7 +847,9 @@ export function Step4ReviewLaunch() {
 
           <PreflightChecklist report={report} />
 
-          <ReturnAddressForm />
+          <ReturnAddressForm
+            disabled={busy || launchInFlight || machine.stage === "paying"}
+          />
         </div>
 
         <div className="min-w-0 space-y-6">
