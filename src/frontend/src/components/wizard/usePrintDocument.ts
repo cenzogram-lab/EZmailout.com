@@ -125,7 +125,7 @@ export async function buildPrintPdf(
   sampleRecipientId: string,
 ): Promise<BuiltPrintDocument> {
   const dims = canvasDims(canvas, layoutVariant);
-  const options = { dpi: RASTER_DPI, sampleRecipientId };
+  const options = { dpi: RASTER_DPI, sampleRecipientId, requireImages: true };
   const rasters: HTMLCanvasElement[] = [
     toNativePage(await rasterizeSide(canvas.front, dims, options), dims),
   ];

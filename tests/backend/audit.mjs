@@ -502,8 +502,17 @@ sections.orders = async function orders() {
   await o.uploadDocumentChunk(cid, 0n, 2n, "application/pdf", "a.pdf", first.slice(0, half));
   await o.uploadDocumentChunk(cid, 1n, 2n, "application/pdf", "a.pdf", first.slice(half));
   await o.uploadDocumentChunk(cid, 0n, 2n, "application/pdf", "b.pdf", second.slice(0, half));
+  // ...and is staged beside the complete file, which stays payable until the
+  // new one is complete and checked: a re-upload that stops part-way can no
+  // longer take away the file an open checkout was created for.
+  const staging = (await o.getDocumentUploadStatus(cid))[0];
   const mixed = await call(env.pic, up, env.deferred(owner).createPaymentIntent({ CampaignOrder: null }, [cid], []));
-  check(!mixed.ok && /print file/.test(mixed.error[0] ?? ""), "a re-upload's first chunk starts a new file (old and new never mix)", mixed.error);
+  check(staging?.complete && staging.fileName === "a.pdf" && mixed.ok, "a re-upload's first chunk never mixes with the staged file, which stays complete and payable", { staging, error: mixed.error });
+  await o.uploadDocumentChunk(cid, 1n, 2n, "application/pdf", "b.pdf", second.slice(half));
+  check((await o.getDocumentUploadStatus(cid))[0]?.fileName === "b.pdf", "the new file replaces the staged one once complete");
+  const badSwap = await o.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "c.pdf", printPdf(1, 3));
+  check(!badSwap.ok && (await o.getDocumentUploadStatus(cid))[0]?.fileName === "b.pdf", "a replacement that fails the check leaves the staged file in place", badSwap.error);
+  await env.pic.advanceTime(3_000); await env.pic.tick(); // the per-identity checkout gap
   // A print job needs a return address, and a paid order's cannot change.
   const noReturn = await o.createCampaign(campaignInput(1, { returnAddress: [] }));
   check(!noReturn.ok && /return address/i.test(noReturn.error[0] ?? ""), "a campaign without a return address is refused", noReturn.error);
@@ -541,9 +550,15 @@ sections.orders = async function orders() {
 
   const referee = ident(153);
   await env.as(referee).ensureAccount([code], []);
-  const p1 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  // A payment under the month it would earn earns nothing: fresh identities
+  // are free, so a $5 pack must not buy a $9 month.
+  const smallPack = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const smallPaid = await call(env.pic, up, env.deferred(referee).confirmPayment(smallPack.paymentIntentId[0]));
+  check(smallPaid.ok && !smallPaid.referralRewardApplied && (await r.getReferralStats())[0].referralCreditsEarned === 0n, "a referred customer's $5 payment earns the referrer nothing", smallPaid.error);
   await env.pic.advanceTime(3_000); await env.pic.tick();
-  const p2 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Starter: null }]));
+  const p1 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+  await env.pic.advanceTime(3_000); await env.pic.tick();
+  const p2 = await call(env.pic, up, env.deferred(referee).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
   const c2 = await call(env.pic, up, env.deferred(referee).confirmPayment(p2.paymentIntentId[0]));
   const c1 = await call(env.pic, up, env.deferred(referee).confirmPayment(p1.paymentIntentId[0]));
   const stats = (await r.getReferralStats())[0];
@@ -935,7 +950,13 @@ sections.auditFixes = async function auditFixes() {
   const s1 = await call(env.pic, partial, env.deferred(env.controller).syncPrintTracking(cid));
   const mid = (await o.getCampaign(cid))[0].status;
   check(s1.ok && s1.newEvents === 0n && mid.InProduction !== undefined, "a job without tracking holds the campaign where it is", { status: mid, events: s1.newEvents });
-  const whole = upstream(fakePrintPartner({ scans: ["Delivered"] }));
+  // Every job answering with a few deliveries does not settle 12,000 pieces:
+  // tracking is judged per piece, and unscanned pieces count against it.
+  const few = upstream(fakePrintPartner({ scans: ["Delivered"] }));
+  await call(env.pic, few, env.deferred(env.controller).syncPrintTracking(cid));
+  const early = (await o.getCampaign(cid))[0].status;
+  check(early.Delivered === undefined, "a handful of delivery scans does not mark a 12,000-piece campaign delivered", early);
+  const whole = upstream(fakePrintPartner({ scans: Array.from({ length: N / 2 }, () => "Delivered") }));
   const s2 = await call(env.pic, whole, env.deferred(env.controller).syncPrintTracking(cid));
   const end = (await o.getCampaign(cid))[0].status;
   check(s2.ok && s2.newEvents === 1n && end.Delivered !== undefined, "with every job answering, the campaign advances", { status: end, events: s2.newEvents });

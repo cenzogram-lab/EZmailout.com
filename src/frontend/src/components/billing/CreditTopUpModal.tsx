@@ -25,6 +25,10 @@ export function CreditTopUpModal() {
   const creditBalance = useAccountStore((s) => s.creditBalance);
   const { refresh } = useAccountSync();
   const [pack, setPack] = useState<CreditPack | null>(null);
+  // Once the card step has run, the modal stays until the payment is
+  // confirmed: a new checkout from "Change" or a reopened modal could charge
+  // the card a second time (`StripeCheckout` `onLockedChange`).
+  const [locked, setLocked] = useState(false);
 
   const selected = CREDIT_PACKS.find((p) => p.id === pack) ?? null;
 
@@ -34,7 +38,10 @@ export function CreditTopUpModal() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => (o ? setOpen(true) : !locked && close())}
+    >
       <DialogContent className="max-w-lg" data-ocid="credits.topup.modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
@@ -87,6 +94,7 @@ export function CreditTopUpModal() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setPack(null)}
+                disabled={locked}
                 data-ocid="credits.change_pack.button"
               >
                 Change
@@ -106,6 +114,7 @@ export function CreditTopUpModal() {
                 close();
               }}
               onCancel={() => setPack(null)}
+              onLockedChange={setLocked}
             />
           </div>
         )}

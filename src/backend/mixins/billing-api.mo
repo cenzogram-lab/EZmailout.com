@@ -325,8 +325,19 @@ mixin (
         // The draft could have been evicted or expired while the processor
         // answered: a checkout handed out now would take a payment for
         // nothing, so the customer is told to launch again instead.
-        if (purpose == #CampaignOrder and not campaigns.containsKey(refText)) {
-          return intentFail("This draft was removed while checkout was opening (unpaid drafts expire after 14 days). Re-run it from Campaigns to launch it again; nothing was charged.");
+        if (purpose == #CampaignOrder) {
+          switch (campaigns.get(refText)) {
+            case null { return intentFail("This draft was removed while checkout was opening (unpaid drafts expire after 14 days). Re-run it from Campaigns to launch it again; nothing was charged.") };
+            // Paid from another tab or device while the processor answered:
+            // a second checkout would only take a second payment.
+            case (?c) { if (c.paymentStatus == #Paid or c.paymentStatus == #Waived) { return intentFail("Campaign is already paid") } };
+          };
+        };
+        // The id comes from one node's reply (the create call is not
+        // replicated), so it must never reset an existing record: a reused
+        // id of a settled payment would be confirmed, and granted, twice.
+        if (payments.containsKey(intent.id)) {
+          return intentFail("Unexpected response from the payment processor; please try again");
         };
         let stripeRecord : Account.PaymentRecord = { paymentIntentId = intent.id; userId = a.id; purpose; amountCents = amount; reference = ?refText; creditPack = pack; var state = #Created; createdAt = Time.now(); var confirmedAt = null; sandbox = false };
         payments.add(intent.id, stripeRecord);
@@ -347,13 +358,24 @@ mixin (
     };
   };
 
+  /// A payment that can earn its payer's referrer a free month: real money,
+  /// at least the month it earns (identities are free, so a smaller payment
+  /// from a fresh account would buy months below their price).
+  private func referralQualifying(p : Account.PaymentRecord) : Bool {
+    (p.state == #Succeeded or p.state == #Waived) and p.amountCents >= Credits.referralRewardCents and not p.sandbox and settledItsCampaign(p);
+  };
+
+  /// Whether this is the customer's first qualifying payment to be
+  /// confirmed. Ordered by confirmation, not creation: an older checkout
+  /// confirmed later must not reopen a referral already decided.
   private func isFirstPayment(userId : Text, paymentIntentId : Text) : Bool {
     var earliest : ?Account.PaymentRecord = null;
+    let confirmed = func(p : Account.PaymentRecord) : Int = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
     for ((_, p) in payments.entries()) {
-      if (p.userId == userId and (p.state == #Succeeded or p.state == #Waived) and p.amountCents > 0 and not p.sandbox and settledItsCampaign(p)) {
+      if (p.userId == userId and referralQualifying(p)) {
         switch (earliest) {
           case null { earliest := ?p };
-          case (?e) { if (p.createdAt < e.createdAt) { earliest := ?p } };
+          case (?e) { if (confirmed(p) < confirmed(e)) { earliest := ?p } };
         };
       };
     };
@@ -365,20 +387,15 @@ mixin (
 
   /// Grants the referrer one free month when a referred user's first payment succeeds.
   private func tryReferralReward(record : Account.PaymentRecord) : Bool {
-    if (record.state != #Succeeded and record.state != #Waived) { return false };
-    if (record.amountCents == 0) { return false };
-    // Test-mode payments move no money, so they never earn a free month.
-    if (record.sandbox) { return false };
+    // Test-mode payments move no money, and a payment under the month it
+    // would earn could buy months below their price (`referralQualifying`).
+    if (not referralQualifying(record)) { return false };
     // One free month per referred customer, ever: whichever of their
     // payments is confirmed first. (Ordering by creation time alone let a
     // customer confirm several open checkouts newest first and earn one each.)
     for (r in referralRewards.values()) {
       if (r.paymentIntentId == record.paymentIntentId or r.refereeId == record.userId) { return false };
     };
-    // A campaign payment counts only if it is the one that paid the campaign:
-    // not a duplicate for an already paid campaign, nor a payment for a draft
-    // removed before it arrived (both are refunded).
-    if (not settledItsCampaign(record)) { return false };
     let payer = switch (accounts.get(record.userId)) { case (?p) p; case null { return false } };
     if (not isFirstPayment(payer.id, record.paymentIntentId)) { return false };
     let referrerId = switch (payer.referredBy) { case (?r) r; case null { return false } };
@@ -396,7 +413,14 @@ mixin (
   private func applyPaymentEffects(record : Account.PaymentRecord, a : Account.UserAccount) : (?Nat, ?Text, ?Bool) {
     record.state := #Succeeded;
     record.confirmedAt := ?Time.now();
-    if (a.firstPaymentAt == null and record.amountCents > 0 and not record.sandbox) { a.firstPaymentAt := ?Time.now() };
+    // A duplicate or orphaned campaign payment is refunded, so it is not the
+    // customer's first payment.
+    let settles = switch (record.purpose, record.reference) {
+      case (#CampaignOrder, ?id) { switch (campaigns.get(id)) { case (?c) c.paymentStatus == #Unpaid or c.paymentStatus == #Pending; case null false } };
+      case (#CampaignOrder, null) false;
+      case _ true;
+    };
+    if (a.firstPaymentAt == null and settles and record.amountCents > 0 and not record.sandbox) { a.firstPaymentAt := ?Time.now() };
     switch (record.purpose) {
       case (#CampaignOrder) {
         let campaignId = switch (record.reference) { case (?r) r; case null "" };

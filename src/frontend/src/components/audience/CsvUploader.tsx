@@ -121,7 +121,13 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
     });
   }, [result, rows]);
 
+  // The list on screen now: a verification run that outlives its list (a new
+  // file dropped, a row deleted) must not put its results on another one.
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
   async function loadFile(file: File) {
+    if (verifying) return;
     setResult(null);
     setVerifyError(null);
     setFileName(file.name);
@@ -156,6 +162,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
   }
 
   function handleDeleteRow(index: number) {
+    if (verifying) return;
     setRows((prev) => prev.filter((_, i) => i !== index));
     setResult(null);
     setVerifyError(null);
@@ -180,6 +187,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           setVerifyProgress(start);
           await sleep(VERIFY_GAP_MS);
         }
+        if (rowsRef.current !== rows) return;
         const slice = rows.slice(start, start + VERIFY_BATCH);
         let batch = await verify.mutateAsync(slice);
         const wait = batch.ok ? null : waitSeconds(batch.error);
@@ -187,6 +195,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           await sleep(wait * 1000 + 500);
           batch = await verify.mutateAsync(slice);
         }
+        if (rowsRef.current !== rows) return;
         if (!batch.ok) {
           const reason =
             batch.error ?? "EZmailout could not verify these addresses.";
@@ -199,6 +208,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
         }
         done.push(batch);
       }
+      if (rowsRef.current !== rows) return;
       const merged = mergeBatches(done);
       setResult(merged);
       toast.success(
@@ -372,7 +382,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           <AddressTable
             rows={rows}
             statuses={statuses}
-            onDeleteRow={handleDeleteRow}
+            onDeleteRow={verifying ? undefined : handleDeleteRow}
             ocidPrefix="audience.csv"
           />
         </div>

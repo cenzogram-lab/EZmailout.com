@@ -116,10 +116,11 @@ export function countLines(text: string, opts: MeasureOptions): number {
 /**
  * The lines a text block breaks into at `maxWidth`, as the editor lays it out
  * (`white-space: pre-wrap` + `word-break: break-word`): explicit newlines
- * always break, words wrap greedily, runs of spaces are kept, and a word
- * wider than the line is split across lines. The measurement above and the
- * print rasterizer both use it, so the PDF wraps exactly where the editor
- * and the height refit do.
+ * always break, words wrap greedily, runs of spaces are kept, a hyphenated
+ * word may break after its hyphen or dash (as the browser does: "family-" /
+ * "owned"), and a word wider than the line is split across lines. The
+ * measurement above and the print rasterizer both use it, so the PDF wraps
+ * exactly where the editor and the height refit do.
  */
 export function wrapText(
   text: string,
@@ -133,8 +134,15 @@ export function wrapText(
       continue;
     }
     let current: string | null = null;
-    for (const word of paragraph.split(" ")) {
-      const candidate: string = current === null ? word : `${current} ${word}`;
+    const pieces = paragraph.split(" ").flatMap((word, i) =>
+      hyphenSegments(word).map((text, j) => ({
+        text,
+        join: j > 0 ? "" : i > 0 ? " " : "",
+      })),
+    );
+    for (const { text: word, join } of pieces) {
+      const candidate: string =
+        current === null ? word : `${current}${join}${word}`;
       // Spaces at a wrap point hang past the edge, as in the editor.
       if (advance(candidate.trimEnd()) <= maxWidth) {
         current = candidate;
@@ -159,6 +167,29 @@ export function wrapText(
     lines.push((current ?? "").trimEnd());
   }
   return lines;
+}
+
+const HYPHENS = "-\u2010\u2013\u2014";
+
+/**
+ * A word cut after each hyphen or dash that the browser may wrap at: one
+ * with a character before it and a letter or digit after it ("Award-" /
+ * "winning", "555-" / "0123", as Chromium breaks them; a leading "-5" and
+ * "1,000-$2,000" stay whole).
+ */
+function hyphenSegments(word: string): string[] {
+  const chars = Array.from(word);
+  const out: string[] = [];
+  let start = 0;
+  for (let k = 1; k < chars.length - 1; k++) {
+    const next = chars[k + 1];
+    if (HYPHENS.includes(chars[k]) && /[\p{L}\p{N}]/u.test(next)) {
+      out.push(chars.slice(start, k + 1).join(""));
+      start = k + 1;
+    }
+  }
+  out.push(chars.slice(start).join(""));
+  return out;
 }
 
 /**

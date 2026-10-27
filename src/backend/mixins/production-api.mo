@@ -48,6 +48,9 @@ mixin (
   /// by page: usually two outcalls, at most `Fulfilment.maxTrackingPages` + 1),
   /// however many campaigns or batches they belong to.
   transient let maxPollJobsPerTick : Nat = 10;
+  /// How long the automatic poll keeps looking up a campaign whose timeline
+  /// has not moved: 45 days (Marketing Mail lands within about three weeks).
+  transient let trackingQuietNs : Int = 45 * 24 * 3_600 * 1_000_000_000;
 
   /// Campaigns with a print dispatch running. Taken before the first
   /// outcall and released in `finally`, so it survives a trap in any
@@ -55,6 +58,14 @@ mixin (
   /// calls in flight, so the set is always empty across an upgrade and can
   /// never strand a campaign behind a stale lock.
   transient let dispatchInFlight = Set.empty<Text>();
+
+  /// A new print file for a campaign that already has a complete one, held
+  /// here until it is complete and passes the print-file check: replacing the
+  /// staged file chunk by chunk let a re-upload that stopped (or failed the
+  /// check) take away the file an open checkout was created for, and the
+  /// campaign could be paid with nothing to print. Transient: an upload cut
+  /// off by an upgrade is simply sent again, and the staged file stays.
+  transient let pendingUploads = Map.empty<Text, Types.DocumentUpload>();
 
   /// Set while a tracking poll runs, so the timer and a manual trigger never
   /// pay for the same outcalls twice.
@@ -133,10 +144,14 @@ mixin (
     if (totalChunks == 0 or totalChunks > maxChunks) { return { ok = false; error = ?"totalChunks must be between 1 and 8" } };
     if (chunkIndex >= totalChunks) { return { ok = false; error = ?"chunkIndex out of range" } };
     if (data.size() == 0 or data.size() > maxChunkBytes) { return { ok = false; error = ?"Chunk must be between 1 byte and 1.9 MB" } };
+    // A file that replaces a complete one is staged beside it and swapped in
+    // only once complete and checked (`pendingUploads`).
+    let replacing = switch (documentUploads.get(campaignId)) { case (?u) u.receivedChunks == u.totalChunks; case null false };
+    let slot = if (replacing) pendingUploads else documentUploads;
     // Chunk 0, or any chunk after a complete file, begins a new file: a
     // re-upload with the same chunk count must not mix with the old one (new
     // chunk 0 + old chunk 1 still counted as complete, and could be paid).
-    let existing : ?Types.DocumentUpload = switch (documentUploads.get(campaignId)) {
+    let existing : ?Types.DocumentUpload = switch (slot.get(campaignId)) {
       case (?u) {
         if (u.totalChunks == totalChunks and u.mimeType == mimeType and chunkIndex != 0 and u.receivedChunks < u.totalChunks) ?u else null;
       };
@@ -151,7 +166,8 @@ mixin (
       case (?u) u;
       case null {
         let fresh : Types.DocumentUpload = { campaignId; mimeType; fileName = safeFileName(fileName); totalChunks; var chunks = Array.repeat<Blob>(Blob.empty(), totalChunks); var receivedChunks = 0; createdAt = Time.now() };
-        documentUploads.add(campaignId, fresh);
+        if (replacing) { sweepPendingUploads() };
+        slot.add(campaignId, fresh);
         fresh;
       };
     };
@@ -163,11 +179,29 @@ mixin (
     // one that fails is dropped so it can never be paid for.
     if (upload.receivedChunks == totalChunks) {
       switch (PrintFile.stagedError(upload)) {
-        case (?e) { documentUploads.remove(campaignId); return { ok = false; error = ?e } };
-        case null {};
+        case (?e) { slot.remove(campaignId); return { ok = false; error = ?e } };
+        case null {
+          if (replacing) {
+            documentUploads.add(campaignId, upload);
+            pendingUploads.remove(campaignId);
+          };
+        };
       };
     };
     { ok = true; error = null };
+  };
+
+  /// Drops replacement uploads that can no longer be used: their campaign is
+  /// gone, paid, or its file is already with the print partner.
+  private func sweepPendingUploads() {
+    let stale = List.empty<Text>();
+    for ((id, _) in pendingUploads.entries()) {
+      switch (campaigns.get(id)) {
+        case (?c) { if (c.paymentStatus == #Paid or c.paymentStatus == #Waived or c.printDocumentId != null) stale.add(id) };
+        case null { stale.add(id) };
+      };
+    };
+    for (id in stale.values()) { pendingUploads.remove(id) };
   };
 
   public shared query ({ caller }) func getDocumentUploadStatus(campaignId : Text) : async ?Types.DocumentUploadStatus {
@@ -535,9 +569,9 @@ mixin (
     };
     let pieceStatuses = pieces.toArray();
     let stage = if (pieceStatuses.size() > 0) {
-      Fulfilment.aggregateStage(pieceStatuses);
+      Fulfilment.aggregateStage(pieceStatuses, record.recipientCount);
     } else {
-      Fulfilment.aggregateStage(statuses.toArray());
+      Fulfilment.aggregateStage(statuses.toArray(), 0);
     };
     var newEvents = 0;
     switch (stage) {
@@ -601,7 +635,10 @@ mixin (
     if (pollRunning or not AdminLib.hasFulfilment(adminKeysState)) { return 0 };
     let inFlight = List.empty<(Int, Types.CampaignRecord)>();
     for ((_, r) in campaigns.entries()) {
-      if (r.printJobId != null and not CampaignLib.trackingFinished(r)) {
+      // A campaign whose timeline has not moved for `trackingQuietNs` is
+      // left to its owner's lookups and webhooks: mail with no IMb scans
+      // (EDDM) would otherwise be polled forever, crowding out live ones.
+      if (r.printJobId != null and not CampaignLib.trackingFinished(r) and Time.now() - r.updatedAt <= trackingQuietNs) {
         inFlight.add((switch (syncCooldowns.get(r.id)) { case (?t) t; case null 0 }, r));
       };
     };
@@ -636,17 +673,23 @@ mixin (
 
   // ─── Webhooks ────────────────────────────────────────────────────────────
 
+  /// The campaign holding print job `jobId`, or null when none does or when
+  /// several do: Staging and Production number jobs separately, so a test
+  /// campaign and a live one can hold the same id, and an event for one must
+  /// never move the other (the partner can send `campaignId` instead).
   private func findByJobId(jobId : Text) : ?Types.CampaignRecord {
-    for ((_, r) in campaigns.entries()) {
-      if (r.printJobId == ?jobId) { return ?r };
+    let found = Set.empty<Text>();
+    for ((id, r) in campaigns.entries()) {
+      if (r.printJobId == ?jobId) { found.add(id) };
     };
     // Jobs of a campaign's later batches.
     for ((id, plan) in printBatches.entries()) {
       for (b in plan.vals()) {
-        if (b.jobId == ?jobId) { return campaigns.get(id) };
+        if (b.jobId == ?jobId) { found.add(id) };
       };
     };
-    null;
+    if (found.size() != 1) return null;
+    switch (found.values().next()) { case (?id) campaigns.get(id); case null null };
   };
 
   /// How far back a redelivered webhook is looked for. Redeliveries come

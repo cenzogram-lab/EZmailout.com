@@ -489,10 +489,14 @@ export function CanvasEditor({
   // Keyboard: delete / escape / nudge for the selected element.
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
+      // Only while the canvas has focus: with focus on the page (a click in
+      // the drawer's or proof's empty space), arrows must scroll and
+      // Backspace must not delete a selection the customer can't see.
       if (
         editingId ||
         event.defaultPrevented ||
-        isForeignKeyTarget(event.target)
+        isForeignKeyTarget(event.target) ||
+        !containerRef.current?.contains(document.activeElement)
       )
         return;
       const store = useWizardStore.getState();

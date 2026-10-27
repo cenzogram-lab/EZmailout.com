@@ -10,7 +10,17 @@ export interface RasterizeOptions {
   dpi?: number;
   /** Recipient id substituted into `{{recipientId}}` dynamic QR placeholders. */
   sampleRecipientId?: string;
+  /**
+   * Fail when an image cannot be loaded, instead of leaving it out. The
+   * print file sets it: the editor's `<img>` can still show a picture the
+   * rasterizer cannot read (an expired or cross-origin URL), and a paid file
+   * missing it would print that side as a flat colour.
+   */
+  requireImages?: boolean;
 }
+
+export const IMAGE_LOAD_ERROR =
+  "An image in your design couldn't be loaded for printing (a generated image's link may have expired). Replace it in the studio, then launch again; nothing has been charged.";
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -62,6 +72,7 @@ export async function rasterizeSide(
 
   if (side.backgroundImageUrl) {
     const img = await loadImage(side.backgroundImageUrl);
+    if (!img && options.requireImages) throw new Error(IMAGE_LOAD_ERROR);
     if (img) {
       const ratio = Math.max(
         canvas.width / img.width,
@@ -85,6 +96,7 @@ export async function rasterizeSide(
       z: logo.zIndex,
       draw: async () => {
         const img = await loadImage(logo.url);
+        if (!img && options.requireImages) throw new Error(IMAGE_LOAD_ERROR);
         if (!img) return;
         const x = logo.x * scale;
         const y = logo.y * scale;

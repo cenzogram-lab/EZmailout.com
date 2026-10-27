@@ -93,6 +93,13 @@ mixin (
     };
   };
 
+  private func hasRoom(usage : Map.Map<Text, { var windowStart : Int; var count : Nat }>, key : Text, limit : Nat) : Bool {
+    switch (usage.get(key)) {
+      case (?u) { Time.now() - u.windowStart > hourNs or u.count < limit };
+      case null { limit > 0 };
+    };
+  };
+
   private func clipSupport(t : Text, max : Nat) : Text {
     let clean = AddressLib.sanitizeText(t);
     if (clean.size() <= max) clean else Text.fromArray(clean.toArray().sliceToArray(0, max));
@@ -113,10 +120,13 @@ mixin (
     if (message == "" or message.size() > maxMessageChars) { return fail("Enter a message (up to " # maxMessageChars.toText() # " characters)") };
     let anonymous = caller.isAnonymous();
     let limit = if (anonymous) ticketsPerHourAnonymous else ticketsPerHourSignedIn;
-    if (not charge(ticketUsage, caller.toText(), limit)) { return fail("Too many tickets in the last hour; please try again later") };
+    if (not hasRoom(ticketUsage, caller.toText(), limit)) { return fail("Too many tickets in the last hour; please try again later") };
     // Identities are free to mint: the per-identity limit has a canister-wide
-    // partner, so the inbox cannot be flooded in one burst.
-    if (not charge(ticketUsage, ticketsGlobalKey, ticketsPerHourGlobal)) { return fail("The support inbox is busy right now; please try again in a few minutes") };
+    // partner, so the inbox cannot be flooded in one burst. Both are checked
+    // before either is charged, so a refused ticket uses up nobody's quota.
+    if (not hasRoom(ticketUsage, ticketsGlobalKey, ticketsPerHourGlobal)) { return fail("The support inbox is busy right now; please try again in a few minutes") };
+    ignore charge(ticketUsage, caller.toText(), limit);
+    ignore charge(ticketUsage, ticketsGlobalKey, ticketsPerHourGlobal);
     // A full inbox makes room by dropping its oldest ticket (and that
     // ticket's email entry) rather than turning every new ticket away.
     let id = "tkt_" # nextTicketNumber().toText();

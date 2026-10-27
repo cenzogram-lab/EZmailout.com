@@ -12,6 +12,7 @@ import { useAccountSync } from "@/hooks/use-account";
 import { useBackendActor, useEnsureAccount } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
 import { MONTHLY_ALLOWANCE } from "@/lib/credits";
+import { SUBSCRIPTION_PRICE_CENTS, formatCents } from "@/lib/pricing";
 import { useAccountStore } from "@/store/account";
 import { Link, useParams } from "@tanstack/react-router";
 import {
@@ -49,7 +50,7 @@ const PERKS = [
   },
   {
     icon: Gift,
-    text: "Your first payment earns your referrer a free month while their membership is active — and you get your own referral link to share.",
+    text: `Your first payment of ${formatCents(SUBSCRIPTION_PRICE_CENTS)} or more earns your referrer a free month while their membership is active — and you get your own referral link to share.`,
   },
 ];
 
@@ -173,8 +174,10 @@ export function ReferralLandingPage() {
                   <AlertDescription>
                     Your account is linked to referral code{" "}
                     <span className="font-mono">{referredBy ?? code}</span>.
-                    Your first payment will earn your referrer a free month if
-                    their membership is active then.
+                    Your first payment of{" "}
+                    {formatCents(SUBSCRIPTION_PRICE_CENTS)} or more will earn
+                    your referrer a free month if their membership is active
+                    then.
                   </AlertDescription>
                 </Alert>
               )}

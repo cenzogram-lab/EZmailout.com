@@ -34,7 +34,7 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export interface PresetEditorProps {
@@ -115,8 +115,12 @@ export function PresetEditor({
     setDirty(false);
   }, [preset.name]);
 
+  // A refetch never replaces edits that are not saved yet (a partial save
+  // keeps the whole list here to save again).
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
   useEffect(() => {
-    if (addresses.data) {
+    if (addresses.data && !dirtyRef.current) {
       setList(addresses.data);
       setDirty(false);
     }

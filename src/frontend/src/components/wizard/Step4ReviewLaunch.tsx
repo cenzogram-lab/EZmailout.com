@@ -57,7 +57,7 @@ import {
   Rocket,
   Truck,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PreflightChecklist, computePreflight } from "./PreflightChecklist";
 import { ReturnAddressForm } from "./ReturnAddressForm";
@@ -199,6 +199,16 @@ export function Step4ReviewLaunch() {
   const setLaunchInFlight = useWizardStore((s) => s.setLaunchInFlight);
   const launchInFlight = useWizardStore((s) => s.launchInFlight);
   const returnAddressUnsaved = useWizardStore((s) => s.returnAddressUnsaved);
+  const campaignOrderKey = useWizardStore((s) => s.campaignOrderKey);
+  // Checkout holds the wizard like a launch does: stepping back to the
+  // studio and returning would open a second checkout for the same campaign
+  // while the first card payment may still be unconfirmed.
+  const paying = machine.stage === "paying";
+  useEffect(() => {
+    if (!paying) return;
+    setLaunchInFlight(true);
+    return () => setLaunchInFlight(false);
+  }, [paying, setLaunchInFlight]);
 
   const row = selectedLayout ? getPricingRow(selectedLayout) : undefined;
   const mailClass = selectedSpec?.mailClass;
@@ -587,11 +597,20 @@ export function Step4ReviewLaunch() {
     machine.stage === "rendering" ||
     machine.stage === "uploading" ||
     machine.stage === "dispatching";
+  // The order on screen was already paid (from here, or confirmed from its
+  // campaign page): launching it again would create and charge a second
+  // campaign for the same mailing. Any change to the order makes it new.
+  const paidOrderLoaded =
+    machine.stage === "idle" &&
+    campaignPaid &&
+    campaignId !== null &&
+    campaignOrderKey === launchOrderKey(useWizardStore.getState());
   // Signed in, the price depends on membership, so it waits for the account.
   const launchDisabled =
     report.blocked ||
     busy ||
     launchInFlight ||
+    paidOrderLoaded ||
     dueCents <= 0 ||
     belowMinimum ||
     (isAuthenticated && !accountReady);
@@ -1076,12 +1095,55 @@ export function Step4ReviewLaunch() {
                       Sign in to launch
                     </Button>
                   )}
+                  {paidOrderLoaded && campaignId && (
+                    <Alert
+                      className="border-emerald-brand/40 bg-emerald-brand/10"
+                      data-ocid="review.already_paid.alert"
+                    >
+                      <CheckCircle2 className="size-4 text-emerald-brand" />
+                      <AlertTitle>This order is already paid</AlertTitle>
+                      <AlertDescription className="space-y-3">
+                        <p>
+                          Follow it from its campaign page, or start a new
+                          campaign. Change anything here to launch it as a new
+                          order.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="outline">
+                            <Link
+                              to="/campaigns/$campaignId"
+                              params={{ campaignId }}
+                            >
+                              View campaign
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => reset()}
+                            data-ocid="review.already_paid.new.button"
+                          >
+                            Start a new campaign
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {machine.failedStage ? (
                     <Button
                       type="button"
                       size="lg"
                       onClick={handleRetry}
-                      disabled={busy}
+                      // A retry launches like the first try: never past the
+                      // preflight (an unsaved return address included).
+                      disabled={
+                        busy ||
+                        launchInFlight ||
+                        (machine.failedStage !== "dispatching" &&
+                          machine.failedStage !== "paying" &&
+                          report.blocked)
+                      }
                       className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                       data-ocid="review.launch.retry.button"
                     >

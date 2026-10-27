@@ -66,5 +66,5 @@ actor {
 
   // Unpaid drafts expire 14 days after their last activity; swept on the same
   // 6-hour cadence, on its own timer so a slow poll never delays it.
-  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now()) });
+  ignore Timer.recurringTimer<system>(#seconds 21_600, func() : async () { ignore pruneExpiredDrafts(Time.now(), null) });
 };

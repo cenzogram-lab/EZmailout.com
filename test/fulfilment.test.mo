@@ -57,4 +57,21 @@ assert Fulfilment.trackingPageCount("{\"tracking\":[{\"pageCount\":9}]}") == nul
 assert Fulfilment.trackingPageCount("{\"totalPages\":0}") == null;
 assert Fulfilment.trackingPageCount("{\"tracking\":[]}") == null;
 
+// Tracking is judged per piece: a few early deliveries do not settle a large
+// campaign, a piece's scan history does not dilute its delivery, and
+// unscanned pieces count against every outcome.
+let history = ["Accepted at USPS Origin Facility", "Processed through regional facility", "Out for delivery", "Delivered"];
+assert Fulfilment.aggregateStage([history, history, history].flatten(), 3) == ?#Delivered;
+assert Fulfilment.aggregateStage(["Delivered", "Delivered"], 100) != ?#Delivered;
+assert Fulfilment.aggregateStage(["Returned to sender", "Delivered", "Delivered"], 3) == ?#Delivered;
+assert Fulfilment.aggregateStage(["Returned to sender", "Returned to sender", "Delivered"], 3) == ?#Returned;
+assert Fulfilment.aggregateStage(["Delivered"], 0) == ?#Delivered;
+assert Fulfilment.aggregateStage([], 5) == null;
+// One scan record carrying two status keys is one scan.
+assert Fulfilment.parseTrackingStatuses("{\"tracking\":[{\"scanDescription\":\"Delivered\",\"status\":\"Delivered\"}]}").size() == 1;
+// Negated submission wording is never a yes.
+assert Fulfilment.jobSubmitted("{\"status\":\"Job not submitted\"}") != ?true;
+assert Fulfilment.jobSubmitted("{\"status\":\"Unsubmitted\"}") != ?true;
+assert Fulfilment.jobSubmitted("{\"status\":\"Submitted\"}") == ?true;
+
 Debug.print("fulfilment: all checks passed");

@@ -140,15 +140,32 @@ mixin (
       (newDraft and unpaidDraftTotal() >= CampaignLib.maxUnpaidDraftsGlobal) or unpaidStoredRecipients() + adding > maxUnpaidRecipientsGlobal;
     };
     if (not full()) { return true };
-    ignore pruneExpiredDrafts(now);
+    ignore pruneExpiredDrafts(now, keep);
     let checkouts = checkoutActivity();
     let isProtected = evictionProtected(now);
-    while (full()) {
-      switch (CampaignLib.oldestIdleDraft(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), func(id : Text) : Bool = isProtected.contains(id) or ?id == keep)) {
-        case (?id) { removeDrafts([id]) };
+    // Chosen first and removed together, so the tracking log is swept once
+    // (not once per draft), and nothing is evicted unless it makes room.
+    var drafts = unpaidDraftTotal();
+    var stored = unpaidStoredRecipients();
+    let evict = Set.empty<Text>();
+    while ((newDraft and drafts >= CampaignLib.maxUnpaidDraftsGlobal) or stored + adding > maxUnpaidRecipientsGlobal) {
+      switch (CampaignLib.oldestIdleDraft(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), func(id : Text) : Bool = isProtected.contains(id) or ?id == keep or evict.contains(id))) {
+        case (?id) {
+          evict.add(id);
+          switch (campaigns.get(id)) {
+            case (?r) {
+              if (r.paymentStatus == #Unpaid) {
+                drafts := Nat.sub(drafts, 1);
+                stored := Nat.sub(stored, switch (campaignRecipients.get(id)) { case (?a) Nat.min(a.size(), stored); case null 0 });
+              };
+            };
+            case null {};
+          };
+        };
         case null { return false };
       };
     };
+    removeDrafts(evict.toArray());
     true;
   };
 
@@ -201,9 +218,10 @@ mixin (
   /// how many. Orders (paid, waived, or sent to the print partner) never expire.
   /// Runs from the 6-hourly timer in `main.mo`, and from `createCampaign`
   /// before a draft cap refuses.
-  private func pruneExpiredDrafts(now : Int) : Nat {
+  private func pruneExpiredDrafts(now : Int, keep : ?Text) : Nat {
     let checkouts = checkoutActivity();
-    let expired = CampaignLib.expiredDrafts(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), now);
+    // `keep` is the draft being staged: it is in use, whatever its age.
+    let expired = CampaignLib.expiredDrafts(campaigns, func(id : Text) : Int = lastDraftActivity(id, checkouts), now).filter(func(id : Text) : Bool = ?id != keep);
     removeDrafts(expired);
     expired.size();
   };
@@ -267,7 +285,7 @@ mixin (
     // an expired draft never holds a slot the timer has not freed yet.
     let owner = caller.toText();
     let refusal = switch (ownerDraftRefusal(owner, count)) {
-      case (?_) { ignore pruneExpiredDrafts(Time.now()); ownerDraftRefusal(owner, count) };
+      case (?_) { ignore pruneExpiredDrafts(Time.now(), null); ownerDraftRefusal(owner, count) };
       case null null;
     };
     switch (refusal) { case (?msg) { return fail(msg) }; case null {} };

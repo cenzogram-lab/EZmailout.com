@@ -127,7 +127,7 @@ const INTENTS: Intent[] = [
   {
     keywords: /\b(refer\w*|invite\w*|friend\w*|free month|reward\w*)\b/i,
     answer: () =>
-      `Share your referral link from the dashboard. When someone you referred makes their first payment while your membership is active, you earn one free month of membership — a ${membership} value.`,
+      `Share your referral link from the dashboard. When someone you referred makes their first payment of ${membership} or more while your membership is active, you earn one free month of membership — a ${membership} value.`,
     chips: ["referrals"],
   },
   {

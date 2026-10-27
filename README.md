@@ -79,7 +79,7 @@ Members receive 50 credits each time they activate or renew the 30-day membershi
 
 ## Referral program
 
-Every account gets `https://ezmailout.com/ref/{code}`. When a referred user makes their first payment
+Every account gets `https://ezmailout.com/ref/{code}`. When a referred user makes their first payment of $9.00 or more
 (membership, credit pack, or the payment that settles a campaign) the referrer earns one free month, used the next time they renew (the 30-day pass at no charge),
 as long as the referrer's membership is active when the referred payment is confirmed.
 

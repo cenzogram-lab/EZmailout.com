@@ -296,15 +296,18 @@ module {
     null;
   };
 
-  /// Collects every status-like string from a tracking response (JSON or XML),
-  /// at any nesting depth (per-piece scan records are usually nested arrays).
+  /// Collects the scan text of a tracking response (JSON or XML), at any
+  /// nesting depth (per-piece scan records are usually nested arrays). Only
+  /// the first key that carries text is read: a scan record holding both a
+  /// `scanDescription` and a `status` must count once, not twice.
   public func parseTrackingStatuses(body : Text) : [Text] {
     let out = List.empty<Text>();
     let keys = ["scanDescription", "scan_description", "statusDescription", "trackingStatus", "scanEvent", "event", "status"];
-    for (k in keys.vals()) {
+    label byKey for (k in keys.vals()) {
       for (v in Json.getAllStrings(body, k).vals()) {
         if (v != "" and not v.toArray().all(func(c : Char) : Bool { c.isDigit() })) { out.add(v) };
       };
+      if (out.size() > 0) break byKey;
     };
     if (out.size() == 0) {
       for (tag in ["scanDescription", "status", "description", "event"].vals()) {
@@ -316,10 +319,15 @@ module {
     out.toArray();
   };
 
-  /// Highest stage reached by at least half of the scans, on the ranking of
-  /// `CampaignLib.stageIndex`: a campaign turns Undeliverable or Returned only
-  /// when at least half of its scans say so, never for one bad address.
-  public func aggregateStage(statuses : [Text]) : ?Types.CampaignStatus {
+  /// Highest stage reached by at least half of the pieces, on the ranking of
+  /// `CampaignLib.stageIndex`: a campaign turns Delivered, Undeliverable or
+  /// Returned only when at least half of its `pieces` have a scan that says
+  /// so, never for one bad address or the first few deliveries. Each scan at
+  /// or past a stage counts once toward it, so a piece's earlier scans (its
+  /// history) never dilute its latest one, and pieces with no scan yet count
+  /// against every stage. `pieces` 0 weighs the scans among themselves (the
+  /// job-level status fallback).
+  public func aggregateStage(statuses : [Text], pieces : Nat) : ?Types.CampaignStatus {
     let stages = List.empty<Nat>();
     for (s in statuses.vals()) {
       switch (CampaignLib.statusFromText(s)) {
@@ -327,8 +335,8 @@ module {
         case null {};
       };
     };
-    let total = stages.size();
-    if (total == 0) { return null };
+    if (stages.size() == 0) { return null };
+    let total = if (pieces == 0) stages.size() else pieces;
     var stage : Nat = CampaignLib.stageIndex(#Returned);
     loop {
       var count = 0;
@@ -352,9 +360,11 @@ module {
       switch (Json.xmlTag(body, k)) { case (?v) texts.add(v); case null {} };
     };
     var editing = false;
-    for (raw in texts.values()) {
+    label reading for (raw in texts.values()) {
       let t = raw.toLower();
       let has = func(p : Text) : Bool { t.contains(#text p) };
+      // "Not submitted", "unsubmitted", "submission failed": never a yes.
+      if (has("not ") or has("n't") or has("unsubmit") or has("never") or has("fail") or has("cancel") or has("error") or has("pending")) continue reading;
       if (has("submitted") or has("in production") or has("printing") or has("printed") or has("mailed") or has("completed") or has("shipped")) {
         return ?true;
       };

@@ -41,8 +41,7 @@ const PERKS: Perk[] = [
   {
     icon: Gift,
     title: "Referral rewards",
-    description:
-      "Earn one free month for every referred user who makes their first payment while your membership is active.",
+    description: `Earn one free month for every referred user whose first payment of ${formatCents(SUBSCRIPTION_PRICE_CENTS)} or more comes while your membership is active.`,
   },
 ];
 

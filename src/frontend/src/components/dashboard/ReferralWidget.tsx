@@ -115,8 +115,8 @@ export function ReferralWidget() {
         <CardDescription>
           Earn a free 30-day membership (worth{" "}
           {formatCents(SUBSCRIPTION_PRICE_CENTS)}) each time someone you refer
-          makes their first payment while your membership is active. Use it
-          whenever you renew.
+          makes their first payment of {formatCents(SUBSCRIPTION_PRICE_CENTS)}{" "}
+          or more while your membership is active. Use it whenever you renew.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -219,7 +219,7 @@ export function ReferralWidget() {
                   pose="mail"
                   size="sm"
                   title="No rewards yet"
-                  description="Share your link: a friend's first payment earns you a free month while your membership is active."
+                  description={`Share your link: a friend's first payment of ${formatCents(SUBSCRIPTION_PRICE_CENTS)} or more earns you a free month while your membership is active.`}
                   data-ocid="dashboard.referral.rewards.empty"
                 />
               ) : (

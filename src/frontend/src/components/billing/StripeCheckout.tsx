@@ -38,6 +38,13 @@ export interface StripeCheckoutProps {
   /** `testMode` is true when the canister settled it as a test-mode order. */
   onSuccess: (result: ConfirmPaymentResult, testMode: boolean) => void;
   onCancel?: () => void;
+  /**
+   * True while leaving would risk a second charge: the card is being
+   * charged, or was and the payment is not yet confirmed. Hosts must then
+   * offer no way out (no close, no "change", no step back), or a new
+   * checkout could take the same payment again.
+   */
+  onLockedChange?: (locked: boolean) => void;
 }
 
 type Phase =
@@ -71,15 +78,21 @@ function PaymentForm({
   submitLabel,
   onConfirmed,
   onCancel,
+  onSubmittingChange,
 }: {
   amountLabel: string;
   submitLabel: string;
   onConfirmed: () => Promise<void>;
   onCancel?: () => void;
+  onSubmittingChange: (submitting: boolean) => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmittingState] = useState(false);
+  const setSubmitting = (value: boolean) => {
+    setSubmittingState(value);
+    onSubmittingChange(value);
+  };
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -186,6 +199,7 @@ export function StripeCheckout({
   submitLabel = "Pay",
   onSuccess,
   onCancel,
+  onLockedChange,
 }: StripeCheckoutProps) {
   const { isAuthenticated } = useAccountSync();
   const createIntent = useCreatePaymentIntent();
@@ -193,6 +207,17 @@ export function StripeCheckout({
   const setCreditBalance = useAccountStore((s) => s.setCreditBalance);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const started = useRef(false);
+  const [cardRunning, setCardRunning] = useState(false);
+  const locked =
+    cardRunning ||
+    phase.kind === "confirming" ||
+    (phase.kind === "error" && phase.paymentIntentId !== undefined);
+  const lockedRef = useRef(onLockedChange);
+  lockedRef.current = onLockedChange;
+  useEffect(() => {
+    lockedRef.current?.(locked);
+  }, [locked]);
+  useEffect(() => () => lockedRef.current?.(false), []);
 
   const finish = useCallback(
     async (paymentIntentId: string, testMode = false) => {
@@ -349,6 +374,7 @@ export function StripeCheckout({
               submitLabel={submitLabel}
               onConfirmed={() => finish(phase.paymentIntentId)}
               onCancel={onCancel}
+              onSubmittingChange={setCardRunning}
             />
           </Elements>
         )}

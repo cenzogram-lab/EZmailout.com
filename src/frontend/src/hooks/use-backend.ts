@@ -459,11 +459,15 @@ export function useUpdatePreset() {
           }
         : replaced;
     },
-    onSuccess: (_, { presetId }) => {
+    onSuccess: (result, { presetId }) => {
       queryClient.invalidateQueries({ queryKey: ["presets"] });
-      queryClient.invalidateQueries({
-        queryKey: ["presetAddresses", presetId],
-      });
+      // After a partial save the editor keeps the whole list to save again;
+      // re-reading the stored part would replace it with the truncated one.
+      if (result.ok) {
+        queryClient.invalidateQueries({
+          queryKey: ["presetAddresses", presetId],
+        });
+      }
     },
   });
 }

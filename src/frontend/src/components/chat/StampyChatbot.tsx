@@ -527,6 +527,13 @@ function Message({
 const OUTBOX_RETRY_MS = 120_000;
 
 /**
+ * One flush at a time for the whole page: the chat panel remounts when the
+ * signed-in identity changes, and a per-instance flag let the old panel's
+ * flush and the new one's send the same queued tickets twice.
+ */
+let outboxFlushing = false;
+
+/**
  * Re-sends tickets queued while the canister was unreachable: when the
  * backend becomes reachable, when the browser comes back online, and every
  * two minutes while any are waiting (not only on the next page load).
@@ -534,37 +541,37 @@ const OUTBOX_RETRY_MS = 120_000;
 function useSupportOutboxFlush() {
   const { ready } = useBackendActor();
   const submit = useSubmitSupportTicket();
-  const flushing = useRef(false);
   const submitRef = useRef(submit.mutateAsync);
   submitRef.current = submit.mutateAsync;
   useEffect(() => {
     if (!ready) return;
     const flush = async () => {
-      if (flushing.current) return;
+      if (outboxFlushing) return;
       const queued = readOutbox();
       if (queued.length === 0) return;
-      flushing.current = true;
-      const done: string[] = [];
-      for (const ticket of queued) {
-        try {
-          const result = await submitRef.current(ticket);
-          // A rate limit or a busy inbox clears later ("try again …"): keep
-          // the ticket. Anything else was refused on its merits and would be
-          // refused again, so it leaves the outbox.
-          if (!result.ok && /try again/i.test(result.error ?? "")) break;
-          done.push(JSON.stringify(ticket));
-        } catch {
-          break; // Still unreachable: keep the rest for next time.
+      outboxFlushing = true;
+      try {
+        for (const ticket of queued) {
+          try {
+            const result = await submitRef.current(ticket);
+            // A rate limit or a busy inbox clears later ("try again …"):
+            // keep the ticket. Anything else was refused on its merits and
+            // would be refused again, so it leaves the outbox.
+            if (!result.ok && /try again/i.test(result.error ?? "")) break;
+          } catch {
+            break; // Still unreachable: keep the rest for next time.
+          }
+          // Each handled ticket leaves at once (tickets queued meanwhile
+          // stay), so nothing already sent is sent again.
+          const key = JSON.stringify(ticket);
+          const left = readOutbox();
+          const at = left.findIndex((t) => JSON.stringify(t) === key);
+          if (at >= 0) left.splice(at, 1);
+          writeOutbox(left);
         }
+      } finally {
+        outboxFlushing = false;
       }
-      // Tickets queued while this ran stay: only the ones handled leave.
-      const left = readOutbox();
-      for (const key of done) {
-        const at = left.findIndex((t) => JSON.stringify(t) === key);
-        if (at >= 0) left.splice(at, 1);
-      }
-      writeOutbox(left);
-      flushing.current = false;
     };
     void flush();
     const onOnline = () => void flush();

@@ -204,8 +204,11 @@ function PayNowDialog({
 }) {
   const total =
     Number(campaign.recipientCount) * Number(campaign.unitPriceCents);
+  // No way out once the card was charged and the payment is unconfirmed:
+  // a second checkout would charge it again (`onLockedChange`).
+  const [locked, setLocked] = useState(false);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => (o || !locked) && onOpenChange(o)}>
       <DialogContent
         className="sm:max-w-lg"
         data-ocid="campaign_detail.pay_now.dialog"
@@ -242,6 +245,7 @@ function PayNowDialog({
             }
           }}
           onCancel={() => onOpenChange(false)}
+          onLockedChange={setLocked}
         />
       </DialogContent>
     </Dialog>
