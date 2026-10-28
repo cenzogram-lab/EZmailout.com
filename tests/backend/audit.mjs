@@ -630,6 +630,19 @@ sections.orders = async function orders() {
   const [heldRefund] = await drive(env.pic, up, [refundExec]);
   const live2After = (await pz.getCampaign(live2))[0];
   check(!during.ok && heldRefund.ok && live2After.paymentStatus.Refunded === null && live2After.productionStatus.Submitted === undefined, "a dispatch started while a full refund is being made is refused", { dispatch: during.error, refund: heldRefund.error, status: live2After.paymentStatus });
+  // A refund still pending keeps the order held; if it fails, the hold is
+  // released and the order prints.
+  const [live4, live4Pay] = await paidOrder(14);
+  pay.refundStatus = "pending";
+  const pendingCampaignRefund = await call(env.pic, up, env.deferred(env.controller).adminRefundPayment({ paymentIntentId: live4Pay, amountCents: BigInt(pay.intents.get(live4Pay).amount), reason: "Cancelled", revokeEffects: true }));
+  const heldNow = (await pz.getCampaign(live4))[0].paymentStatus;
+  const heldRun = await call(env.pic, up, env.deferred(payer).dispatchPrintJob(live4));
+  pay.refundStatus = "failed";
+  await env.pic.advanceTime(HOUR + 60_000); await drive(env.pic, up, []);
+  pay.refundStatus = undefined;
+  const releasedRun = await call(env.pic, up, env.deferred(payer).dispatchPrintJob(live4));
+  check(pendingCampaignRefund.ok && heldNow.Refunded === null && !heldRun.ok && (await pz.getCampaign(live4))[0].paymentStatus.Paid === null && releasedRun.ok,
+    "a pending refund holds the order; when it fails the hold is released and the order prints", { held: heldNow, heldRun: heldRun.error, released: releasedRun.error });
   // A refund the processor refuses releases the hold: the order still prints.
   const [live3, live3Pay] = await paidOrder(13);
   pay.refundFails = true;
@@ -731,6 +744,31 @@ sections.orders = async function orders() {
   const renewsAfter = (await r.getMyAccount())[0].subscriptionRenewsAt;
   const keptNs = renewsAfter - renewsBefore;
   check(usedBack.referralCreditsEarned === 0n && usedBack.referralCreditsRedeemed === 0n && keptNs >= 0n && keptNs < 3_600_000_000_000n, "refunding below the month's price takes back what is left of the used free month, nothing more", { usedBack, renewsBefore, renewsAfter });
+  // A refund the processor reports pending takes nothing back yet: if it
+  // later fails, the customer keeps what they had (credits, the referral
+  // month) and a held order is released; once one succeeds, the hourly sweep
+  // takes back what it covers.
+  const referee3 = ident(166);
+  await env.as(referee3).ensureAccount([code], []);
+  const g3 = await call(env.pic, up, env.deferred(referee3).createPaymentIntent({ CreditPack: null }, [], [{ Growth: null }]));
+  const g3Paid = await call(env.pic, up, env.deferred(referee3).confirmPayment(g3.paymentIntentId[0]));
+  const creditsOf3 = async () => (await env.as(referee3).getMyAccount())[0].creditBalance;
+  const credits3 = await creditsOf3();
+  check(g3Paid.ok && g3Paid.referralRewardApplied && (await earnedNow()).referralCreditsEarned === 1n, "a third referred customer's first payment earns a month", g3Paid.error);
+  pay.refundStatus = "pending";
+  const pendingRefund = await refundAll(g3.paymentIntentId[0], 1500);
+  check(pendingRefund.ok && (await creditsOf3()) === credits3 && (await earnedNow()).referralCreditsEarned === 1n, "a pending refund takes back nothing yet", pendingRefund.error);
+  pay.refundStatus = "failed";
+  await env.pic.advanceTime(HOUR + 60_000); await drive(env.pic, up, []);
+  const failedView = (await env.as(env.controller).adminFindPayments(g3.paymentIntentId[0]))[0];
+  check((await creditsOf3()) === credits3 && (await earnedNow()).referralCreditsEarned === 1n && failedView.refunds[0]?.status === "failed" && failedView.refundedCents === 0n,
+    "a pending refund that fails takes nothing back: the credits and the referral month stay", failedView.refunds);
+  pay.refundStatus = "pending";
+  const retried = await refundAll(g3.paymentIntentId[0], 1500);
+  pay.refundStatus = "succeeded";
+  await env.pic.advanceTime(HOUR + 60_000); await drive(env.pic, up, []);
+  check(retried.ok && (await creditsOf3()) === 0n && (await earnedNow()).referralCreditsEarned === 0n, "once a pending refund succeeds, the sweep takes back the credits and the referral month", { error: retried.error, credits: await creditsOf3() });
+  pay.refundStatus = undefined;
 
   // Verification fails closed when the per-address result does not line up
   // with the batch, and a customer sees plain advice, not network detail.

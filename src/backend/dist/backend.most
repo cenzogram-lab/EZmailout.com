@@ -1653,6 +1653,22 @@ type PaymentStatus__640394429 =
 type PaymentStatus__71296514 = {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
 type PaymentStatus__825349200 =
   {#Paid; #Pending; #Refunded; #Unpaid; #Waived};
+type PendingRefundEffects__464933939 =
+  {
+    amountCents : Nat;
+    createdAt : Int;
+    heldCampaign : ?Text;
+    paymentIntentId : Text;
+    revokeEffects : Bool
+  };
+type PendingRefundEffects__51030288 =
+  {
+    amountCents : Nat;
+    createdAt : Int;
+    heldCampaign : ?Text;
+    paymentIntentId : Text;
+    revokeEffects : Bool
+  };
 type PrintBatch__526880683 =
   {
     addressListId : ?Text;
@@ -2892,7 +2908,13 @@ type VerifiedAddress__924635918 =
           Map__521176851<Text, FulfilmentEnvironment__714397961>
       };
   "20261027_000000_PaymentRefunds" :
-    {} -> {paymentRefunds : Map__521176851<Text, [RefundRecord__676888573]>}
+    {} -> {paymentRefunds : Map__521176851<Text, [RefundRecord__676888573]>};
+  "20261028_000000_PendingRefundEffects" :
+    {} ->
+      {
+        pendingRefundEffects :
+          Map__521176851<Text, PendingRefundEffects__464933939>
+      }
 }
 actor  {
   stable accounts :
@@ -2944,6 +2966,11 @@ actor  {
   stable payments :
     {
       var root : Node__809479745<Text, PaymentRecord__75058045>;
+      var size : Nat__677858269
+    };
+  stable pendingRefundEffects :
+    {
+      var root : Node__809479745<Text, PendingRefundEffects__51030288>;
       var size : Nat__677858269
     };
   stable presetMeta :

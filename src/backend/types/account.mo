@@ -127,6 +127,18 @@ module {
   };
 
   /// A refund the admin issued through the payment processor.
+  /// What a refund still pending with the processor will take back once it
+  /// succeeds (nothing is taken back before: a refund that later fails must
+  /// leave the customer as they were). Keyed by refund id.
+  public type PendingRefundEffects = {
+    paymentIntentId : Text;
+    amountCents : Nat;
+    revokeEffects : Bool;
+    /// The campaign held (marked refunded) when the refund was made.
+    heldCampaign : ?Text;
+    createdAt : Int;
+  };
+
   public type RefundRecord = {
     refundId : Text;
     amountCents : Nat;

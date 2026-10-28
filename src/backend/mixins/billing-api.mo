@@ -37,6 +37,7 @@ mixin (
   trackingEvents : List.List<Types.TrackingEvent>,
   documentUploads : Map.Map<Text, Types.DocumentUpload>,
   paymentRefunds : Map.Map<Text, [Account.RefundRecord]>,
+  pendingRefundEffects : Map.Map<Text, Account.PendingRefundEffects>,
   state : Common.Counters,
   adminKeysState : Common.AdminState,
   transformFn : Http.TransformFn,
@@ -881,7 +882,7 @@ mixin (
       for (r in refundsOf(id).vals()) {
         if (r.status == "pending" or r.status == "requires_action") {
           switch (await* readRefund(secret, r.refundId)) {
-            case (?seen) { setRefundStatus(id, r.refundId, seen.status) };
+            case (?seen) { settleRefund(id, r.refundId, seen.status, Time.now()) };
             case null {};
           };
         };
@@ -950,73 +951,144 @@ mixin (
       let amount = if (refund.amount > 0) refund.amount else input.amountCents;
       let now = Time.now();
       paymentRefunds.add(id, refundsOf(id).concat([{ refundId = refund.id; amountCents = amount; reason; status = refund.status; createdAt = now; by }]));
-      let full = already + amount >= p.amountCents;
-      // A free month this payment earned the customer's referrer goes once
-      // what is kept of the payment no longer covers it (`referralQualifying`).
-      if (input.revokeEffects and already + amount + Credits.referralRewardCents > p.amountCents) {
-        ignore revokeReferralMonth(id, now);
-      };
-      var balance : ?Nat = null;
-      switch (accounts.get(p.userId)) {
-        case (?a) {
-          switch (p.purpose) {
-            case (#CampaignOrder) {
-              switch (p.reference) {
-                case (?cid) {
-                  switch (campaigns.get(cid)) {
-                    case (?c) {
-                      // Held before the processor was called (`held`): taken
-                      // back for good once the refund covers the payment.
-                      switch (held) {
-                        case (?h) {
-                          if (h.id == c.id and full and c.paymentStatus == #Refunded) {
-                            c.updatedAt := now;
-                            // Nothing will print it: its staged file goes.
-                            documentUploads.remove(cid);
-                          } else if (c.paymentStatus == #Refunded) { c.paymentStatus := #Paid };
-                        };
-                        case null {};
-                      };
-                      // The customer sees this on the campaign's timeline: the
-                      // amount only, never the admin's note.
-                      CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.refunded", refund.id, #System, ?("Refunded " # refundDollars(amount) # " to the card"));
-                    };
-                    case null {};
-                  };
-                };
-                case null {};
-              };
-            };
-            case (#CreditPack) {
-              if (input.revokeEffects) {
-                let info = Credits.packInfo(switch (p.creditPack) { case (?k) k; case null #Starter });
-                let take = info.credits * amount / p.amountCents;
-                if (take > 0) {
-                  balance := ?AccountLib.applyCredits(creditLedger, state, a, -take, "refund:" # Credits.packName(info.pack), ?id);
-                };
-              };
-            };
-            case (#Subscription) {
-              // Only what is left of this payment's own 30 days is taken back
-              // (a pass refunded months later leaves today's membership as
-              // it is), and its credits only while that window is open.
-              let paidAt = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
-              let unused = paidAt + Credits.thirtyDaysNs - now;
-              if (input.revokeEffects and full and unused > 0) {
-                a.subscriptionRenewsAt := Int.max(now, a.subscriptionRenewsAt - unused);
-                if (a.subscriptionRenewsAt <= now) { a.subscriptionActive := false };
-                balance := ?AccountLib.applyCredits(creditLedger, state, a, -Credits.monthlyAllowance, "refund:membership", ?id);
-              };
-            };
-          };
-          if (balance == null) { balance := ?a.creditBalance };
-        };
-        case null {};
+      let heldId : ?Text = switch (held) { case (?c) ?c.id; case null null };
+      // What the refund takes back waits until the processor reports it
+      // succeeded: one still pending keeps the order held, and the hourly
+      // sweep (`settlePendingRefunds`) applies or releases it.
+      let balance : ?Nat = if (refund.status == "succeeded") {
+        applyRefundEffects(p, refund.id, amount, already, input.revokeEffects, heldId, now);
+      } else {
+        pendingRefundEffects.add(refund.id, { paymentIntentId = id; amountCents = amount; revokeEffects = input.revokeEffects; heldCampaign = heldId; createdAt = now });
+        null;
       };
       { ok = true; error = null; refundId = ?refund.id; refundedCents = already + amount; creditBalance = balance };
     } finally {
       refundsInFlight.remove(id);
     };
+  };
+
+  /// Takes back what a refund of `amount` (after `already` refunded) gives
+  /// back, where it still can: the free month it earned a referrer, the
+  /// held campaign (`heldCampaign`, released when the refund turns out not
+  /// to cover the payment), a credit pack's share of credits, a membership's
+  /// unused days. Only `revokeEffects` takes anything back; the campaign's
+  /// timeline always notes the refund. Runs once the processor reports the
+  /// refund succeeded. Returns the customer's balance.
+  private func applyRefundEffects(p : Account.PaymentRecord, refundId : Text, amount : Nat, already : Nat, revokeEffects : Bool, heldCampaign : ?Text, now : Int) : ?Nat {
+    let id = p.paymentIntentId;
+    let full = already + amount >= p.amountCents;
+    // A free month this payment earned the customer's referrer goes once
+    // what is kept of the payment no longer covers it (`referralQualifying`).
+    if (revokeEffects and already + amount + Credits.referralRewardCents > p.amountCents) {
+      ignore revokeReferralMonth(id, now);
+    };
+    var balance : ?Nat = null;
+    switch (accounts.get(p.userId)) {
+      case (?a) {
+        switch (p.purpose) {
+          case (#CampaignOrder) {
+            switch (p.reference) {
+              case (?cid) {
+                switch (campaigns.get(cid)) {
+                  case (?c) {
+                    // Held before the processor was called (`heldCampaign`):
+                    // taken back for good once the refund covers the payment.
+                    switch (heldCampaign) {
+                      case (?h) {
+                        if (h == c.id and full and c.paymentStatus == #Refunded) {
+                          c.updatedAt := now;
+                          // Nothing will print it: its staged file goes.
+                          documentUploads.remove(cid);
+                        } else if (c.paymentStatus == #Refunded) { c.paymentStatus := #Paid };
+                      };
+                      case null {};
+                    };
+                    // The customer sees this on the campaign's timeline: the
+                    // amount only, never the admin's note.
+                    CampaignLib.appendEvent(trackingEvents, state, c.id, c.status, "payment.refunded", refundId, #System, ?("Refunded " # refundDollars(amount) # " to the card"));
+                  };
+                  case null {};
+                };
+              };
+              case null {};
+            };
+          };
+          case (#CreditPack) {
+            if (revokeEffects) {
+              let info = Credits.packInfo(switch (p.creditPack) { case (?k) k; case null #Starter });
+              let take = info.credits * amount / p.amountCents;
+              if (take > 0) {
+                balance := ?AccountLib.applyCredits(creditLedger, state, a, -take, "refund:" # Credits.packName(info.pack), ?id);
+              };
+            };
+          };
+          case (#Subscription) {
+            // Only what is left of this payment's own 30 days is taken back
+            // (a pass refunded months later leaves today's membership as
+            // it is), and its credits only while that window is open.
+            let paidAt = switch (p.confirmedAt) { case (?t) t; case null p.createdAt };
+            let unused = paidAt + Credits.thirtyDaysNs - now;
+            if (revokeEffects and full and unused > 0) {
+              a.subscriptionRenewsAt := Int.max(now, a.subscriptionRenewsAt - unused);
+              if (a.subscriptionRenewsAt <= now) { a.subscriptionActive := false };
+              balance := ?AccountLib.applyCredits(creditLedger, state, a, -Credits.monthlyAllowance, "refund:membership", ?id);
+            };
+          };
+        };
+        if (balance == null) { balance := ?a.creditBalance };
+      };
+      case null {};
+    };
+    balance;
+  };
+
+  /// Records a refund's new status and settles what it was waiting on: a
+  /// pending refund that succeeded takes back its effects, one that failed
+  /// or was cancelled releases its held order and takes back nothing.
+  private func settleRefund(paymentIntentId : Text, refundId : Text, status : Text, now : Int) {
+    setRefundStatus(paymentIntentId, refundId, status);
+    switch (pendingRefundEffects.get(refundId)) {
+      case (?e) {
+        if (status == "succeeded") {
+          pendingRefundEffects.remove(refundId);
+          switch (payments.get(e.paymentIntentId)) {
+            case (?p) {
+              let already = Nat.sub(refundedCents(e.paymentIntentId), Nat.min(e.amountCents, refundedCents(e.paymentIntentId)));
+              ignore applyRefundEffects(p, refundId, e.amountCents, already, e.revokeEffects, e.heldCampaign, now);
+            };
+            case null {};
+          };
+        } else if (status == "failed" or status == "canceled") {
+          pendingRefundEffects.remove(refundId);
+          switch (e.heldCampaign) {
+            case (?cid) {
+              switch (campaigns.get(cid)) {
+                case (?c) { if (c.paymentStatus == #Refunded and c.paymentIntentId == ?e.paymentIntentId) { c.paymentStatus := #Paid; c.updatedAt := now } };
+                case null {};
+              };
+            };
+            case null {};
+          };
+        };
+      };
+      case null {};
+    };
+  };
+
+  /// Reads refunds still pending with the processor again (hourly, from
+  /// `sweepPayments`, within its lookup budget) and settles them.
+  private func settlePendingRefunds(secret : Text, budget : Nat) : async* Nat {
+    var used = 0;
+    let due = pendingRefundEffects.entries().toArray();
+    label reading for ((refundId, e) in due.vals()) {
+      if (used >= budget) break reading;
+      used += 1;
+      switch (await* readRefund(secret, refundId)) {
+        case (?seen) { if (pendingRefundEffects.containsKey(refundId)) { settleRefund(e.paymentIntentId, refundId, seen.status, Time.now()) } };
+        case null {};
+      };
+    };
+    used;
   };
 
   /// A refund as the whole subnet reads it from the payment processor
@@ -1096,6 +1168,9 @@ mixin (
   /// for every checkout the hourly intent caps let open (`intentsPerHourGlobal`
   /// beside the per-campaign caps, whose drafts reuse their open checkout).
   transient let maxSweepLookups : Nat = 500;
+  /// Pending refunds one sweep reads again (replicated reads, counted
+  /// against `maxSweepLookups`).
+  transient let maxPendingRefundReads : Nat = 50;
   /// When the sweep last looked each open checkout up.
   transient let sweepLooked = Map.empty<Text, Int>();
   /// When the processor first answered 404 for an open checkout: closed only
@@ -1191,7 +1266,8 @@ mixin (
       };
       let secret = switch (adminKeysState.stripeSecretKey) { case (?k) k; case null { return changed } };
       let byAge = func(x : Account.PaymentRecord, y : Account.PaymentRecord) : Order.Order = Int.compare(x.createdAt, y.createdAt);
-      var lookups = 0;
+      // Refunds still pending: applied once they succeed, released if not.
+      var lookups = await* settlePendingRefunds(secret, maxPendingRefundReads);
       let look = func(p : Account.PaymentRecord) : async* (Nat, Text) {
         lookups += 1;
         let resp = await* Http.get(Stripe.apiBase # "/payment_intents/" # p.paymentIntentId, Stripe.headers(secret, null), AdminLib.outcallOptions(adminKeysState, 32_000), transformFn);

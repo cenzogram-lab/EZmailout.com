@@ -68,6 +68,7 @@ import {
 } from "@/lib/format";
 import { formatCents, mailClassLabel } from "@/lib/pricing";
 import { isShapeUrl } from "@/lib/shapes";
+import { shownText } from "@/lib/textFit";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -166,7 +167,7 @@ function CanvasThumbnail({ canvas }: { canvas: CanvasState }) {
             zIndex: Number(block.zIndex),
           }}
         >
-          {block.text}
+          {shownText(block.text)}
         </div>
       ))}
       {side.qrCodes.map((qr) => (

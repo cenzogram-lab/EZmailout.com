@@ -9,6 +9,16 @@
  * sized with `bandHeight()` always contains the text `countLines()` reports.
  */
 
+/**
+ * Text as the studio shows, measures and prints it: a tab is one space. The
+ * page would lay a tab out at 8-space tab stops, which the print renderer
+ * does not reproduce, so every view (editor, previews, campaign page, print)
+ * goes through this and new text is stored without tabs (`updateTextBlock`).
+ */
+export function shownText(text: string): string {
+  return text.includes("\t") ? text.replace(/\t/g, " ") : text;
+}
+
 /** Default line height applied by `textBlockStyle` — keep the two in step. */
 export const TEXT_LINE_HEIGHT = 1.2;
 
@@ -149,20 +159,22 @@ export function countLines(text: string, opts: MeasureOptions): number {
  * exactly where the editor and the height refit do.
  */
 export function wrapText(
-  text: string,
+  rawText: string,
   maxWidth: number,
   advance: (s: string) => number,
 ): string[] {
+  const text = shownText(rawText);
   const lines: string[] = [];
   // Chromium's line breaker measures in layout units (1/64 px), rounding a
   // run's width down: a run up to 1/64 px wider than the line still fits.
-  // A run followed by a space is measured with it, as Chromium shapes the
-  // whole line: a face that kerns a letter against the space (Playfair's
-  // "r ") makes "foo -bar" narrower before " baz" than on its own.
-  const fits = (s: string, spaceFollows = false) => {
+  // A run is measured with what follows it (`following`, or the space it
+  // ends in), as Chromium shapes the whole line: a face that kerns a letter
+  // against the next character (Playfair's "r " before " baz", Pacifico's
+  // "/" before "t" in a word split letter by letter) changes the run's width.
+  const fits = (s: string, following = "") => {
     const t = s.trimEnd();
-    const width =
-      spaceFollows || t !== s ? advance(`${t} `) - advance(" ") : advance(t);
+    const next = t !== s ? " " : following;
+    const width = next ? advance(`${t}${next}`) - advance(next) : advance(t);
     return Math.floor(width * 64) / 64 <= maxWidth;
   };
   for (const paragraph of text.split(/\r?\n/)) {
@@ -181,7 +193,8 @@ export function wrapText(
           current === null ? word : `${current}${join}${word}`;
         join = "";
         // Spaces at a wrap point hang past the edge, as in the editor.
-        if (fits(candidate, j === pieces.length - 1 && i < words.length - 1)) {
+        const spaceAfter = j === pieces.length - 1 && i < words.length - 1;
+        if (fits(candidate, spaceAfter ? " " : "")) {
           current = candidate;
           continue;
         }
@@ -192,10 +205,15 @@ export function wrapText(
           current = null;
         }
         // A piece that cannot fit on its own line is broken character by
-        // character.
+        // character; the run that ends the word is measured with the space
+        // after it, as Chromium does (a letter after the run is not: checked
+        // against Chromium, that made more lines differ, not fewer).
+        const chars = graphemes(word);
         let chunk = "";
-        for (const char of graphemes(word)) {
-          if (chunk === "" || fits(chunk + char)) {
+        for (let k = 0; k < chars.length; k++) {
+          const char = chars[k];
+          const last = k === chars.length - 1 && spaceAfter;
+          if (chunk === "" || fits(chunk + char, last ? " " : "")) {
             chunk += char;
             continue;
           }

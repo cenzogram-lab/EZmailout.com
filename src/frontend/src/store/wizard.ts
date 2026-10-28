@@ -29,7 +29,7 @@ import {
   orientationOf,
 } from "@/lib/printSpec";
 import { isShapeUrl, reshapeForBox } from "@/lib/shapes";
-import { measuredHeight } from "@/lib/textFit";
+import { measuredHeight, shownText } from "@/lib/textFit";
 import {
   type StudioTextBlock,
   changesTextLayout,
@@ -703,7 +703,13 @@ export const useWizardStore = create<WizardStore>()(
 
       addTextBlock: (sideKey, partial) => {
         const side = getSide(get().canvas, sideKey);
-        const block = makeTextBlock(side, partial);
+        // Text is stored without tabs (`shownText`), as it is shown and printed.
+        const block = makeTextBlock(
+          side,
+          partial?.text === undefined
+            ? partial
+            : { ...partial, text: shownText(partial.text) },
+        );
         set((s) => ({
           canvas: withSide(s.canvas, sideKey, {
             ...side,
@@ -726,7 +732,10 @@ export const useWizardStore = create<WizardStore>()(
               ...side,
               textBlocks: side.textBlocks.map((t) => {
                 if (t.id !== id) return t;
-                const next = { ...t, ...patch };
+                const next =
+                  patch.text === undefined
+                    ? { ...t, ...patch }
+                    : { ...t, ...patch, text: shownText(patch.text) };
                 return refit ? { ...next, height: fittedHeight(next) } : next;
               }),
             }),

@@ -12,6 +12,7 @@ import {
 } from "@/lib/printSpec";
 import { isShapeUrl } from "@/lib/shapes";
 import { loadTemplateFonts, templateFontsLoaded } from "@/lib/templates";
+import { shownText } from "@/lib/textFit";
 import { cn } from "@/lib/utils";
 import type { CanvasSideKey, DesignTemplate } from "@/types";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -120,7 +121,7 @@ export function SidePreview({
                     ...textBlockStyle(el.data),
                   }}
                 >
-                  {el.data.text}
+                  {shownText(el.data.text)}
                 </div>
               );
             }

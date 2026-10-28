@@ -11,6 +11,7 @@ import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { type PhysicalTraits, physicalTraitsFor } from "@/lib/physical";
 import type { LayoutDims } from "@/lib/printSpec";
 import { isShapeUrl } from "@/lib/shapes";
+import { shownText } from "@/lib/textFit";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type { CanvasSideKey } from "@/types";
@@ -73,7 +74,7 @@ function Face({
                 ...textBlockStyle(el.data),
               }}
             >
-              {el.data.text}
+              {shownText(el.data.text)}
             </div>
           );
         }

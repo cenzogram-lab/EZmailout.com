@@ -25,6 +25,7 @@ import {
 } from "@/lib/printSpec";
 import { qrDataUrl } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
+import { shownText } from "@/lib/textFit";
 import { textExtras } from "@/lib/textStyle";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
@@ -800,7 +801,7 @@ export function CanvasEditor({
                         transform: undefined,
                       }}
                     >
-                      {el.data.text || " "}
+                      {shownText(el.data.text) || " "}
                     </div>
                   ))}
                 {el.kind === "logo" && (
