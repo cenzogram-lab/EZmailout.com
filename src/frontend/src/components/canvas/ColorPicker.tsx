@@ -1,3 +1,8 @@
+import {
+  EDGE_PADDING,
+  FadingScroll,
+  barCollisionPadding,
+} from "@/components/canvas/popoverBounds";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -56,8 +61,8 @@ function Swatch({
       aria-pressed={active}
       onClick={() => onPick(hex)}
       className={cn(
-        "flex items-center justify-center border border-black/10 transition-transform hover:z-10 hover:scale-110 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-        active && "ring-2 ring-primary ring-offset-1 ring-offset-popover",
+        "flex items-center justify-center border border-hairline-strong transition-transform hover:z-10 hover:scale-110 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active && "ring-2 ring-ring ring-offset-1 ring-offset-popover",
         className,
       )}
       style={{ backgroundColor: hex }}
@@ -234,11 +239,11 @@ export function ColorPanel({
             <button
               type="button"
               onClick={() => emit(parsed)}
-              className="flex w-full items-center gap-2 rounded-lg border border-border/70 px-2 py-1.5 text-left text-sm hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded-xl border border-hairline-strong bg-card-raised px-2 py-1.5 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
               data-ocid={`${ocid}.use_typed`}
             >
               <span
-                className="size-6 shrink-0 rounded-md border border-black/10"
+                className="size-6 shrink-0 rounded-md border border-hairline-strong"
                 style={{ backgroundColor: parsed }}
               />
               Use <span className="font-mono">{parsed}</span>
@@ -251,11 +256,11 @@ export function ColorPanel({
                   key={m.name}
                   type="button"
                   onClick={() => emit(m.hex)}
-                  className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 text-left text-xs hover:bg-muted"
+                  className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 text-left text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80"
                   title={`${m.name} ${m.hex}`}
                 >
                   <span
-                    className="size-5 shrink-0 rounded-md border border-black/10"
+                    className="size-5 shrink-0 rounded-md border border-hairline-strong"
                     style={{ backgroundColor: m.hex }}
                   />
                   <span className="truncate">{m.name}</span>
@@ -282,7 +287,7 @@ export function ColorPanel({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(hsv.s * 100)}
-            className="relative h-32 cursor-crosshair touch-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="relative h-32 cursor-crosshair touch-none rounded-xl border border-hairline-strong focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
             style={{
               backgroundColor: hsvToHex(hsv.h, 1, 1),
               backgroundImage:
@@ -309,7 +314,7 @@ export function ColorPanel({
             aria-valuemin={0}
             aria-valuemax={360}
             aria-valuenow={Math.round(hsv.h)}
-            className="relative h-3.5 cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="relative h-3.5 cursor-pointer touch-none rounded-full border border-hairline-strong focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
             style={{
               background:
                 "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
@@ -328,7 +333,7 @@ export function ColorPanel({
           </div>
           <div className="flex items-center gap-2">
             <span
-              className="size-8 shrink-0 rounded-lg border border-black/10"
+              className="size-8 shrink-0 rounded-xl border border-hairline-strong shadow-[inset_0_1px_1px_rgb(255_255_255/0.25)]"
               style={{ backgroundColor: current }}
             />
             <Input
@@ -349,7 +354,7 @@ export function ColorPanel({
                 type="button"
                 title="Pick a colour from the screen"
                 aria-label="Pick a colour from the screen"
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border hover:bg-muted"
+                className="btn-3d-neutral flex size-8 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
                 onClick={async () => {
                   try {
                     const r = await new EyeDropper().open();
@@ -399,7 +404,7 @@ export function ColorPanel({
           <div>
             {section("All colours")}
             <div
-              className="grid grid-cols-12 overflow-hidden rounded-lg"
+              className="grid grid-cols-12 overflow-hidden rounded-xl border border-hairline-strong"
               data-ocid={`${ocid}.grid`}
             >
               {GRID.flat().map((hex, i) => (
@@ -444,8 +449,15 @@ export function ColorPicker({
   className?: string;
 }) {
   const hex = parseColor(value);
+  // Kept between the header pill and the phone dock (measured on open), so a
+  // popover that flips upward never covers the nav or Launch campaign.
+  const [padding, setPadding] = useState(EDGE_PADDING);
   return (
-    <Popover>
+    <Popover
+      onOpenChange={(open) => {
+        if (open) setPadding(barCollisionPadding());
+      }}
+    >
       <PopoverTrigger asChild>
         {variant === "swatch" ? (
           <button
@@ -453,14 +465,15 @@ export function ColorPicker({
             title="More colours"
             aria-label={`${label}: more colours`}
             className={cn(
-              "flex shrink-0 items-center justify-center rounded-full border border-black/10 bg-[conic-gradient(from_0deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)] transition-smooth hover:scale-110",
+              "flex shrink-0 items-center justify-center rounded-full border border-hairline-strong bg-[conic-gradient(from_0deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)] shadow-[inset_0_1px_1px_rgb(255_255_255/0.4)] transition-smooth hover:scale-110 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80",
               size === "sm" ? "size-6" : "size-7",
               className,
             )}
             data-ocid={`${ocid}.custom`}
           >
             <span className="flex size-3.5 items-center justify-center rounded-full bg-white/90">
-              <Plus className="size-2.5 text-foreground" />
+              {/* Fixed dark ink: the disc is white in both themes. */}
+              <Plus className="size-2.5 text-neutral-900" />
             </span>
           </button>
         ) : (
@@ -468,31 +481,38 @@ export function ColorPicker({
             type="button"
             aria-label={`${label}: ${hex ?? value}`}
             className={cn(
-              "flex h-8 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-2 text-left text-xs hover:bg-muted",
+              "flex h-8 w-full min-w-0 items-center gap-2 rounded-xl border border-input bg-card px-2 text-left text-xs shadow-[inset_0_1px_2px_rgb(0_0_0/0.05)] transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30 dark:bg-well",
               className,
             )}
             data-ocid={ocid}
           >
             <span
-              className="size-5 shrink-0 rounded-md border border-black/10"
+              className="size-5 shrink-0 rounded-md border border-hairline-strong"
               style={{ backgroundColor: hex ?? "#ffffff" }}
             />
-            <span className="truncate font-mono">{hex ?? value}</span>
+            <span className="truncate font-mono tracking-wider">
+              {hex ?? value}
+            </span>
           </button>
         )}
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        collisionPadding={12}
-        className="max-h-[min(34rem,var(--radix-popover-content-available-height))] w-[min(19rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl p-3"
+        collisionPadding={padding}
+        className="flex max-h-[min(34rem,var(--radix-popover-content-available-height))] w-[min(19rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl p-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
+        data-ocid={`${ocid}.popover`}
       >
-        <ColorPanel
-          value={value}
-          onChange={onChange}
-          label={label}
-          ocid={ocid}
-        />
+        {/* Fades its bottom edge while more of the panel is below, so a
+            popover cut short by the screen shows that it scrolls. */}
+        <FadingScroll className="min-h-0 flex-1 p-3">
+          <ColorPanel
+            value={value}
+            onChange={onChange}
+            label={label}
+            ocid={ocid}
+          />
+        </FadingScroll>
       </PopoverContent>
     </Popover>
   );

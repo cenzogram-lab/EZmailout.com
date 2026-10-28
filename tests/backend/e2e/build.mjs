@@ -3,7 +3,7 @@
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 const FE = new URL("../../../src/frontend/", import.meta.url).pathname;
-const OUT = new URL("../.e2e/dist/", import.meta.url).pathname;
+const OUT = process.env.E2E_DIST ?? new URL("../.e2e/dist/", import.meta.url).pathname;
 const BRIDGE = new URL("./bridge.js", import.meta.url).pathname;
 process.chdir(FE);
 const require = createRequire(`${FE}package.json`);

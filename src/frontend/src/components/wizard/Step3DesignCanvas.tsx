@@ -13,6 +13,7 @@ import { StudioRail } from "@/components/canvas/StudioRail";
 import { TemplatesPanel } from "@/components/canvas/TemplatesPanel";
 import { TextPanel } from "@/components/canvas/TextPanel";
 import { UploadsPanel } from "@/components/canvas/UploadsPanel";
+import { FadingScroll } from "@/components/canvas/popoverBounds";
 import { StampyStep3Studio, StampyTip } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
@@ -115,10 +116,10 @@ export function Step3DesignCanvas() {
     <div className="space-y-4" data-ocid="canvas.step3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight">
+          <h2 className="display-heading text-2xl sm:text-3xl">
             Design your mail piece
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {selectedProduct?.productType ?? "Postcard"} ·{" "}
             {layoutLabel(layoutVariant)} · {dims.widthInches}″ ×{" "}
             {dims.heightInches}″ · exported at 300 DPI for print
@@ -127,7 +128,7 @@ export function Step3DesignCanvas() {
         <div className="flex flex-wrap gap-2 text-xs">
           {resolutionWarning ? (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-primary-ink"
+              className="status-pill status-pill-amber whitespace-normal py-1"
               data-ocid="canvas.warning.resolution"
             >
               <AlertTriangle className="size-3.5" /> {resolutionWarning}
@@ -135,7 +136,7 @@ export function Step3DesignCanvas() {
           ) : null}
           {outsideSafe.length > 0 ? (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-destructive"
+              className="status-pill status-pill-red whitespace-normal py-1"
               data-ocid="canvas.warning.boundary"
             >
               <AlertTriangle className="size-3.5" /> {outsideSafe.length}{" "}
@@ -144,7 +145,7 @@ export function Step3DesignCanvas() {
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-emerald-brand/40 bg-emerald-brand/10 px-2.5 py-1 text-emerald-brand"
+              className="status-pill status-pill-emerald whitespace-normal py-1"
               data-ocid="canvas.ok.boundary"
             >
               <CheckCircle2 className="size-3.5" /> All elements inside the ¼″
@@ -181,21 +182,32 @@ export function Step3DesignCanvas() {
             }}
           />
           {drawerOpen ? (
+            // The frame keeps the rounded card; the scroller inside it fades
+            // its bottom edge while more of the panel is below (as the colour
+            // and font popovers do), so a tall panel cut by the frame from
+            // lg up reads as "more below" rather than as clipped tiles.
             <div
-              className="relative min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-soft lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
+              className="relative min-w-0 flex-1 rounded-3xl border border-hairline-strong bg-card-raised shadow-surface lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col"
               data-ocid={`canvas.drawer.${tool}`}
             >
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                className="absolute right-2 top-2 hidden size-7 items-center justify-center rounded-lg text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground lg:flex"
-                title="Collapse panel"
-                aria-label="Collapse panel"
-                data-ocid="canvas.panel.collapse"
-              >
-                <PanelLeftClose className="size-4" />
-              </button>
-              {panel}
+              <FadingScroll className="relative rounded-[calc(1.5rem-1px)] p-4 overscroll-auto max-lg:overflow-visible lg:min-h-0 lg:flex-1">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  className="absolute right-2.5 top-2.5 hidden size-8 items-center justify-center rounded-full text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 lg:flex"
+                  title="Collapse panel"
+                  aria-label="Collapse panel"
+                  data-ocid="canvas.panel.collapse"
+                >
+                  <PanelLeftClose className="size-4" />
+                </button>
+                {/* The drawer is the raised step on the wizard card, so its tiles
+                  (bg-card-raised) step up once more: white in light, a lighter
+                  graphite in dark. */}
+                <div className="[--card-raised:var(--card)] dark:[--card-raised:var(--muted)]">
+                  {panel}
+                </div>
+              </FadingScroll>
             </div>
           ) : null}
         </div>
@@ -209,8 +221,10 @@ export function Step3DesignCanvas() {
           <CanvasToolbar />
           <OrientationNotice />
           <CanvasEditor maxHeight={540} />
+          {/* A size container: the inspector's number rows choose their
+              columns by its width, not the screen's. */}
           <div
-            className="rounded-2xl border bg-card p-4 shadow-xs"
+            className="@container rounded-3xl border border-hairline-strong bg-card-raised p-4 shadow-surface"
             data-ocid="canvas.inspector"
           >
             <ElementInspector key={selectedElementId ?? "none"} />

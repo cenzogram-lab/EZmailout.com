@@ -15,6 +15,13 @@ import { LayoutTemplate, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+/** Theme-following frame around a template thumbnail (the art inside is print data). */
+const THUMB_FRAME =
+  "overflow-hidden rounded-xl border border-hairline-strong shadow-surface transition-smooth group-hover:border-primary/60 group-hover:shadow-raised";
+const THUMB_ACTIVE = "border-primary ring-2 ring-ring/50";
+const THUMB_NAME =
+  "mt-1.5 line-clamp-2 text-[11px] font-semibold leading-tight text-foreground";
+
 /** Templates & layouts tool: every gallery design, laid out for this format. */
 export function TemplatesPanel() {
   const selectedLayout = useWizardStore((s) => s.selectedLayout);
@@ -99,7 +106,9 @@ export function TemplatesPanel() {
   return (
     <div className="space-y-4" data-ocid="canvas.panel.templates">
       <div>
-        <p className="font-display text-sm font-semibold">Templates</p>
+        <p className="font-display text-base font-black tracking-tight">
+          Templates
+        </p>
         <p className="text-xs text-muted-foreground">
           Designs made for this size, then every design laid out for it.
           Applying one replaces both sides.
@@ -119,7 +128,7 @@ export function TemplatesPanel() {
       </div>
       {madeForThis.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Made for this size
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -130,35 +139,34 @@ export function TemplatesPanel() {
                   key={e.id}
                   type="button"
                   onClick={() => applyMail(e.id, e.name)}
-                  className="group min-w-0 text-left"
+                  className="group min-w-0 rounded-xl text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 focus-visible:ring-offset-2 focus-visible:ring-offset-card-raised"
                   aria-label={`Apply ${e.name}`}
                   data-ocid={`canvas.mail_template.${e.id}`}
                 >
                   {lib && (
-                    <LazyMailSide
-                      lib={lib}
-                      entry={e}
-                      side="front"
-                      className={cn(
-                        "overflow-hidden rounded-lg border border-border/70 shadow-soft transition-smooth group-hover:border-primary/60",
-                        active && "border-primary ring-2 ring-primary/30",
-                      )}
-                    />
+                    // The thumbnail is the design itself (print colours);
+                    // only its frame follows the theme.
+                    <div data-template-preview="">
+                      <LazyMailSide
+                        lib={lib}
+                        entry={e}
+                        side="front"
+                        className={cn(THUMB_FRAME, active && THUMB_ACTIVE)}
+                      />
+                    </div>
                   )}
-                  <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-tight text-foreground">
-                    {e.name}
-                  </p>
+                  <p className={THUMB_NAME}>{e.name}</p>
                 </button>
               );
             })}
           </div>
-          <p className="pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Every design, laid out for this size
           </p>
         </div>
       )}
       {templates.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-hairline-strong bg-well/60 py-6 text-center text-xs text-muted-foreground">
           <LayoutTemplate className="size-5" />
           No template matches — try another word.
         </div>
@@ -184,31 +192,28 @@ export function TemplatesPanel() {
                   setDesignTemplate(t);
                   toast.success(`Applied “${t.name}”`);
                 }}
-                className={cn("group min-w-0 text-left")}
+                className="group min-w-0 rounded-xl text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 focus-visible:ring-offset-2 focus-visible:ring-offset-card-raised"
                 aria-label={`Apply ${t.name}`}
                 data-ocid={`canvas.template.${t.id}`}
               >
-                <LazyTemplateSide
-                  template={t}
-                  layoutVariant={layoutVariant}
-                  orientation={orientation}
-                  side="front"
-                  aspect={aspect}
-                  className={cn(
-                    "overflow-hidden rounded-lg border border-border/70 shadow-soft transition-smooth group-hover:border-primary/60",
-                    active && "border-primary ring-2 ring-primary/30",
-                  )}
-                />
-                <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-tight text-foreground">
-                  {t.name}
-                </p>
+                <div data-template-preview="">
+                  <LazyTemplateSide
+                    template={t}
+                    layoutVariant={layoutVariant}
+                    orientation={orientation}
+                    side="front"
+                    aspect={aspect}
+                    className={cn(THUMB_FRAME, active && THUMB_ACTIVE)}
+                  />
+                </div>
+                <p className={THUMB_NAME}>{t.name}</p>
               </button>
             );
           })}
         </div>
       )}
-      <div className="space-y-2 border-t pt-3">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+      <div className="space-y-2 border-t border-hairline pt-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Layouts
         </p>
         {LAYOUT_PRESETS.map((preset) => (
@@ -216,11 +221,13 @@ export function TemplatesPanel() {
             key={preset.id}
             type="button"
             variant="outline"
-            className="h-auto w-full items-start justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-left"
+            className="h-auto w-full items-start justify-start gap-2.5 whitespace-normal rounded-2xl px-3 py-2.5 text-left"
             onClick={() => applyLayout(preset.id)}
             data-ocid={`canvas.layout.${preset.id}`}
           >
-            <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="size-3.5" />
+            </span>
             <span>
               <span className="block text-sm font-medium">{preset.name}</span>
               <span className="block text-[11px] font-normal text-muted-foreground">

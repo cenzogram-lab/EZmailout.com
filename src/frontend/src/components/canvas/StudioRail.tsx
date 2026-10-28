@@ -49,15 +49,19 @@ export function StudioRail({
         type="button"
         onClick={() => onSelect(tool.id)}
         aria-pressed={isActive}
+        // `segmented-item` raises the active tool into a pill (aria-pressed);
+        // the overrides turn the capsule into a stacked icon tile.
         className={cn(
-          "flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-smooth sm:min-w-[64px] sm:flex-1 sm:px-2 lg:flex-none",
-          isActive
-            ? "bg-card text-primary shadow-sm"
-            : "text-muted-foreground hover:bg-card/70 hover:text-foreground",
+          "segmented-item min-h-0 min-w-0 flex-col gap-1 whitespace-normal rounded-2xl px-1 py-2 text-[11px] leading-tight focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:min-w-[64px] sm:flex-1 sm:px-2 lg:flex-none lg:px-0.5",
+          !isActive && "hover:bg-card/70",
         )}
         data-ocid={`canvas.rail.${tool.id}`}
       >
-        <Icon className="size-5" strokeWidth={1.75} />
+        <Icon
+          className={cn("size-5", isActive && "text-primary")}
+          strokeWidth={isActive ? 2 : 1.75}
+          aria-hidden
+        />
         {tool.label}
       </button>
     );
@@ -65,11 +69,11 @@ export function StudioRail({
   return (
     <nav
       aria-label="Studio tools"
-      className="grid shrink-0 grid-cols-4 gap-1 rounded-2xl border border-border/60 bg-muted/60 p-1.5 sm:flex lg:w-[76px] lg:flex-col lg:py-3"
+      className="grid shrink-0 grid-cols-4 gap-1 rounded-3xl border border-[color:var(--segmented-border)] bg-well p-1.5 shadow-[var(--segmented-inset)] sm:flex lg:w-[76px] lg:flex-col lg:py-2"
       data-ocid="canvas.rail"
     >
       {STUDIO_TOOLS.map(item)}
-      <div className="my-1 hidden border-t border-border/60 lg:block" />
+      <div className="mx-2 my-1 hidden border-t border-hairline-strong lg:block" />
       {item({ id: "layers", label: "Layers", icon: Layers })}
     </nav>
   );

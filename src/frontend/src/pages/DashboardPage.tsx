@@ -22,7 +22,7 @@ import {
   Plus,
   Rocket,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 const RECENT_LIMIT = 5;
 
@@ -89,7 +89,8 @@ function RecentCampaigns() {
           action={
             <Button
               asChild
-              className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              size="lg"
+              className="gap-2 px-5"
               data-ocid="dashboard.recent_campaigns.new.link"
             >
               <Link to="/wizard">
@@ -113,7 +114,10 @@ function RecentCampaigns() {
           icon={Mailbox}
           label={campaign.name}
           description={`${layoutLabel(campaign.product.layoutVariant)} · ${formatNumber(campaign.recipientCount)} recipients · ${formatTimestamp(campaign.createdAt, false)}`}
-          value={<StatusBadge status={campaign.status} />}
+          // No stage icon: the row's mail tile already carries one, and the
+          // narrower pill leaves the campaign name its room (on a phone it
+          // drops under the name and description instead).
+          value={<StatusBadge status={campaign.status} showIcon={false} />}
           data-ocid={`dashboard.recent_campaigns.item.${idx + 1}.link`}
         />
       ))}
@@ -155,9 +159,65 @@ function QuickLinks() {
   );
 }
 
+/**
+ * The sticky left column (from `lg`). While it fits the window it rests just
+ * under the floating header. When it is taller (a laptop screen, or the
+ * membership checkout opened inside it) it scrolls along with the page in
+ * either direction until one of its ends is in view and only then holds:
+ * scrolling down reveals its bottom, scrolling up its top, so every card
+ * and button in it stays reachable, and content that grows inside it (the
+ * checkout) opens downward from where it is. `top` is written to the element
+ * directly, so scrolling never re-renders the page.
+ */
+function useStickyColumn(el: HTMLElement | null) {
+  useLayoutEffect(() => {
+    if (!el) return;
+    const wide = window.matchMedia("(min-width: 1024px)");
+    let min = 0;
+    let max = 0;
+    let top: number | null = null;
+    let lastY = window.scrollY;
+    const apply = (delta: number) => {
+      const next = Math.round(
+        Math.min(max, Math.max(min, (top ?? max) - delta)),
+      );
+      if (next !== top) {
+        top = next;
+        el.style.top = `${next}px`;
+      }
+    };
+    const measure = () => {
+      const header = document.querySelector("header");
+      max = (header?.getBoundingClientRect().bottom ?? 96) + 24;
+      min = Math.min(max, window.innerHeight - el.offsetHeight - 24);
+      apply(0);
+    };
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      if (wide.matches) apply(delta);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", onScroll);
+      el.style.top = "";
+    };
+  }, [el]);
+}
+
 export function DashboardPage() {
   const { isAuthenticated, isInitializing } = useAccountSync();
   const hash = useRouterState({ select: (s) => s.location.hash });
+  // A callback ref: the column mounts only once the session is known.
+  const [leftColumn, setLeftColumn] = useState<HTMLDivElement | null>(null);
+  useStickyColumn(leftColumn);
 
   // `/dashboard#referrals` (Stampy's Referral Rewards chip): the sections only
   // exist once signed in, so scroll after they render.
@@ -171,14 +231,17 @@ export function DashboardPage() {
 
   return (
     <div
-      className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
+      className="relative isolate mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
       data-ocid="dashboard.page"
     >
+      {/* Brand backlight behind the title and the rewards hero. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,var(--glow-brand),transparent_75%)]"
+      />
       <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm font-medium text-muted-foreground">
+        <h1 className="display-heading text-3xl sm:text-4xl">Dashboard</h1>
+        <p className="mt-1.5 text-sm font-medium text-muted-foreground">
           Membership, AI credits, referrals and your latest campaigns.
         </p>
       </div>
@@ -192,14 +255,21 @@ export function DashboardPage() {
       ) : (
         <div className="space-y-6">
           <RewardsBanner />
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="min-w-0 space-y-6 lg:col-span-1">
+          {/* Two columns from `lg`: you and your campaigns on the left (it
+              stays in view while the wider money column scrolls past),
+              credits, payments and referrals on the right. Phones read the
+              cards in the same order, one under another. */}
+          <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+            <div
+              ref={setLeftColumn}
+              className="min-w-0 space-y-6 lg:sticky lg:col-span-1"
+            >
               <AccountCard />
               <SubscriptionWidget />
-            </div>
-            <div className="min-w-0 space-y-6 lg:col-span-2">
               <QuickLinks />
               <RecentCampaigns />
+            </div>
+            <div className="min-w-0 space-y-6 lg:col-span-2">
               <CreditsWidget />
               <PaymentHistory />
               <div id="referrals" className="scroll-mt-24">

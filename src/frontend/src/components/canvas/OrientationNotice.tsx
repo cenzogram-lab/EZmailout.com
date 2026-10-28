@@ -53,21 +53,25 @@ export function OrientationNotice() {
 
   return (
     <output
-      className="flex flex-col gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-amber-900 sm:flex-row sm:items-start"
+      className="flex flex-col gap-2.5 rounded-3xl border border-[color:var(--status-amber-border)] bg-[var(--status-amber-bg)] p-4 text-foreground sm:flex-row sm:items-start"
       data-ocid={`canvas.orientation.notice.${kind}`}
     >
-      <AlertTriangle
-        className="mt-0.5 size-4 shrink-0 text-amber-600"
+      <span
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-brand text-white shadow-[inset_0_1px_1px_rgb(255_255_255/0.3)]"
         aria-hidden
-      />
+      >
+        <AlertTriangle className="size-4" />
+      </span>
       <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="text-sm font-semibold">{copy[kind].title}</p>
-        <p className="text-xs leading-relaxed text-amber-900/80">
+        <p className="text-sm font-bold tracking-tight text-amber-brand">
+          {copy[kind].title}
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
           {copy[kind].body}
         </p>
         {rebuiltTemplate ? (
           <p
-            className="text-xs leading-relaxed text-amber-900/80"
+            className="text-xs leading-relaxed text-muted-foreground"
             data-ocid="canvas.orientation.template_rebuilt"
           >
             {`The “${rebuiltTemplate}” template is laid out natively for ${turned}. Until you edit it, turning the artboard lays it out again rather than shrinking it.`}
@@ -77,7 +81,7 @@ export function OrientationNotice() {
       <button
         type="button"
         onClick={rotateCanvas}
-        className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-900 transition-smooth hover:bg-amber-100"
+        className="btn-3d-neutral inline-flex min-h-9 shrink-0 items-center gap-1.5 self-start rounded-full px-3.5 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
         data-ocid="canvas.orientation.rotate_back"
       >
         <RotateCcw className="size-3.5" aria-hidden /> Rotate back

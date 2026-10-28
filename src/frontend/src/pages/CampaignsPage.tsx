@@ -4,6 +4,12 @@ import {
   ProductionStatus,
 } from "@/backend";
 import { DraftExpiry } from "@/components/campaigns/DraftExpiry";
+import {
+  GlossyTile,
+  StatTile,
+  raisedClass,
+  titleGlowClass,
+} from "@/components/campaigns/PanelParts";
 import { SavePresetDialog } from "@/components/campaigns/SavePresetDialog";
 import {
   PaymentStatusBadge,
@@ -41,6 +47,7 @@ import {
 } from "@/lib/format";
 import { MAX_CAMPAIGN_NAME_CHARS } from "@/lib/inputLimits";
 import { wireMailClassToCatalog } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -51,8 +58,11 @@ import {
   Eye,
   LayoutDashboard,
   Loader2,
+  Mailbox,
   Repeat,
   Rocket,
+  Send,
+  Truck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -90,12 +100,12 @@ function RowActions({
   onRerun,
 }: RowActionsProps) {
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1.5 xl:gap-1">
       <Button
         asChild
         variant="outline"
         size="sm"
-        className="gap-1.5"
+        className="mr-auto h-11 gap-1.5 px-4 xl:mr-1 xl:h-8 xl:px-3"
         data-ocid={`campaigns.item.${index}.view.link`}
       >
         <Link to="/campaigns/$campaignId" params={{ campaignId: campaign.id }}>
@@ -107,9 +117,9 @@ function RowActions({
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="size-8"
+            className="size-11 rounded-full text-muted-foreground xl:size-8"
             onClick={() => onExport(campaign)}
             disabled={exporting}
             aria-label="Export CSV"
@@ -128,9 +138,9 @@ function RowActions({
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="size-8"
+            className="size-11 rounded-full text-muted-foreground xl:size-8"
             onClick={() => onSavePreset(campaign)}
             aria-label="Save audience as preset"
             data-ocid={`campaigns.item.${index}.save_preset.button`}
@@ -144,9 +154,9 @@ function RowActions({
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="size-8"
+            className="size-11 rounded-full text-muted-foreground xl:size-8"
             onClick={() => onRerun(campaign)}
             disabled={rerunning}
             aria-label="Re-run audience"
@@ -311,63 +321,66 @@ export function CampaignsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <LayoutDashboard className="size-5" />
+      <div className="relative isolate mb-8">
+        {/* The brand backlight behind the page title. */}
+        <div aria-hidden="true" className={titleGlowClass} />
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <GlossyTile icon={LayoutDashboard} size="lg" />
+            <div className="min-w-0">
+              <h1 className="display-heading text-3xl sm:text-4xl">
+                Campaign Portal
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                Track production, delivery and results for every mailing.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Campaign Portal
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Track production, delivery and results for every mailing.
-            </p>
-          </div>
+          <Button
+            asChild
+            size="lg"
+            className="gap-2"
+            data-ocid="campaigns.new_campaign.button"
+          >
+            <Link to="/wizard">
+              <Rocket className="size-4" />
+              New Campaign
+            </Link>
+          </Button>
         </div>
-        <Button
-          asChild
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          data-ocid="campaigns.new_campaign.button"
-        >
-          <Link to="/wizard">
-            <Rocket className="size-4" />
-            New Campaign
-          </Link>
-        </Button>
       </div>
 
       {!isLoading && list.length > 0 ? (
         <div
-          className="mb-6 grid gap-3 sm:grid-cols-3"
+          className="mb-6 grid gap-3 sm:grid-cols-3 sm:gap-4"
           data-ocid="campaigns.summary.panel"
         >
-          <Card className="gap-1 py-4">
-            <CardContent className="px-5">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Campaigns
-              </p>
-              <p className="font-display text-2xl font-bold text-foreground">
-                {formatNumber(list.length)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="gap-1 py-4">
-            <CardContent className="px-5">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Pieces mailed
-              </p>
-              <p className="font-display text-2xl font-bold text-foreground">
-                {formatNumber(totalPieces)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="gap-1 py-4">
-            <CardContent className="px-5">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                In flight / delivered
-              </p>
-              <p className="font-display text-2xl font-bold text-foreground">
+          <StatTile
+            label="Campaigns"
+            icon={Mailbox}
+            value={formatNumber(list.length)}
+          />
+          <StatTile
+            label="Pieces mailed"
+            icon={Send}
+            value={formatNumber(totalPieces)}
+            title={formatNumber(totalPieces)}
+            valueClassName={
+              // A million pieces and up steps down so it still fits a
+              // narrow tablet tile.
+              formatNumber(totalPieces).length > 7
+                ? "sm:text-[length:clamp(1.75rem,15cqw,3rem)]"
+                : undefined
+            }
+          />
+          <StatTile
+            label="In flight / delivered"
+            icon={Truck}
+            // Wraps at the " / " rather than cutting a count off; on phones
+            // (label and number in one row) the label wraps first.
+            valueClassName="whitespace-normal max-sm:max-w-[60%] max-sm:shrink-0 max-sm:text-right"
+            value={
+              <>
                 <span className="text-primary">
                   {formatNumber(inFlightCount)}
                 </span>
@@ -375,9 +388,9 @@ export function CampaignsPage() {
                 <span className="text-emerald-brand">
                   {formatNumber(deliveredCount)}
                 </span>
-              </p>
-            </CardContent>
-          </Card>
+              </>
+            }
+          />
         </div>
       ) : null}
 
@@ -393,10 +406,10 @@ export function CampaignsPage() {
         // Unreachable is not empty: "No mailouts yet" here read as if the
         // customer's campaigns were gone.
         <div
-          className="rounded-3xl border border-border/60 bg-card px-4 py-10 text-center shadow-soft"
+          className="surface-card px-4 py-10 text-center"
           data-ocid="campaigns.error.state"
         >
-          <p className="font-display text-lg font-semibold text-foreground">
+          <p className="font-display text-xl font-black tracking-tight text-foreground">
             We couldn't load your campaigns
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -405,7 +418,7 @@ export function CampaignsPage() {
           </p>
           <Button
             variant="outline"
-            className="mt-4 gap-2 rounded-full"
+            className="mt-5 h-11 gap-2 px-5"
             onClick={() => void refetch()}
             disabled={isRefetching}
             data-ocid="campaigns.error.retry.button"
@@ -415,7 +428,8 @@ export function CampaignsPage() {
           </Button>
         </div>
       ) : list.length === 0 ? (
-        <div className="rounded-3xl border border-border/60 bg-card px-4 py-6 shadow-soft">
+        <div className="surface-card relative isolate overflow-hidden px-4 py-6">
+          <div aria-hidden="true" className="ambient-glow-backdrop" />
           <MascotEmptyState
             pose="mail"
             title="No mailouts yet"
@@ -424,7 +438,8 @@ export function CampaignsPage() {
             action={
               <Button
                 asChild
-                className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                size="lg"
+                className="gap-2"
                 data-ocid="campaigns.empty.cta.button"
               >
                 <Link to="/wizard">
@@ -437,67 +452,70 @@ export function CampaignsPage() {
         </div>
       ) : (
         <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-xl border bg-card shadow-sm md:block">
+          {/* Desktop table (from xl: below it the columns would scroll) */}
+          <div className="surface-card hidden overflow-hidden xl:block">
             <Table data-ocid="campaigns.table">
-              <TableHeader>
+              <TableHeader className="bg-card-raised">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Audience</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Production</TableHead>
-                  <TableHead>Delivery</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="h-11 pl-5">Campaign</TableHead>
+                  <TableHead className="h-11">Product</TableHead>
+                  <TableHead className="h-11 pr-8 text-right">
+                    Audience
+                  </TableHead>
+                  <TableHead className="h-11">Payment</TableHead>
+                  <TableHead className="h-11">Production</TableHead>
+                  <TableHead className="h-11">Delivery</TableHead>
+                  <TableHead className="h-11">Created</TableHead>
+                  <TableHead className="h-11 pr-5 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.map((campaign, idx) => (
                   <TableRow
                     key={campaign.id}
+                    className="hover:bg-muted/40"
                     data-ocid={`campaigns.item.${idx + 1}.row`}
                   >
-                    <TableCell className="max-w-[240px]">
+                    <TableCell className="max-w-[240px] py-3.5 pl-5">
                       <Link
                         to="/campaigns/$campaignId"
                         params={{ campaignId: campaign.id }}
-                        className="block truncate font-medium text-foreground hover:text-primary hover:underline"
+                        className="block truncate rounded-sm font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
                         data-ocid={`campaigns.item.${idx + 1}.name.link`}
                       >
                         {campaign.name || "Untitled campaign"}
                       </Link>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {campaign.id}
-                      </span>
+                      <span className="meta-mono">{campaign.id}</span>
                     </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-foreground">
+                    <TableCell className="py-3.5">
+                      <p className="text-sm font-medium text-foreground">
                         {productLabel(campaign)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {productSubLabel(campaign)}
                       </p>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="py-3.5 pr-8 text-right font-display text-lg font-black tracking-tight tabular-nums text-foreground">
                       {formatNumber(campaign.recipientCount)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       <PaymentStatusBadge status={campaign.paymentStatus} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       <ProductionStatusBadge
                         status={campaign.productionStatus}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5">
                       <StatusBadge status={campaign.status} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3.5 text-sm tabular-nums text-muted-foreground">
                       {formatTimestamp(campaign.createdAt, false)}
                       <DraftExpiry expiresAt={campaign.draftExpiresAt} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3.5 pr-5">
                       <RowActions
                         campaign={campaign}
                         index={idx + 1}
@@ -514,54 +532,73 @@ export function CampaignsPage() {
             </Table>
           </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-3 md:hidden" data-ocid="campaigns.card.list">
+          {/* Phone, tablet and small-laptop cards (two columns from md) */}
+          <div
+            className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:hidden"
+            data-ocid="campaigns.card.list"
+          >
             {list.map((campaign, idx) => (
               <Card
                 key={campaign.id}
                 className="gap-4 py-4"
                 data-ocid={`campaigns.item.${idx + 1}.card`}
               >
-                <CardContent className="space-y-3 px-4">
+                <CardContent className="space-y-4 px-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    {/* The name wraps (up to two lines) beside the badge,
+                        so a phone never cuts a short name. */}
+                    <div className="min-w-0 flex-1">
                       <Link
                         to="/campaigns/$campaignId"
                         params={{ campaignId: campaign.id }}
-                        className="block truncate font-display font-semibold text-foreground"
+                        className="line-clamp-2 break-words rounded-sm font-display text-lg font-black leading-tight tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
                         data-ocid={`campaigns.item.${idx + 1}.mobile_name.link`}
                       >
                         {campaign.name || "Untitled campaign"}
                       </Link>
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="meta-mono mt-1 block">
                         {campaign.id}
                       </span>
                     </div>
-                    <StatusBadge status={campaign.status} />
+                    <StatusBadge status={campaign.status} className="mt-0.5" />
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
-                      <dt className="text-xs text-muted-foreground">Product</dt>
-                      <dd className="text-foreground">
+                  <dl
+                    className={cn(
+                      raisedClass,
+                      "grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-sm",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold text-muted-foreground">
+                        Product
+                      </dt>
+                      <dd className="font-medium text-foreground">
                         {productLabel(campaign)}
+                        {/* From md the card stands in for the table, which
+                            also showed the type and colour option. */}
+                        <span className="hidden text-xs font-normal text-muted-foreground md:block">
+                          {productSubLabel(campaign)}
+                        </span>
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold text-muted-foreground">
                         Audience
                       </dt>
-                      <dd className="font-mono text-foreground">
+                      <dd className="font-display text-xl font-black leading-tight tracking-tight tabular-nums text-foreground">
                         {formatNumber(campaign.recipientCount)}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">Payment</dt>
+                    <div className="min-w-0">
+                      <dt className="mb-1 text-xs font-semibold text-muted-foreground">
+                        Payment
+                      </dt>
                       <dd>
                         <PaymentStatusBadge status={campaign.paymentStatus} />
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <dt className="mb-1 text-xs font-semibold text-muted-foreground">
                         Production
                       </dt>
                       <dd>
@@ -571,8 +608,10 @@ export function CampaignsPage() {
                       </dd>
                     </div>
                     <div className="col-span-2">
-                      <dt className="text-xs text-muted-foreground">Created</dt>
-                      <dd className="text-foreground">
+                      <dt className="text-xs font-semibold text-muted-foreground">
+                        Created
+                      </dt>
+                      <dd className="tabular-nums text-foreground">
                         {formatTimestamp(campaign.createdAt, false)}
                         <DraftExpiry expiresAt={campaign.draftExpiresAt} />
                       </dd>

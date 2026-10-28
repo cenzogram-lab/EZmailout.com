@@ -3,9 +3,11 @@ import { openStampy } from "@/lib/stampyChat";
 import { cn } from "@/lib/utils";
 
 /**
- * Stampy peeking up from behind the header's bottom edge, paws on the airmail
- * stripe. He lives inside the header bar, so he is on every page without ever
- * covering page content; the bar's bottom edge hides his chin. Tapping him
+ * Stampy peeking up from behind the header pill's bottom edge, paws on the
+ * airmail stripe. He lives inside the floating header pill (a flex item of its
+ * row), so he is on every page without ever covering page content; the pill's
+ * bottom edge hides his chin, and with <MascotGloss /> mounted he gets the
+ * glossy 3D lighting (`.stampy-peek-mark` in index.css). Tapping him
  * opens the Stampy panel. His size is fluid (`--peek-w` in index.css): it
  * follows the viewport from phones to large desktops with no breakpoint
  * jumps, and he rises a little on hover only where a pointer can hover.

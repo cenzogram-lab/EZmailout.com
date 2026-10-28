@@ -4,7 +4,13 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { identityCreateOptions } from "./lib/identityOrigin";
+import { initInputModality } from "./lib/inputModality";
+import { initTheme } from "./lib/theme";
 import { restoreWizardDraft } from "./store/wizard";
+
+// The saved light/dark choice goes on <html> before anything renders.
+initTheme();
+initInputModality();
 
 BigInt.prototype.toJSON = function () {
   return this.toString();

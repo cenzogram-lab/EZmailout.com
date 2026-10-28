@@ -270,31 +270,24 @@ export function PresetEditor({
           type="button"
           variant="ghost"
           onClick={onBack}
-          className="gap-2"
+          className="h-11 gap-2 sm:h-9"
           data-ocid="audience.preset_editor.back.button"
         >
           <ArrowLeft className="size-4" /> All presets
         </Button>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">
+          <Badge variant="neutral" className="tabular-nums">
             {formatNumber(list.length)} recipients
           </Badge>
-          {dirty && (
-            <Badge
-              variant="outline"
-              className="border-primary/40 bg-primary/10 text-primary-ink"
-            >
-              Unsaved changes
-            </Badge>
-          )}
+          {dirty && <Badge variant="warning">Unsaved changes</Badge>}
         </div>
       </div>
 
-      <Card className="bg-card">
-        <CardHeader className="pb-3">
+      <Card className="gap-4 rounded-2xl bg-card-raised py-5 shadow-none">
+        <CardHeader className="px-4 sm:px-5">
           <CardTitle className="text-base">Preset details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-4 sm:px-5">
           <div className="space-y-2">
             <Label htmlFor="preset-name">Preset name</Label>
             <Input
@@ -305,6 +298,7 @@ export function PresetEditor({
                 setDirty(true);
               }}
               maxLength={80}
+              className="h-11 sm:h-9"
               data-ocid="audience.preset_editor.name.input"
             />
           </div>
@@ -320,6 +314,7 @@ export function PresetEditor({
                 size="sm"
                 variant="outline"
                 onClick={() => void addresses.refetch()}
+                className="h-11 sm:h-8"
               >
                 Try again
               </Button>
@@ -339,11 +334,11 @@ export function PresetEditor({
         </CardContent>
       </Card>
 
-      <Card className="bg-card">
-        <CardHeader className="pb-3">
+      <Card className="gap-4 rounded-2xl bg-card-raised py-5 shadow-none">
+        <CardHeader className="px-4 sm:px-5">
           <CardTitle className="text-base">Add a recipient</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 px-4 sm:px-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="new-name">Name</Label>
@@ -353,6 +348,7 @@ export function PresetEditor({
                 onChange={(e) => setField("name", e.target.value)}
                 placeholder="Jane Rivera"
                 maxLength={MAX_ADDRESS_FIELD_CHARS}
+                className="h-11 sm:h-9"
                 data-ocid="audience.preset_editor.add.name.input"
               />
             </div>
@@ -364,6 +360,7 @@ export function PresetEditor({
                 onChange={(e) => setField("address_line1", e.target.value)}
                 placeholder="120 Harbor View Dr"
                 maxLength={MAX_ADDRESS_FIELD_CHARS}
+                className="h-11 sm:h-9"
                 data-ocid="audience.preset_editor.add.line1.input"
               />
             </div>
@@ -375,6 +372,7 @@ export function PresetEditor({
                 onChange={(e) => setField("address_line2", e.target.value)}
                 placeholder="Apt 4B (optional)"
                 maxLength={MAX_ADDRESS_FIELD_CHARS}
+                className="h-11 sm:h-9"
                 data-ocid="audience.preset_editor.add.line2.input"
               />
             </div>
@@ -386,6 +384,7 @@ export function PresetEditor({
                 onChange={(e) => setField("city", e.target.value)}
                 placeholder="Austin"
                 maxLength={MAX_ADDRESS_FIELD_CHARS}
+                className="h-11 sm:h-9"
                 data-ocid="audience.preset_editor.add.city.input"
               />
             </div>
@@ -397,7 +396,7 @@ export function PresetEditor({
                 onChange={(e) => setField("state", e.target.value)}
                 placeholder="TX"
                 maxLength={2}
-                className="uppercase"
+                className="h-11 uppercase sm:h-9"
                 data-ocid="audience.preset_editor.add.state.input"
               />
             </div>
@@ -410,6 +409,7 @@ export function PresetEditor({
                 placeholder="78701"
                 inputMode="numeric"
                 maxLength={10}
+                className="h-11 sm:h-9"
                 data-ocid="audience.preset_editor.add.zip.input"
               />
             </div>
@@ -425,7 +425,7 @@ export function PresetEditor({
             variant="outline"
             onClick={() => void handleAdd()}
             disabled={verify.isPending || !listLoaded}
-            className="gap-2"
+            className="h-11 w-full gap-2 sm:h-9 sm:w-auto"
             data-ocid="audience.preset_editor.add.button"
           >
             {verify.isPending ? (
@@ -440,14 +440,18 @@ export function PresetEditor({
 
       <Separator />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+      {/* Phones: one full-width stack (the pills wrapped into a ragged,
+          left-aligned row of three widths), the primary action last. From
+          sm the three sit in a row with Re-run under them on the right, and
+          from lg all four share one row. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             variant="outline"
             onClick={() => void handleUpdate()}
             disabled={busy || !listLoaded || list.length === 0}
-            className="gap-2"
+            className="h-11 w-full gap-2 sm:h-9 sm:w-auto"
             data-ocid="audience.preset_editor.update.button"
           >
             {updatePreset.isPending ? (
@@ -465,7 +469,7 @@ export function PresetEditor({
               setSaveAsOpen(true);
             }}
             disabled={busy || !listLoaded || list.length === 0}
-            className="gap-2"
+            className="h-11 w-full gap-2 sm:h-9 sm:w-auto"
             data-ocid="audience.preset_editor.save_as.button"
           >
             <BookmarkPlus className="size-4" /> Save as new preset
@@ -475,7 +479,7 @@ export function PresetEditor({
             variant="ghost"
             onClick={() => setConfirmDelete(true)}
             disabled={busy}
-            className="gap-2 text-destructive hover:text-destructive"
+            className="h-11 w-full gap-2 text-destructive hover:text-destructive sm:h-9 sm:w-auto"
             data-ocid="audience.preset_editor.delete.button"
           >
             <Trash2 className="size-4" /> Delete preset
@@ -485,7 +489,7 @@ export function PresetEditor({
           type="button"
           onClick={() => onRerun(list, preset.id)}
           disabled={busy || !listLoaded || list.length === 0}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="h-11 w-full gap-2 sm:h-9 sm:w-auto sm:self-end lg:self-auto"
           data-ocid="audience.preset_editor.rerun.button"
         >
           Re-run this audience <ArrowRight className="size-4" />
@@ -510,6 +514,7 @@ export function PresetEditor({
               value={saveAsName}
               onChange={(e) => setSaveAsName(e.target.value)}
               maxLength={80}
+              className="h-11 sm:h-9"
               data-ocid="audience.preset_editor.save_as.name.input"
             />
           </div>
@@ -518,6 +523,7 @@ export function PresetEditor({
               type="button"
               variant="outline"
               onClick={() => setSaveAsOpen(false)}
+              className="h-11 sm:h-9"
               data-ocid="audience.preset_editor.save_as.cancel.button"
             >
               Cancel
@@ -526,7 +532,7 @@ export function PresetEditor({
               type="button"
               onClick={() => void handleSaveAs()}
               disabled={savePreset.isPending}
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-11 gap-2 sm:h-9"
               data-ocid="audience.preset_editor.save_as.confirm.button"
             >
               {savePreset.isPending ? (
@@ -557,6 +563,7 @@ export function PresetEditor({
               type="button"
               variant="outline"
               onClick={() => setConfirmDelete(false)}
+              className="h-11 sm:h-9"
               data-ocid="audience.preset_editor.delete.cancel.button"
             >
               Keep it
@@ -566,7 +573,7 @@ export function PresetEditor({
               variant="destructive"
               onClick={() => void handleDelete()}
               disabled={deletePreset.isPending}
-              className="gap-2"
+              className="h-11 gap-2 sm:h-9"
               data-ocid="audience.preset_editor.delete.confirm.button"
             >
               {deletePreset.isPending ? (

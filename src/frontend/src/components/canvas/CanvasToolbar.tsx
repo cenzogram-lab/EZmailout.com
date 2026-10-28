@@ -25,11 +25,12 @@ export function CanvasToolbar() {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-card px-2 py-1.5 shadow-xs"
+      // Raised a step off the wizard card it sits on.
+      className="flex flex-wrap items-center gap-2 rounded-3xl border border-hairline-strong bg-card-raised p-2 shadow-surface"
       data-ocid="canvas.toolbar"
     >
       <div
-        className="inline-flex rounded-full border border-border/60 bg-muted/60 p-0.5"
+        className="segmented gap-0.5 p-1"
         role="tablist"
         aria-label="Card side"
       >
@@ -40,12 +41,9 @@ export function CanvasToolbar() {
             role="tab"
             aria-selected={activeSide === s}
             onClick={() => setActiveSide(s)}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold capitalize transition-smooth",
-              activeSide === s
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            // The active side is the raised pill (aria-selected).
+            // 44 px touch targets on phones, the compact pill from sm.
+            className="segmented-item min-h-11 px-4 text-xs capitalize sm:min-h-8 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
             data-ocid={`canvas.side.${s}`}
           >
             {s}
@@ -61,10 +59,10 @@ export function CanvasToolbar() {
             aria-label="Rotate Canvas (Swap W ↔ H)"
             aria-pressed={dims.rotated}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-smooth disabled:opacity-50",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full sm:min-h-9 px-3.5 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 disabled:opacity-50",
               dims.rotated
-                ? "border-primary/40 bg-primary/10 text-primary-ink"
-                : "border-border/60 text-muted-foreground hover:text-foreground",
+                ? "border border-primary/40 bg-primary/10 text-primary-ink"
+                : "btn-3d-neutral",
             )}
             data-ocid="canvas.rotate"
             data-orientation={dims.rotated ? "rotated" : "native"}
@@ -77,7 +75,9 @@ export function CanvasToolbar() {
               aria-hidden
             />
             <span>{orientationName(dims)}</span>
-            <span className="font-mono font-normal tabular-nums">
+            {/* Geist with tabular figures, not mono: mono tracking floated
+                the inch marks off their digits ("9 ″ × 6 ″"). */}
+            <span className="font-normal tabular-nums">
               {dims.widthInches}″ × {dims.heightInches}″
             </span>
           </button>
@@ -86,14 +86,17 @@ export function CanvasToolbar() {
           Switch between Landscape and Portrait orientation
         </TooltipContent>
       </Tooltip>
-      <span className="text-xs text-muted-foreground">
+      {/* Credits share the first row (pushed right); the hint is the
+          full-width last line, so the card is two rows instead of leaving
+          the credits alone on a third. */}
+      <div className="ml-auto">
+        <CreditBadge compact />
+      </div>
+      <span className="basis-full px-1 text-xs text-muted-foreground">
         {selectedElementId
           ? "Use the toolbar above the selection to align, reorder, duplicate or delete."
           : "Click an element to select it · double-click text to edit · arrow keys nudge."}
       </span>
-      <div className="ml-auto">
-        <CreditBadge compact />
-      </div>
     </div>
   );
 }

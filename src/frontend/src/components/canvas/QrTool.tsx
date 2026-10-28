@@ -43,6 +43,12 @@ const EXAMPLES = [
   },
 ];
 
+/** A tracking-mode choice card; the chosen one gets the indigo tint. */
+const MODE_CARD =
+  "rounded-2xl border border-hairline-strong bg-card-raised p-3 text-left text-xs transition-smooth hover:border-primary/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80";
+const MODE_ON =
+  "border-primary/60 bg-primary/10 shadow-[inset_0_0_0_1px_oklch(var(--primary)/0.35)] hover:border-primary/60";
+
 /** Dynamic link + QR code creator: destination, tracking mode, colours, size, live vector preview. */
 export function QrTool() {
   const qrDestinationUrl = useWizardStore((s) => s.qrDestinationUrl);
@@ -123,7 +129,7 @@ export function QrTool() {
   // on desktop it sits in the studio's narrow drawer, where screen breakpoints
   // gave it two columns and squeezed the mode cards to ~70 px.
   return (
-    <div className="@container" data-ocid="canvas.qr_tool">
+    <div className="@container space-y-4" data-ocid="canvas.qr_tool">
       <div className="grid gap-4 @xl:grid-cols-[minmax(0,1fr)_170px]">
         <div className="space-y-3">
           <div className="space-y-1">
@@ -156,7 +162,7 @@ export function QrTool() {
                   key={ex.label}
                   type="button"
                   onClick={() => setQrDestinationUrl(ex.value)}
-                  className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-foreground"
+                  className="inline-flex min-h-7 items-center gap-1 rounded-full border border-hairline-strong bg-card-raised px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80"
                   data-ocid={`canvas.qr.example.${ex.label.toLowerCase().replace(/\s+/g, "_")}`}
                 >
                   <ex.icon className="size-3" /> {ex.label}
@@ -168,11 +174,10 @@ export function QrTool() {
             <button
               type="button"
               onClick={() => setMode(QrMode.DynamicTracking)}
+              aria-pressed={mode === QrMode.DynamicTracking}
               className={cn(
-                "rounded-lg border p-3 text-left text-xs transition-smooth",
-                mode === QrMode.DynamicTracking
-                  ? "border-primary bg-primary/10"
-                  : "hover:border-primary/50",
+                MODE_CARD,
+                mode === QrMode.DynamicTracking && MODE_ON,
               )}
               data-ocid="canvas.qr.mode.dynamic"
             >
@@ -189,12 +194,8 @@ export function QrTool() {
             <button
               type="button"
               onClick={() => setMode(QrMode.StaticUrl)}
-              className={cn(
-                "rounded-lg border p-3 text-left text-xs transition-smooth",
-                mode === QrMode.StaticUrl
-                  ? "border-primary bg-primary/10"
-                  : "hover:border-primary/50",
-              )}
+              aria-pressed={mode === QrMode.StaticUrl}
+              className={cn(MODE_CARD, mode === QrMode.StaticUrl && MODE_ON)}
               data-ocid="canvas.qr.mode.static"
             >
               <span className="font-semibold text-foreground">Static URL</span>
@@ -205,7 +206,7 @@ export function QrTool() {
           </div>
           <div className="grid grid-cols-2 items-end gap-3">
             <div className="col-span-2 space-y-1">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Size · {size}px
               </Label>
               <Slider
@@ -218,7 +219,7 @@ export function QrTool() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Ink
               </Label>
               <ColorPicker
@@ -229,7 +230,7 @@ export function QrTool() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Paper
               </Label>
               <ColorPicker
@@ -243,7 +244,7 @@ export function QrTool() {
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => add("front")}
-              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="gap-1.5"
               data-ocid="canvas.qr.add_front"
             >
               <QrCode className="size-4" /> Add to front
@@ -263,18 +264,23 @@ export function QrTool() {
           </div>
         </div>
         <div className="flex flex-col items-center gap-2">
+          {/* The code's own colours are print data; the frame follows the theme. */}
           <div
-            className="rounded-lg border bg-white p-2 shadow-sm"
+            className="rounded-2xl border border-hairline bg-card-raised p-2.5 shadow-surface"
             data-ocid="canvas.qr.preview"
           >
             {svgUrl ? (
-              <img src={svgUrl} alt="QR preview" className="size-[140px]" />
+              <img
+                src={svgUrl}
+                alt="QR preview"
+                className="size-[140px] rounded-lg"
+              />
             ) : (
-              <div className="size-[140px] animate-pulse rounded bg-muted" />
+              <div className="size-[140px] rounded-lg bg-well motion-safe:animate-pulse" />
             )}
           </div>
           <span
-            className="max-w-[170px] truncate font-mono text-[10px] text-muted-foreground"
+            className="max-w-[170px] truncate font-mono text-[10px] tracking-wider text-muted-foreground"
             title={encoded}
           >
             {encoded}

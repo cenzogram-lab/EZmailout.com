@@ -20,16 +20,17 @@ function isActive(path: string, to: string): boolean {
 }
 
 /**
- * Phone and tablet tab bar (below `lg`, where the header nav collapses): an
- * opaque sheet across the bottom edge with rounded top corners, five slots and
- * Create as a raised indigo button in the middle. The active tab gets a tinted
- * pill behind its icon and an indigo label. `--bottom-nav-h` in index.css is
- * the sheet's height including the home-indicator inset, and everything else
- * anchored to the bottom (Stampy, toasts, page padding) is offset by it; the
- * Create button rises above the sheet in the middle, clear of the Stampy
- * launcher in the right corner. While the on-screen keyboard is up it slides
- * away (and is `inert`), so it never floats over the field being typed in; the
- * slide is its height plus 3rem so the raised Create button goes too.
+ * Phone and tablet tab bar (below `lg`, where the header nav collapses): a
+ * floating glass capsule dock (95 % opaque, the header pill's glass) over the
+ * five slots, --dock-gap above the bottom edge (home-indicator inset
+ * included) and at most 28rem wide. The active tab
+ * is an enclosed pill (icon and label); Create is a raised glossy indigo
+ * button rising out of the dock's middle, clear of the Stampy launcher in the
+ * right corner. `--bottom-nav-h` in index.css is the dock's whole footprint
+ * (height + gap + inset), and everything else anchored to the bottom (Stampy,
+ * toasts, page padding) is offset by it. While the on-screen keyboard is up it
+ * slides away (and is `inert`), so it never floats over the field being typed
+ * in; the slide clears the gap and the raised Create button too.
  * Hidden on the QR redirect routes, which recipients rather than customers
  * land on.
  */
@@ -51,12 +52,15 @@ export function BottomNav() {
       aria-label="Primary"
       inert={keyboardOpen}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 rounded-t-[1.75rem] border-t border-border/60 bg-card pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_30px_-18px_rgb(15_23_42/0.35)] motion-safe:transition-transform lg:hidden",
-        keyboardOpen && "pointer-events-none translate-y-[calc(100%+3rem)]",
+        "glass-bar fixed inset-x-2 bottom-[var(--dock-gap)] z-40 mx-auto h-[var(--dock-h)] max-w-md rounded-full bg-popover/95 p-1 backdrop-blur-md backdrop-saturate-150 motion-safe:transition-transform min-[360px]:inset-x-4 min-[360px]:p-1.5 lg:hidden",
+        keyboardOpen &&
+          "pointer-events-none translate-y-[calc(100%+var(--dock-gap)+3rem)]",
       )}
       data-ocid="bottom_nav"
     >
-      <ul className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 px-1">
+      {/* One row exactly the dock's inner height, so the raised Create
+          button overflows upwards instead of growing the row. */}
+      <ul className="grid h-full grid-cols-5 grid-rows-1">
         {TABS.map(({ to, label, icon: Icon, ocid }) => {
           const active = isActive(path, to);
           const badge = to === "/campaigns" ? drafts : 0;
@@ -67,25 +71,33 @@ export function BottomNav() {
                 to={to}
                 aria-current={active ? "page" : undefined}
                 aria-label={create ? "Create a campaign" : undefined}
-                className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded-2xl pb-2.5 text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 min-[360px]:text-[11px]"
+                className={cn(
+                  "group flex min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-full border pb-[7px] text-[10px] font-semibold tracking-tight transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/80 min-[390px]:text-[11px]",
+                  create
+                    ? "border-transparent"
+                    : active
+                      ? "border-primary/30 bg-primary/15 font-bold dark:bg-primary/20"
+                      : "border-transparent hover:bg-muted/70",
+                )}
                 data-ocid={`bottom_nav.${ocid}.link`}
               >
                 {/* Labels share one baseline (justify-end), so Create's sits
-                    level with the others under its raised button. 10 px below
-                    360 px keeps "Campaigns" whole on a 320 px phone. */}
+                    level with the others under its raised button, which
+                    overflows the dock's top edge. 10 px below 390 px keeps
+                    "Campaigns" (bold when active) whole on a 320 px phone. */}
                 {create ? (
-                  // Raised above the sheet, ringed in the card colour so it
-                  // reads as cut out of the bar.
-                  <span className="-mt-9 mb-0.5 flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-[5px] ring-card transition-transform group-active:scale-95 motion-safe:group-hover:-translate-y-0.5">
+                  // Ringed in the page colour, so it reads as cut out of the
+                  // dock's edge.
+                  <span className="btn-3d-primary mb-0.5 flex size-14 shrink-0 items-center justify-center rounded-full ring-4 ring-background motion-safe:group-hover:-translate-y-0.5">
                     <Icon className="size-7" strokeWidth={2.6} />
                   </span>
                 ) : (
                   <span
                     className={cn(
-                      "relative flex h-8 w-14 shrink-0 items-center justify-center rounded-full transition-colors",
+                      "relative flex h-6 shrink-0 items-center justify-center",
                       active
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground group-hover:bg-muted group-hover:text-foreground",
+                        ? "text-primary"
+                        : "text-muted-foreground group-hover:text-foreground",
                     )}
                   >
                     <Icon
@@ -94,7 +106,7 @@ export function BottomNav() {
                     />
                     {badge > 0 ? (
                       <span
-                        className="absolute -top-1 right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-card bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground"
+                        className="absolute -right-3 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-popover bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground shadow-sm"
                         aria-label={`${badge} unpaid ${badge === 1 ? "draft" : "drafts"}`}
                         data-ocid={`bottom_nav.${ocid}.badge`}
                       >
@@ -105,7 +117,9 @@ export function BottomNav() {
                 )}
                 <span
                   className={cn(
-                    "max-w-full truncate px-0.5",
+                    // shrink-0: under the raised Create button the column
+                    // overflows, and a shrinking label would collapse to 0.
+                    "max-w-full shrink-0 truncate leading-tight",
                     active ? "text-primary-ink" : "text-muted-foreground",
                   )}
                 >

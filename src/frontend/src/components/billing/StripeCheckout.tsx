@@ -3,12 +3,14 @@ import type {
   CreditPack,
   PaymentPurpose,
 } from "@/backend";
+import { GlossyIcon } from "@/components/dashboard/WidgetParts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAccountSync } from "@/hooks/use-account";
 import { useConfirmPayment, useCreatePaymentIntent } from "@/hooks/use-backend";
 import { formatCents } from "@/lib/pricing";
+import { useTheme } from "@/lib/theme";
 import { useAccountStore } from "@/store/account";
 import {
   Elements,
@@ -16,7 +18,7 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import { type Stripe, loadStripe } from "@stripe/stripe-js";
+import { type Appearance, type Stripe, loadStripe } from "@stripe/stripe-js";
 import {
   AlertCircle,
   CreditCard,
@@ -63,6 +65,42 @@ type Phase =
   | { kind: "error"; message: string; paymentIntentId?: string };
 
 const stripeCache = new Map<string, Promise<Stripe | null>>();
+
+/** A sunken inset panel for the loading states. */
+const WELL =
+  "rounded-2xl border border-hairline bg-well shadow-[inset_0_1px_2px_rgb(15_17_23/0.06)] dark:shadow-[inset_0_1px_3px_rgb(0_0_0/0.45)]";
+
+/**
+ * The card form's look in each theme: brand indigo, the card surface behind
+ * the fields and 14 px rounding, so the payment form matches the checkout
+ * card around it (light: white; dark: the obsidian card).
+ */
+function stripeAppearance(isDark: boolean): Appearance {
+  return isDark
+    ? {
+        theme: "night",
+        variables: {
+          colorPrimary: "#818cf8",
+          colorBackground: "#161a26",
+          colorText: "#f4f5f9",
+          colorTextSecondary: "#a1a6b4",
+          colorDanger: "#ff8a8a",
+          borderRadius: "14px",
+          fontFamily: "Geist, sans-serif",
+        },
+      }
+    : {
+        theme: "stripe",
+        variables: {
+          colorPrimary: "#5c5ee8",
+          colorBackground: "#ffffff",
+          colorText: "#01080a",
+          colorDanger: "#c70a0d",
+          borderRadius: "14px",
+          fontFamily: "Geist, sans-serif",
+        },
+      };
+}
 
 function getStripe(publishableKey: string): Promise<Stripe | null> {
   let promise = stripeCache.get(publishableKey);
@@ -146,15 +184,18 @@ function PaymentForm({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Lock className="size-3.5" /> Secure, encrypted checkout
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Lock className="size-3.5 text-emerald-brand" /> Secure, encrypted
+          checkout
         </span>
-        <div className="flex gap-2">
+        <div className="ml-auto flex flex-wrap justify-end gap-2">
           {onCancel && (
             <Button
               type="button"
               variant="ghost"
+              size="lg"
+              className="px-4"
               onClick={onCancel}
               // Never while the card is being charged (3-D Secure included):
               // leaving then invited a second checkout and a second charge.
@@ -167,7 +208,8 @@ function PaymentForm({
           <Button
             type="submit"
             disabled={!stripe || !elements || submitting}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            size="lg"
+            className="gap-2 px-5"
             data-ocid="checkout.pay.button"
           >
             {submitting ? (
@@ -202,6 +244,7 @@ export function StripeCheckout({
   onLockedChange,
 }: StripeCheckoutProps) {
   const { isAuthenticated } = useAccountSync();
+  const { isDark } = useTheme();
   const createIntent = useCreatePaymentIntent();
   const confirmPayment = useConfirmPayment();
   const setCreditBalance = useAccountStore((s) => s.setCreditBalance);
@@ -346,27 +389,35 @@ export function StripeCheckout({
   }
 
   return (
-    <Card data-ocid="checkout.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="size-4 text-emerald-brand" />
-          {title}
-        </CardTitle>
+    <Card className="gap-5" data-ocid="checkout.card">
+      <CardHeader className="pb-0">
+        <div className="flex items-center gap-3">
+          <GlossyIcon icon={ShieldCheck} tone="emerald" />
+          <CardTitle className="font-display text-lg font-black leading-tight tracking-tight text-foreground">
+            {title}
+          </CardTitle>
+        </div>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         )}
       </CardHeader>
       <CardContent>
         {(phase.kind === "idle" || phase.kind === "creating") && (
-          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Preparing secure
-            checkout…
+          <div
+            className={`${WELL} flex items-center gap-2.5 px-4 py-5 text-sm font-medium text-muted-foreground`}
+          >
+            <Loader2 className="size-4 animate-spin text-primary" /> Preparing
+            secure checkout…
           </div>
         )}
         {phase.kind === "confirming" && (
-          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Confirming payment with
-            the ledger…
+          <div
+            className={`${WELL} flex items-center gap-2.5 px-4 py-5 text-sm font-medium text-muted-foreground`}
+          >
+            <Loader2 className="size-4 animate-spin text-primary" /> Confirming
+            payment with the ledger…
           </div>
         )}
         {phase.kind === "elements" && stripePromise && (
@@ -374,14 +425,7 @@ export function StripeCheckout({
             stripe={stripePromise}
             options={{
               clientSecret: phase.clientSecret,
-              appearance: {
-                theme: "stripe",
-                variables: {
-                  colorPrimary: "#f97316",
-                  borderRadius: "10px",
-                  fontFamily: "Geist, sans-serif",
-                },
-              },
+              appearance: stripeAppearance(isDark),
             }}
           >
             <PaymentForm
@@ -398,10 +442,16 @@ export function StripeCheckout({
           </Elements>
         )}
         {phase.kind === "done" && (
-          <Alert className="border-emerald-brand/40 bg-emerald-brand/10">
-            <ShieldCheck className="size-4 text-emerald-brand" />
-            <AlertTitle>Payment confirmed</AlertTitle>
-            <AlertDescription>
+          <Alert className="relative isolate overflow-hidden rounded-2xl border-emerald-brand/35 bg-card px-4 py-4 has-[>svg]:grid-cols-[1.25rem_1fr] has-[>svg]:gap-x-3 [&>svg]:translate-y-0">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -z-10 bg-emerald-brand/10"
+            />
+            <ShieldCheck className="!size-5 text-emerald-brand" />
+            <AlertTitle className="font-display text-base font-black text-emerald-brand">
+              Payment confirmed
+            </AlertTitle>
+            <AlertDescription className="text-foreground">
               {phase.result.referralRewardApplied
                 ? "Your referrer just earned a free month. Thanks for joining through their link!"
                 : "Your payment has been recorded on the ledger."}
@@ -426,7 +476,7 @@ export function StripeCheckout({
                 open the order under Campaigns once the payment clears.
               </p>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {phase.paymentIntentId ? (
                 <Button
                   variant="outline"

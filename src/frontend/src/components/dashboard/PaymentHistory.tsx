@@ -1,19 +1,15 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadError } from "@/components/ui/load-error";
 import { useMyPayments } from "@/hooks/use-backend";
 import { copyText } from "@/lib/download";
 import { formatTimestamp } from "@/lib/format";
 import { paymentLabel } from "@/lib/payments";
 import { formatCents } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 import { Copy, Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { WidgetHeader, emptyNoteClass } from "./WidgetParts";
 
 /**
  * The customer's payments, newest first. Each carries its invoice number
@@ -31,14 +27,12 @@ export function PaymentHistory() {
 
   return (
     <Card data-ocid="dashboard.payments.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Receipt className="size-4 text-primary" /> Payment history
-        </CardTitle>
-        <CardDescription>
-          Need a refund? Contact support with your account ID and the invoice
-          number of the payment.
-        </CardDescription>
+      <CardHeader className="pb-0">
+        <WidgetHeader
+          icon={Receipt}
+          title="Payment history"
+          description="Need a refund? Contact support with your account ID and the invoice number of the payment."
+        />
       </CardHeader>
       <CardContent>
         {payments.isLoading ? (
@@ -53,46 +47,57 @@ export function PaymentHistory() {
             data-ocid="dashboard.payments.error"
           />
         ) : list.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No payments yet.</p>
+          <p className={emptyNoteClass}>No payments yet.</p>
         ) : (
-          <ul className="divide-y divide-border/60">
+          <ul className="@container divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-card-raised">
             {list.map((p) => (
+              // Narrow rows (a phone) stack the amount and its pill under
+              // the details, so the invoice number customers quote for a
+              // refund is always shown whole; wider rows put them at the
+              // right. Sized by the list's own width.
               <li
                 key={p.paymentIntentId}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3.5"
                 data-ocid={`dashboard.payments.item.${p.paymentIntentId}`}
               >
-                <div className="min-w-0 space-y-0.5">
-                  <p className="truncate text-sm font-medium">
+                <div className="min-w-0 flex-1 basis-full space-y-1 @md:basis-0">
+                  <p className="line-clamp-2 break-words text-[15px] font-semibold text-foreground">
                     {paymentLabel(p)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="meta-mono whitespace-nowrap">
                     {formatTimestamp(p.confirmedAt ?? p.createdAt)}
                   </p>
                   <button
                     type="button"
                     onClick={() => void copy(p.paymentIntentId)}
-                    className="inline-flex max-w-full items-center gap-1 font-mono text-xs text-muted-foreground hover:text-foreground"
+                    className="meta-mono -mx-1.5 inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-xl px-1.5 py-0.5 text-left transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:min-h-7"
                     aria-label={`Copy invoice number ${p.paymentIntentId}`}
                   >
-                    <span className="truncate">
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
                       Invoice {p.paymentIntentId}
                     </span>
-                    <Copy className="size-3 shrink-0" />
+                    <Copy className="size-3.5 shrink-0" />
                   </button>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span className="text-sm font-semibold tabular-nums">
+                <div className="flex shrink-0 items-center gap-2.5 @md:flex-col @md:items-end @md:gap-1.5">
+                  <span className="font-display text-xl font-black tracking-tight text-foreground tabular-nums">
                     {formatCents(p.amountCents)}
                   </span>
                   {p.testMode ? (
-                    <Badge variant="outline">Test mode</Badge>
+                    <Badge variant="info">Test mode</Badge>
                   ) : p.refundedCents > 0n ? (
-                    <Badge variant="outline">
+                    <span
+                      className={cn(
+                        "status-pill",
+                        p.refundedCents >= p.amountCents
+                          ? "status-pill-red"
+                          : "status-pill-amber",
+                      )}
+                    >
                       {p.refundedCents >= p.amountCents
                         ? "Refunded"
                         : `${formatCents(p.refundedCents)} refunded`}
-                    </Badge>
+                    </span>
                   ) : null}
                 </div>
               </li>

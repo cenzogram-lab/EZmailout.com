@@ -1,4 +1,4 @@
-import { StampyChatAvatarTip } from "@/components/stampy";
+import { MascotStage, StampyChatAvatarTip } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAccountSync } from "@/hooks/use-account";
@@ -11,19 +11,30 @@ export function SignInPrompt({
 }) {
   const { login, isLoggingIn, isInitializing } = useAccountSync();
   return (
-    <Card className="rounded-3xl" data-ocid="auth.sign_in_prompt.card">
+    <Card
+      className="relative isolate overflow-hidden rounded-3xl"
+      data-ocid="auth.sign_in_prompt.card"
+    >
+      {/* Brand backlight from the top edge, behind Stampy. */}
+      <div aria-hidden className="ambient-glow-backdrop" />
       <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-        <StampyChatAvatarTip className="mascot-shadow size-24" />
-        <p className="font-display text-lg font-bold tracking-tight text-foreground">
+        <MascotStage
+          mascot={StampyChatAvatarTip}
+          size="sm"
+          className="mb-3"
+          mascotClassName="size-24"
+        />
+        <p className="font-display text-xl font-black tracking-tight text-foreground text-balance">
           Sign in to pick up where you left off
         </p>
-        <p className="max-w-sm text-sm font-medium text-muted-foreground">
+        <p className="max-w-sm text-sm font-medium leading-relaxed text-muted-foreground">
           {message}
         </p>
         <Button
+          size="lg"
           onClick={login}
           disabled={isLoggingIn || isInitializing}
-          className="gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+          className="mt-1 gap-2 px-5"
           data-ocid="auth.sign_in_prompt.button"
         >
           {isLoggingIn ? (

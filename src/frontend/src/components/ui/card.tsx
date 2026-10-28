@@ -2,12 +2,14 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/** The 24 px tactile card: card fill, hairline border, soft depth (white on
+ * the #F6F6F6 page in light, #12151E on obsidian in dark). */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-2xl border border-border/60 py-6 shadow-soft",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-3xl border border-hairline py-6 shadow-surface",
         className,
       )}
       {...props}
@@ -20,7 +22,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-[[data-slot=card-action]]:grid-cols-[1fr_auto] [.border-b]:pb-6",
         className,
       )}
       {...props}
@@ -32,7 +34,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("leading-none font-bold tracking-tight", className)}
       {...props}
     />
   );

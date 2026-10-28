@@ -11,6 +11,16 @@ import { formatCents } from "@/lib/pricing";
 import { useWizardStore } from "@/store/wizard";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { ICON_TILE } from "./tactile";
+
+/**
+ * Tile widths per breakpoint: n tiles and n − 1 gaps (gap-3) fill a row,
+ * less 0.1 px so sub-pixel rounding never wraps a row early. The 14 families
+ * fill rows of 2 on phones and 7 from lg; in between (4 and 5 a row) the
+ * container centres the shorter last row.
+ */
+const TILE_WIDTHS =
+  "w-[calc((100%_-_0.75rem)/2_-_0.1px)] sm:w-[calc((100%_-_2.25rem)/4_-_0.1px)] md:w-[calc((100%_-_3rem)/5_-_0.1px)] lg:w-[calc((100%_-_4.5rem)/7_-_0.1px)]";
 
 function CategoryTile({ category }: { category: CatalogCategory }) {
   const navigate = useNavigate();
@@ -39,22 +49,23 @@ function CategoryTile({ category }: { category: CatalogCategory }) {
     <button
       type="button"
       onClick={start}
-      className="group flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-3 py-6 text-center transition-smooth hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
+      className={`${TILE_WIDTHS} surface-card group flex min-w-0 flex-col items-center gap-2 px-3 pb-5 pt-6 text-center outline-none transition-smooth hover:-translate-y-1 hover:border-primary/40 hover:shadow-raised focus-visible:ring-[3px] focus-visible:ring-ring/80 active:translate-y-0 motion-reduce:hover:translate-y-0`}
       data-ocid={`products.category.${category.id}`}
     >
-      <CatalogIcon
-        id={category.icon}
-        className="size-11 text-muted-foreground transition-smooth group-hover:text-primary"
-      />
-      <span className="text-sm font-semibold text-foreground">
+      <span
+        className={`${ICON_TILE} mb-1 size-16 transition-smooth group-hover:border-primary/40`}
+      >
+        <CatalogIcon id={category.icon} className="size-9" />
+      </span>
+      <span className="text-sm font-bold leading-snug tracking-tight text-foreground">
         {category.name}
       </span>
-      <span className="text-[11px] text-muted-foreground">
+      <span className="meta-mono mb-2 text-[11px]">
         {rows.length} size{rows.length === 1 ? "" : "s"}
       </span>
-      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary-ink">
+      <span className="status-pill status-pill-indigo mt-auto">
         from {formatCents(categoryFromCents(category))}
-        <ArrowRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+        <ArrowRight className="-mr-0.5 hidden size-3 group-hover:block group-focus-visible:block" />
       </span>
     </button>
   );
@@ -65,14 +76,14 @@ export function ProductShowcase() {
   return (
     <div className="space-y-6">
       <div
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"
+        className="flex flex-wrap justify-center gap-3"
         data-ocid="products.grid"
       >
         {CATALOG.map((category) => (
           <CategoryTile key={category.id} category={category} />
         ))}
       </div>
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="mx-auto max-w-3xl text-balance text-center text-xs text-muted-foreground">
         {CATALOG.length} product families · {CATALOG_SIZE_COUNT} sizes ·
         printed, addressed and mailed by EZmailout. Prices include print,
         postage and CASS verification.

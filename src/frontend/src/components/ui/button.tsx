@@ -4,21 +4,26 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Tactile buttons (index.css): `default` is the glossy 3D indigo
+ * (.btn-3d-primary), `success` the glossy emerald (.btn-3d-success, dark
+ * text), `outline` / `secondary` raised neutral surfaces that read in both
+ * themes, `ghost` and `link` flat. Focus rings compose with the 3D shadows.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/80 focus-visible:ring-[3px] aria-invalid:ring-destructive/30 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        default: "btn-3d-primary",
+        success: "btn-3d-success",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-card shadow-xs hover:bg-muted hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-black/10 border-t-white/25 bg-destructive text-destructive-foreground shadow-[inset_0_1px_1px_rgb(255_255_255/0.3),0_8px_20px_-8px_rgb(220_38_38/0.5)] hover:bg-destructive/90 active:translate-y-px focus-visible:ring-destructive/40",
+        outline: "btn-3d-neutral hover:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost: "hover:bg-muted hover:text-foreground dark:hover:bg-muted/60",
-        navy: "bg-navy text-primary-foreground shadow-xs hover:bg-navy/90",
+          "border border-hairline bg-secondary text-secondary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] hover:bg-secondary/80",
+        ghost: "hover:bg-muted hover:text-foreground",
+        navy: "border border-white/10 bg-navy text-primary-foreground shadow-xs hover:bg-navy/90",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

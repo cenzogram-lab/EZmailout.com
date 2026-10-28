@@ -208,9 +208,12 @@ export function AiStudioPanel() {
   }
 
   return (
-    <div className="space-y-4" data-ocid="canvas.ai_studio">
+    // Laid out by the panel's own width (container queries): in the desktop
+    // drawer screen breakpoints squeezed the size cards into three ~80 px
+    // columns and pushed their credit badges out of the cards.
+    <div className="@container space-y-4" data-ocid="canvas.ai_studio">
       {config.data && !config.data.openAiConfigured && (
-        <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs">
+        <p className="rounded-2xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary-ink">
           The AI studio isn't set up yet, so generations are not available right
           now.
         </p>
@@ -224,8 +227,9 @@ export function AiStudioPanel() {
               type="button"
               onClick={() => setPrompt(q.prompt)}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-xs transition-smooth hover:border-primary",
-                prompt === q.prompt && "border-primary bg-primary/10",
+                "min-h-8 rounded-full border border-hairline-strong bg-card-raised px-3 py-1 text-xs font-medium text-muted-foreground transition-smooth hover:border-primary/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80",
+                prompt === q.prompt &&
+                  "border-primary/60 bg-primary/10 text-primary-ink hover:text-primary-ink",
               )}
               data-ocid={`canvas.ai.quick_prompt.${q.industry.toLowerCase().replace(/[^a-z]+/g, "_")}`}
             >
@@ -241,23 +245,23 @@ export function AiStudioPanel() {
         placeholder="Describe the background art: subject, lighting, mood, and where you want empty space for text…"
         data-ocid="canvas.ai.prompt"
       />
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 @md:grid-cols-3">
         {SIZES.map((s) => (
           <button
             key={s.size}
             type="button"
             onClick={() => setSize(s.size)}
+            aria-pressed={size === s.size}
             className={cn(
-              "rounded-lg border p-2.5 text-left text-xs transition-smooth",
-              size === s.size
-                ? "border-primary bg-primary/10"
-                : "hover:border-primary/50",
+              "rounded-2xl border border-hairline-strong bg-card-raised p-2.5 text-left text-xs transition-smooth hover:border-primary/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80",
+              size === s.size &&
+                "border-primary/60 bg-primary/10 shadow-[inset_0_0_0_1px_oklch(var(--primary)/0.35)]",
             )}
             data-ocid={`canvas.ai.size.${s.size}`}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="font-semibold text-foreground">{s.label}</span>
-              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary-ink">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary-ink">
                 {s.credits} cr
               </span>
             </div>
@@ -269,7 +273,7 @@ export function AiStudioPanel() {
         <Button
           onClick={handleGenerate}
           disabled={generate.isPending}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="gap-2"
           data-ocid="canvas.ai.generate"
         >
           {generate.isPending ? (
@@ -280,20 +284,24 @@ export function AiStudioPanel() {
           Generate with AI · {cost} credits
         </Button>
         <span className="text-xs text-muted-foreground">
-          Balance: <strong>{creditBalance}</strong> credits · applies to the{" "}
-          <strong>{activeSide}</strong> side beneath the print guides
+          Balance:{" "}
+          <strong className="font-black tabular-nums text-foreground">
+            {creditBalance}
+          </strong>{" "}
+          credits · applies to the <strong>{activeSide}</strong> side beneath
+          the print guides
         </span>
       </div>
       {gallery.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             This session
           </Label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-2 @md:grid-cols-4">
             {gallery.map((g) => (
               <div
                 key={g.id}
-                className="group relative overflow-hidden rounded-md border"
+                className="group relative overflow-hidden rounded-xl border border-hairline-strong shadow-surface"
                 data-ocid={`canvas.ai.gallery.${g.id}`}
               >
                 <img
@@ -302,11 +310,11 @@ export function AiStudioPanel() {
                   className="aspect-square w-full object-cover"
                   title={g.revised ?? g.prompt}
                 />
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                   <button
                     type="button"
                     onClick={() => setBackgroundImage(activeSide, g.url)}
-                    className="inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium"
+                    className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-900"
                     data-ocid={`canvas.ai.gallery.apply.${g.id}`}
                   >
                     <ImagePlus className="size-3" /> Background
@@ -315,7 +323,7 @@ export function AiStudioPanel() {
                     type="button"
                     onClick={() => applyAsLogo(g)}
                     disabled={busyLogo === g.id}
-                    className="inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium"
+                    className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-900"
                     data-ocid={`canvas.ai.gallery.logo.${g.id}`}
                   >
                     {busyLogo === g.id ? (

@@ -269,18 +269,18 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-smooth",
+          "flex flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-4 py-10 text-center transition-smooth sm:px-6",
           dragging
             ? "border-primary bg-primary/10"
-            : "border-border bg-muted/30 hover:bg-muted/50",
+            : "border-hairline-strong bg-well hover:border-primary/40",
         )}
         data-ocid="audience.csv.dropzone"
       >
-        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className="btn-3d-primary flex size-14 items-center justify-center rounded-2xl">
           <Upload className="size-6" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-base font-bold tracking-tight text-foreground">
             Drag a CSV here, or browse for one
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -292,7 +292,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-11 gap-2 sm:h-9"
             data-ocid="audience.csv.browse.button"
           >
             <FileSpreadsheet className="size-4" /> Choose file
@@ -303,7 +303,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
             onClick={() =>
               downloadText("ezmailout-sample.csv", SAMPLE_CSV, "text/csv")
             }
-            className="gap-2"
+            className="h-11 gap-2 sm:h-9"
             data-ocid="audience.csv.sample.button"
           >
             <Download className="size-4" /> Download sample CSV
@@ -322,7 +322,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           data-ocid="audience.csv.file.input"
         />
         {fileName && (
-          <Badge variant="secondary" className="font-mono">
+          <Badge variant="neutral" className="max-w-full truncate font-mono">
             {fileName}
           </Badge>
         )}
@@ -346,17 +346,10 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary">
+              <Badge variant="neutral" className="tabular-nums">
                 {formatNumber(rows.length)} recipients parsed
               </Badge>
-              {result?.ok && (
-                <Badge
-                  variant="outline"
-                  className="border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-                >
-                  CASS verified
-                </Badge>
-              )}
+              {result?.ok && <Badge variant="success">CASS verified</Badge>}
             </div>
             <Button
               type="button"
@@ -365,7 +358,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               disabled={
                 verifying || verify.isPending || verifyProgress !== null
               }
-              className="gap-2"
+              className="h-11 gap-2 sm:h-9"
               data-ocid="audience.csv.verify.button"
             >
               {verifying || verify.isPending || verifyProgress !== null ? (
@@ -400,21 +393,31 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
       )}
 
       {result?.ok && (
-        <Card className="bg-card" data-ocid="audience.csv.summary.card">
-          <CardContent className="flex flex-wrap items-center gap-4 py-4">
+        <Card
+          className="relative isolate rounded-2xl bg-card-raised py-4 shadow-none"
+          data-ocid="audience.csv.summary.card"
+        >
+          <div aria-hidden className="ambient-glow-backdrop" />
+          <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-4 px-4 sm:px-5">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="size-5 text-emerald-brand" />
               <span className="text-sm font-medium text-foreground">
-                {formatNumber(result.validCount)} valid
+                <span className="text-2xl font-black tracking-tight tabular-nums">
+                  {formatNumber(result.validCount)}
+                </span>{" "}
+                valid
               </span>
             </div>
             <div className="flex items-center gap-2">
               <XCircle className="size-5 text-destructive" />
               <span className="text-sm font-medium text-foreground">
-                {formatNumber(result.invalidCount)} invalid (skipped)
+                <span className="text-2xl font-black tracking-tight tabular-nums">
+                  {formatNumber(result.invalidCount)}
+                </span>{" "}
+                invalid (skipped)
               </span>
             </div>
-            <div className="ml-auto flex flex-wrap gap-2">
+            <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:flex-wrap">
               <Button
                 type="button"
                 variant="outline"
@@ -431,7 +434,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
                   setPresetOpen(true);
                 }}
                 disabled={verifiedAddresses.length === 0}
-                className="gap-2"
+                className="h-11 w-full gap-2 sm:h-9 sm:w-auto"
                 data-ocid="audience.csv.save_preset.button"
               >
                 <BookmarkPlus className="size-4" /> Save as preset
@@ -440,7 +443,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
                 type="button"
                 onClick={() => onUseAudience(verifiedAddresses)}
                 disabled={!canContinue}
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-11 w-full gap-2 sm:h-9 sm:w-auto"
                 data-ocid="audience.csv.use.button"
               >
                 Use verified audience <ArrowRight className="size-4" />
@@ -466,6 +469,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
               maxLength={80}
+              className="h-11 sm:h-9"
               data-ocid="audience.csv.save_preset.name.input"
             />
           </div>
@@ -474,6 +478,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               type="button"
               variant="outline"
               onClick={() => setPresetOpen(false)}
+              className="h-11 sm:h-9"
               data-ocid="audience.csv.save_preset.cancel.button"
             >
               Cancel
@@ -482,7 +487,7 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
               type="button"
               onClick={() => void handleSavePreset()}
               disabled={savePreset.isPending}
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-11 gap-2 sm:h-9"
               data-ocid="audience.csv.save_preset.confirm.button"
             >
               {savePreset.isPending ? (

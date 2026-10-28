@@ -1,25 +1,16 @@
 import { cn } from "@/lib/utils";
 import type * as React from "react";
-import { StampyStep1Catalog } from "./StampyStep1Catalog";
-import { StampyStep2Audience } from "./StampyStep2Audience";
-import { StampyStep3Studio } from "./StampyStep3Studio";
-import { StampyStep4Preflight } from "./StampyStep4Preflight";
+import { type MascotPose, MascotStage } from "./MascotStage";
+
+export type { MascotPose } from "./MascotStage";
 
 /**
- * Which Stampy fits the empty list: a postcard for mailings, the map for
- * audiences and recipients, the palette for designs and drafts, the clipboard
- * for logs and inboxes.
+ * Empty state with Stampy in place of a generic icon: the glossy mascot on
+ * stage (spotlight, floor shadow, idle float), a heavy display title, muted
+ * micro-copy and an optional call to action (pass a `Button`; its default
+ * variant is the glossy 3D primary). It paints no background of its own, so
+ * it sits on whatever card or page holds it, in either theme.
  */
-const POSES = {
-  mail: StampyStep1Catalog,
-  audience: StampyStep2Audience,
-  design: StampyStep3Studio,
-  checklist: StampyStep4Preflight,
-} as const;
-
-export type MascotPose = keyof typeof POSES;
-
-/** Empty state with Stampy in place of a generic icon. */
 export function MascotEmptyState({
   pose = "mail",
   title,
@@ -33,40 +24,54 @@ export function MascotEmptyState({
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
-  size?: "sm" | "md";
+  /** `sm` for tables and side panels, `md` for a page's main list, `lg` for a whole screen. */
+  size?: "sm" | "md" | "lg";
   className?: string;
   "data-ocid"?: string;
 }) {
-  const Mascot = POSES[pose];
   return (
     <div
       className={cn(
         "flex flex-col items-center text-center",
-        size === "md" ? "gap-3 py-10" : "gap-2 py-6",
+        size === "sm"
+          ? "gap-2 py-6"
+          : size === "md"
+            ? "gap-3 py-10"
+            : "gap-4 py-12",
         className,
       )}
       data-ocid={ocid}
     >
-      <Mascot
-        className={cn(
-          "mascot-shadow motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-500",
-          size === "md" ? "size-32" : "size-20",
-        )}
+      <MascotStage
+        pose={pose}
+        size={size}
+        className={size === "sm" ? "mb-2" : "mb-4"}
       />
       <p
         className={cn(
-          "font-display font-bold tracking-tight text-foreground",
-          size === "md" ? "text-lg" : "text-sm",
+          "font-display font-black tracking-tight text-foreground text-balance",
+          size === "sm"
+            ? "text-base"
+            : size === "md"
+              ? "text-xl"
+              : "text-2xl sm:text-3xl",
         )}
       >
         {title}
       </p>
       {description ? (
-        <p className="max-w-xs text-sm font-medium text-muted-foreground">
+        <p
+          className={cn(
+            "text-sm leading-relaxed text-muted-foreground text-pretty",
+            size === "sm" ? "max-w-xs" : "max-w-sm",
+          )}
+        >
           {description}
         </p>
       ) : null}
-      {action ? <div className="mt-1">{action}</div> : null}
+      {action ? (
+        <div className={size === "sm" ? "mt-1" : "mt-3"}>{action}</div>
+      ) : null}
     </div>
   );
 }

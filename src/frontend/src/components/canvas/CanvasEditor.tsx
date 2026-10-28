@@ -249,14 +249,20 @@ const GUIDES = [
   },
 ] as const;
 
-const SAFE_LABEL_COLOR = "#10b981";
+/**
+ * Workspace label fills: a shade deeper than the guide strokes so their 9 px
+ * white text passes AA (emerald-700 5.5:1, red-600 4.8:1) on the light and
+ * the dark workspace alike. The guides drawn on the artwork keep theirs.
+ */
+const SAFE_LABEL_COLOR = "#047857";
+const BLEED_LABEL_COLOR = "#dc2626";
 
 /** Height of a 9 px guide label at line-height 1.4 (screen px). */
 const GUIDE_LABEL_HEIGHT = 13;
 
 /** A guide label parked in the workspace outside the sheet. */
 const WORKSPACE_LABEL_CLASS =
-  "pointer-events-none absolute whitespace-nowrap rounded px-1 font-mono text-[9px] uppercase tracking-wide text-white";
+  "pointer-events-none absolute whitespace-nowrap rounded-full px-1.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-white shadow-sm";
 
 const BLEED_COLOR = "#ef4444";
 
@@ -613,7 +619,9 @@ export function CanvasEditor({
       // `isolate` keeps the selection toolbar's z-index inside the stage, so it
       // scrolls under the sticky header and the tab bar instead of over them.
       className={cn(
-        "studio-dotgrid relative isolate w-full select-none rounded-2xl border outline-none",
+        // Sunken dotted workspace (obsidian in dark) around the paper sheet;
+        // only the chrome is themed, the sheet keeps its print colours.
+        "studio-dotgrid relative isolate w-full select-none rounded-3xl border border-hairline shadow-[inset_0_1px_3px_rgb(15_17_23/0.06)] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 dark:shadow-[inset_0_2px_10px_rgb(0_0_0/0.55)]",
         "flex justify-center",
         className,
       )}
@@ -639,10 +647,13 @@ export function CanvasEditor({
           boxSizing: "border-box",
           opacity: 0.9,
         }}
+        // The design's own paper running into the bleed: artwork, which the
+        // UI walk's light-panel check skips like the sheet itself.
+        data-template-preview=""
         data-ocid="canvas.editor.guide.bleed"
       />
       <div
-        className="absolute shadow-lg"
+        className="absolute shadow-lg dark:shadow-[0_2px_6px_rgb(0_0_0/0.5),0_24px_48px_-16px_rgb(0_0_0/0.85)]"
         style={{
           top: WORKSPACE_PADDING,
           left: "50%",
@@ -841,7 +852,7 @@ export function CanvasEditor({
             right: -bleedPx,
             bottom: `calc(100% + ${labelOffset}px)`,
             lineHeight: 1.4,
-            backgroundColor: BLEED_COLOR,
+            backgroundColor: BLEED_LABEL_COLOR,
           }}
           data-ocid="canvas.editor.guide.bleed_label"
         >
@@ -854,7 +865,6 @@ export function CanvasEditor({
             top: displayHeight + labelOffset,
             lineHeight: 1.4,
             backgroundColor: SAFE_LABEL_COLOR,
-            opacity: 0.85,
           }}
           data-ocid="canvas.editor.guide.safe_label"
         >

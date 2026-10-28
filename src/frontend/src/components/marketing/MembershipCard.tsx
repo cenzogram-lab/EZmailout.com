@@ -12,6 +12,7 @@ import {
   Tag,
   Users,
 } from "lucide-react";
+import { BRAND_PANEL, BRAND_PANEL_INSET } from "./tactile";
 
 interface Perk {
   icon: LucideIcon;
@@ -56,24 +57,29 @@ const INCLUDED = [
 export function MembershipCard() {
   return (
     <div
-      className="surface-glow relative overflow-hidden rounded-2xl border border-border bg-card"
+      className="surface-card relative overflow-hidden"
       data-ocid="membership.card.panel"
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary to-primary" />
       <div className="grid gap-0 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        {/* Price column */}
-        <div className="relative overflow-hidden border-b border-border bg-primary p-8 text-primary-foreground lg:border-b-0 lg:border-r sm:p-10">
-          <div className="absolute -right-16 -top-16 size-48 rounded-full bg-primary/20 blur-3xl" />
-          <div className="absolute -bottom-20 -left-10 size-56 rounded-full bg-white/10 blur-3xl" />
+        {/* Price column: the glossy indigo panel. */}
+        <div className={`${BRAND_PANEL} p-6 sm:p-10`}>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-24 -left-16 -z-10 size-72 rounded-full bg-black/25 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-8 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+          />
           <div className="relative">
-            <span className="inline-flex items-center rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <span className="inline-flex items-center rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]">
               Platform membership
             </span>
             <div className="mt-6 flex items-end gap-2">
-              <span className="font-display text-6xl font-extrabold leading-none tracking-tight">
+              <span className="font-display text-7xl font-black leading-none tracking-[-0.05em] tabular-nums">
                 {formatCents(SUBSCRIPTION_PRICE_CENTS).replace(/\.00$/, "")}
               </span>
-              <span className="pb-1 text-base text-primary-foreground">
+              <span className="pb-1.5 font-mono text-sm font-semibold tracking-wider text-primary-foreground">
                 / 30 days
               </span>
             </div>
@@ -81,13 +87,18 @@ export function MembershipCard() {
               One flat fee gets you the 10,000-piece rate on small batches. Pay
               per piece only for what you actually mail.
             </p>
-            <ul className="mt-6 space-y-2">
+            <ul className={`${BRAND_PANEL_INSET} mt-6 space-y-2.5 p-4`}>
               {INCLUDED.map((item) => (
                 <li
                   key={item}
-                  className="flex items-center gap-2 text-sm text-primary-foreground"
+                  className="flex items-center gap-2.5 text-sm font-medium text-primary-foreground"
                 >
-                  <Check className="size-4 shrink-0 text-primary-foreground" />
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/20 shadow-[inset_0_1px_0_rgb(255_255_255/0.3)]">
+                    <Check
+                      className="size-3 text-primary-foreground"
+                      strokeWidth={3}
+                    />
+                  </span>
                   {item}
                 </li>
               ))}
@@ -95,7 +106,8 @@ export function MembershipCard() {
             <Button
               asChild
               size="lg"
-              className="mt-8 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              variant="outline"
+              className="mt-8 h-12 w-full gap-2 px-7 text-base sm:w-auto"
             >
               <Link to="/dashboard" data-ocid="membership.start.link">
                 Start membership
@@ -106,18 +118,18 @@ export function MembershipCard() {
         </div>
 
         {/* Perks column */}
-        <div className="p-8 sm:p-10">
-          <h3 className="font-display text-xl font-bold text-foreground">
+        <div className="p-6 sm:p-10">
+          <h3 className="font-display text-xl font-extrabold tracking-tight text-foreground">
             What your membership unlocks
           </h3>
-          <ul className="mt-6 grid gap-5 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-x-6 gap-y-6 sm:grid-cols-2">
             {PERKS.map((perk) => (
-              <li key={perk.title} className="flex gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-brand/10 text-emerald-brand">
-                  <perk.icon className="size-4" />
+              <li key={perk.title} className="flex gap-3.5">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-brand/25 bg-gradient-to-b from-emerald-brand/20 to-emerald-brand/5 text-emerald-brand shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]">
+                  <perk.icon className="size-[18px]" />
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-foreground">
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-foreground">
                     {perk.title}
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -127,7 +139,7 @@ export function MembershipCard() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+          <p className="mt-7 rounded-2xl border border-dashed border-hairline-strong bg-well px-4 py-3 text-xs leading-relaxed text-muted-foreground">
             Membership billing and per-piece charges go through our secure
             payment processor. Sign in with Internet Identity to activate — no
             card is needed until you launch.

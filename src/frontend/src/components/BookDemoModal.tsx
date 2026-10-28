@@ -1,4 +1,5 @@
 import { queueTicket } from "@/components/chat/supportOutbox";
+import { MascotStage } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,7 @@ import {
 import { useSubmitSupportTicket } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-import { CalendarCheck, CheckCircle2, Clock, Loader2, X } from "lucide-react";
+import { CalendarCheck, Clock, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const WEEKDAY_SLOTS = [
@@ -187,7 +188,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
   return (
     <dialog
       open
-      className="fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center bg-transparent p-4"
+      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-end justify-center bg-transparent p-0 sm:items-center sm:p-4"
       aria-labelledby="demo-modal-title"
     >
       {/* Backdrop */}
@@ -200,34 +201,36 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
         role="presentation"
       />
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Top primary line */}
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary to-primary" />
+      {/* Card: a bottom sheet on phones, a centred dialog from `sm`. */}
+      <div className="surface-sheet relative isolate z-10 flex max-h-[calc(100dvh-0.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-b-none pb-[env(safe-area-inset-bottom,0px)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-3xl sm:pb-0">
+        <div aria-hidden="true" className="ambient-glow-backdrop" />
+        <span aria-hidden="true" className="sheet-handle sm:hidden" />
 
         {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-6 pb-4">
+        <div className="flex shrink-0 items-start justify-between px-6 pb-4 pt-3 sm:pt-6">
           <div>
-            <div className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+            <div className="status-pill status-pill-indigo mb-2 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em]">
               <CalendarCheck className="size-3.5" />
               Talk to EZmailout
             </div>
             <h2
               id="demo-modal-title"
-              className="font-display text-xl font-bold text-foreground sm:text-2xl"
+              className="font-display text-2xl font-black tracking-tight text-foreground"
             >
               Book a walkthrough
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               A 20-minute call with the EZmailout team — we'll build your first
               campaign with you.{" "}
-              <span className="font-medium text-primary">Spots fill fast.</span>
+              <span className="font-semibold text-primary">
+                Spots fill fast.
+              </span>
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-4 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="btn-3d-neutral ml-4 flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/80"
             aria-label="Close modal"
             data-ocid="demo_modal.close_button"
           >
@@ -237,15 +240,15 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
 
         {/* Step indicator */}
         {step < 3 && (
-          <div className="mx-6 mb-4 flex items-center gap-2">
+          <div className="mx-6 mb-4 flex shrink-0 items-center gap-2">
             {([1, 2] as const).map((s) => (
               <div key={s} className="flex items-center gap-2">
                 <div
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-full text-xs font-bold transition-colors",
+                    "flex size-7 items-center justify-center rounded-full text-xs font-bold transition-colors",
                     step >= s
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
+                      ? "btn-3d-primary"
+                      : "border border-hairline-strong bg-well text-muted-foreground",
                   )}
                 >
                   {s}
@@ -258,19 +261,26 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 >
                   {s === 1 ? "Pick Date & Time" : "Contact Info"}
                 </span>
-                {s < 2 && <div className="mx-1 h-px w-8 bg-border" />}
+                {s < 2 && (
+                  <div
+                    className={cn(
+                      "mx-1 h-0.5 w-8 rounded-full",
+                      step > s ? "bg-primary" : "bg-hairline-strong",
+                    )}
+                  />
+                )}
               </div>
             ))}
           </div>
         )}
 
-        <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
           {/* ── Step 1: Date + Time ── */}
           {step === 1 && (
             <div className="space-y-5" data-ocid="demo_modal.step1_panel">
               {/* Day picker */}
               <div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Select a Date
                 </p>
                 <div className="grid grid-cols-7 gap-1.5">
@@ -281,22 +291,36 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                       onClick={() => handleDateSelect(day)}
                       data-ocid={`demo_modal.date_${day.isoDate}`}
                       className={cn(
-                        "flex flex-col items-center rounded-xl border px-1 py-2.5 text-center transition-all hover:-translate-y-0.5",
+                        "flex min-w-0 flex-col items-center rounded-2xl px-0.5 py-2.5 text-center outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/80 motion-safe:hover:-translate-y-0.5",
                         selectedDate?.isoDate === day.isoDate
-                          ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                          : "border-border bg-muted/30 text-foreground hover:border-primary/50 hover:bg-muted",
+                          ? "btn-3d-primary"
+                          : "border border-hairline bg-card-raised text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] hover:border-primary/50 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
                         day.isWeekend && selectedDate?.isoDate !== day.isoDate
-                          ? "opacity-60"
+                          ? "border-dashed border-hairline-strong bg-transparent shadow-none"
                           : "",
                       )}
                     >
-                      <span className="text-[10px] font-medium leading-none opacity-70">
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold uppercase leading-none tracking-wide",
+                          selectedDate?.isoDate === day.isoDate
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
                         {day.label}
                       </span>
-                      <span className="mt-1 text-sm font-bold leading-none">
+                      <span className="mt-1 text-base font-black leading-none tabular-nums">
                         {day.dateNum}
                       </span>
-                      <span className="mt-0.5 text-[10px] leading-none opacity-60">
+                      <span
+                        className={cn(
+                          "mt-0.5 text-[10px] leading-none",
+                          selectedDate?.isoDate === day.isoDate
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
                         {day.month}
                       </span>
                     </button>
@@ -307,11 +331,11 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               {/* Time slots */}
               {selectedDate && (
                 <div>
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     <Clock className="mr-1 inline size-3" />
                     Available Times
                     {selectedDate.isWeekend && (
-                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary-ink">
+                      <span className="status-pill status-pill-indigo ml-2 inline-flex px-2 py-0 align-middle font-sans text-[10px] normal-case tracking-normal">
                         Weekend hours
                       </span>
                     )}
@@ -324,10 +348,10 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                         onClick={() => handleTimeSelect(slot)}
                         data-ocid="demo_modal.time_slot"
                         className={cn(
-                          "rounded-lg border px-3 py-2 text-sm font-medium transition-all hover:-translate-y-0.5",
+                          "min-h-11 rounded-full px-3 py-2 text-sm font-semibold tabular-nums outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/80 motion-safe:hover:-translate-y-0.5 sm:min-h-10",
                           selectedTime === slot
-                            ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                            : "border-border bg-muted/30 text-foreground hover:border-primary/50 hover:bg-muted",
+                            ? "btn-3d-primary"
+                            : "border border-hairline bg-card-raised text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] hover:border-primary/50 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]",
                         )}
                       >
                         {slot}
@@ -349,9 +373,9 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
             >
               {/* Selected slot summary */}
               {formattedSlot && (
-                <div className="flex items-center gap-2.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+                <div className="flex items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
                   <CalendarCheck className="size-4 shrink-0 text-primary" />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm font-semibold text-foreground">
                     {formattedSlot}
                   </span>
                   <button
@@ -360,7 +384,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                       setStep(1);
                       setSelectedTime(null);
                     }}
-                    className="ml-auto text-xs text-muted-foreground hover:text-primary"
+                    className="ml-auto shrink-0 rounded-full px-2 py-1 text-xs font-semibold text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/80"
                   >
                     Change
                   </button>
@@ -371,7 +395,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="demo-name"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                   >
                     Full Name <span className="text-destructive">*</span>
                   </Label>
@@ -398,7 +422,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="demo-email"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                   >
                     Business Email <span className="text-destructive">*</span>
                   </Label>
@@ -427,7 +451,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="demo-company"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                 >
                   Company Name <span className="text-destructive">*</span>
                 </Label>
@@ -455,10 +479,10 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="demo-phone"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                   >
                     Phone Number
-                    <span className="ml-1 text-[10px] font-normal text-muted-foreground/60">
+                    <span className="ml-1 font-sans text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
                       (optional)
                     </span>
                   </Label>
@@ -477,7 +501,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="demo-volume"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                   >
                     Monthly Mail Volume
                   </Label>
@@ -514,7 +538,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
                 type="submit"
                 size="lg"
                 disabled={submit.isPending}
-                className="w-full gap-2 text-base"
+                className="h-12 w-full gap-2 text-base"
                 data-ocid="demo_modal.submit_button"
               >
                 {submit.isPending ? (
@@ -533,10 +557,8 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               className="flex flex-col items-center py-6 text-center"
               data-ocid="demo_modal.confirmation_panel"
             >
-              <div className="flex size-16 items-center justify-center rounded-full bg-emerald-brand/10 ring-4 ring-emerald-brand/20">
-                <CheckCircle2 className="size-9 text-emerald-brand" />
-              </div>
-              <h3 className="mt-4 font-display text-xl font-bold text-foreground">
+              <MascotStage pose="checklist" size="md" className="mb-2" />
+              <h3 className="mt-4 font-display text-2xl font-black tracking-tight text-foreground">
                 {delivery === "sent" ? "Request received" : "Request saved"}
               </h3>
               <p
@@ -549,8 +571,8 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               </p>
 
               {/* Booking summary */}
-              <div className="mt-5 w-full rounded-xl border border-border bg-muted/30 p-4 text-left text-sm">
-                <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="mt-5 w-full rounded-2xl border border-hairline bg-card-raised p-4 text-left text-sm">
+                <div className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Booking Summary
                 </div>
                 <div className="space-y-1.5">
@@ -592,7 +614,7 @@ export function BookDemoModal({ open, onClose }: BookDemoModalProps) {
               <Button
                 type="button"
                 variant="outline"
-                className="mt-5"
+                className="mt-5 h-11 px-8"
                 onClick={onClose}
                 data-ocid="demo_modal.done_button"
               >

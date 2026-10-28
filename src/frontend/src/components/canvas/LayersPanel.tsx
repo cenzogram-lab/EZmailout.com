@@ -35,9 +35,13 @@ export function LayersPanel() {
   if (layers.length === 0) {
     return (
       <div className="space-y-3" data-ocid="canvas.panel.layers">
-        <p className="font-display text-sm font-semibold">Layers</p>
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-          <Layers className="size-5" />
+        <p className="font-display text-base font-black tracking-tight">
+          Layers
+        </p>
+        <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-dashed border-hairline-strong bg-well/60 px-4 py-8 text-center text-sm text-muted-foreground">
+          <span className="flex size-10 items-center justify-center rounded-full border border-hairline bg-card text-foreground shadow-surface">
+            <Layers className="size-5" />
+          </span>
           No layers on the {activeSide} side yet. Add text, a logo or a QR code.
         </div>
       </div>
@@ -47,13 +51,18 @@ export function LayersPanel() {
   return (
     <div className="space-y-3" data-ocid="canvas.panel.layers">
       <div>
-        <p className="font-display text-sm font-semibold">Layers</p>
+        <p className="font-display text-base font-black tracking-tight">
+          Layers
+        </p>
         <p className="text-xs text-muted-foreground">
           Top of the list prints on top. Reorder one step or jump to the front /
           back.
         </p>
       </div>
-      <ul className="divide-y rounded-lg border" data-ocid="canvas.layers.list">
+      <ul
+        className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-card-raised"
+        data-ocid="canvas.layers.list"
+      >
         {layers.map((el) => {
           const selected = el.id === selectedElementId;
           const shape = el.kind === "logo" && isShapeUrl(el.data.url);
@@ -79,28 +88,39 @@ export function LayersPanel() {
             <li
               key={el.id}
               className={cn(
-                "flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1.5 text-sm",
-                selected && "bg-primary/10",
+                "flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2.5 py-2 text-sm transition-colors",
+                selected
+                  ? "bg-primary/10 shadow-[inset_3px_0_0_oklch(var(--primary))]"
+                  : "hover:bg-foreground/5",
               )}
               data-ocid={`canvas.layers.item.${el.id}`}
             >
               <button
                 type="button"
                 onClick={() => setSelectedElementId(el.id)}
-                className="flex min-w-0 basis-full items-center gap-2 py-0.5 text-left"
+                className="flex min-w-0 basis-full items-center gap-2 rounded-lg py-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80"
                 data-ocid={`canvas.layers.select.${el.id}`}
               >
-                <Icon className="size-4 shrink-0 text-muted-foreground" />
-                <span className="truncate">{label}</span>
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-lg border border-hairline bg-card",
+                    selected ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  <Icon className="size-3.5" />
+                </span>
+                <span className={cn("truncate", selected && "font-semibold")}>
+                  {label}
+                </span>
+                <span className="ml-auto font-mono text-[10px] tabular-nums tracking-wider text-muted-foreground">
                   z{el.z}
                 </span>
               </button>
-              <div className="ml-6 flex items-center gap-0.5">
+              <div className="ml-9 flex items-center gap-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                   onClick={() => bringForward(activeSide, el.id)}
                   title="Bring forward"
                   data-ocid={`canvas.layers.forward.${el.id}`}
@@ -110,7 +130,7 @@ export function LayersPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                   onClick={() => sendBackward(activeSide, el.id)}
                   title="Send backward"
                   data-ocid={`canvas.layers.backward.${el.id}`}
@@ -120,7 +140,7 @@ export function LayersPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                   onClick={() => bringToFront(activeSide, el.id)}
                   title="Bring to front"
                   data-ocid={`canvas.layers.front.${el.id}`}
@@ -130,7 +150,7 @@ export function LayersPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                   onClick={() => sendToBack(activeSide, el.id)}
                   title="Send to back"
                   data-ocid={`canvas.layers.back.${el.id}`}
@@ -140,7 +160,7 @@ export function LayersPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7 text-destructive"
+                  className="size-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => removeElement(activeSide, el.id)}
                   title="Delete"
                   data-ocid={`canvas.layers.delete.${el.id}`}

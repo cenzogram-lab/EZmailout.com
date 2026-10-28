@@ -73,60 +73,68 @@ export function SupportTicketForm({ onBack }: { onBack: () => void }) {
 
   if (done) {
     return (
+      // Scrolls rather than clipping on a short phone, and keeps clear of the
+      // column the seated Stampy launcher takes on phones, like the form below.
       <div
-        className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center"
+        className="flex h-full flex-col overflow-y-auto py-3 pl-6 pr-20 text-center sm:pr-6 [@media(max-height:500px)]:pr-6"
         data-ocid="stampy.support.confirmation"
       >
-        <CheckCircle2 className="size-10 text-emerald-500" />
-        {done.kind === "sent" ? (
-          <>
-            <p className="font-display text-base font-semibold">
-              {TICKET_CONFIRMATION}
-            </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              Ticket {done.ticketId}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="font-display text-base font-semibold">
-              Saved on this device.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              We couldn't reach our servers just now, so your ticket will be
-              sent to our postal team automatically the next time you're online.
-            </p>
-          </>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onBack}
-          data-ocid="stampy.support.done"
-        >
-          Back to chat
-        </Button>
+        <div className="m-auto flex flex-col items-center gap-3">
+          <CheckCircle2 className="size-10 text-emerald-brand" />
+          {done.kind === "sent" ? (
+            <>
+              <p className="font-display text-base font-semibold">
+                {TICKET_CONFIRMATION}
+              </p>
+              <p className="meta-mono">Ticket {done.ticketId}</p>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-base font-semibold">
+                Saved on this device.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                We couldn't reach our servers just now, so your ticket will be
+                sent to our postal team automatically the next time you're
+                online.
+              </p>
+            </>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onBack}
+            data-ocid="stampy.support.done"
+          >
+            Back to chat
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
+    // On phones the Stampy launcher is seated in the panel's bottom-right
+    // corner (as beside the chat composer), so the whole scrolling form keeps
+    // clear of its column; on a short screen the panel covers the launcher.
     <form
       onSubmit={handleSubmit}
-      className="flex h-full flex-col gap-3 overflow-y-auto px-4 py-3"
+      className="flex h-full flex-col gap-3 overflow-y-auto py-3 pl-4 pr-20 sm:pr-4 [@media(max-height:500px)]:pr-4"
       data-ocid="stampy.support.form"
       noValidate
     >
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex w-fit items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex w-fit items-center gap-1 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
         data-ocid="stampy.support.back"
       >
         <ArrowLeft className="size-3.5" /> Back to chat
       </button>
       <div>
-        <p className="font-display text-sm font-semibold">Contact Support</p>
+        <p className="font-display text-[15px] font-black tracking-tight">
+          Contact Support
+        </p>
         <p className="text-xs text-muted-foreground">
           A person from our postal team will reply by email.
         </p>
@@ -185,10 +193,11 @@ export function SupportTicketForm({ onBack }: { onBack: () => void }) {
           {error}
         </p>
       ) : null}
+      {/* As tall as the chat composer's controls on phones. */}
       <Button
         type="submit"
         disabled={submit.isPending}
-        className="mt-auto"
+        className="mt-auto h-11 shrink-0 sm:h-9"
         data-ocid="stampy.support.submit"
       >
         {submit.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

@@ -43,6 +43,13 @@ import { useRef, useState } from "react";
 
 const WEIGHTS = ["300", "400", "500", "600", "700", "800", "900"];
 
+/** Small-caps field label used across the inspector. */
+const FIELD_LABEL =
+  "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
+/** Live value readout beside a slider. */
+const READOUT =
+  "font-mono text-[11px] tabular-nums tracking-wider text-muted-foreground";
+
 /**
  * A number box that lets the customer finish typing: what they type is kept
  * as typed and applied as soon as it is in range, and clamped only when they
@@ -113,14 +120,14 @@ function NumberField({
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </Label>
+      <Label className={FIELD_LABEL}>{label}</Label>
       <NumberInput
         value={value}
         onChange={onChange}
         min={min}
-        className="h-8"
+        // Narrow side padding leaves room for four digits in a phone's
+        // column; the 16 px type stays (smaller text makes iOS zoom).
+        className="h-8 px-2"
         ocid={ocid}
       />
     </div>
@@ -144,8 +151,10 @@ export function ElementInspector() {
 
   if (!selectedElementId || !kind) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        <MousePointerSquareDashed className="size-5" />
+      <div className="flex h-full flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed border-hairline-strong bg-well/60 p-6 text-center text-sm text-muted-foreground">
+        <span className="flex size-10 items-center justify-center rounded-full border border-hairline bg-card text-foreground shadow-surface">
+          <MousePointerSquareDashed className="size-5" />
+        </span>
         Select an element on the canvas to edit its properties.
       </div>
     );
@@ -153,11 +162,13 @@ export function ElementInspector() {
 
   const header = (title: string) => (
     <div className="flex items-center justify-between">
-      <span className="font-display text-sm font-semibold">{title}</span>
+      <span className="font-display text-sm font-bold tracking-tight">
+        {title}
+      </span>
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 gap-1 text-destructive"
+        className="h-8 gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={() => removeElement(activeSide, selectedElementId)}
         data-ocid="canvas.inspector.delete"
       >
@@ -183,9 +194,7 @@ export function ElementInspector() {
         />
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Font
-            </Label>
+            <Label className={FIELD_LABEL}>Font</Label>
             <FontPicker
               value={block.fontFamily}
               onChange={(v) => patch({ fontFamily: v })}
@@ -193,15 +202,13 @@ export function ElementInspector() {
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Weight
-            </Label>
+            <Label className={FIELD_LABEL}>Weight</Label>
             <Select
               value={String(block.fontWeight)}
               onValueChange={(v) => patch({ fontWeight: BigInt(v) })}
             >
               <SelectTrigger
-                className="h-8"
+                className="h-8 w-full data-[size=default]:h-8"
                 data-ocid="canvas.inspector.weight"
               >
                 <SelectValue />
@@ -218,9 +225,7 @@ export function ElementInspector() {
         </div>
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Size
-            </Label>
+            <Label className={FIELD_LABEL}>Size</Label>
             <NumberInput
               min={8}
               max={160}
@@ -240,9 +245,7 @@ export function ElementInspector() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Colour
-          </Label>
+          <Label className={FIELD_LABEL}>Colour</Label>
           <SwatchRow
             value={block.color}
             onChange={(color) => patch({ color })}
@@ -257,34 +260,35 @@ export function ElementInspector() {
             data-ocid="canvas.inspector.color_hex"
           />
         </div>
-        <div className="flex gap-1">
-          {(["left", "center", "right"] as const).map((a) => {
-            const Icon =
-              a === "left"
-                ? AlignLeft
-                : a === "center"
-                  ? AlignCenter
-                  : AlignRight;
-            return (
-              <Button
-                key={a}
-                type="button"
-                variant={block.align === a ? "default" : "outline"}
-                size="icon"
-                className="size-8"
-                onClick={() => patch({ align: a })}
-                data-ocid={`canvas.inspector.align.${a}`}
-                aria-label={`Align ${a}`}
-              >
-                <Icon className="size-4" />
-              </Button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <div className="segmented gap-0.5 p-1">
+            {(["left", "center", "right"] as const).map((a) => {
+              const Icon =
+                a === "left"
+                  ? AlignLeft
+                  : a === "center"
+                    ? AlignCenter
+                    : AlignRight;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  className="segmented-item size-8 min-h-0 px-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
+                  onClick={() => patch({ align: a })}
+                  aria-pressed={block.align === a}
+                  data-ocid={`canvas.inspector.align.${a}`}
+                  aria-label={`Align ${a}`}
+                >
+                  <Icon className="size-4" />
+                </button>
+              );
+            })}
+          </div>
           <Button
             type="button"
             variant={extras.italic ? "default" : "outline"}
             size="icon"
-            className="ml-auto size-8"
+            className="ml-auto size-9"
             onClick={() => patch({ italic: !extras.italic })}
             aria-pressed={extras.italic}
             aria-label="Italic"
@@ -296,10 +300,8 @@ export function ElementInspector() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Spacing
-              </Label>
-              <span className="font-mono text-[11px] text-muted-foreground">
+              <Label className={FIELD_LABEL}>Spacing</Label>
+              <span className={READOUT}>
                 {Math.round(extras.letterSpacing * 100)}
               </span>
             </div>
@@ -315,12 +317,8 @@ export function ElementInspector() {
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Line height
-              </Label>
-              <span className="font-mono text-[11px] text-muted-foreground">
-                {extras.lineHeight.toFixed(2)}
-              </span>
+              <Label className={FIELD_LABEL}>Line height</Label>
+              <span className={READOUT}>{extras.lineHeight.toFixed(2)}</span>
             </div>
             <Slider
               min={LINE_HEIGHT_RANGE.min}
@@ -333,7 +331,10 @@ export function ElementInspector() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-5 gap-2">
+        {/* X Y W over H Turn° until the inspector (a container, see
+            Step3DesignCanvas) is 24rem wide: five boxes across a phone's
+            260 px column left 20 px for the digits and cut "507" to "50". */}
+        <div className="grid grid-cols-3 gap-2 @sm:grid-cols-5">
           <NumberField
             label="X"
             value={block.x}
@@ -386,9 +387,7 @@ export function ElementInspector() {
         <div className="space-y-3" data-ocid="canvas.inspector.shape">
           {header(`Shape · ${shapeKind}`)}
           <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Fill
-            </Label>
+            <Label className={FIELD_LABEL}>Fill</Label>
             <SwatchRow
               value={shapeFillOf(logo.url)}
               onChange={(fill) =>
@@ -399,7 +398,7 @@ export function ElementInspector() {
               size="sm"
             />
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 @[16rem]:grid-cols-4">
             <NumberField
               label="X"
               value={logo.x}
@@ -441,7 +440,7 @@ export function ElementInspector() {
           <img
             src={logo.url}
             alt=""
-            className="size-14 rounded border object-contain checkerboard"
+            className="checkerboard size-14 rounded-xl border border-hairline-strong object-contain"
           />
           <div className="space-y-1">
             <input
@@ -520,16 +519,16 @@ export function ElementInspector() {
   return (
     <div className="space-y-3" data-ocid="canvas.inspector.qr">
       {header("QR code")}
-      <div className="flex gap-1">
+      <div className="segmented flex w-full gap-0.5 p-1">
         {[
           { mode: QrMode.DynamicTracking, label: "Dynamic tracking" },
           { mode: QrMode.StaticUrl, label: "Static URL" },
         ].map((opt) => (
-          <Button
+          <button
             key={opt.mode}
             type="button"
-            size="sm"
-            variant={qr.mode === opt.mode ? "default" : "outline"}
+            className="segmented-item min-h-8 min-w-0 flex-1 whitespace-normal px-2 text-center text-xs leading-tight focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
+            aria-pressed={qr.mode === opt.mode}
             onClick={() =>
               patchQr({
                 mode: opt.mode,
@@ -544,14 +543,12 @@ export function ElementInspector() {
             data-ocid={`canvas.inspector.qr_mode.${opt.mode}`}
           >
             {opt.label}
-          </Button>
+          </button>
         ))}
       </div>
       {qr.mode === QrMode.StaticUrl ? (
         <div className="space-y-1">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Static URL
-          </Label>
+          <Label className={FIELD_LABEL}>Static URL</Label>
           <Input
             value={qr.url}
             onChange={(e) => patchQr({ url: e.target.value })}
@@ -570,7 +567,7 @@ export function ElementInspector() {
           />
         </div>
       ) : (
-        <p className="rounded-md bg-muted/60 p-2 text-[11px] text-muted-foreground">
+        <p className="rounded-2xl border border-hairline bg-well/60 p-2.5 text-[11px] leading-relaxed text-muted-foreground">
           Each printed piece gets its own{" "}
           <span className="font-mono">ezmailout.com/t/&lt;recipient&gt;</span>{" "}
           link that redirects to the campaign destination set in the QR &amp;
@@ -578,9 +575,7 @@ export function ElementInspector() {
         </p>
       )}
       <div className="space-y-1">
-        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Size
-        </Label>
+        <Label className={FIELD_LABEL}>Size</Label>
         <Slider
           min={40}
           max={400}
@@ -592,9 +587,7 @@ export function ElementInspector() {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Foreground
-          </Label>
+          <Label className={FIELD_LABEL}>Foreground</Label>
           <ColorPicker
             value={qr.foreground}
             onChange={(hex) => patchQr({ foreground: hex })}
@@ -603,9 +596,7 @@ export function ElementInspector() {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Background
-          </Label>
+          <Label className={FIELD_LABEL}>Background</Label>
           <ColorPicker
             value={qr.background}
             onChange={(hex) => patchQr({ background: hex })}

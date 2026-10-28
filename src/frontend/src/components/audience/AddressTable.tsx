@@ -48,6 +48,33 @@ function rowKey(row: AddressRowLike, index: number): string {
   return `${index}:${row.zip_code}:${row.address_line1}:${row.name}`;
 }
 
+/** A row's verification result: Valid, Invalid (with the reason) or a dash. */
+function RowStatus({ status }: { status: AddressRowStatus | undefined }) {
+  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (status.isValid) {
+    return (
+      <Badge variant="success" className="gap-1">
+        <CheckCircle2 className="size-3" /> Valid
+      </Badge>
+    );
+  }
+  return (
+    <span className="flex flex-col gap-0.5">
+      <Badge
+        variant="outline"
+        className="w-fit gap-1 border-destructive/30 bg-destructive/10 text-destructive"
+      >
+        <XCircle className="size-3" /> Invalid
+      </Badge>
+      {status.errorMessage && (
+        <span className="whitespace-normal text-xs text-destructive sm:whitespace-nowrap">
+          {status.errorMessage}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** Paginated recipient table with optional status and delete columns. */
 export function AddressTable({
   rows,
@@ -75,7 +102,7 @@ export function AddressTable({
         size="sm"
         title={emptyMessage}
         description="Recipients you add or verify appear here."
-        className="rounded-2xl border border-dashed border-border bg-muted/30 px-4"
+        className="rounded-3xl border border-dashed border-hairline-strong bg-card-raised px-4"
         data-ocid={`${ocidPrefix}.table.empty`}
       />
     );
@@ -84,19 +111,21 @@ export function AddressTable({
   return (
     <div className="space-y-3">
       <div
-        className="overflow-auto rounded-xl border border-border"
+        className="overflow-auto rounded-2xl border border-hairline bg-card-raised shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]"
         data-ocid={`${ocidPrefix}.table`}
       >
         <Table>
-          <TableHeader>
-            <TableRow>
+          <TableHeader className="bg-well">
+            <TableRow className="hover:bg-transparent">
               <TableHead className="w-10 text-right">#</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>State</TableHead>
-              <TableHead>ZIP</TableHead>
-              {showStatus && <TableHead>Status</TableHead>}
+              <TableHead className="hidden sm:table-cell">Address</TableHead>
+              <TableHead className="hidden sm:table-cell">City</TableHead>
+              <TableHead className="hidden sm:table-cell">State</TableHead>
+              <TableHead className="hidden sm:table-cell">ZIP</TableHead>
+              {showStatus && (
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
+              )}
               {showDelete && <TableHead className="w-12" />}
             </TableRow>
           </TableHeader>
@@ -105,6 +134,7 @@ export function AddressTable({
               const index = start + i;
               const status = statuses?.[index];
               const invalid = status ? !status.isValid : false;
+              const zip = `${row.zip_code}${row.zip_plus4 ? `-${row.zip_plus4}` : ""}`;
               return (
                 <TableRow
                   key={rowKey(row, index)}
@@ -114,10 +144,24 @@ export function AddressTable({
                   <TableCell className="text-right font-mono text-xs text-muted-foreground">
                     {index + 1}
                   </TableCell>
-                  <TableCell className="font-medium text-foreground">
+                  <TableCell className="whitespace-normal font-medium text-foreground sm:whitespace-nowrap">
                     {row.name || "Resident"}
+                    {/* Phones: the address and status go under the name and
+                        wrap, instead of five more columns scrolling out of
+                        the card with the street cut mid-word. */}
+                    <span className="mt-0.5 block text-xs font-normal leading-snug text-muted-foreground [overflow-wrap:anywhere] sm:hidden">
+                      {row.address_line1}
+                      {row.address_line2 ? `, ${row.address_line2}` : ""}
+                      <br />
+                      {row.city}, {row.state} {zip}
+                    </span>
+                    {showStatus && (
+                      <span className="mt-1.5 block font-normal sm:hidden">
+                        <RowStatus status={status} />
+                      </span>
+                    )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {row.address_line1}
                     {row.address_line2 ? (
                       <span className="text-muted-foreground">
@@ -125,42 +169,18 @@ export function AddressTable({
                       </span>
                     ) : null}
                   </TableCell>
-                  <TableCell>{row.city}</TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="hidden sm:table-cell">
+                    {row.city}
+                  </TableCell>
+                  <TableCell className="hidden font-mono text-xs sm:table-cell">
                     {row.state}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {row.zip_code}
-                    {row.zip_plus4 ? `-${row.zip_plus4}` : ""}
+                  <TableCell className="hidden font-mono text-xs sm:table-cell">
+                    {zip}
                   </TableCell>
                   {showStatus && (
-                    <TableCell>
-                      {status ? (
-                        status.isValid ? (
-                          <Badge
-                            variant="outline"
-                            className="gap-1 border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-                          >
-                            <CheckCircle2 className="size-3" /> Valid
-                          </Badge>
-                        ) : (
-                          <span className="flex flex-col gap-0.5">
-                            <Badge
-                              variant="outline"
-                              className="w-fit gap-1 border-destructive/30 bg-destructive/10 text-destructive"
-                            >
-                              <XCircle className="size-3" /> Invalid
-                            </Badge>
-                            {status.errorMessage && (
-                              <span className="text-xs text-destructive">
-                                {status.errorMessage}
-                              </span>
-                            )}
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="hidden sm:table-cell">
+                      <RowStatus status={status} />
                     </TableCell>
                   )}
                   {showDelete && (
@@ -169,7 +189,7 @@ export function AddressTable({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="size-8 text-muted-foreground hover:text-destructive"
+                        className="size-11 text-muted-foreground hover:text-destructive sm:size-8"
                         onClick={() => onDeleteRow?.(index)}
                         aria-label={`Remove recipient ${index + 1}`}
                         data-ocid={`${ocidPrefix}.item.${index + 1}.delete.button`}
@@ -185,7 +205,7 @@ export function AddressTable({
         </Table>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>
+        <span className="tabular-nums">
           Showing {formatNumber(start + 1)}–
           {formatNumber(Math.min(rows.length, start + ADDRESS_PAGE_SIZE))} of{" "}
           {formatNumber(rows.length)}
@@ -198,12 +218,12 @@ export function AddressTable({
               size="sm"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="gap-1"
+              className="h-11 gap-1 sm:h-8"
               data-ocid={`${ocidPrefix}.pagination.prev.button`}
             >
               <ChevronLeft className="size-3.5" /> Prev
             </Button>
-            <span className="px-2 font-mono">
+            <span className="meta-mono px-2">
               {page + 1} / {pageCount}
             </span>
             <Button
@@ -212,7 +232,7 @@ export function AddressTable({
               size="sm"
               onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
               disabled={page >= pageCount - 1}
-              className="gap-1"
+              className="h-11 gap-1 sm:h-8"
               data-ocid={`${ocidPrefix}.pagination.next.button`}
             >
               Next <ChevronRight className="size-3.5" />

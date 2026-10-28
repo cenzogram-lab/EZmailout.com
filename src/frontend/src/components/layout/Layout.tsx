@@ -11,7 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MascotGloss } from "@/components/ui/mascot-gloss";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAccountSync } from "@/hooks/use-account";
 import { useIsAdmin } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
@@ -52,11 +54,11 @@ const ocidFor = (label: string) =>
   `nav.${label.toLowerCase().replace(/\s+/g, "_")}.link`;
 
 /**
- * Desktop nav item, after a news-site section bar: a full-height cell of the
- * header with hairline dividers between cells, a 20 px indigo icon and a bold
- * label, and a 3 px indigo underline on the active section (sitting on the
- * airmail stripe). From `xl` it shows its label; at `lg` the label is visually
- * hidden (still its accessible name) so the bar fits 1024 px.
+ * Desktop nav item: a segment of the capsule track in the floating header
+ * pill (`.segmented` / `.segmented-item` in index.css). The active section is
+ * the raised pill, read from `aria-current="page"`. From `xl` it shows its
+ * label; at `lg` the label is visually hidden (still its accessible name) so
+ * the bar fits 1024 px.
  */
 function NavLink({
   to,
@@ -74,15 +76,13 @@ function NavLink({
       title={label}
       data-ocid={ocidFor(label)}
       aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "relative flex h-full shrink-0 items-center gap-2 whitespace-nowrap px-4 text-[15px] font-bold tracking-tight transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 xl:px-5",
-        isActive
-          ? "bg-primary/[0.06] text-primary-ink after:bg-primary"
-          : "text-foreground/75 after:bg-transparent hover:bg-muted/70 hover:text-foreground hover:after:bg-border",
-      )}
+      className="segmented-item h-9 shrink-0 gap-2 px-2.5 text-sm tracking-tight focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 xl:px-3.5"
     >
       <Icon
-        className={cn("size-5", isActive ? "text-primary" : "text-primary/75")}
+        className={cn(
+          "size-[18px]",
+          isActive ? "text-primary" : "text-primary/80",
+        )}
         strokeWidth={2.2}
       />
       <span className="sr-only xl:not-sr-only">{label}</span>
@@ -109,13 +109,13 @@ function MenuLink({
       onClick={onClick}
       data-ocid={ocidFor(label)}
       className={cn(
-        "flex h-12 items-center gap-3 rounded-2xl px-2 text-base font-semibold transition-smooth",
+        "flex h-12 items-center gap-3 rounded-2xl border px-2 text-base font-semibold transition-smooth focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80",
         isActive
-          ? "bg-primary/10 text-primary-ink"
-          : "text-foreground hover:bg-muted",
+          ? "border-primary/25 bg-primary/10 font-bold text-primary-ink"
+          : "border-transparent text-foreground hover:bg-muted",
       )}
     >
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
         <Icon className="size-5" strokeWidth={2.2} />
       </span>
       {label}
@@ -173,12 +173,12 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       >
-        <span className="hidden h-10 w-32 animate-pulse rounded-full bg-foreground/10 sm:block" />
-        <span className="block size-10 animate-pulse rounded-full bg-foreground/10" />
+        <span className="hidden h-11 w-32 animate-pulse rounded-full bg-foreground/10 sm:block lg:h-10" />
+        <span className="block size-11 animate-pulse rounded-full bg-foreground/10 lg:size-10" />
       </output>
     ) : (
       <output
-        className="block h-10 w-10 animate-pulse rounded-full bg-foreground/10 sm:w-[5.75rem]"
+        className="block size-11 animate-pulse rounded-full bg-foreground/10 sm:w-[5.75rem] lg:h-10"
         aria-label="Checking your session"
         data-ocid="nav.auth.loading"
       />
@@ -190,7 +190,7 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         size="sm"
         onClick={login}
         disabled={isLoggingIn}
-        className="size-10 shrink-0 gap-1.5 whitespace-nowrap rounded-full bg-primary p-0 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 sm:h-10 sm:w-auto sm:px-4"
+        className="size-11 shrink-0 gap-1.5 whitespace-nowrap rounded-full p-0 text-[15px] font-semibold sm:h-11 sm:w-auto sm:px-4 lg:h-10"
         aria-label="Sign in"
         data-ocid="nav.sign_in.button"
       >
@@ -213,26 +213,34 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
   };
   return (
     <div className="flex items-center gap-2">
+      {/* A raised glossy pill: the balance as a heavy figure, "credits"
+          small beside it. */}
       <Link
         to="/dashboard"
         onClick={onNavigate}
-        className="hidden h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 bg-card px-4 text-sm font-semibold shadow-soft sm:inline-flex"
+        className="btn-3d-neutral hidden h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full pl-1.5 pr-3.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:inline-flex lg:h-10"
         data-ocid="nav.credits.link"
         title={principal ?? undefined}
       >
-        <Sparkles className="size-4 text-primary" />
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <Sparkles className="size-4" />
+        </span>
         {accountReady ? (
-          creditBalance.toLocaleString()
+          <span className="text-base font-black tabular-nums tracking-tight">
+            {creditBalance.toLocaleString()}
+          </span>
         ) : (
-          <span className="inline-block h-3.5 w-7 animate-pulse rounded bg-muted" />
+          <span className="inline-block h-4 w-7 animate-pulse rounded bg-muted" />
         )}{" "}
-        credits
+        <span className="text-xs font-semibold text-muted-foreground">
+          credits
+        </span>
       </Link>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-deep text-sm font-bold text-primary-foreground shadow-soft ring-2 ring-card transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+            className="btn-3d-primary flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold tracking-wide lg:size-10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
             aria-label="Account menu"
             data-ocid="nav.account.button"
           >
@@ -241,22 +249,23 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-60 rounded-2xl p-1.5"
+          sideOffset={10}
+          className="w-64 rounded-3xl p-1.5"
           data-ocid="nav.account.menu"
         >
           <DropdownMenuLabel className="flex flex-col gap-0.5 px-2.5 py-2">
             <span className="text-sm font-semibold text-foreground">
               Signed in
             </span>
-            <span className="font-mono text-xs font-normal text-muted-foreground">
-              {short}
-            </span>
-            <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Sparkles className="size-3.5 text-primary" />
+            <span className="meta-mono font-normal">{short}</span>
+            <span className="mt-2 inline-flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
+              <Sparkles className="size-3.5 self-center text-primary" />
               {accountReady ? (
-                creditBalance.toLocaleString()
+                <span className="text-2xl font-black tabular-nums tracking-tight text-foreground">
+                  {creditBalance.toLocaleString()}
+                </span>
               ) : (
-                <span className="inline-block h-3.5 w-7 animate-pulse rounded bg-muted" />
+                <span className="inline-block h-6 w-10 animate-pulse self-center rounded bg-muted" />
               )}{" "}
               credits
             </span>
@@ -283,6 +292,11 @@ function AuthControls({ onNavigate }: { onNavigate?: () => void }) {
           >
             <Plus className="size-4" /> Top up credits
           </DropdownMenuItem>
+          <ThemeToggle
+            variant="menu-item"
+            className="rounded-xl"
+            data-ocid="nav.account.theme"
+          />
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="gap-2 rounded-xl text-destructive focus:text-destructive"
@@ -349,89 +363,138 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = NAV.filter((item) => item.to !== "/admin" || isAdmin);
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 bg-background pt-[env(safe-area-inset-top,0px)]">
-        {/* From 2xl the bar may use up to 100rem: the logo and the peeking Stampy keep growing with the viewport, and the page content (max-w-7xl) stays centred under it. */}
-        <div className="mx-auto flex h-[var(--header-h)] max-w-7xl items-center gap-2 px-3 min-[360px]:px-4 sm:gap-3 sm:px-6 lg:px-8 2xl:max-w-[100rem]">
-          <Link
-            to="/"
-            data-ocid="nav.logo.link"
-            className="flex shrink-0 items-center gap-2.5"
-          >
-            {/* Stampy is the brand mark: his head in an indigo-ringed disc. */}
-            <span className="flex size-[clamp(2.5rem,2.1rem+0.9vw,3.25rem)] items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30">
-              <StampyMark className="h-[88%] w-[104%]" />
-            </span>
-            <span className="font-display text-[clamp(1.125rem,0.95rem+0.55vw,1.5rem)] font-extrabold whitespace-nowrap tracking-tight text-primary">
-              {BRAND.name}
-              <span className="text-[#e5402a]">.</span>
-            </span>
-          </Link>
-
-          <nav
-            aria-label="Main"
-            className="hidden flex-1 items-stretch justify-center gap-4 self-stretch lg:flex"
-          >
-            <ul className="flex items-stretch divide-x divide-border/70 border-x border-border/70">
-              {navItems.map((item) => (
-                <li key={item.to} className="flex">
-                  <NavLink {...item} />
-                </li>
-              ))}
-            </ul>
-            <Link
-              to="/wizard"
-              className="self-center"
-              data-ocid="nav.launch_campaign.link"
+      {/* The hidden lighting filter behind `.mascot-3d` (glossy Stampy). */}
+      <MascotGloss />
+      {/* The header is a transparent sticky band (its footprint is
+          --header-h + 4px + the notch inset) holding a floating glass pill.
+          Nothing between it and the viewport sets transform, filter, contain
+          or overflow. */}
+      <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)]">
+        {/* Under a notch the status bar keeps the page colour. */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[env(safe-area-inset-top,0px)] bg-background"
+        />
+        {/* From 2xl the pill may use up to 100rem: the logo and the peeking Stampy keep growing with the viewport, and the page content (max-w-7xl) stays centred under it. */}
+        <div className="mx-auto h-[var(--header-h)] max-w-7xl px-2 pt-[var(--header-gap)] min-[360px]:px-3 sm:px-4 lg:px-6 2xl:max-w-[100rem]">
+          {/* Glass at 95 % (page text scrolling under the bar barely shows
+              where the blur is clamped at its edges) and 12 px of blur, not
+              the utility's 24 px: Chromium's software renderer skips larger
+              backdrop blurs, and the bar must look the same everywhere. */}
+          <div className="glass-bar relative h-full rounded-full bg-popover/95 backdrop-blur-md backdrop-saturate-150">
+            {/* The airmail stripe runs along the pill's bottom edge; the
+                peeking Stampy rests his paws on it. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
             >
-              <Button
-                className="h-10 shrink-0 gap-2 whitespace-nowrap rounded-full px-5 text-[15px] font-semibold"
-                variant="default"
+              <span className="airmail-stripe absolute inset-x-0 bottom-0" />
+            </span>
+            <div className="relative flex h-full items-center gap-1 pb-[3px] pl-1.5 pr-1.5 min-[360px]:gap-2 sm:gap-3 sm:pl-2 sm:pr-2 lg:pl-3">
+              <Link
+                to="/"
+                data-ocid="nav.logo.link"
+                className="flex shrink-0 items-center gap-1.5 rounded-full focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 min-[360px]:gap-2.5"
               >
-                <Send className="size-[18px]" strokeWidth={2.2} />
-                <span className="xl:hidden">Launch</span>
-                <span className="hidden xl:inline">Launch campaign</span>
-              </Button>
-            </Link>
-          </nav>
+                {/* Stampy is the brand mark: his head in an indigo-ringed disc. */}
+                <span className="flex size-[clamp(2.5rem,2.1rem+0.9vw,3.25rem)] items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30">
+                  <StampyMark className="h-[88%] w-[104%]" />
+                </span>
+                <span className="font-display text-[clamp(1.125rem,0.95rem+0.55vw,1.5rem)] font-extrabold whitespace-nowrap tracking-tight text-primary">
+                  {BRAND.name}
+                  {/* The red stamp dot, a shade per theme so it reads on the
+                      glass in both (AA). */}
+                  <span className="text-[#d33a24] dark:text-[#f05a44]">.</span>
+                </span>
+              </Link>
 
-          <div className="ml-auto flex items-center gap-1.5 self-stretch sm:gap-2 lg:ml-0">
-            <StampyPeek />
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <AuthControls />
-              <button
-                type="button"
-                onClick={() => setOpen((o) => !o)}
-                className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 bg-card text-foreground shadow-soft lg:hidden"
-                aria-label="Toggle menu"
-                aria-expanded={open}
-                data-ocid="nav.mobile_menu.button"
+              <nav
+                aria-label="Main"
+                className="hidden flex-1 items-center justify-center gap-2 lg:flex xl:gap-3"
               >
-                {open ? <X className="size-5" /> : <Menu className="size-5" />}
-              </button>
+                <ul className="segmented gap-0.5 p-1">
+                  {navItems.map((item) => (
+                    <li key={item.to} className="flex">
+                      <NavLink {...item} />
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/wizard"
+                  className="shrink-0"
+                  data-ocid="nav.launch_campaign.link"
+                >
+                  <Button
+                    className="h-10 shrink-0 gap-2 whitespace-nowrap rounded-full px-4 text-sm font-bold xl:px-5"
+                    variant="default"
+                  >
+                    <Send className="size-[18px]" strokeWidth={2.2} />
+                    <span className="xl:hidden">Launch</span>
+                    <span className="hidden xl:inline">Launch campaign</span>
+                  </Button>
+                </Link>
+              </nav>
+
+              <div className="ml-auto flex items-center gap-1 self-stretch min-[360px]:gap-1.5 sm:gap-2 lg:ml-0">
+                <StampyPeek />
+                <div className="flex items-center gap-1 min-[360px]:gap-1.5 sm:gap-2">
+                  {/* The phone menu and the account menu carry the switch
+                      too; below 390 px the pill has no room for it. */}
+                  <ThemeToggle
+                    className="hidden size-11 min-[390px]:inline-flex lg:size-10"
+                    data-ocid="nav.theme.toggle"
+                  />
+                  <AuthControls />
+                  <button
+                    type="button"
+                    onClick={() => setOpen((o) => !o)}
+                    className="btn-3d-neutral inline-flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 lg:hidden"
+                    aria-label="Toggle menu"
+                    aria-expanded={open}
+                    data-ocid="nav.mobile_menu.button"
+                  >
+                    {open ? (
+                      <X className="size-5" />
+                    ) : (
+                      <Menu className="size-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="airmail-stripe" aria-hidden />
+        {/* The 4 px under the pill that --header-h + 4px counts. */}
+        <div aria-hidden className="h-1" />
         {open && (
-          // Capped to the space between the header and the tab bar, so on a
-          // landscape phone the last rows scroll instead of hiding under it.
-          <div
-            className="max-h-[calc(100dvh-var(--header-h)-4px-env(safe-area-inset-top,0px)-var(--bottom-nav-h))] overflow-y-auto overscroll-contain border-b border-border/60 bg-card px-4 py-3 lg:hidden"
-            data-ocid="nav.mobile.menu"
-          >
-            <div className="flex flex-col gap-1">
-              {navItems.map((item) => (
+          // A floating sheet under the pill, capped to the space between the
+          // header and the tab bar, so on a landscape phone the last rows
+          // scroll instead of hiding under it.
+          <div className="mx-auto max-w-7xl px-2 pb-2 min-[360px]:px-3 sm:px-4 lg:hidden">
+            <div
+              className="surface-sheet max-h-[calc(100dvh-var(--header-h)-4px-env(safe-area-inset-top,0px)-var(--bottom-nav-h)-1rem)] overflow-y-auto overscroll-contain p-2"
+              data-ocid="nav.mobile.menu"
+            >
+              <div className="flex flex-col gap-1">
+                {navItems.map((item) => (
+                  <MenuLink
+                    key={item.to}
+                    {...item}
+                    onClick={() => setOpen(false)}
+                  />
+                ))}
                 <MenuLink
-                  key={item.to}
-                  {...item}
+                  to="/wizard"
+                  label="Launch campaign"
+                  icon={Send}
                   onClick={() => setOpen(false)}
                 />
-              ))}
-              <MenuLink
-                to="/wizard"
-                label="Launch campaign"
-                icon={Send}
-                onClick={() => setOpen(false)}
+              </div>
+              <div aria-hidden className="mx-2 my-1.5 h-px bg-hairline" />
+              <ThemeToggle
+                variant="row"
+                className="px-2"
+                data-ocid="nav.mobile.theme"
               />
             </div>
           </div>
@@ -447,7 +510,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Extra bottom padding lets the end of every page scroll clear of the
           Stampy launcher in the bottom-right corner and, below lg, the tab bar. */}
-      <footer className="border-t border-border/60 pb-[calc(6rem+var(--bottom-nav-h))] pt-8">
+      <footer className="border-t border-hairline pb-[calc(6rem+var(--bottom-nav-h))] pt-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <span>
             &copy; {new Date().getFullYear()} {BRAND.site} · Direct mail without
@@ -462,7 +525,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               caffeine.ai
             </a>
           </span>
-          <span className="monospace-accent">v2.0.0</span>
+          {/* Uppercase, as `monospace-accent` set it before the restyle:
+              it has always read "V2.0.0". */}
+          <span className="meta-mono uppercase">v2.0.0</span>
         </div>
       </footer>
       <CreditTopUpModal />

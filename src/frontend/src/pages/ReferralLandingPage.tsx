@@ -1,13 +1,8 @@
+import { MascotStage } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAccountSync } from "@/hooks/use-account";
 import { useBackendActor, useEnsureAccount } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
@@ -118,155 +113,169 @@ export function ReferralLandingPage() {
   const referredBy = account?.referredBy;
 
   return (
-    <div
-      className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8"
-      data-ocid="referral.page"
-    >
-      <Card className="surface-glow animate-fade-up">
-        <CardHeader>
-          <div className="mb-2 flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="border-primary/40 bg-primary/15 font-mono text-primary-ink"
-              data-ocid="referral.code.badge"
-            >
-              <Gift className="size-3" /> {code || "No code"}
-            </Badge>
-          </div>
-          <CardTitle className="font-display text-2xl tracking-tight">
+    <div className="relative isolate" data-ocid="referral.page">
+      <div aria-hidden="true" className="ambient-glow-backdrop" />
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        {/* The invitation: Stampy waving a postcard on stage, the code, a
+          heavy headline. */}
+        <div className="flex flex-col items-center text-center motion-safe:animate-fade-up">
+          <MascotStage pose="mail" size="lg" className="mb-8" />
+          <Badge
+            variant="info"
+            className="gap-1.5 px-3 py-1 font-mono tracking-wider"
+            data-ocid="referral.code.badge"
+          >
+            <Gift className="size-3" /> {code || "No code"}
+          </Badge>
+          <h1 className="display-heading mt-4 text-3xl leading-[1.1] sm:text-4xl">
             You've been invited to {BRAND.name}
-          </CardTitle>
-          <CardDescription>
+          </h1>
+          <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground">
             Sign in with Internet Identity to claim your welcome. Direct mail
             that's designed, addressed and shipped in minutes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {!code && (
-            <Alert variant="destructive" data-ocid="referral.missing.alert">
-              <Info className="size-4" />
-              <AlertTitle>Missing referral code</AlertTitle>
-              <AlertDescription>
-                This invitation link doesn't include a code. You can still sign
-                up — you just won't be linked to a referrer.
-              </AlertDescription>
-            </Alert>
-          )}
+          </p>
+        </div>
 
-          {isAuthenticated && code && (
-            <>
-              {result.kind === "pending" && (
-                <div
-                  className="flex items-center gap-2 text-sm text-muted-foreground"
-                  data-ocid="referral.linking.status"
-                >
-                  <Loader2 className="size-4 animate-spin" /> Linking your
-                  referral…
-                </div>
-              )}
-              {result.kind === "linked" && (
-                <Alert
-                  className="border-emerald-brand/40 bg-emerald-brand/10"
-                  data-ocid="referral.linked.alert"
-                >
-                  <CheckCircle2 className="size-4 text-emerald-brand" />
-                  <AlertTitle>Referral linked</AlertTitle>
-                  <AlertDescription>
-                    Your account is linked to referral code{" "}
-                    <span className="font-mono">{referredBy ?? code}</span>.
-                    Your first payment of{" "}
-                    {formatCents(SUBSCRIPTION_PRICE_CENTS)} or more will earn
-                    your referrer a free month if their membership is active
-                    then.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {result.kind === "existing" && (
-                <Alert data-ocid="referral.existing.alert">
-                  <Info className="size-4" />
-                  <AlertTitle>Already have an account</AlertTitle>
-                  <AlertDescription>
-                    Referral codes apply to new accounts only. You're all set —
-                    head to the wizard to launch your next campaign.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {result.kind === "error" && (
-                <Alert variant="destructive" data-ocid="referral.error.alert">
-                  <Info className="size-4" />
-                  <AlertTitle>Could not link referral</AlertTitle>
-                  <AlertDescription>{result.message}</AlertDescription>
-                </Alert>
-              )}
-            </>
-          )}
-
-          <ul className="space-y-3">
-            {PERKS.map((perk) => (
-              <li key={perk.text} className="flex items-start gap-3 text-sm">
-                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-ink">
-                  <perk.icon className="size-3.5" />
-                </span>
-                <span className="text-foreground">{perk.text}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            {!isAuthenticated ? (
-              <Button
-                onClick={login}
-                disabled={isLoggingIn || isInitializing}
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                data-ocid="referral.sign_in.button"
-              >
-                {isLoggingIn ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Fingerprint className="size-4" />
-                )}
-                Sign in with Internet Identity
-              </Button>
-            ) : (
-              <Button
-                asChild
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                data-ocid="referral.wizard.link"
-              >
-                <Link to="/wizard">
-                  <Rocket className="size-4" /> Start a campaign
-                </Link>
-              </Button>
+        <Card className="mt-8 motion-safe:animate-fade-up">
+          <CardContent className="space-y-6">
+            {!code && (
+              <Alert variant="destructive" data-ocid="referral.missing.alert">
+                <Info className="size-4" />
+                <AlertTitle>Missing referral code</AlertTitle>
+                <AlertDescription>
+                  This invitation link doesn't include a code. You can still
+                  sign up — you just won't be linked to a referrer.
+                </AlertDescription>
+              </Alert>
             )}
-            {!isAuthenticated && (
+
+            {isAuthenticated && code && (
+              <>
+                {result.kind === "pending" && (
+                  <div
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    data-ocid="referral.linking.status"
+                  >
+                    <Loader2 className="size-4 animate-spin" /> Linking your
+                    referral…
+                  </div>
+                )}
+                {result.kind === "linked" && (
+                  <Alert
+                    className="border-emerald-brand/40 bg-emerald-brand/10"
+                    data-ocid="referral.linked.alert"
+                  >
+                    <CheckCircle2 className="size-4 text-emerald-brand" />
+                    <AlertTitle>Referral linked</AlertTitle>
+                    <AlertDescription>
+                      Your account is linked to referral code{" "}
+                      <span className="font-mono">{referredBy ?? code}</span>.
+                      Your first payment of{" "}
+                      {formatCents(SUBSCRIPTION_PRICE_CENTS)} or more will earn
+                      your referrer a free month if their membership is active
+                      then.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {result.kind === "existing" && (
+                  <Alert
+                    className="bg-card-raised"
+                    data-ocid="referral.existing.alert"
+                  >
+                    <Info className="size-4" />
+                    <AlertTitle>Already have an account</AlertTitle>
+                    <AlertDescription>
+                      Referral codes apply to new accounts only. You're all set
+                      — head to the wizard to launch your next campaign.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {result.kind === "error" && (
+                  <Alert variant="destructive" data-ocid="referral.error.alert">
+                    <Info className="size-4" />
+                    <AlertTitle>Could not link referral</AlertTitle>
+                    <AlertDescription>{result.message}</AlertDescription>
+                  </Alert>
+                )}
+              </>
+            )}
+
+            <ul className="space-y-4">
+              {PERKS.map((perk) => (
+                <li
+                  key={perk.text}
+                  className="flex items-start gap-3.5 text-sm"
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]">
+                    <perk.icon className="size-4" />
+                  </span>
+                  <span className="pt-2 leading-relaxed text-foreground">
+                    {perk.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-col gap-2.5 border-t border-hairline pt-6 sm:flex-row sm:flex-wrap sm:items-center">
+              {!isAuthenticated ? (
+                <Button
+                  onClick={login}
+                  disabled={isLoggingIn || isInitializing}
+                  size="lg"
+                  className="h-12 gap-2 px-6 text-base"
+                  data-ocid="referral.sign_in.button"
+                >
+                  {isLoggingIn ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Fingerprint className="size-4" />
+                  )}
+                  Sign in with Internet Identity
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 gap-2 px-6 text-base"
+                  data-ocid="referral.wizard.link"
+                >
+                  <Link to="/wizard">
+                    <Rocket className="size-4" /> Start a campaign
+                  </Link>
+                </Button>
+              )}
+              {!isAuthenticated && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="h-12 gap-2 px-6 text-base"
+                  data-ocid="referral.wizard.link"
+                >
+                  <Link to="/wizard">
+                    <Rocket className="size-4" /> Explore the wizard
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 variant="outline"
-                className="gap-2"
-                data-ocid="referral.wizard.link"
+                size="lg"
+                className="h-12 gap-2 px-6 text-base"
+                data-ocid="referral.home.link"
               >
-                <Link to="/wizard">
-                  <Rocket className="size-4" /> Explore the wizard
+                <Link to="/">
+                  <Home className="size-4" /> Home
                 </Link>
               </Button>
-            )}
-            <Button
-              asChild
-              variant="ghost"
-              className="gap-2"
-              data-ocid="referral.home.link"
-            >
-              <Link to="/">
-                <Home className="size-4" /> Home
-              </Link>
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Your referral code is saved in this browser and applied
-            automatically when you create your account.
-          </p>
-        </CardContent>
-      </Card>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Your referral code is saved in this browser and applied
+              automatically when you create your account.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

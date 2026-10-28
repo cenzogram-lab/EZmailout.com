@@ -1,5 +1,6 @@
 import type { VerifiedAddress } from "@/backend";
 import { SignInPrompt } from "@/components/billing/SignInPrompt";
+import { GlossyTile, insetClass } from "@/components/campaigns/PanelParts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -151,8 +152,8 @@ export function SavePresetDialog({
         data-ocid="campaigns.save_preset.dialog"
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display">
-            <BookmarkPlus className="size-5 text-primary" />
+          <DialogTitle className="flex items-center gap-3 font-display text-xl font-black tracking-tight">
+            <GlossyTile icon={BookmarkPlus} size="sm" />
             Save audience as preset
           </DialogTitle>
           <DialogDescription>
@@ -183,23 +184,20 @@ export function SavePresetDialog({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Badge
-                variant="outline"
-                className="border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-              >
+              <Badge variant="success" className="tabular-nums">
                 {formatNumber(keptCount)} of {formatNumber(rows.length)} kept
               </Badge>
               <Input
                 value={filter}
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Filter by name or address"
-                className="h-8 w-full sm:w-56"
+                className="h-11 w-full rounded-full px-4 sm:h-9 sm:w-60"
                 data-ocid="campaigns.save_preset.filter.input"
               />
             </div>
 
             <div
-              className="max-h-72 overflow-y-auto rounded-xl border bg-muted/30"
+              className={cn(insetClass, "max-h-72 overflow-y-auto")}
               data-ocid="campaigns.save_preset.recipient.list"
             >
               {recipients.isLoading ? (
@@ -216,14 +214,14 @@ export function SavePresetDialog({
                   No recipients match that filter.
                 </p>
               ) : (
-                <ul className="divide-y">
+                <ul className="divide-y divide-hairline">
                   {listedRows.map((row) => {
                     const isRemoved = removed.has(row.index);
                     return (
                       <li
                         key={row.key}
                         className={cn(
-                          "flex items-center justify-between gap-3 px-3 py-2 text-sm",
+                          "flex items-center justify-between gap-3 px-4 py-2 text-sm",
                           isRemoved && "opacity-60",
                         )}
                         data-ocid={`campaigns.save_preset.item.${row.index + 1}`}
@@ -245,7 +243,7 @@ export function SavePresetDialog({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="size-8 shrink-0"
+                          className="size-11 shrink-0 rounded-full sm:size-8"
                           onClick={() => toggleRow(row.index)}
                           aria-label={
                             isRemoved ? "Restore recipient" : "Remove recipient"
@@ -263,7 +261,7 @@ export function SavePresetDialog({
                   })}
                   {visibleRows.length > listedRows.length ? (
                     <li
-                      className="px-3 py-2 text-xs text-muted-foreground"
+                      className="px-4 py-2.5 text-xs text-muted-foreground"
                       data-ocid="campaigns.save_preset.more.text"
                     >
                       Showing {formatNumber(listedRows.length)} of{" "}
@@ -281,6 +279,7 @@ export function SavePresetDialog({
           <Button
             type="button"
             variant="outline"
+            className="h-11 px-5 sm:h-9"
             onClick={() => onOpenChange(false)}
             data-ocid="campaigns.save_preset.cancel.button"
           >
@@ -289,7 +288,7 @@ export function SavePresetDialog({
           {isAuthenticated ? (
             <Button
               type="button"
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-11 gap-2 px-5 sm:h-9"
               onClick={handleSave}
               disabled={
                 savePreset.isPending || recipients.isLoading || keptCount === 0

@@ -56,6 +56,8 @@ const GREETING: ChatMessage = {
 /** Turns the relay sees: the greeting is local chrome, not conversation. */
 const MAX_TURNS = 8;
 
+const COMPOSER_PLACEHOLDER = "Ask Stampy anything about your mailing…";
+
 /**
  * Stampy, the floating postal copilot. Mounted once at the app root, so the
  * conversation survives navigation. Hidden on the QR/tracking redirect routes,
@@ -231,18 +233,36 @@ function StampyChatbotPanel() {
   return (
     <>
       {open ? (
+        // Phones: the panel is a sheet over the page, so the page behind it
+        // (not the header, tab bar or launcher) is dimmed. Visual only: taps
+        // still reach the page, as before.
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 bottom-0 top-[env(safe-area-inset-top,0px)] z-[39] bg-black/25 dark:bg-black/50 sm:hidden"
+        />
+      ) : null}
+      {open ? (
         <section
           id="stampy-chat-panel"
           aria-label="Stampy — Postal Copilot"
-          // Above the launcher, at most 560 px tall, and never under the
-          // sticky header (its top stops 0.75rem below the header). On short
-          // screens (landscape phones) that would leave no room for messages,
-          // so there it fills the height down to the tab bar, over the
-          // launcher and the header; its own minimize button stays in view.
-          className="fixed bottom-[calc(6rem+var(--bottom-nav-h))] right-4 top-[max(calc(var(--header-h)+4px+env(safe-area-inset-top,0px)+0.75rem),calc(100dvh-6rem-var(--bottom-nav-h)-560px))] z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl sm:right-5 [@media(max-height:500px)]:bottom-[calc(0.75rem+var(--bottom-nav-h))] [@media(max-height:500px)]:top-[calc(0.5rem+env(safe-area-inset-top,0px))] [@media(max-height:500px)]:z-[60]"
+          // Never under the sticky header. On phones it is a bottom sheet:
+          // edge to edge from the header band (over a scrim, below) down to
+          // the screen's bottom edge, with the floating dock and the
+          // launcher over its foot (z-[39], under their z-40). Its bottom
+          // padding is the dock's footprint plus the raised Create button's
+          // rise, so the composer ends just above them and no page shows
+          // between the sheet and the dock; the launcher (Close) is seated
+          // at the composer's right end. From sm it floats above the
+          // launcher, at most 560 px tall, its top at least 0.75rem below
+          // the header. On short screens (landscape phones) that would leave
+          // no room for messages, so there it fills the height down to the
+          // tab bar, over the launcher and the header; its own minimize
+          // button stays in view.
+          className="fixed inset-x-0 bottom-0 top-[calc(var(--header-h)+4px+env(safe-area-inset-top,0px))] z-[39] flex flex-col overflow-hidden rounded-t-3xl border border-hairline bg-popover pb-[calc(var(--bottom-nav-h)+1.5rem)] text-popover-foreground shadow-raised sm:bottom-[calc(6rem+var(--bottom-nav-h))] sm:left-auto sm:right-5 sm:top-[max(calc(var(--header-h)+4px+env(safe-area-inset-top,0px)+0.75rem),calc(100dvh-6rem-var(--bottom-nav-h)-560px))] sm:z-40 sm:w-[min(380px,calc(100vw-2rem))] sm:rounded-b-3xl sm:pb-0 [@media(max-height:500px)]:bottom-[calc(0.75rem+var(--bottom-nav-h))] [@media(max-height:500px)]:top-[calc(0.5rem+env(safe-area-inset-top,0px))] [@media(max-height:500px)]:z-[60] [@media(max-height:500px)]:rounded-b-3xl [@media(max-height:500px)]:pb-0"
           data-ocid="stampy.chat.panel"
         >
-          <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
+          <header className="relative isolate flex items-center gap-3 border-b border-hairline px-4 py-3">
+            <div aria-hidden className="ambient-glow-backdrop" />
             {thinking ? (
               <StampyChatAvatarThinking
                 className="size-11 shrink-0"
@@ -250,26 +270,33 @@ function StampyChatbotPanel() {
               />
             ) : (
               <StampyChatAvatarIdle
-                className="stampy-launcher size-11 shrink-0"
+                className="stampy-launcher mascot-3d size-11 shrink-0"
                 data-ocid="stampy.chat.avatar.idle"
               />
             )}
             <div className="min-w-0 flex-1">
-              <p className="font-display text-sm font-semibold leading-tight">
+              <p className="font-display text-[15px] font-black leading-tight tracking-tight">
                 Stampy — Postal Copilot
               </p>
               <p
-                className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                className="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground"
                 data-ocid="stampy.chat.status"
               >
-                <span className={cn("size-2 rounded-full", status.dot)} />
+                {/* text-xs lines are 1rem tall: a 0.25rem offset centres the
+                    0.5rem dot on the first line when the label wraps. */}
+                <span
+                  className={cn(
+                    "mt-1 size-2 shrink-0 rounded-full",
+                    status.dot,
+                  )}
+                />
                 {status.label}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground"
+              className="btn-3d-neutral flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground sm:size-9 hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
               aria-label="Minimize Stampy"
               title="Minimize"
               data-ocid="stampy.chat.minimize"
@@ -280,7 +307,7 @@ function StampyChatbotPanel() {
 
           <nav
             aria-label="Stampy menu"
-            className="flex flex-wrap items-center gap-1.5 border-b border-border/60 bg-muted/60 px-3 py-2"
+            className="flex flex-wrap items-center gap-1.5 border-b border-hairline bg-well px-3 py-2"
           >
             <MenuButton
               onClick={() => setView("support")}
@@ -333,7 +360,7 @@ function StampyChatbotPanel() {
                         key={q}
                         type="button"
                         onClick={() => void send(q)}
-                        className="rounded-full border border-primary/25 bg-card px-3 py-1 text-xs text-primary transition-smooth hover:bg-primary/5"
+                        className="rounded-full border border-primary/30 bg-card px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-smooth hover:border-primary/50 hover:bg-primary/5"
                       >
                         {q}
                       </button>
@@ -351,7 +378,7 @@ function StampyChatbotPanel() {
                 ) : null}
               </div>
               {!isAuthenticated ? (
-                <p className="border-t border-border/60 px-4 py-1.5 text-[11px] text-muted-foreground">
+                <p className="border-t border-hairline px-4 py-1.5 text-[11px] text-muted-foreground">
                   Quick answers work signed out.{" "}
                   <button
                     type="button"
@@ -363,26 +390,43 @@ function StampyChatbotPanel() {
                   for full AI answers.
                 </p>
               ) : null}
+              {/* On phones the right end is the launcher's seat (56 px + an
+                  8 px gap from its right-4 edge), so it never covers Send.
+                  The launcher hides while the on-screen keyboard is up, and
+                  under the short-screen sheet, so the seat goes too. */}
               <form
                 onSubmit={handleSubmit}
-                className="flex items-center gap-2 border-t border-border/60 p-3"
+                className="flex items-center gap-2 border-t border-hairline p-3 pr-20 sm:pr-3 [@media(max-height:500px)]:pr-3 [html[data-soft-keyboard]_&]:pr-3"
               >
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask Stampy anything about your mailing…"
-                  maxLength={1000}
-                  className="rounded-full"
-                  aria-label="Message Stampy"
-                  data-ocid="stampy.chat.input"
-                />
+                {/* On a narrow phone the placeholder ends in "…" instead of
+                    stopping mid-word. Chromium drops text-overflow on a
+                    focused field, and the panel focuses it on open, so the
+                    visible placeholder is the span over the field; the
+                    native one stays (transparent) for assistive tech. */}
+                <div className="relative min-w-0 flex-1">
+                  <Input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder={COMPOSER_PLACEHOLDER}
+                    maxLength={1000}
+                    className="peer h-11 rounded-full text-ellipsis placeholder:text-transparent"
+                    aria-label="Message Stampy"
+                    data-ocid="stampy.chat.input"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-px hidden items-center px-3 text-base text-muted-foreground peer-placeholder-shown:flex md:text-sm"
+                  >
+                    <span className="truncate">{COMPOSER_PLACEHOLDER}</span>
+                  </span>
+                </div>
                 <Button
                   type="submit"
                   size="icon"
                   disabled={!input.trim() || thinking}
                   aria-label="Send"
-                  className="shrink-0 rounded-full"
+                  className="size-11 shrink-0 rounded-full"
                   data-ocid="stampy.chat.send"
                 >
                   <Send className="size-4" />
@@ -394,11 +438,19 @@ function StampyChatbotPanel() {
       ) : null}
 
       {/* Avatar pill above the tab bar: a circle on phones, "Ask Stampy" from
-          sm up. A red count replaces the green online dot while replies wait. */}
+          sm up. A red count replaces the green online dot while replies wait.
+          While the phone sheet is open it rises 10 px to sit centred in the
+          composer row's seat (the row's centre is 1.5rem + 34 px above the
+          dock), clear of the raised Create button. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="hide-with-keyboard group fixed bottom-[calc(1.25rem+var(--bottom-nav-h))] right-4 z-40 flex h-14 items-center gap-2 rounded-full border border-border/60 bg-card p-1 shadow-soft transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:right-5 sm:pr-4"
+        className={cn(
+          "btn-3d-neutral hide-with-keyboard group fixed right-4 z-40 flex h-14 items-center gap-2 rounded-full p-1 [--tw-shadow:var(--btn-neutral-shadow),0_12px_28px_-10px_rgb(79_70_229/0.5)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:right-5 sm:pr-4",
+          open
+            ? "bottom-[calc(1.875rem+var(--bottom-nav-h))] sm:bottom-[calc(1.25rem+var(--bottom-nav-h))]"
+            : "bottom-[calc(1.25rem+var(--bottom-nav-h))]",
+        )}
         aria-label={
           open
             ? "Minimize Stampy"
@@ -411,10 +463,10 @@ function StampyChatbotPanel() {
         data-ocid="stampy.chat.launcher"
       >
         <span className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary">
-          <StampyChatAvatarIdle className="stampy-launcher stampy-bob size-12" />
+          <StampyChatAvatarIdle className="stampy-launcher mascot-3d stampy-bob size-12" />
           {unread > 0 ? (
             <span
-              className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-destructive px-1 text-[11px] font-bold leading-none text-destructive-foreground"
+              className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-popover bg-destructive px-1 text-[11px] font-bold leading-none text-destructive-foreground shadow-sm"
               data-ocid="stampy.chat.unread"
             >
               {unread > 9 ? "9+" : unread}
@@ -425,17 +477,17 @@ function StampyChatbotPanel() {
               aria-hidden="true"
             >
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
-              <span className="relative inline-flex size-3.5 rounded-full border-2 border-card bg-emerald-500" />
+              <span className="relative inline-flex size-3.5 rounded-full border-2 border-popover bg-emerald-500" />
             </span>
           )}
         </span>
-        <span className="hidden text-sm font-semibold text-foreground sm:inline">
+        <span className="hidden text-sm font-bold tracking-tight text-foreground sm:inline">
           {open ? "Close" : "Ask Stampy"}
         </span>
         {open ? null : (
           <span
             role="tooltip"
-            className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full bg-[#0e2b4f] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full border border-white/10 bg-[#1b1f2b] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-raised transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
             data-ocid="stampy.chat.tooltip"
           >
             Need help? Ask Stampy!
@@ -462,10 +514,10 @@ function MenuButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-smooth",
+        "inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-smooth focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80",
         active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-card hover:text-foreground",
+          ? "border-white/20 bg-primary font-bold text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_4px_12px_-6px_rgb(79_70_229/0.6)]"
+          : "border-transparent text-muted-foreground hover:border-hairline hover:bg-card hover:text-foreground",
       )}
       data-ocid={ocid}
     >
@@ -484,7 +536,7 @@ function Message({
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">
+        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-white/15 bg-primary px-3 py-2 text-sm text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_8px_18px_-10px_rgb(79_70_229/0.55)]">
           {message.text}
         </p>
       </div>
@@ -492,14 +544,14 @@ function Message({
   }
   return (
     <div className="flex items-start gap-2" data-ocid="stampy.chat.reply">
-      <StampyChatAvatarIdle className="stampy-launcher mt-0.5 size-7 shrink-0" />
+      <StampyChatAvatarIdle className="stampy-launcher mascot-3d mt-0.5 size-7 shrink-0" />
       <div className="min-w-0 max-w-[85%] space-y-2">
         {message.note ? (
           <p className="text-[11px] text-muted-foreground">
             {message.note} Here's a quick answer:
           </p>
         ) : null}
-        <p className="whitespace-pre-wrap rounded-2xl rounded-tl-md bg-muted px-3 py-2 text-sm text-foreground">
+        <p className="whitespace-pre-wrap rounded-2xl rounded-tl-md border border-hairline bg-muted px-3 py-2 text-sm text-foreground">
           {message.text}
         </p>
         {message.chips.length > 0 ? (
@@ -509,7 +561,7 @@ function Message({
                 key={key}
                 type="button"
                 onClick={() => onChip(key)}
-                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs font-medium text-primary transition-smooth hover:bg-primary hover:text-primary-foreground"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs font-semibold text-primary shadow-sm transition-smooth hover:border-primary hover:bg-primary hover:text-primary-foreground"
                 data-ocid={`stampy.chat.chip.${key}`}
               >
                 {NAV_CHIPS[key].label}

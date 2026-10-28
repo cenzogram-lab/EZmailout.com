@@ -49,7 +49,9 @@ export function UploadsPanel() {
   return (
     <div className="space-y-3" data-ocid="canvas.panel.uploads">
       <div>
-        <p className="font-display text-sm font-semibold">Uploads</p>
+        <p className="font-display text-base font-black tracking-tight">
+          Uploads
+        </p>
         <p className="text-xs text-muted-foreground">
           Backgrounds fill the whole {activeSide} side; logos become movable
           layers.
@@ -64,19 +66,19 @@ export function UploadsPanel() {
         data-ocid="canvas.upload_input"
       />
       <Button
-        variant="secondary"
-        className="w-full justify-start gap-2"
+        variant="outline"
+        className="h-11 w-full justify-start gap-2 rounded-2xl"
         onClick={() => bgInput.current?.click()}
         data-ocid="canvas.upload_button"
       >
-        <Upload className="size-4" /> Upload background image
+        <Upload className="size-4 text-primary" /> Upload background image
       </Button>
       {side.backgroundImageUrl && (
-        <div className="flex items-center gap-2 rounded-xl border p-2">
+        <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-card-raised p-2">
           <img
             src={side.backgroundImageUrl}
             alt=""
-            className="size-12 rounded-lg object-cover"
+            className="size-12 rounded-xl border border-hairline object-cover"
           />
           <span className="flex-1 text-xs text-muted-foreground">
             Background on the {activeSide} side
@@ -85,7 +87,7 @@ export function UploadsPanel() {
             variant="ghost"
             size="sm"
             onClick={() => setBackgroundImage(activeSide, null)}
-            className="gap-1 text-muted-foreground"
+            className="gap-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             data-ocid="canvas.remove_background"
           >
             <X className="size-3.5" /> Remove
@@ -101,14 +103,14 @@ export function UploadsPanel() {
         data-ocid="canvas.logo_upload_input"
       />
       <Button
-        variant="secondary"
-        className="w-full justify-start gap-2"
+        variant="outline"
+        className="h-11 w-full justify-start gap-2 rounded-2xl"
         onClick={() => logoInput.current?.click()}
         data-ocid="canvas.logo_upload_button"
       >
-        <ImagePlus className="size-4" /> Upload logo (PNG / SVG)
+        <ImagePlus className="size-4 text-primary" /> Upload logo (PNG / SVG)
       </Button>
-      <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+      <ul className="list-disc space-y-1 rounded-2xl border border-hairline bg-well/60 py-3 pl-7 pr-3 text-xs leading-relaxed text-muted-foreground">
         <li>
           Recommended background: ≥ {Math.round(dims.widthInches * 150)}×
           {Math.round(dims.heightInches * 150)} px, ideally{" "}

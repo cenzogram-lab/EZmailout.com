@@ -35,7 +35,9 @@ export function ElementsPanel() {
   return (
     <div className="space-y-4" data-ocid="canvas.panel.elements">
       <div>
-        <p className="font-display text-sm font-semibold">Elements</p>
+        <p className="font-display text-base font-black tracking-tight">
+          Elements
+        </p>
         <p className="text-xs text-muted-foreground">
           Shapes, dividers and badges. Pick a colour, then click to add.
         </p>
@@ -55,13 +57,15 @@ export function ElementsPanel() {
             onClick={() => add(shape)}
             title={shape.label}
             aria-label={`Add ${shape.label}`}
-            className="flex aspect-square items-center justify-center rounded-xl border bg-card p-2 transition-smooth hover:border-primary/50 hover:bg-primary/5"
+            className="flex aspect-square items-center justify-center rounded-2xl border border-hairline bg-card-raised p-2 shadow-surface transition-smooth hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
             data-ocid={`canvas.elements.add_${shape.kind}`}
           >
             <img
               src={shapeUrl(shape.kind, fill)}
               alt=""
-              className="max-h-full max-w-full"
+              // A faint grey rim keeps a white or near-black fill visible on
+              // the tile in either theme (the placed shape has none).
+              className="max-h-full max-w-full [filter:drop-shadow(0_0_0.5px_rgb(128_128_128/0.9))]"
               style={{
                 width: shape.kind === "line" ? 40 : 36,
                 height:

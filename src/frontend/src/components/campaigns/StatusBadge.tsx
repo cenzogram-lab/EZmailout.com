@@ -132,20 +132,52 @@ export function statusLabel(status: CampaignStatus): string {
   return stageFor(status)?.label ?? status;
 }
 
-/** Navy → emerald progression across the five stages. */
-const STATUS_STYLES: Record<CampaignStatus, string> = {
-  [CampaignStatus.Created]: "border-border bg-muted text-muted-foreground",
-  [CampaignStatus.InProduction]:
-    "border-primary/20 bg-primary/10 text-primary-ink",
-  [CampaignStatus.InTransit]:
-    "border-primary bg-primary text-primary-foreground",
-  [CampaignStatus.SortedAtLocalHub]:
-    "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
-  [CampaignStatus.Delivered]:
-    "border-emerald-brand bg-emerald-brand text-white",
-  [CampaignStatus.Undeliverable]: "border-amber-300 bg-amber-50 text-amber-900",
-  [CampaignStatus.Returned]: "border-amber-700 bg-amber-700 text-white",
+/**
+ * Status pills: neutral until the order is under way, emerald (tinted, with a
+ * live dot) while it is in production or moving through USPS, solid emerald
+ * once delivered, amber for an exception; indigo stays a brand accent (test
+ * mode, a step waiting on the customer). Tinted pills use the
+ * `.status-pill-*` inks, which pass AA on their tint in both themes; solid
+ * pills carry white text (≥ 4.97:1).
+ */
+const SOLID =
+  "border-transparent text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]";
+const RED_PILL = "border-destructive/30 bg-destructive/10 text-destructive";
+
+type PillVariant = "neutral" | "info" | "success" | "warning";
+
+interface PillStyle {
+  variant: PillVariant;
+  className?: string;
+  /** A live dot: the stage is under way. */
+  live?: boolean;
+}
+
+const STATUS_STYLES: Record<CampaignStatus, PillStyle> = {
+  [CampaignStatus.Created]: { variant: "neutral" },
+  [CampaignStatus.InProduction]: { variant: "success", live: true },
+  [CampaignStatus.InTransit]: { variant: "success", live: true },
+  [CampaignStatus.SortedAtLocalHub]: { variant: "success", live: true },
+  [CampaignStatus.Delivered]: {
+    variant: "success",
+    className: cn(SOLID, "bg-emerald-brand"),
+  },
+  [CampaignStatus.Undeliverable]: { variant: "warning" },
+  [CampaignStatus.Returned]: {
+    variant: "warning",
+    className: cn(SOLID, "bg-amber-brand"),
+  },
 };
+
+/** The pulsing dot of a stage that is under way (still for reduced motion). */
+function LiveDot() {
+  return (
+    <span aria-hidden="true" className="relative flex size-1.5 shrink-0">
+      <span className="absolute inset-0 rounded-full bg-current opacity-60 motion-safe:animate-ping" />
+      <span className="relative size-1.5 rounded-full bg-current" />
+    </span>
+  );
+}
 
 export function StatusBadge({
   status,
@@ -158,26 +190,26 @@ export function StatusBadge({
 }) {
   const stage = stageFor(status);
   const Icon = stage?.icon;
+  const style = STATUS_STYLES[status];
   return (
     <Badge
-      variant="outline"
-      className={cn("gap-1 font-medium", STATUS_STYLES[status], className)}
+      variant={style.variant}
+      className={cn("gap-1.5", style.className, className)}
       data-ocid={`campaigns.status.${status.toLowerCase()}.badge`}
     >
       {showIcon && Icon ? <Icon className="size-3" /> : null}
       {stage?.label ?? status}
+      {style.live ? <LiveDot /> : null}
     </Badge>
   );
 }
 
-const PAYMENT_STYLES: Record<PaymentStatus, string> = {
-  [PaymentStatus.Unpaid]: "border-primary/40 bg-primary/15 text-primary-ink",
-  [PaymentStatus.Pending]: "border-border bg-muted text-muted-foreground",
-  [PaymentStatus.Paid]:
-    "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
-  [PaymentStatus.Waived]: "border-primary/20 bg-primary/10 text-primary-ink",
-  [PaymentStatus.Refunded]:
-    "border-destructive/30 bg-destructive/10 text-destructive",
+const PAYMENT_STYLES: Record<PaymentStatus, PillStyle> = {
+  [PaymentStatus.Unpaid]: { variant: "warning" },
+  [PaymentStatus.Pending]: { variant: "neutral" },
+  [PaymentStatus.Paid]: { variant: "success" },
+  [PaymentStatus.Waived]: { variant: "info" },
+  [PaymentStatus.Refunded]: { variant: "neutral", className: RED_PILL },
 };
 
 export function PaymentStatusBadge({
@@ -187,10 +219,11 @@ export function PaymentStatusBadge({
   status: PaymentStatus;
   className?: string;
 }) {
+  const style = PAYMENT_STYLES[status];
   return (
     <Badge
-      variant="outline"
-      className={cn("font-medium", PAYMENT_STYLES[status], className)}
+      variant={style.variant}
+      className={cn(style.className, className)}
       data-ocid={`campaigns.payment.${status.toLowerCase()}.badge`}
       title={
         status === PaymentStatus.Waived
@@ -215,24 +248,23 @@ const PRODUCTION_LABELS: Record<ProductionStatus, string> = {
   [ProductionStatus.Failed]: "Failed",
 };
 
-const PRODUCTION_STYLES: Record<ProductionStatus, string> = {
-  [ProductionStatus.Draft]: "border-border bg-muted text-muted-foreground",
-  [ProductionStatus.AwaitingPayment]:
-    "border-primary/40 bg-primary/15 text-primary-ink",
-  [ProductionStatus.ReadyToDispatch]:
-    "border-primary/20 bg-primary/10 text-primary-ink",
-  [ProductionStatus.Processing]:
-    "border-primary/30 bg-primary/10 text-primary-ink motion-safe:animate-pulse",
-  [ProductionStatus.DocumentUploaded]:
-    "border-primary/20 bg-primary/10 text-primary-ink",
-  [ProductionStatus.AddressListReady]:
-    "border-primary/20 bg-primary/10 text-primary-ink",
-  [ProductionStatus.JobCreated]:
-    "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand",
-  [ProductionStatus.Submitted]:
-    "border-emerald-brand bg-emerald-brand text-white",
-  [ProductionStatus.Failed]:
-    "border-destructive/30 bg-destructive/10 text-destructive",
+const PRODUCTION_STYLES: Record<ProductionStatus, PillStyle> = {
+  [ProductionStatus.Draft]: { variant: "neutral" },
+  [ProductionStatus.AwaitingPayment]: { variant: "warning" },
+  [ProductionStatus.ReadyToDispatch]: { variant: "info" },
+  [ProductionStatus.Processing]: {
+    variant: "success",
+    className: "motion-safe:animate-pulse",
+    live: true,
+  },
+  [ProductionStatus.DocumentUploaded]: { variant: "success", live: true },
+  [ProductionStatus.AddressListReady]: { variant: "success", live: true },
+  [ProductionStatus.JobCreated]: { variant: "success", live: true },
+  [ProductionStatus.Submitted]: {
+    variant: "success",
+    className: cn(SOLID, "bg-emerald-brand"),
+  },
+  [ProductionStatus.Failed]: { variant: "neutral", className: RED_PILL },
 };
 
 export function productionLabel(status: ProductionStatus): string {
@@ -246,13 +278,15 @@ export function ProductionStatusBadge({
   status: ProductionStatus;
   className?: string;
 }) {
+  const style = PRODUCTION_STYLES[status];
   return (
     <Badge
-      variant="outline"
-      className={cn("font-medium", PRODUCTION_STYLES[status], className)}
+      variant={style.variant}
+      className={cn("gap-1.5", style.className, className)}
       data-ocid={`campaigns.production.${status.toLowerCase()}.badge`}
     >
       {productionLabel(status)}
+      {style.live ? <LiveDot /> : null}
     </Badge>
   );
 }

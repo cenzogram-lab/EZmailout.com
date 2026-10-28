@@ -453,38 +453,46 @@ export function computePreflight(input: PreflightInput): PreflightReport {
 
 const LEVEL_STYLES: Record<
   PreflightLevel,
-  { icon: React.ReactNode; className: string }
+  { icon: React.ReactNode; className: string; tile: string }
 > = {
   pass: {
     icon: <CheckCircle2 className="size-4 text-emerald-brand" />,
-    className: "border-emerald-brand/20",
+    className: "border-hairline bg-card-raised",
+    tile: "bg-emerald-brand/10",
   },
   warn: {
-    icon: <AlertTriangle className="size-4 text-primary" />,
-    className: "border-primary/40 bg-primary/5",
+    icon: <AlertTriangle className="size-4 text-amber-brand" />,
+    className: "border-amber-brand/35 bg-amber-brand/5",
+    tile: "bg-amber-brand/15",
   },
   fail: {
     icon: <XCircle className="size-4 text-destructive" />,
     className: "border-destructive/40 bg-destructive/5",
+    tile: "bg-destructive/15",
   },
   info: {
     icon: <Info className="size-4 text-primary" />,
-    className: "border-border",
+    className: "border-hairline bg-card-raised",
+    tile: "bg-primary/10",
   },
   pending: {
     icon: <Loader2 className="size-4 animate-spin text-muted-foreground" />,
-    className: "border-border",
+    className: "border-hairline bg-card-raised",
+    tile: "bg-muted",
   },
 };
 
 /** Renders a computed preflight report. */
 export function PreflightChecklist({ report }: { report: PreflightReport }) {
   return (
-    <Card className="bg-card" data-ocid="review.preflight.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <span className="flex items-center gap-2">
-            <ListChecks className="size-4 text-primary" /> Preflight checklist
+    <Card data-ocid="review.preflight.card">
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary-ink">
+              <ListChecks className="size-4" />
+            </span>
+            Preflight checklist
           </span>
           {report.blocked ? (
             <Badge
@@ -494,19 +502,11 @@ export function PreflightChecklist({ report }: { report: PreflightReport }) {
               Needs attention
             </Badge>
           ) : report.warnings > 0 ? (
-            <Badge
-              variant="outline"
-              className="border-primary/40 bg-primary/10 text-primary-ink"
-            >
+            <Badge variant="warning">
               {report.warnings} warning{report.warnings === 1 ? "" : "s"}
             </Badge>
           ) : (
-            <Badge
-              variant="outline"
-              className="border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-            >
-              Ready to print
-            </Badge>
+            <Badge variant="success">Ready to print</Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -518,14 +518,21 @@ export function PreflightChecklist({ report }: { report: PreflightReport }) {
               <li
                 key={item.id}
                 className={cn(
-                  "flex items-start gap-3 rounded-xl border px-3 py-2.5",
+                  "flex items-start gap-3 rounded-2xl border px-3 py-3",
                   style.className,
                 )}
                 data-ocid={`review.preflight.item.${item.id}`}
               >
-                <span className="mt-0.5 shrink-0">{style.icon}</span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full",
+                    style.tile,
+                  )}
+                >
+                  {style.icon}
+                </span>
+                <span className="min-w-0 pt-0.5">
+                  <span className="block text-sm font-semibold text-foreground">
                     {item.label}
                   </span>
                   <span className="block text-xs text-muted-foreground">

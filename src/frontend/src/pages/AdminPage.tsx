@@ -4,17 +4,19 @@ import {
   FulfilmentEnvironment,
 } from "@/backend";
 import { PaymentsCard } from "@/components/admin/PaymentsCard";
+import {
+  GlossyTile,
+  PanelHeader,
+  SectionLabel,
+  insetClass,
+  raisedClass,
+  titleGlowClass,
+} from "@/components/campaigns/PanelParts";
 import { MascotEmptyState } from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -41,6 +42,7 @@ import {
 } from "@/hooks/use-backend";
 import { copyText } from "@/lib/download";
 import { formatTimestamp } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { loadConfig } from "@caffeineai/core-infrastructure";
 import {
@@ -49,6 +51,7 @@ import {
   Copy,
   Eye,
   EyeOff,
+  Fingerprint,
   FlaskConical,
   Globe,
   KeyRound,
@@ -138,8 +141,8 @@ function SecretField({
 
   return (
     <div className="space-y-2" data-ocid={`admin.${ocid}.field`}>
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={`admin-${ocid}`} className="text-sm font-medium">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <Label htmlFor={`admin-${ocid}`} className="text-sm font-semibold">
           {label}
           {optional && (
             <span className="ml-1 text-xs font-normal text-muted-foreground">
@@ -147,29 +150,24 @@ function SecretField({
             </span>
           )}
         </Label>
-        <div className="flex items-center gap-2">
+        {/* ml-auto: a badge that wraps under a long label stays right. */}
+        <div className="ml-auto flex items-center gap-2">
           {value !== undefined && (
-            <Badge
-              variant="outline"
-              className="border-primary/40 bg-primary/15 text-primary-ink"
-            >
+            <Badge variant="info">
               {cleared ? "Will be cleared" : "Unsaved change"}
             </Badge>
           )}
           <Badge
-            variant="outline"
-            className={
-              configured
-                ? "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand"
-                : "border-border bg-muted text-muted-foreground"
-            }
+            variant={configured ? "success" : "neutral"}
             data-ocid={`admin.${ocid}.${configured ? "configured" : "not_set"}.badge`}
           >
             {configured ? "Configured" : "Not set"}
           </Badge>
         </div>
       </div>
-      <div className="flex gap-2">
+      {/* The field and its icon buttons share one row; an extra action
+          (Generate) takes a full-width row of its own below sm. */}
+      <div className="flex flex-wrap gap-2">
         <Input
           id={`admin-${ocid}`}
           type={secret && !show ? "password" : "text"}
@@ -182,7 +180,7 @@ function SecretField({
           }
           autoComplete="off"
           spellCheck={false}
-          className="flex-1 font-mono text-sm"
+          className="h-11 min-w-[6rem] flex-1 font-mono text-sm sm:h-10"
           data-ocid={`admin.${ocid}.input`}
         />
         {secret && (
@@ -192,6 +190,7 @@ function SecretField({
                 type="button"
                 variant="outline"
                 size="icon"
+                className="size-11 sm:size-10"
                 onClick={() => setShow((s) => !s)}
                 aria-label={show ? "Hide value" : "Show value"}
                 data-ocid={`admin.${ocid}.toggle`}
@@ -206,7 +205,6 @@ function SecretField({
             <TooltipContent>{show ? "Hide" : "Show"}</TooltipContent>
           </Tooltip>
         )}
-        {extra}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -216,7 +214,10 @@ function SecretField({
               onClick={() => setDraft(field, cleared ? undefined : "")}
               disabled={!configured && value === undefined}
               aria-label={cleared ? "Undo clear" : "Clear stored value"}
-              className={cleared ? "text-destructive" : undefined}
+              className={cn(
+                "size-11 sm:size-10",
+                cleared ? "text-destructive hover:text-destructive" : undefined,
+              )}
               data-ocid={`admin.${ocid}.clear`}
             >
               {cleared ? (
@@ -230,6 +231,8 @@ function SecretField({
             {cleared ? "Undo clear" : "Clear stored value on save"}
           </TooltipContent>
         </Tooltip>
+        {/* Last in the DOM as on screen, so the tab order follows it. */}
+        {extra}
       </div>
       {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
     </div>
@@ -253,7 +256,7 @@ function CopyButton({ value, ocid }: { value: string; ocid: string }) {
       type="button"
       variant="ghost"
       size="icon"
-      className="size-8 shrink-0"
+      className="size-11 shrink-0 rounded-full text-muted-foreground hover:text-foreground sm:size-8"
       onClick={handleCopy}
       aria-label="Copy"
       data-ocid={ocid}
@@ -276,22 +279,31 @@ function ConfigFlag({
   on: boolean;
   detail?: string;
 }) {
+  // A short detail (the environment) never breaks: the label wraps instead.
+  // A long one (a publishable key) breaks anywhere, so all of it stays
+  // readable and the row never overflows.
+  const shortDetail = detail !== undefined && detail.length <= 16;
   return (
-    <div className="flex items-center justify-between gap-2 text-sm">
+    <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-2">
+      <span
+        className={cn(
+          "flex items-center gap-2",
+          shortDetail ? "shrink-0" : "min-w-0",
+        )}
+      >
         {detail && (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span
+            className={cn(
+              "meta-mono",
+              shortDetail ? "whitespace-nowrap" : "min-w-0 break-all",
+            )}
+          >
             {detail}
           </span>
         )}
         <Badge
-          variant="outline"
-          className={
-            on
-              ? "border-emerald-brand/30 bg-emerald-brand/15 text-emerald-brand"
-              : "border-border bg-muted text-muted-foreground"
-          }
+          variant={on ? "success" : "neutral"}
           data-ocid={`admin.config.${toOcid(label)}.badge`}
         >
           {on ? "Yes" : "No"}
@@ -332,7 +344,7 @@ function AssignAdminForm() {
   return (
     <form
       onSubmit={submit}
-      className="space-y-2 border-t pt-3"
+      className="space-y-2 border-t border-hairline pt-4"
       data-ocid="admin.assign.form"
     >
       <Label htmlFor="admin-assign-principal">Assign admin (controllers)</Label>
@@ -342,11 +354,12 @@ function AssignAdminForm() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="aaaaa-bbbbb-…-cai"
-          className="min-w-0 font-mono text-xs"
+          className="h-11 min-w-0 font-mono text-xs sm:h-10"
           data-ocid="admin.assign.input"
         />
         <Button
           type="submit"
+          className="h-11 px-5 sm:h-10"
           disabled={assign.isPending || value.trim() === ""}
           data-ocid="admin.assign.submit"
         >
@@ -369,6 +382,18 @@ function AssignAdminForm() {
     </form>
   );
 }
+
+/**
+ * An integration-key group: a raised inner panel from sm. On a phone the
+ * frame and its padding would leave the fields beside their 44 px icon
+ * buttons too narrow to show a stored masked key, so each group there is
+ * the card's own surface, set off from the one above by a hairline.
+ */
+const keyGroupClass = cn(
+  raisedClass,
+  "space-y-4 p-4 sm:p-5",
+  "max-sm:rounded-none max-sm:border-x-0 max-sm:border-b-0 max-sm:bg-transparent max-sm:p-0 max-sm:pt-5 max-sm:shadow-none max-sm:dark:shadow-none max-sm:first:border-t-0 max-sm:first:pt-0",
+);
 
 function principalShort(p: string): string {
   return p.length > 20 ? `${p.slice(0, 10)}…${p.slice(-6)}` : p;
@@ -496,64 +521,78 @@ export function AdminPage() {
       className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8"
       data-ocid="admin.page"
     >
-      <div className="mb-8 flex flex-wrap items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <ShieldCheck className="size-5" />
-        </div>
-        <div className="flex-1">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Admin control panel
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Team settings for EZmailout. Only you can open this page.
-          </p>
+      <div className="relative isolate mb-8">
+        {/* The brand backlight behind the page title. */}
+        <div aria-hidden="true" className={titleGlowClass} />
+        <div className="flex flex-wrap items-center gap-4">
+          <GlossyTile icon={ShieldCheck} size="lg" />
+          <div className="min-w-0 flex-1">
+            <h1 className="display-heading text-3xl sm:text-4xl">
+              Admin control panel
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Team settings for EZmailout. Only you can open this page.
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="space-y-6">
         <Card data-ocid="admin.identity.card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Admin identity</CardTitle>
+          <CardHeader className="pb-0 max-sm:px-4">
+            <PanelHeader icon={Fingerprint} title="Admin identity" />
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Admin principal</span>
-              {view?.adminPrincipal ? (
-                <span className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <code
-                        className="rounded-md bg-muted px-2 py-1 font-mono text-xs"
-                        data-ocid="admin.principal.text"
-                      >
-                        {principalShort(view.adminPrincipal)}
-                      </code>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs break-all font-mono text-xs">
-                      {view.adminPrincipal}
-                    </TooltipContent>
-                  </Tooltip>
-                  <CopyButton
-                    value={view.adminPrincipal}
-                    ocid="admin.principal.copy"
+          <CardContent className="space-y-3 text-sm max-sm:px-4">
+            <div className={cn(raisedClass, "divide-y divide-hairline")}>
+              {/* Both rows stack (label over value) below sm, where the
+                  admin row's pill and copy button do not fit beside it. */}
+              <div className="flex flex-col items-start gap-1.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="text-muted-foreground">Admin principal</span>
+                {view?.adminPrincipal ? (
+                  <span className="flex max-w-full items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <code
+                          className="min-w-0 truncate rounded-full border border-hairline bg-well px-2.5 py-1 font-mono text-xs text-foreground"
+                          data-ocid="admin.principal.text"
+                        >
+                          {principalShort(view.adminPrincipal)}
+                        </code>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs break-all font-mono text-xs">
+                        {view.adminPrincipal}
+                      </TooltipContent>
+                    </Tooltip>
+                    <CopyButton
+                      value={view.adminPrincipal}
+                      ocid="admin.principal.copy"
+                    />
+                  </span>
+                ) : (
+                  <span
+                    className="text-xs text-muted-foreground"
+                    data-ocid="admin.principal.unclaimed"
+                  >
+                    {keysQuery.isLoading
+                      ? "Loading…"
+                      : "Not assigned — a canister controller assigns the admin."}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col items-start gap-1.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="text-muted-foreground">Your principal</span>
+                {/* From sm the spacer holds the admin row's copy-button slot,
+                    so both pills end at the same edge and the rows match. */}
+                <span className="flex max-w-full items-center gap-1">
+                  <code className="min-w-0 truncate rounded-full border border-hairline bg-well px-2.5 py-1 font-mono text-xs text-foreground">
+                    {principal ? principalShort(principal) : "—"}
+                  </code>
+                  <span
+                    aria-hidden="true"
+                    className="hidden size-8 shrink-0 sm:block"
                   />
                 </span>
-              ) : (
-                <span
-                  className="text-xs text-muted-foreground"
-                  data-ocid="admin.principal.unclaimed"
-                >
-                  {keysQuery.isLoading
-                    ? "Loading…"
-                    : "Not assigned — a canister controller assigns the admin."}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Your principal</span>
-              <code className="rounded-md bg-muted px-2 py-1 font-mono text-xs">
-                {principal ? principalShort(principal) : "—"}
-              </code>
+              </div>
             </div>
             {view?.callerIsController ? <AssignAdminForm /> : null}
           </CardContent>
@@ -567,29 +606,30 @@ export function AdminPage() {
             {/* Here rather than in the page header, which is the same for
                   everyone: the header no longer shifts when the caller's admin
                   status arrives, and this appears with the cards below it. */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-brand/30 bg-emerald-brand/10 px-4 py-3">
+            {/* A status card: the white card surface with an emerald edge in
+                light (a tint over the grey page read as a stained panel),
+                an emerald tint over obsidian in dark. */}
+            <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-emerald-brand/35 bg-card px-4 py-3 shadow-surface dark:border-emerald-brand/30 dark:bg-emerald-brand/10">
               <Badge
-                className="gap-1 bg-emerald-brand text-white"
+                className="gap-1 border-transparent bg-emerald-brand text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]"
                 data-ocid="admin.you_are_admin.badge"
               >
                 <ShieldCheck className="size-3" /> You are admin
               </Badge>
-              <p className="min-w-0 flex-1 text-sm text-foreground">
+              <p className="min-w-[14rem] flex-1 text-sm text-foreground">
                 Secure credentials for Click2Mail, Stripe, Resend and OpenAI.
                 Secrets are stored in the canister and never returned in full.
               </p>
             </div>
             <Card data-ocid="admin.keys.card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <KeyRound className="size-4 text-primary" /> Integration keys
-                </CardTitle>
-                <CardDescription>
-                  Leave a field empty to keep the stored value. Type a new value
-                  to replace it, or use the × button to clear it.
-                </CardDescription>
+              <CardHeader className="pb-0 max-sm:px-4">
+                <PanelHeader
+                  icon={KeyRound}
+                  title="Integration keys"
+                  description="Leave a field empty to keep the stored value. Type a new value to replace it, or use the × button to clear it."
+                />
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4 max-sm:px-4">
                 {keysQuery.isLoading && !view ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" /> Loading
@@ -597,10 +637,8 @@ export function AdminPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Click2Mail · print fulfilment
-                      </p>
+                    <div className={keyGroupClass}>
+                      <SectionLabel>Click2Mail · print fulfilment</SectionLabel>
                       <SecretField
                         label="Click2Mail username"
                         field="fulfilmentUsername"
@@ -617,7 +655,7 @@ export function AdminPage() {
                         masked={view?.fulfilmentPasswordMasked}
                       />
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">
+                        <Label className="text-sm font-semibold">
                           Click2Mail environment
                         </Label>
                         <Select
@@ -627,7 +665,7 @@ export function AdminPage() {
                           }
                         >
                           <SelectTrigger
-                            className="w-full sm:w-64"
+                            className="h-11 w-full sm:h-10 sm:w-64"
                             data-ocid="admin.fulfilment_environment.select"
                           >
                             <SelectValue placeholder="Select environment" />
@@ -650,12 +688,8 @@ export function AdminPage() {
                       </div>
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Stripe
-                      </p>
+                    <div className={keyGroupClass}>
+                      <SectionLabel>Stripe</SectionLabel>
                       <SecretField
                         label="Stripe Secret Key"
                         field="stripeSecretKey"
@@ -675,12 +709,8 @@ export function AdminPage() {
                       />
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Email &amp; AI
-                      </p>
+                    <div className={keyGroupClass}>
+                      <SectionLabel>Email &amp; AI</SectionLabel>
                       <SecretField
                         label="Resend API Key"
                         field="resendKey"
@@ -710,12 +740,8 @@ export function AdminPage() {
                       />
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Webhooks &amp; networking
-                      </p>
+                    <div className={keyGroupClass}>
+                      <SectionLabel>Webhooks &amp; networking</SectionLabel>
                       <SecretField
                         label="Webhook Secret"
                         field="webhookSecret"
@@ -735,7 +761,7 @@ export function AdminPage() {
                                     generateWebhookSecret(),
                                   )
                                 }
-                                className="gap-1.5"
+                                className="h-11 w-full gap-1.5 sm:h-10 sm:w-auto"
                                 data-ocid="admin.webhook_secret.generate"
                               >
                                 <RefreshCw className="size-4" /> Generate
@@ -760,18 +786,16 @@ export function AdminPage() {
                       />
                     </div>
 
-                    <Separator />
-
                     <div
-                      className="flex items-start justify-between gap-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3"
+                      className="flex items-start justify-between gap-4 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3.5"
                       data-ocid="admin.sandbox_checkout.field"
                     >
                       <div className="space-y-1">
                         <Label
                           htmlFor="admin-sandbox"
-                          className="flex items-center gap-2 text-sm font-medium"
+                          className="flex items-center gap-2 text-sm font-semibold text-foreground"
                         >
-                          <FlaskConical className="size-4 text-primary" />
+                          <FlaskConical className="size-4 text-primary-ink" />
                           Sandbox checkout
                         </Label>
                         <p className="text-xs text-muted-foreground">
@@ -795,10 +819,11 @@ export function AdminPage() {
                       </Alert>
                     )}
 
-                    <div className="flex items-center justify-end gap-2 pt-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline pt-4">
                       <Button
                         type="button"
                         variant="ghost"
+                        className="h-11 px-5 sm:h-10"
                         onClick={resetDraft}
                         disabled={!dirty || saveKeys.isPending}
                         data-ocid="admin.discard.button"
@@ -809,7 +834,7 @@ export function AdminPage() {
                         type="button"
                         onClick={handleSave}
                         disabled={!dirty || saveKeys.isPending}
-                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="h-11 gap-2 px-5 sm:h-10"
                         data-ocid="admin.save_keys.button"
                       >
                         {saveKeys.isPending ? (
@@ -826,26 +851,33 @@ export function AdminPage() {
             </Card>
 
             <Card data-ocid="admin.webhook.card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Webhook className="size-4 text-primary" /> Delivery webhook
-                </CardTitle>
-                <CardDescription>
-                  Point Click2Mail tracking (or any relay) at this endpoint.
-                  Events are matched by{" "}
-                  <code className="font-mono">campaignId</code> or{" "}
-                  <code className="font-mono">jobId</code> and mapped onto the
-                  delivery timeline.
-                </CardDescription>
+              <CardHeader className="pb-0 max-sm:px-4">
+                <PanelHeader
+                  icon={Webhook}
+                  title="Delivery webhook"
+                  description={
+                    <>
+                      Point Click2Mail tracking (or any relay) at this endpoint.
+                      Events are matched by{" "}
+                      <code className="font-mono text-foreground">
+                        campaignId
+                      </code>{" "}
+                      or{" "}
+                      <code className="font-mono text-foreground">jobId</code>{" "}
+                      and mapped onto the delivery timeline.
+                    </>
+                  }
+                />
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
+              <CardContent className="space-y-5 text-sm max-sm:px-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Endpoint (POST)
-                  </Label>
+                  <SectionLabel>Endpoint (POST)</SectionLabel>
                   <div className="flex items-center gap-2">
                     <code
-                      className="flex-1 truncate rounded-md bg-muted px-2 py-1.5 font-mono text-xs"
+                      className={cn(
+                        insetClass,
+                        "min-w-0 flex-1 truncate px-3 py-2 font-mono text-xs text-foreground",
+                      )}
                       data-ocid="admin.webhook.url.text"
                     >
                       {webhookUrl}
@@ -863,11 +895,14 @@ export function AdminPage() {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Auth header
-                  </Label>
+                  <SectionLabel>Auth header</SectionLabel>
                   <div className="flex items-center gap-2">
-                    <code className="rounded-md bg-muted px-2 py-1.5 font-mono text-xs">
+                    <code
+                      className={cn(
+                        insetClass,
+                        "min-w-0 truncate px-3 py-2 font-mono text-xs text-foreground",
+                      )}
+                    >
                       {WEBHOOK_HEADER}: &lt;webhook secret&gt;
                     </code>
                     <CopyButton
@@ -878,39 +913,43 @@ export function AdminPage() {
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">
-                      Example payload
-                    </Label>
+                    <SectionLabel>Example payload</SectionLabel>
                     <CopyButton
                       value={WEBHOOK_EXAMPLE}
                       ocid="admin.webhook.payload.copy"
                     />
                   </div>
                   <pre
-                    className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed"
+                    className={cn(
+                      insetClass,
+                      "overflow-x-auto p-4 font-mono text-xs leading-relaxed text-foreground",
+                    )}
                     data-ocid="admin.webhook.payload.text"
                   >
                     {WEBHOOK_EXAMPLE}
                   </pre>
-                  <p className="text-xs text-muted-foreground">
-                    <code className="font-mono">event</code> accepts any stage
-                    name (Created, InProduction, InTransit, SortedAtLocalHub,
-                    Delivered) or USPS scan wording;{" "}
-                    <code className="font-mono">timestamp</code> may be seconds,
-                    milliseconds or nanoseconds.
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    <code className="font-mono text-foreground">event</code>{" "}
+                    accepts any stage name (Created, InProduction, InTransit,
+                    SortedAtLocalHub, Delivered) or USPS scan wording;{" "}
+                    <code className="font-mono text-foreground">timestamp</code>{" "}
+                    may be seconds, milliseconds or nanoseconds.
                   </p>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">
-                      Test with curl
-                    </Label>
+                    <SectionLabel>Test with curl</SectionLabel>
                     <CopyButton
                       value={curlExample}
                       ocid="admin.webhook.curl.copy"
                     />
                   </div>
-                  <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+                  <pre
+                    className={cn(
+                      insetClass,
+                      "overflow-x-auto p-4 font-mono text-xs leading-relaxed text-foreground",
+                    )}
+                  >
                     {curlExample}
                   </pre>
                 </div>
@@ -918,21 +957,25 @@ export function AdminPage() {
             </Card>
 
             <Card data-ocid="admin.config.card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Globe className="size-4 text-primary" /> Public configuration
-                </CardTitle>
-                <CardDescription>
-                  What the storefront sees. Updates after every save.
-                </CardDescription>
+              <CardHeader className="pb-0 max-sm:px-4">
+                <PanelHeader
+                  icon={Globe}
+                  title="Public configuration"
+                  description="What the storefront sees. Updates after every save."
+                />
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="max-sm:px-4">
                 {configQuery.isLoading && !config ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" /> Loading…
                   </div>
                 ) : config ? (
-                  <>
+                  <div
+                    className={cn(
+                      raisedClass,
+                      "divide-y divide-hairline overflow-hidden",
+                    )}
+                  >
                     <ConfigFlag
                       label="Stripe configured"
                       on={config.stripeConfigured}
@@ -955,24 +998,23 @@ export function AdminPage() {
                       label="Sandbox checkout"
                       on={config.sandboxCheckout}
                     />
-                    <Separator className="my-2" />
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                      <span className="shrink-0 text-muted-foreground">
                         Tracking base
                       </span>
-                      <code className="font-mono text-xs">
+                      <code className="meta-mono min-w-0 break-all text-foreground">
                         {config.trackingBaseUrl}
                       </code>
                     </div>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                      <span className="shrink-0 text-muted-foreground">
                         Referral base
                       </span>
-                      <code className="font-mono text-xs">
+                      <code className="meta-mono min-w-0 break-all text-foreground">
                         {config.referralBaseUrl}
                       </code>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Public config unavailable.
@@ -996,21 +1038,23 @@ function SupportInboxCard() {
   const list = tickets.data ?? [];
   return (
     <Card className="lg:col-span-2" data-ocid="admin.support.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <LifeBuoy className="size-4 text-primary" /> Support inbox
-          {list.length > 0 ? (
-            <Badge variant="secondary" className="ml-1">
-              {list.length}
-            </Badge>
-          ) : null}
-        </CardTitle>
-        <CardDescription>
-          Tickets filed through Stampy's Contact Support drawer. Reply to each
-          sender by email.
-        </CardDescription>
+      <CardHeader className="pb-0 max-sm:px-4">
+        <PanelHeader
+          icon={LifeBuoy}
+          title={
+            <>
+              Support inbox
+              {list.length > 0 ? (
+                <Badge variant="info" className="tabular-nums">
+                  {list.length}
+                </Badge>
+              ) : null}
+            </>
+          }
+          description="Tickets filed through Stampy's Contact Support drawer. Reply to each sender by email."
+        />
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-sm:px-4">
         {tickets.isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Loading…
@@ -1024,24 +1068,26 @@ function SupportInboxCard() {
             data-ocid="admin.support.empty"
           />
         ) : (
-          <ul className="divide-y">
+          <ul className={cn(raisedClass, "divide-y divide-hairline")}>
             {list.map((t) => (
               <li
                 key={t.id}
-                className="space-y-1 py-3 first:pt-0"
+                className="space-y-1.5 px-4 py-3.5"
                 data-ocid={`admin.support.ticket.${t.id}`}
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-medium">{t.subject}</p>
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <p className="min-w-0 break-words font-semibold text-foreground">
+                    {t.subject}
+                  </p>
+                  <span className="meta-mono">
                     {t.id} · {formatTimestamp(t.createdAt)}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="break-words text-sm text-muted-foreground">
                   {t.name} ·{" "}
                   <a
                     href={`mailto:${t.email}?subject=${encodeURIComponent(`Re: ${t.subject}`)}`}
-                    className="text-primary hover:underline"
+                    className="rounded-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
                   >
                     {t.email}
                   </a>
@@ -1052,9 +1098,9 @@ function SupportInboxCard() {
                   <p
                     className={
                       t.emailStatus.startsWith("Emailed")
-                        ? "text-xs text-emerald-600"
+                        ? "text-xs font-medium text-emerald-brand"
                         : t.emailStatus.startsWith("Email failed")
-                          ? "text-xs text-destructive"
+                          ? "text-xs font-medium text-destructive"
                           : "text-xs text-muted-foreground"
                     }
                     data-ocid={`admin.support.ticket.${t.id}.email_status`}
@@ -1062,7 +1108,9 @@ function SupportInboxCard() {
                     {t.emailStatus}
                   </p>
                 ) : null}
-                <p className="whitespace-pre-wrap text-sm">{t.message}</p>
+                <p className="whitespace-pre-wrap break-words text-sm text-foreground">
+                  {t.message}
+                </p>
               </li>
             ))}
           </ul>

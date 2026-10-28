@@ -64,7 +64,10 @@ export function PresetPicker({ selectedId, onSelect }: PresetPickerProps) {
   const list = presets.data ?? [];
   if (list.length === 0) {
     return (
-      <Card data-ocid="audience.presets.empty">
+      <Card
+        className="border-dashed border-hairline-strong bg-card-raised shadow-none"
+        data-ocid="audience.presets.empty"
+      >
         <CardContent>
           <MascotEmptyState
             pose="audience"
@@ -90,33 +93,40 @@ export function PresetPicker({ selectedId, onSelect }: PresetPickerProps) {
               variant="ghost"
               onClick={() => onSelect(preset)}
               className={cn(
-                "h-auto w-full items-start justify-between gap-3 rounded-xl border p-4 text-left whitespace-normal",
+                "h-auto w-full items-start justify-between gap-3 rounded-2xl border p-4 text-left font-normal whitespace-normal shadow-surface transition-smooth hover:-translate-y-0.5 motion-reduce:hover:translate-y-0",
                 active
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-primary/40",
+                  ? "border-primary/60 bg-primary/[0.07] ring-1 ring-primary/30"
+                  : "border-hairline bg-card-raised hover:border-primary/40 hover:bg-card-raised",
               )}
               data-ocid={`audience.presets.item.${index + 1}`}
             >
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary-ink">
+                <Users className="size-5" />
+              </span>
               <span className="min-w-0 flex-1 space-y-1.5">
-                <span className="block truncate font-medium text-foreground">
+                <span className="block truncate font-bold tracking-tight text-foreground">
                   {preset.name}
                 </span>
                 <span className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="gap-1 font-normal">
-                    <Users className="size-3" />{" "}
-                    {formatNumber(preset.recipientCount)} recipients
-                  </Badge>
+                  <span className="inline-flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black leading-none tracking-tight tabular-nums text-foreground">
+                      {formatNumber(preset.recipientCount)}
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {" recipients"}
+                    </span>
+                  </span>
                   {preset.sourceCampaignId && (
-                    <Badge variant="outline" className="font-mono font-normal">
+                    <Badge variant="neutral" className="font-mono font-medium">
                       from {preset.sourceCampaignId}
                     </Badge>
                   )}
                 </span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="meta-mono block tracking-normal">
                   Updated {formatTimestamp(preset.updatedAt, false)}
                 </span>
               </span>
-              <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground" />
+              <ChevronRight className="mt-3 size-4 shrink-0 text-muted-foreground" />
             </Button>
           </li>
         );

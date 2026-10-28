@@ -184,21 +184,21 @@ export function ReturnAddressForm({
   const saved = !!returnAddress && !dirty;
 
   return (
-    <Card className="bg-card" data-ocid="review.return_address.card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <span className="flex items-center gap-2">
-            <Mailbox className="size-4 text-primary" /> Return address
+    <Card data-ocid="review.return_address.card">
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary-ink">
+              <Mailbox className="size-4" />
+            </span>
+            Return address
           </span>
           {saved ? (
-            <Badge
-              variant="outline"
-              className="gap-1 border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
-            >
+            <Badge variant="success" className="gap-1">
               <CheckCircle2 className="size-3" /> Saved
             </Badge>
           ) : (
-            <Badge variant="outline" className="gap-1 text-muted-foreground">
+            <Badge variant="warning" className="gap-1">
               <AlertCircle className="size-3" /> Required
             </Badge>
           )}
@@ -289,6 +289,7 @@ export function ReturnAddressForm({
               type="button"
               variant="ghost"
               onClick={handleClear}
+              className="h-11 sm:h-9"
               data-ocid="review.return_address.clear.button"
             >
               Clear
@@ -296,7 +297,7 @@ export function ReturnAddressForm({
             <Button
               type="button"
               onClick={handleSave}
-              className="gap-2"
+              className="h-11 flex-1 gap-2 sm:h-9 sm:flex-none"
               data-ocid="review.return_address.save.button"
             >
               <Save className="size-4" /> Save return address
@@ -337,6 +338,7 @@ function Field({
         placeholder={placeholder}
         maxLength={maxLength}
         aria-invalid={!!error}
+        className="h-11 sm:h-9"
         data-ocid={ocid}
       />
       {error && <p className="text-xs text-destructive">{error}</p>}

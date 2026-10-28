@@ -124,28 +124,28 @@ export function PricingCalculator() {
 
   return (
     <div
-      className="surface-glow overflow-hidden rounded-2xl border border-border bg-card"
+      className="surface-card overflow-hidden"
       data-ocid="pricing_calc.panel"
     >
       <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
         {/* Inputs */}
-        <div className="border-b border-border p-6 sm:p-8 lg:border-b-0 lg:border-r">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
-            <Calculator className="size-4" />
+        <div className="min-w-0 border-b border-hairline p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <div className="status-pill status-pill-indigo px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em]">
+            <Calculator className="size-3.5" />
             Build your estimate
           </div>
 
           <div className="mt-6 space-y-2">
             <Label
               htmlFor="pricing-calc-product"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
             >
               Product &amp; format
             </Label>
             <Select value={layoutVariant} onValueChange={setLayoutVariant}>
               <SelectTrigger
                 id="pricing-calc-product"
-                className="w-full"
+                className="h-11 w-full rounded-2xl"
                 data-ocid="pricing_calc.product.select"
               >
                 <SelectValue placeholder="Choose a format" />
@@ -181,10 +181,10 @@ export function PricingCalculator() {
           </div>
 
           <div className="mt-6 space-y-3">
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
               <Label
                 htmlFor="pricing-calc-qty"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
               >
                 Pieces to mail
               </Label>
@@ -201,7 +201,7 @@ export function PricingCalculator() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") commitQty(Number(qtyInput));
                 }}
-                className="w-32 text-right font-mono"
+                className="h-11 w-32 rounded-2xl text-right font-mono text-base font-bold tabular-nums"
                 data-ocid="pricing_calc.quantity.input"
               />
             </div>
@@ -213,47 +213,53 @@ export function PricingCalculator() {
               onValueChange={(values) => commitQty(values[0] ?? MIN_QTY)}
               aria-label="Pieces to mail"
               data-ocid="pricing_calc.quantity.slider"
+              className="py-2"
             />
-            <div className="flex justify-between font-mono text-[11px] text-muted-foreground">
+            <div className="meta-mono flex justify-between text-[11px]">
               <span>{formatNumber(MIN_QTY)}</span>
               <span>{formatNumber(SLIDER_MAX)}+</span>
             </div>
           </div>
 
-          <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl border border-border bg-background p-3">
-              <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                EZmailout / piece
+          {/* Per-piece tiles. Below sm the mono label drops to 10 px with no
+              tracking so "Print shop / piece" stays on one line in a
+              half-width tile (from 360 px); narrower phones stack the tiles
+              as rows, label beside the price. "/ piece" never breaks apart. */}
+          <dl className="mt-6 grid grid-cols-1 gap-2 text-sm min-[360px]:grid-cols-2 sm:gap-3">
+            <div className="flex min-w-0 items-baseline justify-between gap-x-3 gap-y-1 rounded-2xl border border-hairline bg-card-raised px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] min-[360px]:flex-col min-[360px]:items-start min-[360px]:px-2.5 sm:p-3.5 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
+              <dt className="min-w-0 font-mono text-[10px] uppercase tracking-normal text-muted-foreground sm:text-[11px] sm:tracking-[0.06em]">
+                EZmailout <span className="whitespace-nowrap">/ piece</span>
               </dt>
-              <dd className="mt-1 font-display text-lg font-bold text-primary">
+              <dd className="font-display text-2xl font-black tabular-nums tracking-tight text-primary">
                 {formatCents(quote.retailCents)}
               </dd>
             </div>
-            <div className="rounded-xl border border-border bg-background p-3">
-              <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Print shop / piece
+            <div className="flex min-w-0 items-baseline justify-between gap-x-3 gap-y-1 rounded-2xl border border-hairline bg-card-raised px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] min-[360px]:flex-col min-[360px]:items-start min-[360px]:px-2.5 sm:p-3.5 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
+              <dt className="min-w-0 font-mono text-[10px] uppercase tracking-normal text-muted-foreground sm:text-[11px] sm:tracking-[0.06em]">
+                Print shop <span className="whitespace-nowrap">/ piece</span>
               </dt>
-              <dd className="mt-1 font-display text-lg font-bold text-muted-foreground line-through decoration-muted-foreground/50">
+              <dd className="font-display text-2xl font-black tabular-nums tracking-tight text-muted-foreground line-through decoration-muted-foreground/60 decoration-2">
                 {formatCents(quote.benchmarkCents)}
               </dd>
             </div>
           </dl>
         </div>
 
-        {/* Results */}
-        <div className="bg-muted/30 p-6 sm:p-8">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-primary/30 bg-card p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+        {/* Results: the order summary, in the indigo backlight. */}
+        <div className="relative isolate min-w-0 bg-card-raised p-6 sm:p-8">
+          <div aria-hidden="true" className="ambient-glow-backdrop" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="min-w-0 rounded-2xl border border-primary/30 bg-card p-4 shadow-surface ring-1 ring-primary/10 sm:p-5">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
                 EZmailout total
               </div>
               <div
-                className="mt-1 font-display text-3xl font-extrabold tracking-tight text-foreground"
+                className="mt-1.5 font-display text-[2rem] font-black leading-none tabular-nums tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-4xl"
                 data-ocid="pricing_calc.ez_total.value"
               >
                 {formatCents(quote.ezTotalCents)}
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <div className="meta-mono mt-2">
                 {formatNumber(qty)} × {formatCents(quote.retailCents)}
               </div>
               {quote.smallOrderCents > 0 ? (
@@ -275,17 +281,17 @@ export function PricingCalculator() {
                 </div>
               ) : null}
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="min-w-0 rounded-2xl border border-hairline bg-card p-4 shadow-surface sm:p-5">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Traditional print shop
               </div>
               <div
-                className="mt-1 font-display text-3xl font-extrabold tracking-tight text-muted-foreground"
+                className="mt-1.5 font-display text-[1.75rem] font-black leading-none tabular-nums tracking-tight text-muted-foreground [overflow-wrap:anywhere] sm:text-3xl"
                 data-ocid="pricing_calc.shop_total.value"
               >
                 {formatCents(quote.shopTotalCents)}
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <div className="meta-mono mt-2">
                 {formatNumber(qty)} × {formatCents(quote.benchmarkCents)}
               </div>
             </div>
@@ -294,20 +300,20 @@ export function PricingCalculator() {
           <div
             className={
               savingsPositive
-                ? "mt-4 rounded-xl border border-emerald-brand/30 bg-emerald-brand/10 p-5"
-                : "mt-4 rounded-xl border border-border bg-card p-5"
+                ? "mt-4 rounded-2xl border border-emerald-brand/30 bg-card bg-gradient-to-b from-emerald-brand/[0.13] to-emerald-brand/[0.05] p-5 shadow-surface"
+                : "mt-4 rounded-2xl border border-hairline bg-card p-5"
             }
             data-ocid="pricing_calc.savings.panel"
           >
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-brand">
+            <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-brand">
               <TrendingDown className="size-4" />
               You save
             </div>
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-display text-4xl font-extrabold tracking-tight text-foreground">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="stat-number min-w-0 text-[clamp(1.75rem,9vw,2.25rem)] text-foreground [overflow-wrap:anywhere] md:text-5xl">
                 {formatCents(Math.max(0, quote.savingsCents))}
               </span>
-              <span className="rounded-full bg-emerald-brand px-2.5 py-0.5 text-xs font-bold text-white">
+              <span className="rounded-full border border-black/10 bg-emerald-brand px-2.5 py-0.5 text-xs font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.3)]">
                 {Math.max(0, quote.savingsPercent).toFixed(0)}% less
               </span>
             </div>
@@ -317,33 +323,33 @@ export function PricingCalculator() {
             </p>
           </div>
 
-          <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-card text-sm">
-            <div className="flex items-center justify-between px-4 py-3">
+          <div className="mt-4 divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-card text-sm shadow-surface">
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-muted-foreground">Member rate / piece</span>
               <span
-                className="font-mono font-medium text-foreground"
+                className="font-mono font-bold tabular-nums text-foreground"
                 data-ocid="pricing_calc.member_rate.value"
               >
                 {formatCents(quote.memberCents)}
               </span>
             </div>
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-muted-foreground">
                 EZmailout membership
               </span>
-              <span className="font-mono font-medium text-foreground">
+              <span className="shrink-0 font-mono font-bold tabular-nums text-foreground">
                 {formatCents(SUBSCRIPTION_PRICE_CENTS)} / 30 days
               </span>
             </div>
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-muted-foreground">
                 Member savings on this order, after the fee
               </span>
               <span
                 className={
                   quote.memberNetCents >= 0
-                    ? "font-mono font-semibold text-emerald-brand"
-                    : "font-mono font-semibold text-muted-foreground"
+                    ? "font-mono font-bold tabular-nums text-emerald-brand"
+                    : "font-mono font-bold tabular-nums text-muted-foreground"
                 }
               >
                 {quote.memberNetCents >= 0 ? "" : "−"}
@@ -353,7 +359,7 @@ export function PricingCalculator() {
           </div>
 
           <p
-            className="mt-4 text-center text-sm font-medium text-foreground"
+            className="mt-4 text-center text-sm font-semibold text-foreground"
             data-ocid="pricing_calc.break_even.note"
           >
             {quote.breakEvenPieces !== null

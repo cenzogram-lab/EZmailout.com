@@ -8,4 +8,11 @@ export { StampyStep4Preflight } from "./StampyStep4Preflight";
 export { StampyMark, STAMPY_HEAD_VIEWBOX } from "./StampyMark";
 export type { StampyProps } from "./stampy";
 export { StampyTip } from "./StampyTip";
-export { MascotEmptyState, type MascotPose } from "./MascotEmptyState";
+export { MascotEmptyState } from "./MascotEmptyState";
+export {
+  MASCOT_POSES,
+  MascotStage,
+  type MascotPose,
+  type MascotStageProps,
+  type MascotStageSize,
+} from "./MascotStage";

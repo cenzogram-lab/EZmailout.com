@@ -4,8 +4,8 @@ import { ChevronRight } from "lucide-react";
 import type * as React from "react";
 
 /**
- * iOS-style grouped inset list: one rounded card, hairline dividers between
- * rows, an optional small-caps heading above and a muted note below.
+ * iOS-style grouped inset list: one 24 px tactile card, hairline dividers
+ * between rows, an optional small-caps heading above and a muted note below.
  */
 export function GroupedList({
   title,
@@ -20,11 +20,11 @@ export function GroupedList({
   return (
     <section className={cn("min-w-0", className)} {...props}>
       {title ? (
-        <h2 className="px-4 pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <h2 className="px-4 pb-2 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
           {title}
         </h2>
       ) : null}
-      <div className="divide-y divide-border/80 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
+      <div className="divide-y divide-hairline overflow-hidden rounded-3xl border border-hairline bg-card shadow-surface">
         {children}
       </div>
       {footer ? (
@@ -80,32 +80,45 @@ export function GroupedListRow({
             "flex size-9 shrink-0 items-center justify-center rounded-xl",
             danger
               ? "bg-destructive/10 text-destructive"
-              : "bg-muted text-foreground",
+              : "bg-muted text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]",
           )}
         >
           <Icon className="size-[18px]" />
         </span>
       ) : null}
-      <span className="min-w-0 flex-1">
+      {/* Text and value share a line while the text keeps its room: 12rem
+          when it carries a description line, 8rem for a bare label. On a
+          narrower row (a phone) the value (a status badge) drops under the
+          text instead of squeezing the label and its description into short
+          broken lines; a short value beside a bare label (a date) stays
+          beside it down to 320 px. */}
+      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
         <span
           className={cn(
-            "block truncate text-[15px] font-medium",
-            danger ? "text-destructive" : "text-foreground",
+            "flex-1",
+            description ? "min-w-[min(12rem,100%)]" : "min-w-[min(8rem,100%)]",
           )}
         >
-          {label}
+          <span
+            className={cn(
+              "line-clamp-2 break-words text-[15px] font-medium",
+              danger ? "text-destructive" : "text-foreground",
+            )}
+          >
+            {label}
+          </span>
+          {description ? (
+            <span className="line-clamp-2 break-words text-xs font-medium text-muted-foreground">
+              {description}
+            </span>
+          ) : null}
         </span>
-        {description ? (
-          <span className="block truncate text-xs font-medium text-muted-foreground">
-            {description}
+        {value !== undefined && value !== null ? (
+          <span className="flex shrink-0 items-center text-sm text-muted-foreground">
+            {value}
           </span>
         ) : null}
       </span>
-      {value !== undefined && value !== null ? (
-        <span className="ml-2 flex shrink-0 items-center text-sm text-muted-foreground">
-          {value}
-        </span>
-      ) : null}
       {trailing ? (
         <span className="flex shrink-0 items-center gap-1">{trailing}</span>
       ) : null}
@@ -120,7 +133,7 @@ export function GroupedListRow({
   const rowClass = cn(
     "flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left",
     interactive &&
-      "transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
+      "transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/80",
     disabled && "pointer-events-none opacity-50",
     className,
   );

@@ -1,4 +1,8 @@
 import {
+  EDGE_PADDING,
+  barCollisionPadding,
+} from "@/components/canvas/popoverBounds";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -69,6 +73,8 @@ export function FontPicker({
   const [category, setCategory] = useState<FontCategory | "All">("All");
   const [list, setList] = useState<HTMLDivElement | null>(null);
   const [cursor, setCursor] = useState(0);
+  // Kept between the header pill and the phone dock (measured on open).
+  const [padding, setPadding] = useState(EDGE_PADDING);
 
   const results = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -88,13 +94,19 @@ export function FontPicker({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setPadding(barCollisionPadding());
+        setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
           disabled={disabled}
           className={cn(
-            "flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-input bg-background px-2.5 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-input bg-card px-2.5 text-left text-sm shadow-[inset_0_1px_2px_rgb(0_0_0/0.05)] transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-well",
             className,
           )}
           aria-label={`Font: ${value}`}
@@ -108,7 +120,7 @@ export function FontPicker({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        collisionPadding={12}
+        collisionPadding={padding}
         className="flex max-h-[min(30rem,var(--radix-popover-content-available-height))] w-[min(18rem,calc(100vw-1.5rem))] flex-col gap-2 rounded-2xl p-2"
         data-ocid={`${ocid}.popover`}
       >
@@ -136,13 +148,18 @@ export function FontPicker({
               }
             }}
             placeholder={`Search ${FONT_CATALOG.length} fonts`}
-            className="h-9 w-full rounded-full border border-input bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="h-9 w-full rounded-full border border-input bg-card pl-8 pr-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 dark:bg-well"
             aria-label="Search fonts"
             data-ocid={`${ocid}.search`}
           />
         </div>
-        <div className="-mx-0.5 flex shrink-0 gap-1 overflow-x-auto pb-0.5 scrollbar-hide">
-          {(["All", ...FONT_CATEGORIES] as const).map((c) => (
+        {/* The categories sit in two even rows of equal cells, each row
+            filling the track (All · Sans serif · Serif, then the four
+            shorter names): one row scrolling sideways cut "Script" mid-word
+            and hid "Mono" past the edge, and free wrapping left a ragged
+            second row. */}
+        <div className="segmented grid shrink-0 grid-cols-12 gap-1 rounded-[1.125rem] p-1">
+          {(["All", ...FONT_CATEGORIES] as const).map((c, i) => (
             <button
               key={c}
               type="button"
@@ -150,11 +167,10 @@ export function FontPicker({
                 setCategory(c);
                 setCursor(0);
               }}
+              // Capsule track; the chosen category is the raised pill.
               className={cn(
-                "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                c === category
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                "segmented-item min-h-7 min-w-0 px-1 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80",
+                i < 3 ? "col-span-4" : "col-span-3",
               )}
               aria-pressed={c === category}
               data-ocid={`${ocid}.category.${c.toLowerCase().replace(/\s+/g, "_")}`}
@@ -179,7 +195,7 @@ export function FontPicker({
             return (
               <div key={f.family}>
                 {header && category === "All" && (
-                  <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="px-2 pb-1 pt-2.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {f.category}
                     {f.category === "System" && " · depends on the device"}
                   </p>
@@ -190,8 +206,9 @@ export function FontPicker({
                   onClick={() => pick(f.family)}
                   onMouseEnter={() => setCursor(i)}
                   className={cn(
-                    "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left",
+                    "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80",
                     i === cursor ? "bg-muted" : "hover:bg-muted",
+                    active && "text-primary-ink",
                   )}
                   data-ocid={`${ocid}.option.${f.family.toLowerCase().replace(/\s+/g, "_")}`}
                 >

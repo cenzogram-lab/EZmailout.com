@@ -1,10 +1,10 @@
+import { MascotStage } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useBackendActor, useResolveTrackingLink } from "@/hooks/use-backend";
 import { BRAND } from "@/lib/brand";
 import { normalizeRedirectUrl } from "@/lib/qr";
 import { Link, useParams } from "@tanstack/react-router";
-import { ExternalLink, Home, Loader2, Unlink } from "lucide-react";
+import { ExternalLink, Home, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type Phase =
@@ -50,73 +50,82 @@ export function TrackRedirectPage() {
   }, [code, ready, resolveLink]);
 
   return (
-    <div
-      className="mx-auto flex min-h-[60vh] max-w-md items-center px-4 py-12"
-      data-ocid="track.page"
-    >
-      <Card className="w-full">
-        <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-          {phase.kind === "inactive" ? (
-            <>
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <Unlink className="size-6" />
-              </div>
-              <div className="space-y-1">
-                <h1
-                  className="font-display text-xl font-semibold text-foreground"
-                  data-ocid="track.inactive.title"
-                >
-                  This link isn't active
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  The tracking code{code ? ` "${code}"` : ""} doesn't match a
-                  live campaign, or its destination hasn't been set yet.
-                </p>
-              </div>
-              <Button asChild className="gap-2" data-ocid="track.home.link">
-                <Link to="/">
-                  <Home className="size-4" /> Go to {BRAND.name}
-                </Link>
+    <div className="relative isolate" data-ocid="track.page">
+      <div aria-hidden="true" className="ambient-glow-backdrop" />
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 py-12 text-center">
+        {phase.kind === "inactive" ? (
+          <>
+            {/* Stampy with his map: this link leads nowhere yet. */}
+            <MascotStage pose="audience" size="md" className="mb-8" />
+            <div className="space-y-3">
+              <h1
+                className="display-heading text-3xl leading-tight sm:text-4xl"
+                data-ocid="track.inactive.title"
+              >
+                This link isn't active
+              </h1>
+              <p className="text-base leading-relaxed text-muted-foreground">
+                The tracking code
+                {code ? (
+                  <>
+                    {" "}
+                    <span className="font-mono text-sm tracking-wider text-foreground">
+                      "{code}"
+                    </span>
+                  </>
+                ) : (
+                  ""
+                )}{" "}
+                doesn't match a live campaign, or its destination hasn't been
+                set yet.
+              </p>
+            </div>
+            <Button
+              asChild
+              size="lg"
+              className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
+              data-ocid="track.home.link"
+            >
+              <Link to="/">
+                <Home className="size-4" /> Go to {BRAND.name}
+              </Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            {/* A raised disc with the spinner while the code resolves. */}
+            <div className="btn-3d-neutral mb-8 grid size-16 place-items-center rounded-full text-primary">
+              <Loader2 className="size-7 motion-safe:animate-spin" />
+            </div>
+            <div className="space-y-2">
+              <h1
+                className="display-heading text-2xl sm:text-3xl"
+                data-ocid="track.redirecting.title"
+              >
+                {phase.kind === "redirecting" ? "Redirecting…" : "One moment…"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {phase.kind === "redirecting"
+                  ? "Taking you to the destination."
+                  : "Looking up this tracking link."}
+              </p>
+            </div>
+            {phase.kind === "redirecting" && (
+              <Button
+                asChild
+                variant="outline"
+                className="mt-6 gap-2"
+                data-ocid="track.destination.link"
+              >
+                <a href={phase.destinationUrl} rel="noreferrer">
+                  <ExternalLink className="size-4" /> Continue if you aren't
+                  redirected
+                </a>
               </Button>
-            </>
-          ) : (
-            <>
-              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Loader2 className="size-6 animate-spin" />
-              </div>
-              <div className="space-y-1">
-                <h1
-                  className="font-display text-xl font-semibold text-foreground"
-                  data-ocid="track.redirecting.title"
-                >
-                  {phase.kind === "redirecting"
-                    ? "Redirecting…"
-                    : "One moment…"}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {phase.kind === "redirecting"
-                    ? "Taking you to the destination."
-                    : "Looking up this tracking link."}
-                </p>
-              </div>
-              {phase.kind === "redirecting" && (
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  data-ocid="track.destination.link"
-                >
-                  <a href={phase.destinationUrl} rel="noreferrer">
-                    <ExternalLink className="size-4" /> Continue if you aren't
-                    redirected
-                  </a>
-                </Button>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

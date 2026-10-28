@@ -1,8 +1,14 @@
 import { BookDemoModal } from "@/components/BookDemoModal";
-import { CatalogIcon } from "@/components/catalog/CatalogIcon";
 import { MembershipCard } from "@/components/marketing/MembershipCard";
 import { PricingCalculator } from "@/components/marketing/PricingCalculator";
 import { ProductShowcase } from "@/components/marketing/ProductShowcase";
+import {
+  BRAND_PANEL,
+  BRAND_PANEL_INSET,
+  EYEBROW,
+  ICON_TILE,
+} from "@/components/marketing/tactile";
+import { MascotStage } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
 import { CATALOG, CATALOG_SIZE_COUNT } from "@/lib/catalog";
 import { AI_COSTS, CREDIT_PACKS, MONTHLY_ALLOWANCE } from "@/lib/credits";
@@ -58,17 +64,13 @@ function Section({
       id={id}
       className={`mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20 lg:px-8 ${className}`}
     >
-      <div className="mb-10 text-center">
-        {eyebrow && (
-          <div className="mb-3 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-ink">
-            {eyebrow}
-          </div>
-        )}
-        <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+      <div className="mb-10 text-center sm:mb-12">
+        {eyebrow && <div className={`${EYEBROW} mb-4`}>{eyebrow}</div>}
+        <h2 className="display-heading text-balance text-[2rem] leading-[1.08] sm:text-[2.75rem]">
           {title}
         </h2>
         {subtitle && (
-          <p className="mx-auto mt-3 max-w-2xl text-base text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {subtitle}
           </p>
         )}
@@ -92,34 +94,34 @@ const RAIL_ITEMS: { icon: LucideIcon; label: string }[] = [
 function StudioMock() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl shadow-navy/10"
+      className="relative overflow-hidden rounded-3xl border border-hairline bg-card shadow-raised ring-1 ring-primary/10"
       data-ocid="hero.studio_mock"
       aria-hidden="true"
     >
-      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
-        <span className="size-2.5 rounded-full bg-muted" />
-        <span className="size-2.5 rounded-full bg-muted" />
-        <span className="size-2.5 rounded-full bg-muted" />
-        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+      <div className="flex items-center gap-2 border-b border-hairline bg-card-raised px-3 py-2.5">
+        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
+        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
+        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
+        <span className="ml-2 min-w-0 truncate rounded-full border border-hairline bg-well px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           Spring open-house · 6″ × 4.25″ Postcard
         </span>
-        <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+        <span className="btn-3d-primary ml-auto shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold">
           Continue to review
         </span>
       </div>
       <div className="flex">
-        <div className="flex w-14 flex-col items-center gap-2 border-r border-border/60 bg-muted/60 py-3">
+        <div className="flex w-14 shrink-0 flex-col items-center gap-2 border-r border-hairline bg-card-raised py-3">
           {RAIL_ITEMS.map((item, i) => (
             <span
               key={item.label}
-              className={`flex size-9 items-center justify-center rounded-lg ${i === 2 ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}
+              className={`flex size-9 items-center justify-center rounded-xl ${i === 2 ? "bg-primary/15 text-primary-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] ring-1 ring-primary/25" : "text-muted-foreground"}`}
             >
               <item.icon className="size-4" strokeWidth={1.75} />
             </span>
           ))}
         </div>
-        <div className="studio-dotgrid relative flex-1 p-6 sm:p-8">
-          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-border/60 bg-card px-1.5 py-1 shadow-md">
+        <div className="studio-dotgrid relative min-w-0 flex-1 p-6 sm:p-8">
+          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-full border border-hairline bg-popover px-2 py-1 shadow-raised">
             <span className="px-1 text-[9px] font-semibold uppercase text-muted-foreground">
               text
             </span>
@@ -130,9 +132,11 @@ function StudioMock() {
           </div>
           <div className="relative mx-auto mt-6 aspect-[6/4.25] w-full max-w-[360px]">
             <div className="absolute -inset-1.5 rounded-sm border-2 border-[#ef4444]/80" />
-            <div className="relative h-full w-full overflow-hidden rounded-sm bg-white shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#cff3fd] via-white to-[#b5d8fc]/60" />
-              <div className="absolute inset-[6%] rounded-sm border border-dashed border-emerald-brand/70" />
+            {/* The postcard is artwork: print colours, the same in both
+                themes (the studio keeps an artboard's own colours too). */}
+            <div className="relative h-full w-full overflow-hidden rounded-sm shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#cff3fd] via-white to-[#d3e8fd]" />
+              <div className="absolute inset-[6%] rounded-sm border border-dashed border-[#008058]/70" />
               <div className="absolute left-[10%] top-[16%] w-[62%]">
                 <div className="relative rounded-sm outline outline-2 outline-primary">
                   <div className="px-1 font-display text-[clamp(14px,3.6vw,22px)] font-extrabold leading-tight text-[#01080a]">
@@ -150,10 +154,10 @@ function StudioMock() {
                     />
                   ))}
                 </div>
-                <p className="mt-2 px-1 text-[10px] font-medium text-muted-foreground sm:text-xs">
+                <p className="mt-2 px-1 text-[10px] font-medium text-[#475467] sm:text-xs">
                   120 Harbor View Dr · Free valuation for every visitor
                 </p>
-                <span className="mt-2 inline-block rounded-full bg-navy px-3 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
+                <span className="mt-2 inline-block rounded-full bg-[#0e2b4f] px-3 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
                   Book today
                 </span>
               </div>
@@ -161,7 +165,7 @@ function StudioMock() {
                 <QrCode className="size-9 text-[#01080a]" strokeWidth={1.5} />
               </div>
             </div>
-            <span className="absolute -right-2 -top-3 rounded-full bg-[#607bf7] px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+            <span className="absolute -right-2 -top-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
               You
             </span>
           </div>
@@ -170,7 +174,7 @@ function StudioMock() {
               (hex) => (
                 <span
                   key={hex}
-                  className="size-5 rounded-full border border-black/10"
+                  className="size-5 rounded-full border border-hairline-strong shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]"
                   style={{ backgroundColor: hex }}
                 />
               ),
@@ -197,41 +201,57 @@ const TRUST_BADGES: TrustBadge[] = [
 
 function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
-    <section className="relative overflow-hidden bg-background pb-14 pt-14 sm:pb-20 sm:pt-20">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_0%,oklch(var(--primary)/0.12),transparent_70%)]" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:px-8">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-brand opacity-75" />
+    <section className="relative isolate overflow-hidden bg-background pb-20 pt-10 sm:pb-24 sm:pt-16 lg:pt-20">
+      {/* Ambient indigo backlight from the top edge (its own layer, so the
+          section keeps its solid page colour under the text). */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] bg-[radial-gradient(ellipse_75%_60%_at_50%_0%,var(--spotlight),transparent_72%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-48 top-20 -z-10 hidden size-[40rem] rounded-full bg-[radial-gradient(closest-side,var(--glow-brand),transparent)] lg:block"
+      />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-12 lg:px-8">
+        <div className="min-w-0">
+          <div className="inline-flex max-w-full items-center gap-1.5 text-balance rounded-full border border-hairline bg-card px-3 py-1.5 text-[11px] font-medium leading-4 text-muted-foreground shadow-surface min-[390px]:gap-2 min-[390px]:px-3.5 min-[390px]:text-xs">
+            <span className="relative flex size-2 shrink-0">
+              <span className="absolute inline-flex size-full rounded-full bg-emerald-brand opacity-75 motion-safe:animate-ping" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-brand" />
             </span>
-            Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)} for 30 days ·
-            never renews by itself
+            {/* Two unbreakable halves: when the capsule cannot hold one line
+                (under ~360 px) it breaks after the "·", never mid-phrase. */}
+            <span>
+              <span className="whitespace-nowrap">
+                Membership {formatCents(SUBSCRIPTION_PRICE_CENTS)} for 30 days ·
+              </span>{" "}
+              <span className="whitespace-nowrap">never renews by itself</span>
+            </span>
           </div>
-          <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground animate-fade-up sm:text-6xl sm:leading-[1.02]">
+          <h1 className="mt-6 font-display text-balance text-[clamp(2rem,11.2vw,2.625rem)] font-black leading-[1.02] tracking-[-0.04em] text-foreground motion-safe:animate-fade-up sm:text-6xl xl:text-[4rem]">
             Design it. Target it.
             <span className="block text-primary">Mail it tomorrow.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             A Canva-style studio, {CATALOG_SIZE_COUNT} mail formats and
             per-piece prices that drop with volume, or the 10,000-piece rate on
-            small batches with a {formatCents(SUBSCRIPTION_PRICE_CENTS)}
-            30-day membership. Upload a list or draw a radius, design in the
-            browser, and USPS delivers with live IMb tracking.
+            small batches with a {formatCents(SUBSCRIPTION_PRICE_CENTS)} 30-day
+            membership. Upload a list or draw a radius, design in the browser,
+            and USPS delivers with live IMb tracking.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button
-              asChild
-              size="lg"
-              className="gap-2 px-8 shadow-md shadow-primary/25"
-            >
+            <Button asChild size="lg" className="h-12 gap-2 px-8 text-base">
               <Link to="/wizard" data-ocid="hero.launch_campaign.button">
                 Start a campaign
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="px-8">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="h-12 px-8 text-base"
+            >
               <a href="#products" data-ocid="hero.see_pricing.link">
                 Browse the catalog
               </a>
@@ -242,7 +262,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             <button
               type="button"
               onClick={onOpenDemo}
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="rounded-sm font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/80"
               data-ocid="hero.book_demo.button"
             >
               Book a demo
@@ -252,7 +272,7 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             {TRUST_BADGES.map((badge) => (
               <li
                 key={badge.label}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+                className="inline-flex items-center gap-2 rounded-full border border-hairline bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-surface"
               >
                 <badge.icon className="size-3.5 text-primary" />
                 {badge.label}
@@ -260,8 +280,15 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             ))}
           </ul>
         </div>
-        <div className="animate-fade-up">
+        <div className="relative min-w-0 motion-safe:animate-fade-up lg:pl-6">
           <StudioMock />
+          {/* Stampy with his palette, presenting the studio. */}
+          <MascotStage
+            pose="design"
+            size="lg"
+            className="pointer-events-none absolute -bottom-12 -right-1 sm:-bottom-14 sm:-left-5 sm:right-auto lg:-left-6"
+            mascotClassName="size-24 sm:size-32 lg:size-36 xl:size-40"
+          />
         </div>
       </div>
     </section>
@@ -273,10 +300,10 @@ function Marquee() {
   const text =
     "No minimums • $9 30-day membership • Wholesale print rates • CASS-certified addresses • USPS IMb tracking • EZmailout fulfilment • Canva-style design studio • AI backgrounds & copy • Dynamic QR tracking links • Radius targeting with EDDM® estimates • ";
   return (
-    <div className="relative overflow-hidden border-y border-border/60 bg-ice py-3">
-      <div className="flex whitespace-nowrap animate-marquee-scroll">
-        <span className="px-4 text-sm font-medium text-navy">{text}</span>
-        <span className="px-4 text-sm font-medium text-navy">{text}</span>
+    <div className="relative overflow-hidden border-y border-hairline bg-ice py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.5)] [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]">
+      <div className="flex whitespace-nowrap animate-marquee-scroll motion-reduce:animate-none">
+        <span className="px-4 text-sm font-semibold text-navy">{text}</span>
+        <span className="px-4 text-sm font-semibold text-navy">{text}</span>
       </div>
     </div>
   );
@@ -308,23 +335,31 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
 
 function HowItWorks() {
   return (
-    <ol className="grid gap-4 md:grid-cols-4" data-ocid="home.how_it_works">
+    <ol
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      data-ocid="home.how_it_works"
+    >
       {STEPS.map((step, i) => (
         <li
           key={step.title}
-          className="relative rounded-2xl border border-border/60 bg-card p-6 shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
+          className="surface-card relative p-6 transition-smooth hover:-translate-y-1 hover:shadow-raised"
         >
-          <span className="inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className={`${ICON_TILE} size-12`}>
             <step.icon className="size-5" />
           </span>
-          <h3 className="mt-4 font-display text-base font-bold text-foreground">
+          <h3 className="mt-5 font-display text-base font-extrabold tracking-tight text-foreground">
             {step.title}
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {step.body}
           </p>
           {i < STEPS.length - 1 && (
-            <ArrowRight className="absolute -right-3 top-1/2 hidden size-5 -translate-y-1/2 text-primary/50 md:block" />
+            <span
+              aria-hidden="true"
+              className="btn-3d-neutral absolute -right-[22px] top-1/2 z-10 hidden size-7 -translate-y-1/2 items-center justify-center rounded-full lg:flex"
+            >
+              <ArrowRight className="size-3.5 text-primary" />
+            </span>
           )}
         </li>
       ))}
@@ -377,22 +412,30 @@ function StudioFeatures() {
       {STUDIO_FEATURES.map((f) => (
         <div
           key={f.title}
-          className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
+          className="surface-card relative isolate overflow-hidden p-6 sm:p-7"
         >
-          <span className="inline-flex size-11 items-center justify-center rounded-xl bg-ice text-navy">
+          <div aria-hidden="true" className="ambient-glow-backdrop" />
+          <span className={`${ICON_TILE} size-12`}>
             <f.icon className="size-5" />
           </span>
-          <h3 className="mt-4 font-display text-lg font-bold text-foreground">
+          <h3 className="mt-5 font-display text-lg font-extrabold tracking-tight text-foreground">
             {f.title}
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
-          <ul className="mt-4 space-y-2">
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {f.body}
+          </p>
+          <ul className="mt-5 space-y-2.5 border-t border-hairline pt-5">
             {f.bullets.map((b) => (
               <li
                 key={b}
-                className="flex items-start gap-2 text-sm text-muted-foreground"
+                className="flex items-start gap-2.5 text-sm text-muted-foreground"
               >
-                <Check className="mt-0.5 size-4 shrink-0 text-emerald-brand" />
+                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-brand/15">
+                  <Check
+                    className="size-3 text-emerald-brand"
+                    strokeWidth={3}
+                  />
+                </span>
                 {b}
               </li>
             ))}
@@ -430,18 +473,18 @@ const FAQ: { q: string; a: string }[] = [
 function Faq() {
   return (
     <div
-      className="mx-auto max-w-3xl divide-y divide-border/60 rounded-2xl border border-border/60 bg-card"
+      className="surface-card mx-auto max-w-3xl divide-y divide-hairline overflow-hidden"
       data-ocid="home.faq"
     >
       {FAQ.map((item, i) => (
-        <details key={item.q} className="group px-6 py-4" open={i === 0}>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base font-semibold text-foreground">
+        <details key={item.q} className="group px-5 sm:px-6" open={i === 0}>
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-xl py-4 font-display text-base font-bold tracking-tight text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 [&::-webkit-details-marker]:hidden">
             {item.q}
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-transform group-open:rotate-45">
+            <span className="btn-3d-neutral flex size-8 shrink-0 items-center justify-center rounded-full pb-px text-xl font-medium leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none">
               +
             </span>
           </summary>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="-mt-1 pb-5 text-sm leading-relaxed text-muted-foreground">
             {item.a}
           </p>
         </details>
@@ -460,19 +503,20 @@ const STATS = [
 
 function StatsRow() {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
       {STATS.map((s) => (
         <div
           key={s.value}
-          className="rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-smooth hover:-translate-y-1 hover:shadow-md"
+          className="surface-card relative isolate overflow-hidden p-4 text-center transition-smooth hover:-translate-y-1 hover:shadow-raised sm:p-6"
         >
-          <div className="font-display text-3xl font-bold text-primary sm:text-4xl">
+          <div aria-hidden="true" className="ambient-glow-backdrop" />
+          <div className="stat-number text-3xl text-foreground sm:text-4xl lg:text-5xl">
             {s.value}
           </div>
-          <div className="mt-1 text-sm font-semibold text-foreground">
+          <div className="mt-2 text-sm font-bold text-foreground">
             {s.label}
           </div>
-          <div className="text-xs text-muted-foreground">{s.sub}</div>
+          <div className="meta-mono mt-1">{s.sub}</div>
         </div>
       ))}
     </div>
@@ -483,13 +527,16 @@ function StatsRow() {
 function ValuePillars() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
-        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
+      <div className="surface-card group relative isolate overflow-hidden p-6 transition-smooth hover:-translate-y-0.5 hover:shadow-raised sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 -top-12 -z-10 size-44 rounded-full bg-primary/10 blur-3xl transition-smooth group-hover:bg-primary/20"
+        />
         <div className="relative">
-          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className={`${ICON_TILE} mb-5 size-14`}>
             <Upload className="size-6" />
           </div>
-          <h3 className="font-display text-xl font-bold text-foreground">
+          <h3 className="font-display text-xl font-extrabold tracking-tight text-foreground">
             Win back the customers you already have
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -498,7 +545,7 @@ function ValuePillars() {
             undeliverable addresses flagged — before a single piece is printed.
             Save the clean list as a preset and reuse it next quarter.
           </p>
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-5 space-y-2.5 border-t border-hairline pt-5">
             {[
               "CASS-certified scrub via EZmailout",
               "ZIP+4 and delivery-point correction",
@@ -507,9 +554,14 @@ function ValuePillars() {
             ].map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
+                className="flex items-center gap-2.5 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-emerald-brand" />
+                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-brand/15">
+                  <Check
+                    className="size-3 text-emerald-brand"
+                    strokeWidth={3}
+                  />
+                </span>
                 {item}
               </li>
             ))}
@@ -517,13 +569,16 @@ function ValuePillars() {
         </div>
       </div>
 
-      <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-smooth hover:shadow-md">
-        <div className="absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-smooth group-hover:bg-primary/10" />
+      <div className="surface-card group relative isolate overflow-hidden p-6 transition-smooth hover:-translate-y-0.5 hover:shadow-raised sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 -top-12 -z-10 size-44 rounded-full bg-primary/10 blur-3xl transition-smooth group-hover:bg-primary/20"
+        />
         <div className="relative">
-          <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className={`${ICON_TILE} mb-5 size-14`}>
             <MapPin className="size-6" />
           </div>
-          <h3 className="font-display text-xl font-bold text-foreground">
+          <h3 className="font-display text-xl font-extrabold tracking-tight text-foreground">
             Reach every mailbox around your location
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -531,7 +586,7 @@ function ValuePillars() {
             estimate built from USPS EDDM carrier routes. Target the ZIP codes
             and routes that matter and launch without buying a single record.
           </p>
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-5 space-y-2.5 border-t border-hairline pt-5">
             {[
               "Interactive radius builder on a live map",
               "EDDM carrier-route household estimates",
@@ -540,9 +595,14 @@ function ValuePillars() {
             ].map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
+                className="flex items-center gap-2.5 text-sm text-muted-foreground"
               >
-                <Check className="size-4 shrink-0 text-emerald-brand" />
+                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-brand/15">
+                  <Check
+                    className="size-3 text-emerald-brand"
+                    strokeWidth={3}
+                  />
+                </span>
                 {item}
               </li>
             ))}
@@ -557,15 +617,22 @@ function ValuePillars() {
 function AiStudioTeaser() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-primary p-8 text-primary-foreground sm:p-10">
-        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/25 blur-3xl" />
-        <div className="absolute -bottom-24 -left-16 size-64 rounded-full bg-white/10 blur-3xl" />
+      <div className={`${BRAND_PANEL} rounded-3xl p-6 sm:p-10`}>
+        {/* Depth only ever darkens the indigo under the white text. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-28 -right-20 -z-10 size-80 rounded-full bg-black/25 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-8 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+        />
         <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/15 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]">
             <Sparkles className="size-3.5 text-primary-foreground" />
             AI Studio
           </div>
-          <h3 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
+          <h3 className="mt-5 font-display text-2xl font-black leading-tight tracking-tight sm:text-[2rem]">
             Backgrounds and copy, generated inside the canvas
           </h3>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground">
@@ -575,8 +642,8 @@ function AiStudioTeaser() {
             credits with each 30-day pass — one credit is one cent.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/15 bg-black/10 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold">
+            <div className={`${BRAND_PANEL_INSET} p-4`}>
+              <div className="flex items-center gap-2 text-sm font-bold">
                 <ImageIcon className="size-4 text-primary-foreground" />
                 AI backgrounds
               </div>
@@ -585,8 +652,8 @@ function AiStudioTeaser() {
                 {AI_COSTS.wideImage} wide · {AI_COSTS.hdImage} HD
               </div>
             </div>
-            <div className="rounded-xl border border-white/15 bg-black/10 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold">
+            <div className={`${BRAND_PANEL_INSET} p-4`}>
+              <div className="flex items-center gap-2 text-sm font-bold">
                 <Type className="size-4 text-primary-foreground" />
                 AI copywriting
               </div>
@@ -599,7 +666,8 @@ function AiStudioTeaser() {
           <Button
             asChild
             size="lg"
-            className="mt-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            variant="outline"
+            className="mt-6 h-12 w-full gap-2 px-7 text-base sm:w-auto"
           >
             <Link to="/wizard" data-ocid="ai_studio.try.link">
               Try it in the wizard
@@ -609,22 +677,25 @@ function AiStudioTeaser() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-        <h4 className="font-display text-lg font-bold text-foreground">
+      {/* Beside the taller AI Studio panel (lg) the pack rows share the
+          card's extra height, so the card ends with the panel and no empty
+          space collects under the note. */}
+      <div className="surface-card flex flex-col p-6 sm:p-8">
+        <h4 className="font-display text-lg font-extrabold tracking-tight text-foreground">
           Need more credits?
         </h4>
         <p className="mt-1 text-sm text-muted-foreground">
           Top up any time. Bigger packs include bonus credits.
         </p>
-        <ul className="mt-5 space-y-3">
+        <ul className="mt-5 flex flex-1 flex-col gap-3">
           {CREDIT_PACKS.map((pack) => (
             <li
               key={pack.id}
-              className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3"
+              className="flex flex-1 items-center justify-between gap-3 rounded-2xl border border-hairline bg-card-raised px-4 py-3.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] transition-smooth hover:border-primary/30 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]"
               data-ocid={`ai_studio.pack.${pack.id.toLowerCase()}.item`}
             >
-              <div>
-                <div className="text-sm font-semibold text-foreground">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-foreground">
                   {pack.name}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -632,13 +703,14 @@ function AiStudioTeaser() {
                   {pack.bonus > 0 ? ` · includes ${pack.bonus} bonus` : ""}
                 </div>
               </div>
-              <div className="font-display text-lg font-bold text-primary">
+              <div className="shrink-0 font-display text-xl font-black tabular-nums tracking-tight text-primary">
                 {formatCents(pack.priceCents)}
               </div>
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-xs text-muted-foreground">
+        <p className="status-pill status-pill-emerald mt-4 self-start">
+          <Check className="size-3.5" strokeWidth={2.5} />
           Credits never expire.
         </p>
       </div>
@@ -714,14 +786,18 @@ const FEATURES: FeatureRow[] = [
 function SupportCell({ value }: { value: Support }) {
   if (value === "yes") {
     return (
-      <span className="inline-flex size-7 items-center justify-center rounded-full bg-emerald-brand/10">
-        <Check className="size-4 text-emerald-brand" aria-label="Included" />
+      <span className="inline-flex size-7 items-center justify-center rounded-full border border-emerald-brand/25 bg-emerald-brand/15">
+        <Check
+          className="size-4 text-emerald-brand"
+          strokeWidth={2.5}
+          aria-label="Included"
+        />
       </span>
     );
   }
   if (value === "partial") {
     return (
-      <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted">
+      <span className="inline-flex size-7 items-center justify-center rounded-full border border-hairline bg-muted">
         <Minus
           className="size-4 text-muted-foreground"
           aria-label="Partial or add-on"
@@ -730,7 +806,7 @@ function SupportCell({ value }: { value: Support }) {
     );
   }
   return (
-    <span className="inline-flex size-7 items-center justify-center rounded-full bg-destructive/10">
+    <span className="inline-flex size-7 items-center justify-center rounded-full border border-destructive/20 bg-destructive/10">
       <X className="size-4 text-destructive" aria-label="Not included" />
     </span>
   );
@@ -738,54 +814,66 @@ function SupportCell({ value }: { value: Support }) {
 
 function ComparisonTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="px-6 py-4 text-left font-display font-bold text-foreground">
-                Feature
-              </th>
-              <th className="px-6 py-4 text-center font-display font-bold text-primary">
-                EZmailout
-              </th>
-              <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Generic API provider
-              </th>
-              <th className="px-6 py-4 text-center font-display font-bold text-muted-foreground">
-                Traditional print shop
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {FEATURES.map((f) => (
-              <tr
-                key={f.label}
-                className="border-b border-border last:border-0 hover:bg-muted/30"
-              >
-                <td className="px-6 py-4">
-                  <div className="font-medium text-foreground">{f.label}</div>
-                  {f.note && (
-                    <div className="text-xs text-muted-foreground">
-                      {f.note}
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <SupportCell value={f.us} />
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <SupportCell value={f.generic} />
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <SupportCell value={f.traditional} />
-                </td>
+    <div className="surface-card overflow-hidden">
+      {/* Below sm the table scrolls sideways: the next column starts inside
+          the card and runs under a shadow on the right edge, which says there
+          is more to see; the last column's extra right padding keeps its
+          content clear of the shadow at the end of the scroll. */}
+      <div className="relative">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm sm:min-w-[640px]">
+            <thead>
+              <tr className="border-b border-hairline bg-card-raised">
+                <th className="px-4 py-4 text-left font-display font-extrabold text-foreground sm:px-6">
+                  Feature
+                </th>
+                <th className="bg-primary/5 px-4 py-4 text-center font-display font-extrabold text-primary-ink sm:px-6">
+                  EZmailout
+                </th>
+                <th className="px-4 py-4 text-center font-display font-bold text-muted-foreground sm:px-6">
+                  Generic API provider
+                </th>
+                <th className="py-4 pl-4 pr-10 text-center font-display font-bold text-muted-foreground sm:pl-6 sm:pr-6">
+                  Traditional print shop
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {FEATURES.map((f) => (
+                <tr
+                  key={f.label}
+                  className="border-b border-hairline transition-colors last:border-0 hover:bg-muted/40"
+                >
+                  <td className="px-4 py-4 sm:px-6">
+                    <div className="font-semibold text-foreground">
+                      {f.label}
+                    </div>
+                    {f.note && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {f.note}
+                      </div>
+                    )}
+                  </td>
+                  <td className="bg-primary/5 px-4 py-4 text-center sm:px-6">
+                    <SupportCell value={f.us} />
+                  </td>
+                  <td className="px-4 py-4 text-center sm:px-6">
+                    <SupportCell value={f.generic} />
+                  </td>
+                  <td className="py-4 pl-4 pr-10 text-center sm:pl-6 sm:pr-6">
+                    <SupportCell value={f.traditional} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/[0.07] to-transparent dark:from-black/50 sm:hidden"
+        />
       </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border bg-muted/30 px-6 py-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-hairline bg-card-raised px-6 py-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Check className="size-3.5 text-emerald-brand" /> Included
         </span>
@@ -803,21 +891,39 @@ function ComparisonTable() {
 /* ─── Final CTA Banner ─── */
 function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-navy p-8 text-center text-white sm:p-12">
-      <div className="absolute -left-20 -top-20 size-64 rounded-full bg-primary/40 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 size-64 rounded-full bg-ice/30 blur-3xl" />
+    <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-navy px-6 pb-10 pt-8 text-center text-white shadow-raised sm:px-12 sm:pb-12">
+      {/* Indigo backlight behind Stampy and the headline; it only deepens
+          the navy into indigo, so the white text keeps ≥ 6:1. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_65%_at_50%_0%,rgb(99_102_241/0.42),transparent_72%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-10 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="airmail-stripe absolute inset-x-0 bottom-0"
+      />
       <div className="relative">
-        <h2 className="font-display text-2xl font-bold sm:text-3xl">
+        <MascotStage
+          pose="mail"
+          size="md"
+          className="mx-auto mb-5"
+          mascotClassName="size-24 sm:size-28"
+        />
+        <h2 className="font-display text-2xl font-black leading-tight tracking-tight text-balance sm:text-[2.25rem]">
           Your first campaign can be in the mail tomorrow
         </h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm text-white/75 sm:text-base">
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-white/80 sm:text-base">
           Pick a format, upload a list or drop a pin, design it in the studio
           and launch. You pay per piece, printing and postage included, and
           membership ({formatCents(SUBSCRIPTION_PRICE_CENTS)} for 30 days) is
           optional.
         </p>
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild size="lg" className="gap-2 px-8">
+        <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Button asChild size="lg" className="h-12 gap-2 px-8 text-base">
             <Link to="/wizard" data-ocid="final_cta.launch_campaign.button">
               Launch a campaign
               <ArrowRight className="size-4" />
@@ -826,7 +932,8 @@ function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
           <Button
             asChild
             size="lg"
-            className="bg-white px-8 text-navy hover:bg-white/90"
+            variant="outline"
+            className="h-12 px-8 text-base"
           >
             <Link to="/templates" data-ocid="final_cta.templates.link">
               Browse templates
@@ -835,7 +942,7 @@ function FinalCTA({ onOpenDemo }: { onOpenDemo: () => void }) {
           <Button
             variant="ghost"
             size="lg"
-            className="px-6 text-white hover:bg-white/10 hover:text-white"
+            className="h-12 px-6 text-base text-white hover:bg-white/10 hover:text-white"
             data-ocid="final_cta.book_demo.button"
             onClick={onOpenDemo}
           >

@@ -2,6 +2,7 @@ import type { AudiencePresetShared, VerifiedAddress } from "@/backend";
 import { CsvUploader } from "@/components/audience/CsvUploader";
 import { PresetEditor } from "@/components/audience/PresetEditor";
 import { PresetPicker } from "@/components/audience/PresetPicker";
+import { WizardGlow } from "@/components/layout/WizardLayout";
 import { StampyStep2Audience, StampyTip } from "@/components/stampy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,12 +33,12 @@ const RadiusMap = lazy(() =>
 );
 
 const AUDIENCE_TAB =
-  "min-w-0 flex-col gap-0.5 px-1 py-1.5 text-xs leading-tight whitespace-normal sm:flex-row sm:gap-1.5 sm:px-2 sm:py-1 sm:text-sm sm:whitespace-nowrap";
+  "min-h-12 min-w-0 flex-col gap-1 px-1 py-1.5 text-xs leading-tight whitespace-normal sm:min-h-0 sm:flex-row sm:gap-2 sm:px-5 sm:py-1 sm:text-sm sm:whitespace-nowrap";
 
 function RadiusMapLoading() {
   return (
     <output
-      className="flex h-[436px] items-center justify-center rounded-xl bg-muted/60 text-sm text-muted-foreground"
+      className="flex h-[436px] items-center justify-center rounded-2xl border border-hairline bg-well text-sm text-muted-foreground"
       data-ocid="audience.map.loading"
     >
       <Loader2 className="mr-2 size-4 animate-spin" /> Loading the map…
@@ -48,7 +49,7 @@ function RadiusMapLoading() {
 function RadiusMapUnavailable() {
   return (
     <div
-      className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl bg-muted/60 px-4 py-8 text-center"
+      className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-2xl border border-hairline bg-well px-4 py-8 text-center"
       role="alert"
       data-ocid="audience.map.unavailable"
     >
@@ -58,7 +59,7 @@ function RadiusMapUnavailable() {
       </p>
       <Button
         variant="outline"
-        className="rounded-full"
+        className="h-11 rounded-full sm:h-9"
         onClick={() => window.location.reload()}
         data-ocid="audience.map.reload.button"
       >
@@ -129,10 +130,11 @@ export function Step2AudienceIntake() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+    <div className="mx-auto w-full max-w-6xl space-y-6 py-2">
+      <div className="relative isolate flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <WizardGlow />
+        <div className="space-y-2">
+          <h2 className="display-heading text-3xl sm:text-4xl">
             Who should receive it?
           </h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -142,8 +144,8 @@ export function Step2AudienceIntake() {
         </div>
         {audienceType && recipientCount > 0 && (
           <Badge
-            variant="outline"
-            className="w-fit border-emerald-brand/30 bg-emerald-brand/10 text-emerald-brand"
+            variant="success"
+            className="w-fit px-3 py-1"
             data-ocid="audience.current.badge"
           >
             Current: {formatNumber(recipientCount)} recipients (
@@ -172,7 +174,7 @@ export function Step2AudienceIntake() {
         {/* Below sm each tab stacks its icon over its label: three icon +
             label rows do not fit a third of a phone, and nowrap labels spilled
             over the next tab. */}
-        <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-9 sm:w-auto">
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-12 sm:w-auto sm:self-start">
           <TabsTrigger
             value="map"
             className={AUDIENCE_TAB}
@@ -197,8 +199,8 @@ export function Step2AudienceIntake() {
         </TabsList>
 
         <TabsContent value="map" className="pt-3">
-          <Card className="bg-card">
-            <CardContent className="py-5">
+          <Card>
+            <CardContent className="px-4 py-1 max-[379px]:px-3 sm:px-6">
               <Suspense fallback={<RadiusMapLoading />}>
                 <RadiusMap
                   initialTarget={geoTarget}
@@ -210,16 +212,16 @@ export function Step2AudienceIntake() {
         </TabsContent>
 
         <TabsContent value="csv" className="pt-3">
-          <Card className="bg-card">
-            <CardContent className="py-5">
+          <Card>
+            <CardContent className="px-4 py-1 sm:px-6">
               <CsvUploader onUseAudience={applyCsvAudience} />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="preset" className="pt-3">
-          <Card className="bg-card">
-            <CardContent className="py-5">
+          <Card>
+            <CardContent className="px-4 py-1 sm:px-6">
               {selectedPreset ? (
                 <PresetEditor
                   key={selectedPreset.id}
@@ -239,12 +241,12 @@ export function Step2AudienceIntake() {
         </TabsContent>
       </Tabs>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+      <div className="flex flex-col items-stretch gap-2 border-t border-hairline pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Button
           type="button"
           variant="ghost"
           onClick={() => setStep(1)}
-          className="gap-2"
+          className="h-11 gap-2 sm:h-9"
           data-ocid="audience.back.button"
         >
           <ArrowLeft className="size-4" /> Back to products
@@ -253,7 +255,7 @@ export function Step2AudienceIntake() {
           type="button"
           variant="outline"
           onClick={() => setStep(3)}
-          className="gap-2"
+          className="h-11 gap-2 sm:h-9"
           title="You can design first; a verified recipient list is still required before launch."
           data-ocid="audience.skip.button"
         >

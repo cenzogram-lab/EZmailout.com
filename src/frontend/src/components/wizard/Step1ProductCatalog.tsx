@@ -1,4 +1,5 @@
 import { CatalogIcon } from "@/components/catalog/CatalogIcon";
+import { WizardGlow } from "@/components/layout/WizardLayout";
 import { StampyStep1Catalog, StampyTip } from "@/components/stampy";
 import {
   AlertDialog,
@@ -73,16 +74,51 @@ export function AspectBadge({
   return (
     <span
       className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-muted",
+        "inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-hairline bg-well",
         className,
       )}
       title={`${row.widthInches}″ × ${row.heightInches}″`}
       data-ocid={`catalog.aspect.${row.id}`}
     >
       <span
-        className="block rounded-[2px] border border-navy/60 bg-card"
+        className="block rounded-[3px] border border-muted-foreground/60 bg-card shadow-[0_1px_2px_rgb(0_0_0/0.18)] dark:border-transparent dark:bg-muted-foreground"
         style={{ width: w, height: h }}
       />
+    </span>
+  );
+}
+
+/** A per-piece price as a heavy figure: "from $0.59 / piece". */
+function PriceTag({
+  from,
+  cents,
+  className,
+  ocid,
+}: {
+  from: boolean;
+  cents: number;
+  className?: string;
+  ocid: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "items-baseline gap-1 whitespace-nowrap text-foreground",
+        className,
+      )}
+      data-ocid={ocid}
+    >
+      {from ? (
+        <span className="text-[11px] font-medium text-muted-foreground">
+          {"from "}
+        </span>
+      ) : null}
+      <span className="text-xl font-black leading-none tracking-tight tabular-nums sm:text-2xl">
+        {formatCents(cents)}
+      </span>
+      <span className="text-[11px] font-medium text-muted-foreground">
+        {" / piece"}
+      </span>
     </span>
   );
 }
@@ -105,14 +141,14 @@ function SizeRow({
   // Volume-tiered formats show the lowest price a customer can reach and
   // spell out the tiers; flat-priced ones show their one price.
   const tiers = tierSummary(row.id);
-  const priceBadge = `${tiers ? "from " : ""}${formatCents(startingPriceCents(row.id))} / piece`;
+  const fromCents = startingPriceCents(row.id);
   return (
     <div
       className={cn(
-        "rounded-xl border transition-smooth",
+        "min-w-0 rounded-2xl border transition-smooth",
         selected
-          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-          : "border-border bg-card hover:border-primary/40",
+          ? "border-primary/60 bg-primary/[0.07] shadow-[0_12px_28px_-16px_rgb(79_70_229/0.7)] ring-1 ring-primary/30"
+          : "border-hairline bg-card-raised hover:border-primary/40 hover:shadow-surface",
       )}
       data-ocid={`catalog.size.${row.id}.row`}
     >
@@ -120,26 +156,26 @@ function SizeRow({
         type="button"
         onClick={() => onSelect()}
         aria-pressed={selected}
-        className="flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm"
+        className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:px-4"
         data-ocid={`catalog.format.${row.id}.button`}
       >
         <span
           className={cn(
-            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
+            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full",
             selected
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card",
+              ? "btn-3d-primary text-primary-foreground"
+              : "border border-input bg-card",
           )}
         >
           {selected && <Check className="size-3" />}
         </span>
-        <AspectBadge row={row} className="mt-0.5 hidden sm:inline-flex" />
+        <AspectBadge row={row} className="hidden sm:inline-flex" />
         <span className="min-w-0 flex-1">
-          <span className="block font-medium leading-snug text-foreground">
+          <span className="block font-semibold leading-snug tracking-tight text-foreground">
             {row.documentClass}
           </span>
           <span
-            className="block font-mono text-xs text-muted-foreground"
+            className="meta-mono mt-0.5 block tracking-normal"
             data-ocid={`catalog.size.${row.id}.meta`}
           >
             {sizeLabel(row.id)} · {row.paperType}
@@ -147,7 +183,7 @@ function SizeRow({
           </span>
           {tiers ? (
             <span
-              className="block text-xs text-muted-foreground"
+              className="mt-1 block text-xs text-muted-foreground"
               data-ocid={`catalog.size.${row.id}.tiers`}
             >
               {tiers}
@@ -155,60 +191,99 @@ function SizeRow({
           ) : null}
           {/* On phones the price sits under the name, so the name and paper
               line keep the row's full width instead of one word per line. */}
-          <Badge
-            className="mt-1.5 bg-primary text-primary-foreground sm:hidden"
-            data-ocid={`catalog.size.${row.id}.price_inline`}
-          >
-            {priceBadge}
-          </Badge>
+          <PriceTag
+            from={!!tiers}
+            cents={fromCents}
+            className="mt-2 flex sm:hidden"
+            ocid={`catalog.size.${row.id}.price_inline`}
+          />
         </span>
-        <Badge
-          className="mt-0.5 hidden shrink-0 bg-primary text-primary-foreground sm:inline-flex"
-          data-ocid={`catalog.size.${row.id}.price`}
-        >
-          {priceBadge}
-        </Badge>
+        <PriceTag
+          from={!!tiers}
+          cents={fromCents}
+          className="mt-0.5 hidden shrink-0 sm:flex"
+          ocid={`catalog.size.${row.id}.price`}
+        />
       </button>
-      <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pl-11 sm:pl-[4.25rem]">
-        {row.supportedMailClasses.map((option) => {
-          const active = option === mailClass;
-          return (
-            <button
-              key={option}
-              type="button"
-              disabled={!multiClass}
-              onClick={() => {
-                // Another format's chip chooses that format in this class;
-                // a size change can wait on a dialog, so the class travels
-                // with it rather than landing on the current selection.
-                if (selected) onMailClass(option);
-                else onSelect(option);
-              }}
-              aria-pressed={active}
-              title={
-                multiClass
-                  ? `Send this format as ${catalogMailClassLabel(option)}`
-                  : catalogMailClassLabel(option)
-              }
-              className={cn(
-                "inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 text-[11px] font-medium transition-smooth",
-                active
-                  ? "border-primary bg-primary/10 text-primary-ink"
-                  : "border-border bg-muted/60 text-muted-foreground",
-                multiClass && !active && "hover:border-primary/50",
-                !multiClass && "cursor-default",
-              )}
-              data-ocid={`catalog.size.${row.id}.class.${option}`}
-            >
-              {catalogMailClassLabel(option)} · {mailClassDelivery(option)}
-              {classSurchargeCents(row.id, option) > 0
-                ? ` · ${firstClassAddLabel(row.id)}/pc`
-                : ""}
-            </button>
-          );
-        })}
+      {/* Mail classes. With several, a capsule segmented control (the
+          chosen class is the raised pill): the options share the track
+          equally and wrap their labels inside the pill (class name, then
+          delivery time and any surcharge), so the choices stay side by side
+          instead of the inactive one dropping to a bare second line. With
+          one class there is nothing to choose, so it is a flat label, not a
+          pill that reads as a toggle. */}
+      <div className="space-y-1.5 px-3 pb-3 sm:px-4 sm:pl-[6.25rem]">
+        {multiClass ? (
+          <div className="segmented flex w-full max-w-full gap-1 rounded-[1.125rem] p-1">
+            {row.supportedMailClasses.map((option) => {
+              const active = option === mailClass;
+              const surcharge =
+                classSurchargeCents(row.id, option) > 0
+                  ? `${firstClassAddLabel(row.id)}/pc`
+                  : "";
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => {
+                    // Another format's chip chooses that format in this
+                    // class; a size change can wait on a dialog, so the
+                    // class travels with it rather than landing on the
+                    // current selection.
+                    if (selected) onMailClass(option);
+                    else onSelect(option);
+                  }}
+                  aria-pressed={active}
+                  title={`Send this format as ${catalogMailClassLabel(option)}`}
+                  className="segmented-item min-h-11 min-w-0 flex-1 basis-0 flex-col gap-0.5 whitespace-normal rounded-[0.875rem] px-2 py-1.5 text-center text-[11px] leading-tight outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:min-h-10 sm:px-3"
+                  data-ocid={`catalog.size.${row.id}.class.${option}`}
+                >
+                  {/* The hidden separator keeps the accessible name
+                      "Class · delivery · surcharge" as one phrase. */}
+                  <span className="text-balance">
+                    {catalogMailClassLabel(option)}
+                    <span className="sr-only"> · </span>
+                  </span>
+                  {/* Delivery time and surcharge each stay whole; when
+                      they wrap, the "·" stays with the delivery time. */}
+                  <span className="font-medium">
+                    <span className="whitespace-nowrap">
+                      {mailClassDelivery(option)}
+                      {surcharge ? " ·" : ""}
+                    </span>
+                    {surcharge ? (
+                      <>
+                        {" "}
+                        <span className="whitespace-nowrap">{surcharge}</span>
+                      </>
+                    ) : null}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          row.supportedMailClasses.map((option) => {
+            const surcharge =
+              classSurchargeCents(row.id, option) > 0
+                ? `${firstClassAddLabel(row.id)}/pc`
+                : "";
+            return (
+              <Badge
+                key={option}
+                variant="neutral"
+                title={catalogMailClassLabel(option)}
+                className="max-w-full whitespace-normal px-2.5 py-1 text-left text-[11px] font-medium leading-tight"
+                data-ocid={`catalog.size.${row.id}.class.${option}`}
+              >
+                {catalogMailClassLabel(option)} · {mailClassDelivery(option)}
+                {surcharge ? ` · ${surcharge}` : ""}
+              </Badge>
+            );
+          })
+        )}
         {row.note ? (
-          <span className="text-[11px] text-muted-foreground">{row.note}</span>
+          <p className="text-[11px] text-muted-foreground">{row.note}</p>
         ) : null}
       </div>
     </div>
@@ -233,29 +308,32 @@ function CategoryCard({
       onClick={onToggle}
       aria-expanded={expanded}
       className={cn(
-        "group flex flex-col items-center gap-2 rounded-2xl border bg-card px-3 py-5 text-center transition-smooth",
+        "group flex flex-col items-center gap-2.5 rounded-3xl border bg-card px-3 py-5 text-center shadow-surface outline-none transition-smooth focus-visible:ring-[3px] focus-visible:ring-ring/80",
         expanded
-          ? "border-primary shadow-md ring-2 ring-primary/20"
-          : "border-border hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
-        selected && !expanded && "border-primary/60",
+          ? "border-primary/60 bg-primary/[0.05] shadow-[0_16px_36px_-18px_rgb(79_70_229/0.75)] ring-2 ring-primary/25"
+          : "border-hairline hover:-translate-y-0.5 hover:border-primary/40 motion-reduce:hover:translate-y-0",
+        selected && !expanded && "border-primary/50",
       )}
       data-ocid={`catalog.category.${category.id}.button`}
     >
-      <CatalogIcon
-        id={category.icon}
+      <span
         className={cn(
-          "size-10 transition-smooth",
+          "flex size-14 items-center justify-center rounded-2xl transition-smooth",
           expanded || selected
-            ? "text-primary"
-            : "text-muted-foreground group-hover:text-primary",
+            ? "btn-3d-primary text-primary-foreground"
+            : "border border-hairline bg-well text-muted-foreground group-hover:text-foreground",
         )}
-      />
-      <span className="text-sm font-semibold leading-tight text-foreground">
+      >
+        <CatalogIcon id={category.icon} className="size-8" />
+      </span>
+      <span className="text-sm font-bold leading-tight tracking-tight text-foreground">
         {category.name}
       </span>
       <span className="text-[11px] text-muted-foreground">
         {rows.length} size{rows.length === 1 ? "" : "s"} · from{" "}
-        {formatCents(categoryFromCents(category))}
+        <span className="font-bold text-foreground tabular-nums">
+          {formatCents(categoryFromCents(category))}
+        </span>
       </span>
       <ChevronDown
         className={cn(
@@ -352,10 +430,11 @@ export function Step1ProductCatalog() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:space-y-8">
+      <div className="relative isolate flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <WizardGlow />
         <div className="space-y-2">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h2 className="display-heading text-3xl sm:text-4xl">
             Choose your mail piece
           </h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -376,7 +455,7 @@ export function Step1ProductCatalog() {
                 : "e.g. Spring open-house mailer"
             }
             maxLength={MAX_CAMPAIGN_NAME_CHARS}
-            className="rounded-xl bg-card"
+            className="h-11 rounded-2xl"
             data-ocid="catalog.campaign_name.input"
           />
         </div>
@@ -408,16 +487,17 @@ export function Step1ProductCatalog() {
 
       {expanded ? (
         <div
-          className="rounded-2xl border border-primary/30 bg-card p-4 shadow-soft animate-fade-up sm:p-6"
+          className="relative isolate rounded-3xl border border-primary/25 bg-card p-4 shadow-surface animate-fade-up sm:p-6"
           data-ocid={`catalog.sizes.${expanded.id}.panel`}
         >
+          <WizardGlow anchor="top" className="top-0 bottom-auto h-72" />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <span className="btn-3d-primary flex size-12 shrink-0 items-center justify-center rounded-2xl">
                 <CatalogIcon id={expanded.icon} className="size-7" />
               </span>
               <div>
-                <h3 className="font-display text-lg font-semibold text-foreground">
+                <h3 className="text-lg font-black tracking-tight text-foreground sm:text-xl">
                   {expanded.name}
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -431,27 +511,29 @@ export function Step1ProductCatalog() {
               </div>
             </div>
             {supportsBlackAndWhite(expanded.productType) ? (
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
                   Print colour
                 </span>
-                {COLOR_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    type="button"
-                    size="sm"
-                    variant={colorOption === opt.value ? "default" : "outline"}
-                    onClick={() => chooseColor(opt.value)}
-                    data-ocid={`catalog.color.${opt.value}.button`}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
+                <div className="segmented gap-1 p-1">
+                  {COLOR_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={colorOption === opt.value}
+                      onClick={() => chooseColor(opt.value)}
+                      className="segmented-item min-h-10 px-3.5 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 sm:min-h-9 sm:text-sm"
+                      data-ocid={`catalog.color.${opt.value}.button`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
           <div
-            className="mt-4 grid gap-2 lg:grid-cols-2"
+            className="mt-5 grid gap-3 lg:grid-cols-2"
             data-ocid={`catalog.sizes.${expanded.id}.list`}
           >
             {categoryRows(expanded).map((row) => (
@@ -473,14 +555,15 @@ export function Step1ProductCatalog() {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-3xl border border-dashed border-hairline-strong bg-card/60 p-6 text-center text-sm text-muted-foreground">
           Pick a category above to see every size, aspect ratio and per-piece
           price.
         </div>
       )}
 
-      <div className="grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
-        <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+      <div className="relative isolate grid grid-cols-[auto_1fr] items-start gap-4 rounded-3xl border border-primary/20 bg-card p-5 shadow-surface sm:items-center sm:p-6">
+        <div aria-hidden className="ambient-glow-backdrop" />
+        <span className="btn-3d-primary flex size-11 items-center justify-center rounded-2xl">
           <Sparkles className="size-5" />
         </span>
         <p className="text-sm text-foreground">
@@ -495,15 +578,15 @@ export function Step1ProductCatalog() {
         </p>
       </div>
 
-      <div className="flex flex-col items-start justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-stretch justify-between gap-4 rounded-3xl border border-hairline bg-card p-4 shadow-surface sm:flex-row sm:items-center sm:p-5">
         <div
-          className="text-sm text-muted-foreground"
+          className="min-w-0 text-sm text-muted-foreground"
           data-ocid="catalog.selection.summary"
         >
           {selectedRow ? (
             <span>
               Selected:{" "}
-              <span className="font-medium text-foreground">
+              <span className="font-bold text-foreground">
                 {selectedRow.documentClass}
               </span>{" "}
               · {sizeLabel(selectedRow.id)} ·{" "}
@@ -523,7 +606,7 @@ export function Step1ProductCatalog() {
           size="lg"
           onClick={handleContinue}
           disabled={!selectedLayout}
-          className="gap-2"
+          className="h-12 shrink-0 gap-2 px-7 text-base"
           data-ocid="catalog.continue.button"
         >
           Continue to audience

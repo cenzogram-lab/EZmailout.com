@@ -91,7 +91,7 @@ export function TextPanel({
   return (
     <div className="space-y-3" data-ocid="canvas.panel.text">
       <div>
-        <p className="font-display text-sm font-semibold">Text</p>
+        <p className="font-display text-base font-black tracking-tight">Text</p>
         <p className="text-xs text-muted-foreground">
           Click to add a block, then double-click it on the canvas to type.
         </p>
@@ -104,10 +104,12 @@ export function TextPanel({
               key={preset.id}
               type="button"
               onClick={() => add(preset)}
-              className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left transition-smooth hover:border-primary/40 hover:bg-primary/5"
+              className="group flex min-h-12 items-center gap-3 rounded-2xl border border-hairline bg-card-raised px-3 py-2.5 text-left shadow-surface transition-smooth hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 motion-safe:active:translate-y-px"
               data-ocid={`canvas.text.add_${preset.id}`}
             >
-              <Icon className="size-4 shrink-0 text-muted-foreground" />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-hairline bg-card text-muted-foreground transition-colors group-hover:text-primary">
+                <Icon className="size-4" />
+              </span>
               <span className={preset.className}>{preset.label}</span>
             </button>
           );
@@ -115,7 +117,7 @@ export function TextPanel({
       </div>
       <Button
         variant="outline"
-        className="w-full justify-start gap-2"
+        className="h-11 w-full justify-start gap-2 rounded-2xl"
         onClick={onOpenCopywriter}
         data-ocid="canvas.copywriter_button"
       >

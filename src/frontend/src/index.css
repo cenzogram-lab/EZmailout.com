@@ -54,29 +54,46 @@
 }
 
 @layer base {
+  /*
+   * EZmailout brand system — two themes of one tactile look (DESIGN.md).
+   *
+   * LIGHT (default, :root) keeps the original white EZmailout surfaces:
+   *   page #F6F6F6 · cards #FFFFFF · ink #01080A · primary #5C5EE8 indigo
+   *   accent #CFF3FD ice · navy #0E2B4F · emerald #008058 · amber #B45309
+   * DARK (.dark on <html>, lib/theme.ts) is the obsidian look:
+   *   page #0A0B10 · cards #12151E (raised #161A26) · sheets #131622
+   *   wells #0D0F16 · ink #F4F5F9 · muted ink #A1A6B4 · primary fill #5C5EE8
+   *   (white text 4.97:1), primary text #A5A8FF, rings #818CF8.
+   *
+   * Colour tokens are oklch triplets (`oklch(var(--x) / a)` in Tailwind).
+   * `text-primary`, `text-destructive` and `text-navy` read their own *-text
+   * token (tailwind.config.js textColor), so the same class is a fill-safe
+   * colour as a background and an AA-safe colour as text in both themes.
+   * Tactile tokens (hairlines, shadows, glows, glass, segmented control) are
+   * complete CSS values, redefined under .dark, and drive the utilities below.
+   */
   :root {
+    color-scheme: light;
     --font-display: "Geist";
     --font-body: "Geist";
     --font-mono: "Geist Mono";
     --radius: 0.875rem;
 
-    /*
-     * EZmailout brand system (MAIL_Command master spec):
-     *   primary  #5c5ee8 indigo      · page #F6F6F6, cards #FFFFFF · ink #01080a
-     *   accent   #cff3fd ice         · navy #0e2b4f (deep panels, dark buttons)
-     *   emerald  success / verified  · studio swatches: sky #b5d8fc, lime #dbefad
-     * Consumer surfaces: neutral page, white cards with a hairline neutral
-     * border and soft depth (`shadow-soft`), rounded-2xl/3xl, pill controls.
-     */
     --background: 0.973 0 0;
     --foreground: 0.125 0.018 211;
     --card: 1 0 0;
     --card-foreground: 0.125 0.018 211;
+    /* A second card tone: nested panels, inner rows. */
+    --card-raised: 0.983 0.003 286;
     --popover: 1 0 0;
     --popover-foreground: 0.125 0.018 211;
+    /* Sunken wells: segmented tracks, field insets. */
+    --well: 0.946 0.005 275;
 
     --primary: 0.56 0.204 277;
     --primary-foreground: 0.99 0 0;
+    /* `text-primary`: 4.97:1 on white, 4.6:1 on the page. */
+    --primary-text: 0.56 0.204 277;
     /* Text on a pale primary tint (badges, notes): ≥ 6:1 on bg-primary/15. */
     --primary-ink: 0.44 0.2 277;
 
@@ -91,20 +108,27 @@
 
     --destructive: 0.575 0.235 29;
     --destructive-foreground: 0.99 0 0;
+    /* `text-destructive`: ≥ 5:1 on white, the page and bg-destructive/10. */
+    --destructive-text: 0.524 0.211 29;
 
     --border: 0.922 0 0;
-    --input: 0.922 0 0;
+    /* Field borders: ≥ 3:1 on white (WCAG 1.4.11). */
+    --input: 0.644 0.014 271;
     --ring: 0.56 0.204 277;
 
     --navy: 0.289 0.074 255;
+    --navy-text: 0.289 0.074 255;
     --indigo-deep: 0.423 0.175 287;
     --ice: 0.942 0.04 216;
     --sky: 0.869 0.062 249;
     --lime: 0.921 0.088 122;
-    /* Deep enough that white text and icons on it pass AA (4.8:1); text in
+    /* Deep enough that white text and icons on it pass AA (4.97:1); text in
        emerald uses --emerald-ink, which also passes on emerald tints. */
     --emerald: 0.53 0.115 163;
     --emerald-ink: 0.45 0.1 163;
+    /* Solid amber with white text (5:1); amber text uses --amber-ink. */
+    --amber: 0.555 0.146 49;
+    --amber-ink: 0.473 0.125 46;
     --slate: 0.46 0.006 255;
 
     --chart-1: 0.56 0.204 277;
@@ -122,70 +146,493 @@
     --sidebar-border: 0.925 0.008 271;
     --sidebar-ring: 0.56 0.204 277;
 
+    /* ── Tactile tokens (complete values) ── */
+    --hairline: rgb(15 17 23 / 0.08);
+    --hairline-strong: rgb(15 17 23 / 0.14);
+    --shadow-card: 0 1px 2px rgb(15 17 23 / 0.04), 0 10px 30px -18px
+      rgb(15 17 23 / 0.18);
+    --shadow-raised: 0 2px 6px rgb(15 17 23 / 0.06), 0 24px 48px -20px
+      rgb(15 17 23 / 0.28);
+    --glow-brand: rgb(99 102 241 / 0.1);
+    --spotlight: rgb(99 102 241 / 0.16);
+    --stage-floor: rgb(15 17 23 / 0.16);
+    --btn-primary-glow: 0 8px 22px -8px rgb(79 70 229 / 0.5);
+    --btn-primary-glow-pressed: 0 3px 10px -4px rgb(79 70 229 / 0.45);
+    --btn-success-glow: 0 8px 22px -8px rgb(0 160 80 / 0.45);
+    --btn-neutral-from: #ffffff;
+    --btn-neutral-to: #f3f4f7;
+    --btn-neutral-hover-to: #eceef3;
+    --btn-neutral-border: rgb(15 17 23 / 0.12);
+    --btn-neutral-top: rgb(255 255 255 / 1);
+    --btn-neutral-shadow: 0 1px 2px rgb(15 17 23 / 0.06), 0 4px 12px -6px
+      rgb(15 17 23 / 0.18);
+    --glass-bg: rgb(255 255 255 / 0.9);
+    --glass-border: rgb(15 17 23 / 0.08);
+    --glass-shadow: 0 10px 30px -12px rgb(15 17 23 / 0.22);
+    --segmented-border: rgb(15 17 23 / 0.05);
+    --segmented-inset: inset 0 1px 2px rgb(15 17 23 / 0.06);
+    --segmented-active: #ffffff;
+    --segmented-active-fg: oklch(0.125 0.018 211);
+    --segmented-active-border: rgb(15 17 23 / 0.06);
+    --segmented-active-shadow: 0 1px 2px rgb(15 17 23 / 0.08), 0 2px 8px
+      rgb(15 17 23 / 0.08);
+    --sheet-handle: rgb(15 17 23 / 0.18);
+    --status-emerald-bg: rgb(0 128 88 / 0.12);
+    --status-emerald-border: rgb(0 128 88 / 0.28);
+    --status-amber-bg: rgb(245 158 11 / 0.16);
+    --status-amber-border: rgb(217 119 6 / 0.35);
+    --status-red-bg: rgb(227 2 5 / 0.08);
+    --status-red-border: rgb(227 2 5 / 0.25);
+    --mascot-depth: drop-shadow(0 10px 12px rgb(15 17 23 / 0.16))
+      drop-shadow(0 0 20px rgb(99 102 241 / 0.14));
+    --studio-bg: #f4f4f4;
+    --studio-dot: oklch(0.84 0.008 265);
+    --checker-a: #f1f5f9;
+    --checker-b: #e2e8f0;
+
     --perspective-distance: 1400px;
   }
 
   .dark {
-    /* #0D0E12 page, #16181F cards. */
-    --background: 0.165 0.009 274;
-    --foreground: 0.96 0.005 240;
-    --card: 0.21 0.014 273;
-    --card-foreground: 0.96 0.005 240;
-    --popover: 0.235 0.015 274;
-    --popover-foreground: 0.96 0.005 240;
+    color-scheme: dark;
+    --background: 0.151 0.011 276;
+    --foreground: 0.971 0.005 275;
+    --card: 0.197 0.019 270;
+    --card-foreground: 0.971 0.005 275;
+    --card-raised: 0.22 0.024 270;
+    --popover: 0.203 0.024 273;
+    --popover-foreground: 0.971 0.005 275;
+    --well: 0.17 0.015 272;
 
-    --primary: 0.68 0.158 277;
-    --primary-foreground: 0.14 0.03 277;
-    --primary-ink: 0.86 0.08 277;
+    /* The fill stays #5C5EE8 so white text on it passes (4.97:1); text and
+       rings use lighter indigos that pass on the obsidian surfaces. */
+    --primary: 0.56 0.204 277;
+    --primary-foreground: 0.99 0 0;
+    --primary-text: 0.763 0.124 282;
+    --primary-ink: 0.853 0.075 283;
 
-    --secondary: 0.249 0.015 274;
-    --secondary-foreground: 0.94 0.01 240;
-    --muted: 0.249 0.015 274;
-    --muted-foreground: 0.74 0.015 245;
+    --secondary: 0.247 0.031 273;
+    --secondary-foreground: 0.932 0.011 275;
+    --muted: 0.247 0.031 273;
+    --muted-foreground: 0.726 0.021 270;
 
-    --accent: 0.289 0.074 255;
-    --accent-foreground: 0.942 0.04 216;
+    --accent: 0.249 0.037 274;
+    --accent-foreground: 0.92 0.039 276;
 
-    --destructive: 0.65 0.2 27;
+    --destructive: 0.577 0.215 27;
     --destructive-foreground: 0.99 0 0;
+    --destructive-text: 0.761 0.142 21;
 
-    --border: 0.29 0.012 274;
-    --input: 0.29 0.012 274;
+    --border: 0.287 0.026 272;
+    --input: 0.522 0.04 274;
     --ring: 0.68 0.158 277;
 
     --navy: 0.289 0.074 255;
+    --navy-text: 0.878 0.037 260;
     --indigo-deep: 0.51 0.23 277;
-    --ice: 0.942 0.04 216;
+    --ice: 0.258 0.038 240;
     --sky: 0.869 0.062 249;
     --lime: 0.921 0.088 122;
-    --emerald: 0.72 0.15 162;
-    --emerald-ink: 0.8 0.13 162;
-    --slate: 0.74 0.015 245;
+    --emerald: 0.53 0.115 163;
+    --emerald-ink: 0.817 0.182 156;
+    --amber: 0.555 0.146 49;
+    --amber-ink: 0.849 0.147 80;
+    --slate: 0.726 0.021 270;
 
     --chart-1: 0.68 0.158 277;
-    --chart-2: 0.72 0.15 162;
+    --chart-2: 0.817 0.182 156;
     --chart-3: 0.942 0.04 216;
     --chart-4: 0.869 0.062 249;
     --chart-5: 0.921 0.088 122;
 
-    --sidebar: 0.21 0.025 245;
-    --sidebar-foreground: 0.96 0.005 240;
-    --sidebar-primary: 0.68 0.158 277;
-    --sidebar-primary-foreground: 0.14 0.03 277;
-    --sidebar-accent: 0.27 0.03 250;
-    --sidebar-accent-foreground: 0.96 0.005 240;
-    --sidebar-border: 0.29 0.012 274;
+    --sidebar: 0.197 0.019 270;
+    --sidebar-foreground: 0.971 0.005 275;
+    --sidebar-primary: 0.56 0.204 277;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.249 0.037 274;
+    --sidebar-accent-foreground: 0.971 0.005 275;
+    --sidebar-border: 0.287 0.026 272;
     --sidebar-ring: 0.68 0.158 277;
+
+    --hairline: rgb(255 255 255 / 0.08);
+    --hairline-strong: rgb(255 255 255 / 0.14);
+    --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px
+      rgb(0 0 0 / 0.5), 0 16px 40px -20px rgb(0 0 0 / 0.8);
+    --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 2px 8px
+      rgb(0 0 0 / 0.5), 0 30px 60px -20px rgb(0 0 0 / 0.85);
+    --glow-brand: rgb(99 102 241 / 0.16);
+    --spotlight: rgb(99 102 241 / 0.26);
+    --stage-floor: rgb(0 0 0 / 0.55);
+    --btn-primary-glow: 0 10px 28px -6px rgb(79 70 229 / 0.45);
+    --btn-primary-glow-pressed: 0 4px 12px -4px rgb(79 70 229 / 0.45);
+    --btn-success-glow: 0 10px 28px -6px rgb(0 229 117 / 0.35);
+    --btn-neutral-from: #1f2331;
+    --btn-neutral-to: #161a26;
+    --btn-neutral-hover-to: #1c2030;
+    --btn-neutral-border: rgb(255 255 255 / 0.1);
+    --btn-neutral-top: rgb(255 255 255 / 0.16);
+    --btn-neutral-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 16px -8px
+      rgb(0 0 0 / 0.7);
+    --glass-bg: rgb(19 22 34 / 0.9);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --glass-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.75);
+    --segmented-border: rgb(255 255 255 / 0.07);
+    --segmented-inset: inset 0 1px 3px rgb(0 0 0 / 0.5);
+    --segmented-active: #202534;
+    --segmented-active-fg: #ffffff;
+    --segmented-active-border: rgb(99 102 241 / 0.2);
+    --segmented-active-shadow: 0 2px 8px rgb(0 0 0 / 0.6), inset 0 1px 0
+      rgb(255 255 255 / 0.06);
+    --sheet-handle: rgb(255 255 255 / 0.2);
+    --status-emerald-bg: rgb(0 230 118 / 0.12);
+    --status-emerald-border: rgb(0 230 118 / 0.3);
+    --status-amber-bg: rgb(245 158 11 / 0.14);
+    --status-amber-border: rgb(245 158 11 / 0.35);
+    --status-red-bg: rgb(248 113 113 / 0.12);
+    --status-red-border: rgb(248 113 113 / 0.3);
+    --mascot-depth: drop-shadow(0 0 0.5px rgb(255 255 255 / 0.5))
+      drop-shadow(0 12px 14px rgb(0 0 0 / 0.5))
+      drop-shadow(0 0 22px rgb(99 102 241 / 0.32));
+    --studio-bg: #0b0d13;
+    --studio-dot: rgb(255 255 255 / 0.11);
+    --checker-a: #1a1d27;
+    --checker-b: #242836;
   }
 
   * {
     @apply border-border;
+  }
+  /* index.html paints html #F6F6F6 for the boot screen; the dark page must
+     not show it on overscroll. */
+  html.dark {
+    background-color: oklch(var(--background));
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
   ::selection {
     background: oklch(var(--primary) / 0.25);
+  }
+}
+
+/*
+ * ─── Tactile components ─────────────────────────────────────────────────────
+ * Plain classes (components layer, so a Tailwind utility on the same element
+ * still wins). Every colour comes from a token that .dark redefines, so each
+ * one works in both themes.
+ */
+@layer components {
+  /* Soft brand backlight from the top edge, behind hero titles, order
+     summaries and mascot empty states. Adds a background-image over the
+     element's own background colour:
+       <section class="ambient-glow-brand rounded-3xl bg-card">… */
+  .ambient-glow-brand {
+    background-image: radial-gradient(
+      circle at 50% 0%,
+      var(--glow-brand) 0%,
+      transparent 70%
+    );
+  }
+  /* The same glow as its own layer, for a parent that already paints an
+     image or must keep a solid colour (text contrast checks read it):
+       <div class="relative isolate"><div class="ambient-glow-backdrop" aria-hidden />… */
+  .ambient-glow-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: radial-gradient(
+      circle at 50% 0%,
+      var(--glow-brand) 0%,
+      transparent 70%
+    );
+  }
+
+  /* Glossy 3D primary button: indigo gradient, bright top bevel, coloured
+     glow underneath; pressed sinks 2px. White text ≥ 6:1 on its middle. The
+     shadow lives in --tw-shadow so Tailwind focus rings compose with it. */
+  .btn-3d-primary {
+    color: #fff;
+    background-color: #4f46e5;
+    background-image: linear-gradient(
+      180deg,
+      #6366f1 0%,
+      #4f46e5 55%,
+      #4338ca 100%
+    );
+    border: 1px solid #3730a3;
+    border-top-color: rgb(255 255 255 / 0.3);
+    --tw-shadow: inset 0 1px 1px rgb(255 255 255 / 0.4), var(--btn-primary-glow);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
+      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+    transition: transform 0.12s ease, box-shadow 0.15s ease, background-image
+      0.15s ease;
+  }
+  .btn-3d-primary:hover {
+    background-image: linear-gradient(
+      180deg,
+      #6f72f3 0%,
+      #5850ec 55%,
+      #4a3fd6 100%
+    );
+  }
+  .btn-3d-primary:active:not(:disabled) {
+    transform: translateY(2px) scale(0.98);
+    --tw-shadow: inset 0 1px 1px rgb(255 255 255 / 0.3),
+      var(--btn-primary-glow-pressed);
+  }
+
+  /* Glossy success button (emerald). Dark ink: white fails on this green. */
+  .btn-3d-success {
+    color: #04120a;
+    background-color: #00cc66;
+    background-image: linear-gradient(180deg, #00e575 0%, #00b359 100%);
+    border: 1px solid #00994c;
+    border-top-color: rgb(255 255 255 / 0.45);
+    --tw-shadow: inset 0 1px 1px rgb(255 255 255 / 0.45),
+      var(--btn-success-glow);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
+      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+  }
+  .btn-3d-success:hover {
+    background-image: linear-gradient(180deg, #19ec85 0%, #00bf60 100%);
+  }
+  .btn-3d-success:active:not(:disabled) {
+    transform: translateY(2px) scale(0.98);
+    --tw-shadow: inset 0 1px 1px rgb(255 255 255 / 0.35), 0 3px 10px -4px
+      rgb(0 160 80 / 0.4);
+  }
+
+  /* Raised neutral control (theme switch, outline/secondary buttons): white
+     bevel in light, glassy graphite in dark. Text uses the foreground. */
+  .btn-3d-neutral {
+    color: oklch(var(--foreground));
+    background-color: var(--btn-neutral-to);
+    background-image: linear-gradient(
+      180deg,
+      var(--btn-neutral-from) 0%,
+      var(--btn-neutral-to) 100%
+    );
+    border: 1px solid var(--btn-neutral-border);
+    border-top-color: var(--btn-neutral-top);
+    --tw-shadow: var(--btn-neutral-shadow);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
+      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+  }
+  .btn-3d-neutral:hover {
+    background-image: linear-gradient(
+      180deg,
+      var(--btn-neutral-from) 0%,
+      var(--btn-neutral-hover-to) 100%
+    );
+  }
+  .btn-3d-neutral:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  /* 24 px card: card fill, hairline border, soft depth.
+       <div class="surface-card p-6">… (the Card primitive already is one) */
+  .surface-card {
+    border-radius: 1.5rem;
+    background-color: oklch(var(--card));
+    color: oklch(var(--card-foreground));
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow-card);
+  }
+  /* Modal / drawer / sheet surface (#131622 in dark, white in light). */
+  .surface-sheet {
+    border-radius: 1.5rem;
+    background-color: oklch(var(--popover));
+    color: oklch(var(--popover-foreground));
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* Grab handle at the top of a bottom sheet or drawer (decorative). */
+  .sheet-handle {
+    display: block;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 0.25rem;
+    margin: 0.5rem auto;
+    border-radius: 9999px;
+    background-color: var(--sheet-handle);
+  }
+
+  /* Capsule segmented control. The track is `.segmented`; each option is a
+     `.segmented-item`, raised into a pill when it is the active one —
+     read from the state attributes Radix and native controls already set,
+     so no logic changes:
+       <div class="segmented" role="tablist">
+         <button class="segmented-item" aria-selected="true">Front</button>… */
+  .segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem;
+    border-radius: 9999px;
+    background-color: oklch(var(--well));
+    border: 1px solid var(--segmented-border);
+    box-shadow: var(--segmented-inset);
+  }
+  .segmented-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding: 0 0.875rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    color: oklch(var(--muted-foreground));
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s
+      ease;
+  }
+  .segmented-item:hover {
+    color: oklch(var(--foreground));
+  }
+  .segmented-item[data-state="active"],
+  .segmented-item[data-state="on"],
+  .segmented-item[aria-selected="true"],
+  .segmented-item[aria-checked="true"],
+  .segmented-item[aria-pressed="true"],
+  .segmented-item[aria-current="page"] {
+    background-color: var(--segmented-active);
+    color: var(--segmented-active-fg);
+    font-weight: 700;
+    border-color: var(--segmented-active-border);
+    box-shadow: var(--segmented-active-shadow);
+  }
+
+  /* Big heavy figures: pieces mailed, credit balance, totals, counts.
+     Colour is inherited (text-foreground on cards, white on bg-primary). */
+  .stat-number {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 768px) {
+    .stat-number {
+      font-size: 3rem;
+      line-height: 1;
+    }
+  }
+
+  /* Display heading: heavy, tight Geist in the foreground colour. */
+  .display-heading {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    color: oklch(var(--foreground));
+  }
+
+  /* Crisp small metadata: ids, invoice numbers, dates. */
+  .meta-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.05em;
+    color: oklch(var(--muted-foreground));
+  }
+
+  /* Status pills: tinted capsule + ink that passes AA on the tint in both
+     themes. `status-pill` + one of the colour classes:
+       <span class="status-pill status-pill-emerald">Delivered</span> */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: fit-content;
+    white-space: nowrap;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+  }
+  .status-pill-emerald {
+    background-color: var(--status-emerald-bg);
+    border-color: var(--status-emerald-border);
+    color: oklch(var(--emerald-ink));
+  }
+  .status-pill-amber {
+    background-color: var(--status-amber-bg);
+    border-color: var(--status-amber-border);
+    color: oklch(var(--amber-ink));
+  }
+  .status-pill-indigo {
+    background-color: oklch(var(--primary) / 0.12);
+    border-color: oklch(var(--primary) / 0.3);
+    color: oklch(var(--primary-ink));
+  }
+  .status-pill-red {
+    background-color: var(--status-red-bg);
+    border-color: var(--status-red-border);
+    color: oklch(var(--destructive-text));
+  }
+  .status-pill-neutral {
+    background-color: oklch(var(--muted));
+    border-color: var(--hairline-strong);
+    color: oklch(var(--muted-foreground));
+  }
+
+  /* Translucent bar base (floating header pill, bottom dock): ≥ 90 % opaque
+     plus blur, so content scrolling behind never makes it illegible.
+     backdrop-filter makes the element a containing block for fixed
+     descendants: keep fixed overlays (menus, sheets) out of it. */
+  .glass-bar {
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Glossy, rubbery 3D Stampy: depth shadow, soft rim and brand glow, plus
+     (once <MascotGloss /> is mounted, which sets html[data-mascot-gloss])
+     an SVG lighting filter that puffs up the light parts with a specular
+     sheen and shades the silhouette. Put it on the Stampy <svg>. */
+  .mascot-3d {
+    filter: var(--mascot-depth);
+  }
+  html[data-mascot-gloss] .mascot-3d {
+    filter: url(#ez-mascot-gloss) var(--mascot-depth);
+  }
+  /* A soft spotlight and floor shadow behind a staged mascot (success
+     screens, empty states). Wrap the mascot:
+       <div class="mascot-stage"><StampyStep1Catalog class="mascot-3d size-32" /></div> */
+  .mascot-stage {
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    place-items: center;
+  }
+  .mascot-stage::before {
+    content: "";
+    position: absolute;
+    inset: -12% 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(closest-side, var(--spotlight), transparent);
+  }
+  .mascot-stage::after {
+    content: "";
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    bottom: -3%;
+    height: 9%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(closest-side, var(--stage-floor), transparent);
   }
 }
 
@@ -219,36 +666,26 @@
   }
 
   .surface-glow {
-    box-shadow: 0 1px 2px oklch(var(--navy) / 0.06), 0 12px 40px -16px
-      oklch(var(--navy) / 0.25);
+    box-shadow: var(--shadow-raised);
   }
 
-  /* Card depth: a hairline lift plus a wide, faint drop. */
+  /* Card depth: a hairline lift plus a wide, faint drop (deeper in dark). */
   .shadow-soft {
-    box-shadow: 0 1px 2px rgb(15 17 23 / 0.04), 0 10px 30px -18px
-      rgb(15 17 23 / 0.18);
-  }
-  .dark .shadow-soft {
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -18px rgb(0 0 0 / 0.6);
+    box-shadow: var(--shadow-card);
   }
 
   /* The mascot's lift off a card (banners, empty states). */
   .mascot-shadow {
-    filter: drop-shadow(0 12px 14px rgb(15 17 23 / 0.16));
+    filter: var(--mascot-depth);
   }
 
-  /* Emerald text and icons use the ink shade: ≥ 4.5:1 on white and on the
-     bg-emerald-brand/10–/15 tints. Fills (bg-emerald-brand) keep --emerald. */
-  .text-emerald-brand {
-    color: oklch(var(--emerald-ink));
-  }
-
-  /* Canva-style dotted workspace behind the design canvas. */
+  /* Canva-style dotted workspace behind the design canvas (obsidian dots in
+     dark). The artboard on it keeps its own print colours. */
   .studio-dotgrid {
-    background-color: #f4f4f4;
+    background-color: var(--studio-bg);
     background-image: radial-gradient(
       circle,
-      oklch(0.84 0.008 265) 1px,
+      var(--studio-dot) 1px,
       transparent 1.2px
     );
     background-size: 18px 18px;
@@ -268,14 +705,27 @@
   text-transform: uppercase;
 }
 
+/* Transparency grid (image previews); a dark grid in the dark theme. */
 .checkerboard {
-  background-color: #f1f5f9;
-  background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
-    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+  background-color: var(--checker-a);
+  background-image: linear-gradient(
+      45deg,
+      var(--checker-b) 25%,
+      transparent 25%
+    ), linear-gradient(-45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-b) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-3d-primary,
+  .btn-3d-success,
+  .btn-3d-neutral,
+  .segmented-item {
+    transition: none;
+  }
 }
 
 /* ─── Stampy mascot ─────────────────────────────────────────────────────────
@@ -314,28 +764,39 @@
   display: none;
 }
 
-/* Below lg the bottom tab bar (BottomNav) is fixed to the viewport edge, and
- * on notched phones it grows by the home-indicator inset. Everything else that
- * sits at the bottom (Stampy, toasts, page padding, scroll padding) is offset
- * by this one variable, so it is 0 on desktop. */
+/* Below lg the floating dock (BottomNav) is fixed above the bottom edge:
+ * --dock-h tall, --dock-gap above the edge (which takes in the home-indicator
+ * inset on notched phones). Everything else that sits at the bottom (Stampy,
+ * toasts, page padding, scroll padding, the phone menu's cap) is offset by
+ * --bottom-nav-h, the dock's whole footprint: height + gap (inset included),
+ * and 0 on desktop, where there is no dock. */
 :root {
+  --dock-h: 4rem;
+  --dock-gap: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
   --bottom-nav-h: 0px;
 }
 @media (max-width: 1023.98px) {
   :root {
-    --bottom-nav-h: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-h: calc(var(--dock-h) + var(--dock-gap));
+  }
+}
+/* Below 360 px the dock hugs the edges a little closer, so five labels
+ * ("Campaigns" included) keep their width on a 320 px phone. */
+@media (max-width: 359.98px) {
+  :root {
+    --dock-gap: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
   }
 }
 
 /* The Stampy launcher owns the bottom-right corner (56px + 20px margin) above
- * the tab bar. Focus moves and scrollIntoView stop this far above the
- * viewport bottom, so a focused button is never parked underneath either. */
+ * the dock. Focus moves and scrollIntoView stop this far above the viewport
+ * bottom, so a focused button is never parked underneath either. */
 html {
   scroll-padding-bottom: calc(6rem + var(--bottom-nav-h));
 }
 
 /* While a phone's on-screen keyboard is up (useSoftKeyboardOpen sets the
- * attribute), bottom-anchored controls step aside with the tab bar: on iOS a
+ * attribute), bottom-anchored controls step aside with the dock: on iOS a
  * fixed element no longer stays on the screen edge with the keyboard open. */
 html[data-soft-keyboard] .hide-with-keyboard {
   visibility: hidden;
@@ -360,20 +821,23 @@ html[data-soft-keyboard] .hide-with-keyboard {
   }
 }
 
-/* Height of the sticky header's bar (without the notch inset). Sticky bars
- * below it pin at this offset, and anchor jumps stop below it. It grows
- * smoothly with the viewport (72 px on phones and tablets, about 80 px on a
- * 1440 px laptop, 84 px from about 1800 px) so the peeking Stampy can grow
- * with it without his cap being clipped.
+/* The sticky header is a transparent band holding a floating glass pill
+ * (Layout.tsx): --header-gap above the pill, the pill itself
+ * (--header-pill-h, 56 px on phones growing smoothly to 68 px on large
+ * desktops), then 4 px under it. --header-h is the gap plus the pill, so the
+ * whole footprint stays `--header-h + 4px + the notch inset`: sticky bars
+ * below it pin at that offset, and anchor jumps stop below it.
  *
- * --peek-w is the peeking Stampy's width: 64 px on phones, growing with the
- * viewport to 112 px on large desktops (about 85 px on a 1024 px iPad or
- * laptop, 103 px at 1440 px). Everything in the peek is sized from it, so
- * there are no breakpoint jumps. At rest he shows 0.6 × --peek-w of his head
- * and 0.69 × on hover, always less than --header-h. */
+ * --peek-w is the peeking Stampy's width: 56 px on phones, growing with the
+ * viewport to 88 px on large desktops (about 66 px at 1024 px, 76 px at
+ * 1440 px). Everything in the peek is sized from it, so there are no
+ * breakpoint jumps. At rest he shows 0.6 × --peek-w of his head and 0.69 × on
+ * hover, always less than the pill's inner height. */
 :root {
-  --header-h: clamp(4.5rem, 3.9rem + 1.2vw, 5.25rem);
-  --peek-w: clamp(4rem, 2.5rem + 4.4vw, 7rem);
+  --header-gap: 0.5rem;
+  --header-pill-h: clamp(3.5rem, 3.1rem + 0.9vw, 4.25rem);
+  --header-h: calc(var(--header-pill-h) + var(--header-gap));
+  --peek-w: clamp(3.5rem, 2.6rem + 2.4vw, 5.5rem);
 }
 .stampy-peek-button {
   width: var(--peek-w);
@@ -381,6 +845,11 @@ html[data-soft-keyboard] .hide-with-keyboard {
 .stampy-peek-mark {
   width: calc(var(--peek-w) * 0.87);
   height: calc(var(--peek-w) * 0.767);
+}
+/* The glossy 3D Stampy (MascotGloss) in the peek: the lighting only, no drop
+ * shadow or halo, which the peek's clipped box would cut off square. */
+html[data-mascot-gloss] .stampy-peek-mark {
+  filter: url(#ez-mascot-gloss);
 }
 .stampy-peek-paw {
   width: calc(var(--peek-w) * 0.31);
@@ -401,10 +870,10 @@ html {
   );
 }
 
-/* The header's bottom edge: an airmail envelope border in Stampy's red and
- * the brand indigo. The peeking Stampy rests his paws on it. */
+/* The header pill's bottom edge: an airmail envelope border in Stampy's red
+ * and the brand indigo. The peeking Stampy rests his paws on it. */
 .airmail-stripe {
-  height: 4px;
+  height: 3px;
   background: repeating-linear-gradient(
     -45deg,
     #e5402a 0 9px,
@@ -414,7 +883,7 @@ html {
   );
 }
 
-/* Stampy rises from behind the header's bottom edge once per page load. */
+/* Stampy rises from behind the header pill's bottom edge once per page load. */
 @keyframes stampyPeekIn {
   0% {
     transform: translateY(100%);

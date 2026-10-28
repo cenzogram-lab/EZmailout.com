@@ -1,6 +1,7 @@
 import typography from "@tailwindcss/typography";
 import containerQueries from "@tailwindcss/container-queries";
 import animate from "tailwindcss-animate";
+import plugin from "tailwindcss/plugin";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -20,7 +21,7 @@ export default {
         input: "oklch(var(--input) / <alpha-value>)",
         ring: "oklch(var(--ring) / <alpha-value>)",
         background: "oklch(var(--background) / <alpha-value>)",
-        foreground: "oklch(var(--foreground))",
+        foreground: "oklch(var(--foreground) / <alpha-value>)",
         primary: {
           DEFAULT: "oklch(var(--primary) / <alpha-value>)",
           foreground: "oklch(var(--primary-foreground))",
@@ -43,12 +44,22 @@ export default {
           foreground: "oklch(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "oklch(var(--popover))",
+          DEFAULT: "oklch(var(--popover) / <alpha-value>)",
           foreground: "oklch(var(--popover-foreground))",
         },
         card: {
           DEFAULT: "oklch(var(--card) / <alpha-value>)",
           foreground: "oklch(var(--card-foreground))",
+          // Second card tone (nested panels): #F9F9FB light, #161A26 dark.
+          raised: "oklch(var(--card-raised) / <alpha-value>)",
+        },
+        // Sunken wells (segmented tracks, insets): #ECEDF1 / #0D0F16.
+        well: "oklch(var(--well) / <alpha-value>)",
+        // Card and divider hairlines (black/8 light, white/8 dark); the
+        // value carries its own alpha.
+        hairline: {
+          DEFAULT: "var(--hairline)",
+          strong: "var(--hairline-strong)",
         },
         chart: {
           1: "oklch(var(--chart-1))",
@@ -67,7 +78,7 @@ export default {
         },
         ice: {
           DEFAULT: "oklch(var(--ice) / <alpha-value>)",
-          foreground: "oklch(var(--foreground))",
+          foreground: "oklch(var(--foreground) / <alpha-value>)",
         },
         sky: {
           DEFAULT: "oklch(var(--sky) / <alpha-value>)",
@@ -77,6 +88,10 @@ export default {
         },
         "emerald-brand": {
           DEFAULT: "oklch(var(--emerald) / <alpha-value>)",
+          foreground: "oklch(0.98 0 0)",
+        },
+        "amber-brand": {
+          DEFAULT: "oklch(var(--amber) / <alpha-value>)",
           foreground: "oklch(0.98 0 0)",
         },
         slate: {
@@ -91,6 +106,27 @@ export default {
           "accent-foreground": "oklch(var(--sidebar-accent-foreground))",
           border: "oklch(var(--sidebar-border))",
           ring: "oklch(var(--sidebar-ring))",
+        },
+      },
+      // As text, these colours read their AA-safe ink token (lighter in the
+      // dark theme), while bg-/border-/ring- keep the fill colour: white text
+      // on bg-primary passes in both themes, and text-primary passes on the
+      // page and cards in both themes.
+      textColor: {
+        primary: {
+          DEFAULT: "oklch(var(--primary-text) / <alpha-value>)",
+        },
+        destructive: {
+          DEFAULT: "oklch(var(--destructive-text) / <alpha-value>)",
+        },
+        navy: {
+          DEFAULT: "oklch(var(--navy-text) / <alpha-value>)",
+        },
+        "emerald-brand": {
+          DEFAULT: "oklch(var(--emerald-ink) / <alpha-value>)",
+        },
+        "amber-brand": {
+          DEFAULT: "oklch(var(--amber-ink) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -108,6 +144,10 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
+        // Theme-aware depths (index.css tokens).
+        surface: "var(--shadow-card)",
+        raised: "var(--shadow-raised)",
+        glass: "var(--glass-shadow)",
       },
       keyframes: {
         "accordion-down": {
@@ -165,5 +205,16 @@ export default {
       },
     },
   },
-  plugins: [typography, containerQueries, animate],
+  plugins: [
+    typography,
+    containerQueries,
+    animate,
+    // `kbd-focus:` is :focus while the last input was the keyboard
+    // (lib/inputModality.ts). Radix focuses menu and list items by script on
+    // hover, which Chromium counts as :focus-visible, so their focus ring
+    // keys off the input instead.
+    plugin(({ addVariant }) => {
+      addVariant("kbd-focus", "html[data-input-modality=keyboard] &:focus");
+    }),
+  ],
 };

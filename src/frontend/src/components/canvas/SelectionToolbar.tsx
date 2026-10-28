@@ -71,7 +71,11 @@ function IconAction({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn(compact ? "size-8" : "size-7", "rounded-lg", className)}
+      className={cn(
+        compact ? "size-8" : "size-7",
+        "rounded-full text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:ring-2",
+        className,
+      )}
       onClick={onClick}
       title={label}
       aria-label={label}
@@ -83,7 +87,7 @@ function IconAction({
 }
 
 function Divider() {
-  return <span className="mx-0.5 h-5 w-px shrink-0 bg-border" />;
+  return <span className="mx-1 h-5 w-px shrink-0 bg-hairline-strong" />;
 }
 
 /**
@@ -163,7 +167,7 @@ export function SelectionToolbar({
   );
 
   const name = (
-    <span className="shrink-0 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <span className="shrink-0 px-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {label ?? (kind === "qr" ? "QR" : kind)}
     </span>
   );
@@ -242,8 +246,12 @@ export function SelectionToolbar({
       role="toolbar"
       aria-label="Selected element"
       className={cn(
-        "absolute z-[9500] flex w-max rounded-xl border border-border/60 bg-card px-1 py-0.5 shadow-lg",
-        compact ? "flex-col gap-0.5 py-1" : "items-center gap-0.5",
+        // Glass pill: 95 % opaque popover fill, a light blur and the overlay
+        // depth, so the artwork under it never makes the icons illegible.
+        "absolute z-[9500] flex w-max border border-hairline-strong bg-popover/95 px-1 py-0.5 text-popover-foreground shadow-raised backdrop-blur-md",
+        compact
+          ? "flex-col gap-0.5 rounded-2xl py-1"
+          : "items-center gap-0.5 rounded-full",
       )}
       style={{ left, top }}
       onPointerDown={(e) => e.stopPropagation()}

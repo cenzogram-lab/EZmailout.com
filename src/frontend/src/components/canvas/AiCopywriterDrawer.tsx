@@ -194,9 +194,12 @@ export function AiCopywriterDrawer({
         className="w-full overflow-y-auto sm:max-w-lg"
         data-ocid="canvas.copywriter.drawer"
       >
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 font-display">
-            <PenLine className="size-5 text-primary" /> AI Copywriter
+        <SheetHeader className="ambient-glow-brand pr-14 pt-5 sm:px-6">
+          <SheetTitle className="flex items-center gap-2.5 font-display text-lg font-black tracking-tight">
+            <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <PenLine className="size-4" />
+            </span>
+            AI Copywriter
           </SheetTitle>
           <SheetDescription>
             Our AI copywriter writes 3 converting headlines, benefit bullets and
@@ -204,11 +207,11 @@ export function AiCopywriterDrawer({
           </SheetDescription>
         </SheetHeader>
         {!isAuthenticated ? (
-          <div className="mt-6">
+          <div className="px-4 pb-8 sm:px-6">
             <SignInPrompt message="Sign in to use the AI Copywriter." />
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4 px-4 pb-8 sm:px-6">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="cw-business">Business name</Label>
@@ -275,7 +278,7 @@ export function AiCopywriterDrawer({
               <Button
                 onClick={handleGenerate}
                 disabled={generate.isPending}
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="gap-2"
                 data-ocid="canvas.copywriter.generate"
               >
                 {generate.isPending ? (
@@ -286,7 +289,10 @@ export function AiCopywriterDrawer({
                 Generate copy · 1 credit
               </Button>
               <span className="text-xs text-muted-foreground">
-                Balance: {creditBalance}
+                Balance:{" "}
+                <span className="font-black tabular-nums text-foreground">
+                  {creditBalance}
+                </span>
               </span>
             </div>
             {result && (
@@ -299,7 +305,7 @@ export function AiCopywriterDrawer({
                 />
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-display text-sm font-semibold">
+                    <span className="font-display text-sm font-bold tracking-tight">
                       Benefit bullets
                     </span>
                     <Button
@@ -317,7 +323,7 @@ export function AiCopywriterDrawer({
                       <Plus className="size-3.5" /> Insert
                     </Button>
                   </div>
-                  <ul className="list-disc space-y-1 rounded-md border p-3 pl-7 text-sm">
+                  <ul className="list-disc space-y-1 rounded-2xl border border-hairline bg-card-raised p-3 pl-7 text-sm">
                     {result.bullets.map((b) => (
                       <li key={b}>{b}</li>
                     ))}
@@ -358,19 +364,21 @@ function Section({
 }) {
   return (
     <div className="space-y-2">
-      <span className="font-display text-sm font-semibold">{title}</span>
+      <span className="font-display text-sm font-bold tracking-tight">
+        {title}
+      </span>
       <ul className="space-y-1.5">
         {items.map((t) => (
           <li
             key={t}
-            className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+            className="flex items-center justify-between gap-2 rounded-2xl border border-hairline bg-card-raised px-3 py-2 text-sm"
           >
             <span>{t}</span>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onInsert(t)}
-              className="h-7 gap-1 text-primary"
+              className="h-8 shrink-0 gap-1 text-primary hover:bg-primary/10 hover:text-primary-ink"
               data-ocid={`canvas.copywriter.insert.${ocid}`}
             >
               <Plus className="size-3.5" /> Insert

@@ -41,14 +41,16 @@ export function BrandPanel() {
   return (
     <div className="space-y-4" data-ocid="canvas.panel.brand">
       <div>
-        <p className="font-display text-sm font-semibold">Brand kit</p>
+        <p className="font-display text-base font-black tracking-tight">
+          Brand kit
+        </p>
         <p className="text-xs text-muted-foreground">
           EZmailout palette and typefaces. Pick a paper colour for the{" "}
           {activeSide} side or recolour the selected element.
         </p>
       </div>
       <div className="space-y-1.5">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Paper colour · {activeSide}
         </p>
         <SwatchRow
@@ -59,7 +61,7 @@ export function BrandPanel() {
         />
       </div>
       <div className="space-y-1.5">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {kind === "text"
             ? "Selected text colour"
             : kind === "qr"
@@ -76,14 +78,14 @@ export function BrandPanel() {
         </div>
       </div>
       <div className="space-y-1.5">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Palette
         </p>
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5 rounded-2xl border border-hairline bg-card-raised px-2 py-2.5 text-[11px]">
           {STUDIO_SWATCHES.map((s) => (
             <li key={s.hex} className="flex items-center gap-1.5">
               <span
-                className="size-3.5 rounded-full border border-black/10"
+                className="size-3.5 shrink-0 rounded-full border border-hairline-strong"
                 style={{ backgroundColor: s.hex }}
               />
               <span className="truncate">{s.name}</span>
@@ -95,7 +97,7 @@ export function BrandPanel() {
         </ul>
       </div>
       <div className="space-y-1.5">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {kind === "text"
             ? "Selected text font"
             : "Font (select a text block)"}

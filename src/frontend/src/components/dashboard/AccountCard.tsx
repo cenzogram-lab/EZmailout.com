@@ -94,7 +94,7 @@ export function AccountCard() {
           <Tooltip>
             <TooltipTrigger asChild>
               <code
-                className="font-mono text-xs text-muted-foreground"
+                className="meta-mono"
                 data-ocid="dashboard.account.principal.text"
               >
                 {principalText ? shortPrincipal(principalText) : "—"}
@@ -108,9 +108,9 @@ export function AccountCard() {
         trailing={
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="size-8 rounded-full"
+            className="size-11 rounded-full sm:size-10"
             onClick={handleCopy}
             disabled={!principalText}
             aria-label="Copy principal"
@@ -125,7 +125,7 @@ export function AccountCard() {
         }
       />
       {editing ? (
-        <div className="flex items-center gap-2 px-4 py-2.5">
+        <div className="flex min-h-14 items-center gap-2 bg-card-raised px-4 py-2.5">
           <Input
             type="email"
             value={draft}
@@ -133,7 +133,7 @@ export function AccountCard() {
             placeholder="you@example.com"
             autoFocus
             aria-label="Email"
-            className="h-9 rounded-full"
+            className="h-11 rounded-full px-4 sm:h-10"
             onKeyDown={(e) => {
               if (e.key === "Enter") void handleSaveEmail();
               if (e.key === "Escape") setEditing(false);
@@ -143,7 +143,7 @@ export function AccountCard() {
           <Button
             type="button"
             size="icon"
-            className="size-9 shrink-0 rounded-full"
+            className="size-11 shrink-0 rounded-full sm:size-10"
             onClick={handleSaveEmail}
             disabled={updateEmail.isPending}
             aria-label="Save email"
@@ -159,7 +159,7 @@ export function AccountCard() {
             type="button"
             variant="outline"
             size="icon"
-            className="size-9 shrink-0 rounded-full"
+            className="size-11 shrink-0 rounded-full sm:size-10"
             onClick={() => setEditing(false)}
             disabled={updateEmail.isPending}
             aria-label="Cancel"
@@ -184,9 +184,9 @@ export function AccountCard() {
           trailing={
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-8 gap-1 rounded-full px-3 text-xs"
+              className="h-11 gap-1 rounded-full px-3.5 text-xs sm:h-9"
               onClick={startEditing}
               disabled={!account}
               data-ocid="dashboard.account.edit_email.button"
@@ -201,7 +201,10 @@ export function AccountCard() {
         icon={CalendarDays}
         label="Member since"
         value={
-          <span data-ocid="dashboard.account.member_since.badge">
+          <span
+            className="meta-mono text-foreground"
+            data-ocid="dashboard.account.member_since.badge"
+          >
             {account ? formatTimestamp(account.createdAt, false) : "—"}
           </span>
         }

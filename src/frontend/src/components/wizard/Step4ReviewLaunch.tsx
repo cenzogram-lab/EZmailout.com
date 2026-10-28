@@ -1,7 +1,12 @@
 import type { DispatchResult } from "@/backend";
 import { AudienceType, PaymentPurpose } from "@/backend";
 import { StripeCheckout } from "@/components/billing/StripeCheckout";
-import { StampyStep4Preflight, StampyTip } from "@/components/stampy";
+import { WizardGlow } from "@/components/layout/WizardLayout";
+import {
+  MascotStage,
+  StampyStep4Preflight,
+  StampyTip,
+} from "@/components/stampy";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,7 +56,6 @@ import {
   FileImage,
   Fingerprint,
   Loader2,
-  PartyPopper,
   Receipt,
   RefreshCw,
   Rocket,
@@ -672,22 +676,21 @@ export function Step4ReviewLaunch() {
   if (machine.stage === "done") {
     const paidId = campaignId ?? "";
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10">
-        <Card
-          className="surface-glow border-emerald-brand/30 bg-card"
+      <div className="mx-auto w-full max-w-2xl py-2 sm:py-6">
+        <div
+          className="relative isolate flex flex-col items-center gap-6 text-center"
           data-ocid="review.success.card"
         >
-          <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-emerald-brand/10 text-emerald-brand">
-              <PartyPopper className="size-8" />
-            </div>
-            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
+          <WizardGlow className="-top-6 bottom-1/2" />
+          <MascotStage pose="mail" size="lg" className="mt-4" />
+          <div className="space-y-3">
+            <h2 className="display-heading text-3xl sm:text-4xl">
               {paidTestMode
                 ? "Test order placed"
                 : "Campaign paid and on its way"}
             </h2>
             <p
-              className="max-w-md text-sm text-muted-foreground"
+              className="mx-auto max-w-md text-sm text-muted-foreground"
               data-ocid="review.success.summary"
             >
               {campaignName || "Your campaign"} — {formatNumber(recipientCount)}{" "}
@@ -696,89 +699,98 @@ export function Step4ReviewLaunch() {
                 ? `${formatCents(dueCents)} in test mode: nothing was charged, and the job goes only to the print service's test system, so nothing is mailed.`
                 : `${formatCents(dueCents)} charged.`}
             </p>
-            <Badge variant="outline" className="font-mono">
-              {paidId}
-            </Badge>
+          </div>
 
-            {dispatchResult?.ok ? (
-              <Alert className="border-emerald-brand/40 bg-emerald-brand/10 text-left">
-                <Truck className="size-4 text-emerald-brand" />
-                <AlertTitle>Job submitted for printing</AlertTitle>
-                <AlertDescription>
-                  Job ID{" "}
-                  <span className="font-mono">
-                    {dispatchResult.jobId ?? "—"}
-                  </span>
-                  {dispatchResult.productionStatus
-                    ? ` · ${dispatchResult.productionStatus}`
-                    : ""}
-                  . Tracking events will appear as USPS scans the pieces.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert
-                className="border-primary/40 bg-primary/10 text-left"
-                data-ocid="review.dispatch.warning"
-              >
-                <AlertCircle className="size-4 text-primary" />
-                <AlertTitle>Paid, but not yet sent to print</AlertTitle>
-                <AlertDescription>
-                  {dispatchResult?.error ?? "The print job was not submitted."}{" "}
-                  Your payment is recorded; retry the dispatch here or from the
-                  campaign page at any time.
-                </AlertDescription>
-              </Alert>
-            )}
+          <Card className="w-full gap-4 py-5 text-left">
+            <CardContent className="space-y-4 px-4 sm:px-6">
+              <div className="flex justify-center">
+                <Badge variant="neutral" className="font-mono tracking-wider">
+                  {paidId}
+                </Badge>
+              </div>
 
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
-              {!dispatchResult?.ok && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void runDispatch()}
-                  disabled={dispatchJob.isPending}
-                  className="gap-2"
-                  data-ocid="review.dispatch.retry.button"
+              {dispatchResult?.ok ? (
+                <Alert className="border-emerald-brand/40 bg-emerald-brand/10 text-left">
+                  <Truck className="size-4 text-emerald-brand" />
+                  <AlertTitle>Job submitted for printing</AlertTitle>
+                  <AlertDescription>
+                    Job ID{" "}
+                    <span className="font-mono">
+                      {dispatchResult.jobId ?? "—"}
+                    </span>
+                    {dispatchResult.productionStatus
+                      ? ` · ${dispatchResult.productionStatus}`
+                      : ""}
+                    . Tracking events will appear as USPS scans the pieces.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert
+                  className="border-amber-brand/40 bg-amber-brand/10 text-left"
+                  data-ocid="review.dispatch.warning"
                 >
-                  {dispatchJob.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="size-4" />
-                  )}
-                  Retry dispatch
-                </Button>
+                  <AlertCircle className="size-4 text-amber-brand" />
+                  <AlertTitle>Paid, but not yet sent to print</AlertTitle>
+                  <AlertDescription>
+                    {dispatchResult?.error ??
+                      "The print job was not submitted."}{" "}
+                    Your payment is recorded; retry the dispatch here or from
+                    the campaign page at any time.
+                  </AlertDescription>
+                </Alert>
               )}
-              <Button
-                asChild
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                data-ocid="review.view_tracking.link"
-              >
-                <Link
-                  to="/campaigns/$campaignId"
-                  params={{ campaignId: paidId }}
-                >
-                  <Truck className="size-4" /> View tracking
-                </Link>
-              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="flex w-full flex-col items-stretch justify-center gap-2 sm:w-auto sm:flex-row sm:items-center">
+            {!dispatchResult?.ok && (
               <Button
                 type="button"
-                variant="ghost"
-                onClick={() => reset()}
-                data-ocid="review.start_another.button"
+                variant="outline"
+                size="lg"
+                onClick={() => void runDispatch()}
+                disabled={dispatchJob.isPending}
+                className="gap-2"
+                data-ocid="review.dispatch.retry.button"
               >
-                Start another campaign
+                {dispatchJob.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Retry dispatch
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+            <Button
+              asChild
+              size="lg"
+              className="h-12 gap-2 px-7 text-base"
+              data-ocid="review.view_tracking.link"
+            >
+              <Link to="/campaigns/$campaignId" params={{ campaignId: paidId }}>
+                <Truck className="size-4" /> View tracking
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={() => reset()}
+              data-ocid="review.start_another.button"
+            >
+              Start another campaign
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
-      <div className="space-y-1">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+    <div className="mx-auto w-full max-w-6xl space-y-6 py-2">
+      <div className="relative isolate space-y-2">
+        <WizardGlow />
+        <h2 className="display-heading text-3xl sm:text-4xl">
           Review and launch
         </h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -791,15 +803,18 @@ export function Step4ReviewLaunch() {
         {/* min-w-0: a grid item is otherwise as wide as its content, which
             widened the page past a phone's viewport. */}
         <div className="min-w-0 space-y-6">
-          <Card className="bg-card" data-ocid="review.proof.card">
-            <CardHeader className="pb-3">
+          <Card data-ocid="review.proof.card">
+            <CardHeader>
               <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-                <span className="flex items-center gap-2">
-                  <FileImage className="size-4 text-primary" /> Print proof
+                <span className="flex items-center gap-2.5">
+                  <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary-ink">
+                    <FileImage className="size-4" />
+                  </span>
+                  Print proof
                 </span>
                 <div className="flex items-center gap-2">
                   {row && (
-                    <Badge variant="secondary" className="font-mono">
+                    <Badge variant="neutral" className="font-mono">
                       {row.widthInches}" × {row.heightInches}" · 300 DPI
                     </Badge>
                   )}
@@ -809,7 +824,7 @@ export function Step4ReviewLaunch() {
                     size="sm"
                     onClick={() => void runPreflight()}
                     disabled={preflight.status === "running"}
-                    className="gap-1"
+                    className="h-11 gap-1 sm:h-8"
                     data-ocid="review.proof.refresh.button"
                   >
                     <RefreshCw
@@ -825,12 +840,12 @@ export function Step4ReviewLaunch() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="checkerboard flex min-h-56 items-center justify-center overflow-hidden rounded-xl border border-border p-4">
+              <div className="checkerboard flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border border-hairline p-4 shadow-[inset_0_2px_8px_rgb(0_0_0/0.12)] sm:p-6">
                 {preflight.frontPreviewUrl ? (
                   <img
                     src={preflight.frontPreviewUrl}
                     alt="Front face print proof"
-                    className="max-h-[420px] w-auto max-w-full rounded-md shadow-md"
+                    className="max-h-[420px] w-auto max-w-full rounded-md shadow-[0_18px_40px_-16px_rgb(0_0_0/0.55)]"
                     data-ocid="review.proof.image"
                   />
                 ) : preflight.status === "error" ? (
@@ -866,37 +881,43 @@ export function Step4ReviewLaunch() {
             induct into the mail stream.
           </StampyTip>
           <Card
-            className="surface-glow border-primary/20 bg-card"
+            className="relative isolate border-primary/25 shadow-raised"
             data-ocid="review.invoice.card"
           >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Receipt className="size-4 text-primary" /> Invoice
+            <div aria-hidden className="ambient-glow-backdrop" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2.5 text-base">
+                <span className="btn-3d-primary flex size-8 items-center justify-center rounded-xl">
+                  <Receipt className="size-4" />
+                </span>
+                Invoice
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Campaign</span>
-                <span className="max-w-[60%] truncate font-medium text-foreground">
+              <div className="flex justify-between gap-3">
+                <span className="shrink-0 text-muted-foreground">Campaign</span>
+                <span className="max-w-[60%] truncate font-semibold text-foreground">
                   {campaignName || "Untitled campaign"}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Format</span>
-                <span className="font-medium text-foreground">
+              <div className="flex justify-between gap-3">
+                <span className="shrink-0 text-muted-foreground">Format</span>
+                <span className="text-right font-semibold text-foreground">
                   {productLabel ?? "—"}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Audience</span>
-                <span className="font-medium text-foreground">
+              <div className="flex justify-between gap-3">
+                <span className="shrink-0 text-muted-foreground">Audience</span>
+                <span className="text-right font-semibold text-foreground">
                   {audienceLabel(audienceType)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mail class</span>
+              <div className="flex justify-between gap-3">
+                <span className="shrink-0 text-muted-foreground">
+                  Mail class
+                </span>
                 <span
-                  className="font-medium text-foreground"
+                  className="text-right font-semibold text-foreground"
                   data-ocid="review.invoice.mail_class"
                 >
                   {selectedSpec
@@ -905,13 +926,13 @@ export function Step4ReviewLaunch() {
                 </span>
               </div>
               <Separator />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
+              <div className="flex justify-between gap-3">
+                <span className="tabular-nums text-muted-foreground">
                   {formatNumber(recipientCount)} pieces ×{" "}
                   {formatCents(unitCents)}
                 </span>
                 <span
-                  className="font-medium text-foreground"
+                  className="font-semibold tabular-nums text-foreground"
                   data-ocid="review.invoice.line_total"
                 >
                   {formatCents(dueCents)}
@@ -919,7 +940,7 @@ export function Step4ReviewLaunch() {
               </div>
               {savedCents > 0 ? (
                 <p
-                  className="rounded-lg bg-emerald-brand/10 p-2 text-xs text-emerald-brand"
+                  className="rounded-xl border border-emerald-brand/25 bg-emerald-brand/10 px-3 py-2 text-xs font-medium text-emerald-brand"
                   data-ocid="review.invoice.volume_discount"
                 >
                   {memberRateApplies
@@ -954,7 +975,7 @@ export function Step4ReviewLaunch() {
                   <span className="shrink-0">Included</span>
                 </div>
               ) : null}
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between gap-3 text-xs text-muted-foreground">
                 <span>Printing, postage and CASS included</span>
                 <span>$0.00</span>
               </div>
@@ -968,10 +989,12 @@ export function Step4ReviewLaunch() {
                 </div>
               ) : null}
               <Separator />
-              <div className="flex items-baseline justify-between">
-                <span className="font-medium text-foreground">Total due</span>
+              <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1 rounded-2xl border border-primary/25 bg-primary/[0.07] px-4 py-3.5">
+                <span className="pb-1 text-sm font-semibold text-foreground">
+                  Total due
+                </span>
                 <span
-                  className="font-display text-2xl font-bold text-primary"
+                  className="stat-number min-w-0 text-right text-foreground [overflow-wrap:anywhere]"
                   data-ocid="review.invoice.total"
                 >
                   {formatCents(dueCents)}
@@ -979,7 +1002,7 @@ export function Step4ReviewLaunch() {
               </div>
               {belowMinimum ? (
                 <p
-                  className="rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground"
+                  className="rounded-xl border border-amber-brand/30 bg-amber-brand/10 px-3 py-2 text-xs font-medium text-amber-brand"
                   data-ocid="review.invoice.minimum"
                 >
                   Card payments start at {formatCents(MIN_ORDER_CENTS)}. Add a
@@ -1015,14 +1038,17 @@ export function Step4ReviewLaunch() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card" data-ocid="review.launch.card">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Rocket className="size-4 text-primary" /> Launch
+          <Card data-ocid="review.launch.card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2.5 text-base">
+                <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary-ink">
+                  <Rocket className="size-4" />
+                </span>
+                Launch
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ol className="space-y-1.5 text-xs">
+              <ol className="space-y-1 rounded-2xl border border-hairline bg-well p-3 text-xs">
                 {STAGE_ORDER.filter((s) => s !== "done").map((s, i) => {
                   const idx = STAGE_ORDER.indexOf(s);
                   const isCurrent = machine.stage === s;
@@ -1039,17 +1065,17 @@ export function Step4ReviewLaunch() {
                   return (
                     <li
                       key={s}
-                      className="flex items-center gap-2"
+                      className="flex min-h-7 items-center gap-2.5"
                       data-ocid={`review.launch.stage.${s}`}
                     >
                       {isFailed ? (
-                        <AlertCircle className="size-3.5 text-destructive" />
+                        <AlertCircle className="size-4 text-destructive" />
                       ) : isCurrent && busy ? (
-                        <Loader2 className="size-3.5 animate-spin text-primary" />
+                        <Loader2 className="size-4 animate-spin text-primary" />
                       ) : isDone ? (
-                        <CheckCircle2 className="size-3.5 text-emerald-brand" />
+                        <CheckCircle2 className="size-4 text-emerald-brand" />
                       ) : (
-                        <span className="inline-block size-3.5 rounded-full border border-border" />
+                        <span className="mx-px inline-block size-3.5 rounded-full border-2 border-hairline-strong" />
                       )}
                       <span
                         className={
@@ -1140,7 +1166,7 @@ export function Step4ReviewLaunch() {
                       variant="outline"
                       onClick={login}
                       disabled={isLoggingIn}
-                      className="w-full gap-2"
+                      className="h-12 w-full gap-2 text-base"
                       data-ocid="review.sign_in.button"
                     >
                       {isLoggingIn ? (
@@ -1165,7 +1191,12 @@ export function Step4ReviewLaunch() {
                           order.
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          <Button asChild size="sm" variant="outline">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="h-11 sm:h-8"
+                          >
                             <Link
                               to="/campaigns/$campaignId"
                               params={{ campaignId }}
@@ -1178,6 +1209,7 @@ export function Step4ReviewLaunch() {
                             size="sm"
                             variant="ghost"
                             onClick={() => reset()}
+                            className="h-11 sm:h-8"
                             data-ocid="review.already_paid.new.button"
                           >
                             Start a new campaign
@@ -1201,7 +1233,7 @@ export function Step4ReviewLaunch() {
                           machine.failedStage !== "paying" &&
                           report.blocked)
                       }
-                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="h-12 w-full gap-2 text-base"
                       data-ocid="review.launch.retry.button"
                     >
                       <RefreshCw className="size-4" /> Retry{" "}
@@ -1213,7 +1245,7 @@ export function Step4ReviewLaunch() {
                       size="lg"
                       onClick={() => void runPreparation("creating")}
                       disabled={launchDisabled}
-                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="h-12 w-full gap-2 text-base"
                       data-ocid="review.launch.button"
                     >
                       {busy ? (
@@ -1238,13 +1270,13 @@ export function Step4ReviewLaunch() {
         </div>
       </div>
 
-      <div className="flex justify-start border-t border-border pt-4">
+      <div className="flex justify-start border-t border-hairline pt-5">
         <Button
           type="button"
           variant="ghost"
           onClick={() => setStep(3)}
           disabled={busy || machine.stage === "paying"}
-          className="gap-2"
+          className="h-11 gap-2 sm:h-9"
           data-ocid="review.back.button"
         >
           <ArrowLeft className="size-4" /> Back to design
