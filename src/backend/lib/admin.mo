@@ -53,12 +53,46 @@ module {
       case null { null };
       case (?k) {
         let chars = k.toArray();
-        if (chars.size() <= 4) { ?"****" } else {
+        // A short secret (a password) keeps no tail: four of eight
+        // characters would give half of it away.
+        if (chars.size() < 12) { ?"****" } else {
           let start : Nat = chars.size() - 4;
           ?("***" # Text.fromArray(Array.tabulate<Char>(4, func(i) = chars[start + i])));
         };
       };
     };
+  };
+
+  /// A Stripe secret key starts `sk_` (or `rk_`, a restricted key), a
+  /// publishable key `pk_`, and the pair must come from the same mode (live
+  /// or test): a key pasted into the wrong field or a mismatched pair cannot
+  /// take a payment.
+  public func stripeKeyError(secret : ?Text, publishable : ?Text) : ?Text {
+    switch (secret) {
+      case (?s) {
+        if (not (s.startsWith(#text "sk_") or s.startsWith(#text "rk_"))) {
+          return ?"The Stripe secret key should start with sk_ (or rk_ for a restricted key); a key starting with pk_ is the publishable key";
+        };
+      };
+      case null {};
+    };
+    switch (publishable) {
+      case (?p) {
+        if (not p.startsWith(#text "pk_")) {
+          return ?"The Stripe publishable key should start with pk_";
+        };
+      };
+      case null {};
+    };
+    switch (secret, publishable) {
+      case (?s, ?p) {
+        if (s.contains(#text "_live_") != p.contains(#text "_live_")) {
+          return ?"The Stripe secret and publishable keys are from different modes (one live, one test); use a matching pair";
+        };
+      };
+      case _ {};
+    };
+    null;
   };
 
   public func sanitizeKey(key : Text) : ?Text {

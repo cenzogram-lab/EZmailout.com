@@ -41,6 +41,16 @@ mixin (adminKeysState : Common.AdminState) {
       };
       case null {};
     };
+    // Checked only when the save touches a Stripe key, so an older
+    // configuration never blocks saving anything else.
+    if (keys.stripeSecretKey != null or keys.stripePublishableKey != null) {
+      let nextSecret = applyText(adminKeysState.stripeSecretKey, keys.stripeSecretKey);
+      let nextPublishable = applyText(adminKeysState.stripePublishableKey, keys.stripePublishableKey);
+      switch (AdminLib.stripeKeyError(nextSecret, nextPublishable)) {
+        case (?e) { return { ok = false; error = ?e } };
+        case null {};
+      };
+    };
     let supportEmail : ?(?Text) = switch (keys.supportEmailAddress) {
       case null null;
       case (?raw) {

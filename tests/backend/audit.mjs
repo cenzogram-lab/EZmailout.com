@@ -89,6 +89,17 @@ const sections = {
     check(!(await admin.saveAdminKeys(keys({ supportEmailAddress: "not-an-email" }))).ok, "an invalid support email is refused");
     const bad = await admin.saveAdminKeys(keys({ openAiKey: "should-not-save", outcallProxyUrl: "ftp://x" }));
     check(!bad.ok && (await admin.getAdminKeys()).openAiKeyMasked.length === 0, "a refused save writes nothing");
+    // Stripe keys: right field, matching mode.
+    const pkAsSecret = await admin.saveAdminKeys(keys({ stripeSecretKey: "pk_live_publishable_999" }));
+    check(!pkAsSecret.ok && (await admin.getAdminKeys()).stripeSecretKeyMasked[0] === "***3XYZ", "a publishable key pasted as the Stripe secret is refused and nothing changes", pkAsSecret);
+    check(!(await admin.saveAdminKeys(keys({ stripePublishableKey: "sk_live_SECRET_IN_WRONG_FIELD" }))).ok, "a secret key pasted as the publishable key is refused");
+    check(!(await admin.saveAdminKeys(keys({ stripeSecretKey: "sk_test_TEST_SECRET_0001" }))).ok, "a test secret beside a live publishable key is refused");
+    check((await admin.saveAdminKeys(keys({ stripeSecretKey: "sk_test_TEST_SECRET_0001", stripePublishableKey: "pk_test_publishable_0001" }))).ok, "a matching test pair is accepted");
+    check((await admin.saveAdminKeys(keys({ stripeSecretKey: "rk_live_RESTRICTED_0002", stripePublishableKey: SECRETS.stripePublishableKey }))).ok, "a restricted live key with the live publishable key is accepted");
+    check((await admin.saveAdminKeys(keys({ openAiKey: "sk-proj-later-0003" }))).ok, "saving another key does not re-check the Stripe pair");
+    // Short secrets keep no tail in the masked view.
+    await admin.saveAdminKeys(keys({ fulfilmentPassword: "pw-12345" }));
+    check((await admin.getAdminKeys()).fulfilmentPasswordMasked[0] === "****", "a secret under 12 characters is fully masked");
 
     // Persistence across an upgrade.
     await admin.saveAdminKeys(keys(SECRETS));
