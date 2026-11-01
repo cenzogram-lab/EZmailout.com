@@ -35,12 +35,17 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { NavIconTile } from "./NavIconTile";
 
 /** Header destinations, each with a mail-themed icon in the brand indigo. */
 const NAV = [
   { to: "/templates", label: "Templates", icon: Palette },
   { to: "/campaigns", label: "Campaigns", icon: Mailbox },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
   { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
@@ -62,7 +67,7 @@ const ocidFor = (label: string) =>
 function NavLink({
   to,
   label,
-  icon: Icon,
+  icon,
 }: {
   to: string;
   label: string;
@@ -75,25 +80,19 @@ function NavLink({
       title={label}
       data-ocid={ocidFor(label)}
       aria-current={isActive ? "page" : undefined}
-      className="segmented-item h-9 shrink-0 gap-2 px-2.5 text-sm tracking-tight focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 xl:px-3.5"
+      className="segmented-item h-9 shrink-0 gap-2 px-1.5 text-sm tracking-tight focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80 xl:pl-1.5 xl:pr-3.5"
     >
-      <Icon
-        className={cn(
-          "size-[18px]",
-          isActive ? "text-primary" : "text-primary/80",
-        )}
-        strokeWidth={2.2}
-      />
+      <NavIconTile icon={icon} className="size-[26px]" />
       <span className="sr-only xl:not-sr-only">{label}</span>
     </Link>
   );
 }
 
-/** Mobile menu row: a 48 px row with the icon in a tinted tile. */
+/** Mobile menu row: a 48 px row with the icon in an indigo tile. */
 function MenuLink({
   to,
   label,
-  icon: Icon,
+  icon,
   onClick,
 }: {
   to: string;
@@ -114,9 +113,7 @@ function MenuLink({
           : "border-transparent text-foreground hover:bg-muted",
       )}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-5" strokeWidth={2.2} />
-      </span>
+      <NavIconTile icon={icon} className="size-9" />
       {label}
     </Link>
   );

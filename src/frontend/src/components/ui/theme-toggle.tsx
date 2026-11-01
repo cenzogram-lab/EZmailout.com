@@ -1,3 +1,4 @@
+import { NavIconTile } from "@/components/layout/NavIconTile";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -60,9 +61,7 @@ export function ThemeToggle({
           className,
         )}
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Moon className="size-5" strokeWidth={2.2} aria-hidden />
-        </span>
+        <NavIconTile icon={Moon} className="size-9" />
         <span className="flex-1">Dark mode</span>
         <ThemePill on={isDark} />
       </button>

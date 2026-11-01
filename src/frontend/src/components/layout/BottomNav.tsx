@@ -5,13 +5,29 @@ import { useSoftKeyboardOpen } from "@/hooks/use-soft-keyboard";
 import { cn } from "@/lib/utils";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { House, Mailbox, Palette, Plus, UserRound } from "lucide-react";
+import { NavIconTile } from "./NavIconTile";
 
 const TABS = [
   { to: "/", label: "Home", icon: House, ocid: "home" },
-  { to: "/templates", label: "Templates", icon: Palette, ocid: "templates" },
+  {
+    to: "/templates",
+    label: "Templates",
+    icon: Palette,
+    ocid: "templates",
+  },
   { to: "/wizard", label: "Create", icon: Plus, ocid: "create" },
-  { to: "/campaigns", label: "Campaigns", icon: Mailbox, ocid: "campaigns" },
-  { to: "/dashboard", label: "Account", icon: UserRound, ocid: "account" },
+  {
+    to: "/campaigns",
+    label: "Campaigns",
+    icon: Mailbox,
+    ocid: "campaigns",
+  },
+  {
+    to: "/dashboard",
+    label: "Account",
+    icon: UserRound,
+    ocid: "account",
+  },
 ] as const;
 
 function isActive(path: string, to: string): boolean {
@@ -23,8 +39,8 @@ function isActive(path: string, to: string): boolean {
  * Phone and tablet tab bar (below `lg`, where the header nav collapses): a
  * floating glass capsule dock (95 % opaque, the header pill's glass) over the
  * five slots, --dock-gap above the bottom edge (home-indicator inset
- * included) and at most 28rem wide. The active tab
- * is an enclosed pill (icon and label); Create is a raised glossy indigo
+ * included) and at most 28rem wide. Each tab's icon is an indigo app-style
+ * tile (NavIconTile); the active one is ringed with a bold label. Create is a raised glossy indigo
  * button rising out of the dock's middle, clear of the Stampy launcher in the
  * right corner. `--bottom-nav-h` in index.css is the dock's whole footprint
  * (height + gap + inset), and everything else anchored to the bottom (Stampy,
@@ -73,11 +89,9 @@ export function BottomNav() {
                 aria-label={create ? "Create a campaign" : undefined}
                 className={cn(
                   "group flex min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-full border pb-[7px] text-[10px] font-semibold tracking-tight transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/80 min-[390px]:text-[11px]",
-                  create
-                    ? "border-transparent"
-                    : active
-                      ? "border-primary/30 bg-primary/15 font-bold dark:bg-primary/20"
-                      : "border-transparent hover:bg-muted/70",
+                  "border-transparent",
+                  !create && active && "font-bold",
+                  !create && !active && "hover:bg-muted/70",
                 )}
                 data-ocid={`bottom_nav.${ocid}.link`}
               >
@@ -92,17 +106,11 @@ export function BottomNav() {
                     <Icon className="size-7" strokeWidth={2.6} />
                   </span>
                 ) : (
-                  <span
-                    className={cn(
-                      "relative flex h-6 shrink-0 items-center justify-center",
-                      active
-                        ? "text-primary"
-                        : "text-muted-foreground group-hover:text-foreground",
-                    )}
-                  >
-                    <Icon
-                      className="size-[22px]"
-                      strokeWidth={active ? 2.4 : 2}
+                  <span className="relative flex shrink-0 items-center justify-center">
+                    <NavIconTile
+                      icon={Icon}
+                      active={active}
+                      className="size-8 motion-safe:group-hover:-translate-y-px"
                     />
                     {badge > 0 ? (
                       <span
@@ -120,7 +128,7 @@ export function BottomNav() {
                     // shrink-0: under the raised Create button the column
                     // overflows, and a shrinking label would collapse to 0.
                     "max-w-full shrink-0 truncate leading-tight",
-                    active ? "text-primary-ink" : "text-muted-foreground",
+                    active ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {label}
