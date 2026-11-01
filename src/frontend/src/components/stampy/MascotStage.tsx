@@ -66,8 +66,8 @@ export interface MascotStageProps {
 }
 
 /**
- * Stampy on stage: the glossy 3D mascot (`.mascot-3d`: depth, rim glow and,
- * with <MascotGloss /> mounted, the specular sheen) standing in a soft indigo
+ * Stampy on stage: the 3D render (`.mascot-3d`: depth and rim glow) standing
+ * in a soft indigo
  * spotlight, with a pool of light and a contact shadow on the floor and a
  * gentle idle float. For empty states and success screens; it works on the
  * page and on cards in both themes (every colour is a theme token:

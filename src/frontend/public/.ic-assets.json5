@@ -63,6 +63,14 @@
     },
   },
   {
+    // The 3D Stampy renders, imported from src/assets/stampy, so Vite
+    // fingerprints them like the bundles.
+    match: "assets/stampy-*.webp",
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  },
+  {
     // Self-hosted fonts keep fixed names (they come from public/), so cache
     // them for a week rather than forever.
     match: "assets/fonts/**/*",

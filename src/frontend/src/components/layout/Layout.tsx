@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MascotGloss } from "@/components/ui/mascot-gloss";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAccountSync } from "@/hooks/use-account";
@@ -363,8 +362,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = NAV.filter((item) => item.to !== "/admin" || isAdmin);
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* The hidden lighting filter behind `.mascot-3d` (glossy Stampy). */}
-      <MascotGloss />
       {/* The header is a transparent sticky band (its footprint is
           --header-h + 4px + the notch inset) holding a floating glass pill.
           Nothing between it and the viewport sets transform, filter, contain
@@ -398,7 +395,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               >
                 {/* Stampy is the brand mark: his head in an indigo-ringed disc. */}
                 <span className="flex size-[clamp(2.5rem,2.1rem+0.9vw,3.25rem)] items-end justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/30">
-                  <StampyMark className="h-[88%] w-[104%]" />
+                  <StampyMark className="size-[118%] max-w-none shrink-0 translate-y-[9%]" />
                 </span>
                 <span className="font-display text-[clamp(1.125rem,0.95rem+0.55vw,1.5rem)] font-extrabold whitespace-nowrap tracking-tight text-primary">
                   {BRAND.name}

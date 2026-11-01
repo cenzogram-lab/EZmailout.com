@@ -22,6 +22,7 @@ import { keys, fakePrintPartner, campaignInput, printPdf } from "./fixtures.mjs"
 const OUT = process.env.UI_OUT ?? new URL("./.ui/", import.meta.url).pathname;
 const DIST = process.env.E2E_DIST ?? new URL("./.e2e/dist/", import.meta.url).pathname;
 const WIDTHS = (process.env.UI_VIEWPORTS ?? "360,390,768,1440").split(",").map(Number);
+// UI_DPR=2 takes the screenshots at twice the density (sharper on a phone).
 // The theme switch keeps the choice under this key ("light" | "dark").
 const THEMES = (process.env.UI_THEMES ?? "light,dark").split(",");
 const only = process.argv.slice(2);
@@ -170,7 +171,7 @@ let failed = 0;
 try {
   for (const theme of THEMES) for (const width of WIDTHS) {
     for (const route of ROUTES) {
-      const ctx = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 900 }, deviceScaleFactor: 1, hasTouch: width < 1024, isMobile: width < 768 });
+      const ctx = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 900 }, deviceScaleFactor: Number(process.env.UI_DPR ?? 1), hasTouch: width < 1024, isMobile: width < 768 });
       await ctx.addInitScript(([cfg, t]) => { localStorage.setItem("ezlive", JSON.stringify(cfg)); localStorage.setItem("ezmailout_theme", t); }, [{ host: `http://127.0.0.1:${gatewayPort}`, canisterId: env.canisterId.toText(), seed: 7 }, theme]);
       await ctx.route((u) => !u.href.startsWith(site) && !u.href.startsWith(`http://127.0.0.1:${gatewayPort}`), (r) => r.abort());
       const page = await ctx.newPage();

@@ -596,15 +596,10 @@
     box-shadow: var(--glass-shadow);
   }
 
-  /* Glossy, rubbery 3D Stampy: depth shadow, soft rim and brand glow, plus
-     (once <MascotGloss /> is mounted, which sets html[data-mascot-gloss])
-     an SVG lighting filter that puffs up the light parts with a specular
-     sheen and shades the silhouette. Put it on the Stampy <svg>. */
+  /* The 3D Stampy renders standing off the surface: depth shadow, soft rim
+     and brand glow. Put it on a Stampy component. */
   .mascot-3d {
     filter: var(--mascot-depth);
-  }
-  html[data-mascot-gloss] .mascot-3d {
-    filter: url(#ez-mascot-gloss) var(--mascot-depth);
   }
   /* A soft spotlight and floor shadow behind a staged mascot (success
      screens, empty states). Wrap the mascot:
@@ -842,19 +837,17 @@ html[data-soft-keyboard] .hide-with-keyboard {
 .stampy-peek-button {
   width: var(--peek-w);
 }
+/* The head render is square, its chin 15 % above the bottom edge; the peek
+ * lowers it (StampyPeek) so the pill's edge hides the chin. */
 .stampy-peek-mark {
-  width: calc(var(--peek-w) * 0.87);
-  height: calc(var(--peek-w) * 0.767);
+  width: var(--peek-w);
+  height: var(--peek-w);
 }
-/* The glossy 3D Stampy (MascotGloss) in the peek: the lighting only, no drop
- * shadow or halo, which the peek's clipped box would cut off square. */
-html[data-mascot-gloss] .stampy-peek-mark {
-  filter: url(#ez-mascot-gloss);
-}
+/* The paw render, its lower half below the pill's edge (clipped). */
 .stampy-peek-paw {
-  width: calc(var(--peek-w) * 0.31);
-  height: auto;
-  bottom: 0;
+  width: calc(var(--peek-w) * 0.32);
+  height: calc(var(--peek-w) * 0.32);
+  bottom: calc(var(--peek-w) * -0.13);
 }
 .stampy-peek-paw[data-side="left"] {
   left: calc(var(--peek-w) * 0.03);

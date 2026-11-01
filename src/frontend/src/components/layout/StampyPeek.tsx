@@ -1,3 +1,4 @@
+import pawRender from "@/assets/stampy/stampy-paw.webp";
 import { StampyMark } from "@/components/stampy";
 import { openStampy } from "@/lib/stampyChat";
 import { cn } from "@/lib/utils";
@@ -6,8 +7,8 @@ import { cn } from "@/lib/utils";
  * Stampy peeking up from behind the header pill's bottom edge, paws on the
  * airmail stripe. He lives inside the floating header pill (a flex item of its
  * row), so he is on every page without ever covering page content; the pill's
- * bottom edge hides his chin, and with <MascotGloss /> mounted he gets the
- * glossy 3D lighting (`.stampy-peek-mark` in index.css). Tapping him
+ * bottom edge hides his chin. Head and paws are the 3D renders
+ * (`scripts/stampy3d`, poses `head` and `paw`). Tapping him
  * opens the Stampy panel. His size is fluid (`--peek-w` in index.css): it
  * follows the viewport from phones to large desktops with no breakpoint
  * jumps, and he rises a little on hover only where a pointer can hover.
@@ -29,7 +30,7 @@ export function StampyPeek({ className }: { className?: string }) {
         aria-hidden
         className="stampy-peek absolute inset-x-0 bottom-0 flex justify-center"
       >
-        <span className="block translate-y-[22%] transition-transform duration-300 ease-out group-focus-visible:translate-y-[10%] [@media(hover:hover)]:group-hover:translate-y-[10%]">
+        <span className="block translate-y-[30%] transition-transform duration-300 ease-out group-focus-visible:translate-y-[18%] [@media(hover:hover)]:group-hover:translate-y-[18%]">
           <StampyMark className="stampy-peek-mark" />
         </span>
       </span>
@@ -40,27 +41,17 @@ export function StampyPeek({ className }: { className?: string }) {
   );
 }
 
-/** One white paw over the edge, with two toe lines like the illustrations. */
+/** One 3D paw over the edge (the render, mirrored for the right paw). */
 function Paw({ side }: { side: "left" | "right" }) {
   return (
-    <svg
+    <img
+      src={pawRender}
+      alt=""
       aria-hidden="true"
-      viewBox="0 0 22 13"
+      draggable={false}
+      decoding="async"
       data-side={side}
-      className="stampy-peek-paw absolute"
-    >
-      <path
-        d="M2 13 V8 A6.5 6.5 0 0 1 8.5 1.5 H13.5 A6.5 6.5 0 0 1 20 8 V13"
-        className="fill-white stroke-navy"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8.5 5.5 V9 M13.5 5.5 V9"
-        className="stroke-navy"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
+      className="stampy-peek-paw pointer-events-none absolute select-none"
+    />
   );
 }
