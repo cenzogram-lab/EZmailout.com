@@ -92,10 +92,10 @@ const ROUTES = [
   { name: "wizard-3-studio", go: useTemplate },
   // A selected layer turned 30°: its outline, corner handles, rotate handle
   // and the selection toolbar placed clear of them.
-  { name: "wizard-3-rotate", go: useTemplate, after: async (page) => { const el = page.locator('[data-ocid^="canvas.editor.element.logo"], [data-ocid^="canvas.editor.element.qr"]').last(); await el.scrollIntoViewIfNeeded().catch(() => {}); await el.click({ force: true }).catch(() => {}); await page.keyboard.press("]"); await page.keyboard.press("]"); await page.waitForTimeout(400); } },
+  { name: "wizard-3-rotate", go: useTemplate, after: async (page) => { const el = page.locator('[data-ocid^="canvas.editor.element.logo"], [data-ocid^="canvas.editor.element.qr"]').last(); await el.scrollIntoViewIfNeeded().catch(() => {}); await el.click({ force: true }).catch(() => {}); await page.keyboard.press("]"); await page.keyboard.press("]"); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(400); } },
   { name: "wizard-2", path: "/wizard?step=2", prepare: useTemplate },
   // The CSV tab with the typed-address form open and a refused ZIP showing.
-  { name: "wizard-2-csv", path: "/wizard?step=2", prepare: useTemplate, after: async (page) => { await page.click('[data-ocid="audience.tab.csv"]').catch(() => {}); await page.click('[data-ocid="audience.csv.manual.panel"] summary').catch(() => {}); await page.fill('[data-ocid="audience.csv.manual.zip.input"]', "123").catch(() => {}); await page.click('[data-ocid="audience.csv.manual.add.button"]').catch(() => {}); await page.waitForTimeout(400); } },
+  { name: "wizard-2-csv", path: "/wizard?step=2", prepare: useTemplate, after: async (page) => { await page.click('[data-ocid="audience.tab.csv"]').catch(() => {}); await page.click('[data-ocid="audience.csv.manual.panel"] summary').catch(() => {}); await page.fill('[data-ocid="audience.csv.manual.zip.input"]', "123").catch(() => {}); await page.click('[data-ocid="audience.csv.manual.add.button"]').catch(() => {}); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(400); } },
   { name: "wizard-4", path: "/wizard?step=4", prepare: useTemplate },
   { name: "campaigns", path: "/campaigns" },
   { name: "campaign-sent", path: `/campaigns/${sent}` },
