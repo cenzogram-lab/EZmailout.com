@@ -22,6 +22,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   useSearch,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -115,6 +116,32 @@ const routes = [
     getParentRoute: () => rootRoute,
     path: "/ref/$code",
     component: ReferralLandingPage,
+  }),
+  // Legal pages: their own lazy chunks (index-TermsOfService-*.js and so on),
+  // fetched only when opened.
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/terms",
+    component: lazyRouteComponent(
+      () => import("@/pages/legal/TermsOfService"),
+      "TermsOfService",
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/privacy",
+    component: lazyRouteComponent(
+      () => import("@/pages/legal/PrivacyPolicy"),
+      "PrivacyPolicy",
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/cookies",
+    component: lazyRouteComponent(
+      () => import("@/pages/legal/CookiePolicy"),
+      "CookiePolicy",
+    ),
   }),
 ];
 

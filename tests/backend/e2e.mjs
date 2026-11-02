@@ -59,7 +59,7 @@ const web = createServer((req, res) => {
 const site = `http://127.0.0.1:${web.address().port}`;
 const browser = await chromium.launch(process.env.PLAYWRIGHT_BROWSERS_PATH ? { executablePath: `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium` } : {});
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-await ctx.addInitScript((cfg) => localStorage.setItem("ezlive", JSON.stringify(cfg)), { host: `http://127.0.0.1:${gatewayPort}`, canisterId: env.canisterId.toText(), seed: 7 });
+await ctx.addInitScript((cfg) => { localStorage.setItem("ezlive", JSON.stringify(cfg)); localStorage.setItem("ezmailout_cookie_consent", "true"); }, { host: `http://127.0.0.1:${gatewayPort}`, canisterId: env.canisterId.toText(), seed: 7 });
 await ctx.route((u) => !u.href.startsWith(site) && !u.href.startsWith(`http://127.0.0.1:${gatewayPort}`), (r) => r.abort());
 const page = await ctx.newPage();
 const pageErrors = [];
@@ -299,7 +299,7 @@ if (done) {
   const port2 = await env.pic.makeLive();
   const b2 = await chromium.launch(process.env.PLAYWRIGHT_BROWSERS_PATH ? { executablePath: `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium` } : {});
   const c2 = await b2.newContext({ viewport: { width: 1440, height: 900 } });
-  await c2.addInitScript((cfg) => localStorage.setItem("ezlive", JSON.stringify(cfg)), { host: `http://127.0.0.1:${port2}`, canisterId: env.canisterId.toText(), seed: 7 });
+  await c2.addInitScript((cfg) => { localStorage.setItem("ezlive", JSON.stringify(cfg)); localStorage.setItem("ezmailout_cookie_consent", "true"); }, { host: `http://127.0.0.1:${port2}`, canisterId: env.canisterId.toText(), seed: 7 });
   const p2 = await c2.newPage();
   await p2.goto(`${site}/campaigns/${campaignId}`, { waitUntil: "networkidle" });
   await p2.waitForTimeout(2500);

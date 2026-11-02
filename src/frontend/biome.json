@@ -69,6 +69,24 @@
           }
         }
       }
+    },
+    {
+      "include": [
+        "src/pages/legal/**"
+      ],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useJsxKeyInIterable": "off"
+          },
+          "complexity": {
+            "noUselessFragments": "off"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
     }
   ]
 }

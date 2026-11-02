@@ -103,6 +103,12 @@ const ROUTES = [
   { name: "admin", path: "/admin" },
   { name: "referral", path: `/ref/${code}` },
   { name: "not-found", path: "/no-such-page" },
+  // Legal pages: their copy (inside <main>) must use no hyphens or dashes.
+  { name: "legal-terms", path: "/terms", noDashes: true },
+  { name: "legal-privacy", path: "/privacy", noDashes: true },
+  { name: "legal-cookies", path: "/cookies", noDashes: true },
+  // The cookie notice, shown because this view starts without consent.
+  { name: "cookie-banner", path: "/", showCookieBanner: true },
   { name: "stampy-open", path: "/dashboard", after: async (page) => { await page.click('[data-ocid="stampy.launcher"], [data-ocid="chat.launcher.button"], button[aria-label*="Stampy" i]').catch(() => {}); await page.waitForTimeout(600); } },
 ].filter((r) => !only.length || only.includes(r.name));
 
@@ -177,7 +183,9 @@ try {
   for (const theme of THEMES) for (const width of WIDTHS) {
     for (const route of ROUTES) {
       const ctx = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 900 }, deviceScaleFactor: Number(process.env.UI_DPR ?? 1), hasTouch: width < 1024, isMobile: width < 768 });
-      await ctx.addInitScript(([cfg, t]) => { localStorage.setItem("ezlive", JSON.stringify(cfg)); localStorage.setItem("ezmailout_theme", t); }, [{ host: `http://127.0.0.1:${gatewayPort}`, canisterId: env.canisterId.toText(), seed: 7 }, theme]);
+      // Every view but the banner's starts with the cookie notice accepted, so
+      // it never sits over the page being measured.
+      await ctx.addInitScript(([cfg, t, consent]) => { localStorage.setItem("ezlive", JSON.stringify(cfg)); localStorage.setItem("ezmailout_theme", t); if (consent) localStorage.setItem("ezmailout_cookie_consent", "true"); else localStorage.removeItem("ezmailout_cookie_consent"); }, [{ host: `http://127.0.0.1:${gatewayPort}`, canisterId: env.canisterId.toText(), seed: 7 }, theme, !route.showCookieBanner]);
       await ctx.route((u) => !u.href.startsWith(site) && !u.href.startsWith(`http://127.0.0.1:${gatewayPort}`), (r) => r.abort());
       const page = await ctx.newPage();
       const errors = [];
@@ -189,14 +197,17 @@ try {
         await page.waitForTimeout(900);
         if (route.after) await route.after(page);
         const found = await page.evaluate(inspect);
+        // House style for legal copy: no hyphens, en dashes or em dashes.
+        found.dashes = route.noDashes ? await page.evaluate(() => (document.querySelector("main")?.innerText.match(/\S*[-\u2010-\u2015\u2212]\S*/g) ?? []).slice(0, 12)) : [];
+        if (route.showCookieBanner) found.cookieBanner = await page.isVisible('[data-ocid="cookie.banner"]');
         found.themeApplied = await page.evaluate(() => (document.documentElement.classList.contains("dark") ? "dark" : "light"));
         if (theme === "light") { found.lightPanels = []; found.lightPanelCount = 0; }
         const file = `${route.name}-${theme}-${width}.png`;
         await page.screenshot({ path: `${OUT}${file}`, fullPage: true });
-        const bad = found.scrollWidth > found.vw + 1 || found.overflow.length > 0 || found.banned.length > 0 || (process.env.UI_STRICT === "1" && (found.lowContrastCount > 0 || found.lightPanelCount > 0 || found.themeApplied !== theme));
+        const bad = found.scrollWidth > found.vw + 1 || found.overflow.length > 0 || found.banned.length > 0 || found.dashes.length > 0 || found.cookieBanner === false || (process.env.UI_STRICT === "1" && (found.lowContrastCount > 0 || found.lightPanelCount > 0 || found.themeApplied !== theme));
         if (bad) failed++;
         report.push({ route: route.name, theme, width, file, errors, ...found });
-        console.log(`${bad ? "FAIL" : "ok  "} ${route.name} ${theme}${found.themeApplied !== theme ? `(shows ${found.themeApplied})` : ""} @${width}: overflow ${found.scrollWidth > found.vw + 1 ? `${found.scrollWidth}px` : "none"}${found.overflow.length ? ` (${found.overflow.length} el)` : ""} · contrast ${found.lowContrastCount} · light panels ${found.lightPanelCount}${found.banned.length ? ` · banned copy: ${[...new Set(found.banned)].join(", ")}` : ""}${errors.length ? ` · page errors ${errors.length}` : ""}`);
+        console.log(`${bad ? "FAIL" : "ok  "} ${route.name} ${theme}${found.themeApplied !== theme ? `(shows ${found.themeApplied})` : ""} @${width}: overflow ${found.scrollWidth > found.vw + 1 ? `${found.scrollWidth}px` : "none"}${found.overflow.length ? ` (${found.overflow.length} el)` : ""} · contrast ${found.lowContrastCount} · light panels ${found.lightPanelCount}${found.banned.length ? ` · banned copy: ${[...new Set(found.banned)].join(", ")}` : ""}${found.dashes.length ? ` · dashes: ${found.dashes.join(" ")}` : ""}${found.cookieBanner === false ? " · cookie notice missing" : ""}${errors.length ? ` · page errors ${errors.length}` : ""}`);
       } catch (e) {
         failed++;
         report.push({ route: route.name, theme, width, error: String(e?.message ?? e), errors });

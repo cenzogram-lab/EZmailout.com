@@ -142,6 +142,30 @@ writeFileSync(csvFile, `name,address_line1,address_line2,city,state,zip_code\n${
 let launched = false;
 let launchLog = null;
 try {
+  step("Cookie notice");
+  await page.goto(`${site}/`, { waitUntil: "networkidle" });
+  check(await page.isVisible(q("cookie.banner")), "a first visit shows the cookie notice");
+  const footerLinks = await page.evaluate(() => [...document.querySelectorAll('[data-ocid="footer.legal"] a')].map((a) => a.getAttribute("href")));
+  check(ser(footerLinks) === ser(["/terms", "/privacy", "/cookies"]), "the footer links to the Terms, Privacy and Cookie pages", footerLinks);
+  await page.click(q("cookie.banner.customize"));
+  await page.waitForSelector(q("legal.cookies.choices"), { timeout: 15000 });
+  check(page.url().endsWith("/cookies#choices"), "Customize opens the Cookie Policy at Your choices", page.url());
+  await page.click(q("legal.cookies.accept.button"));
+  await page.waitForTimeout(300);
+  check(!(await page.isVisible(q("cookie.banner"))), "accepting on the Cookie Policy hides the notice");
+  await page.click(q("legal.cookies.reset.button"));
+  await page.waitForTimeout(300);
+  check(await page.isVisible(q("cookie.banner")), "Show the notice again brings it back");
+  await page.click(q("cookie.banner.accept"));
+  await page.reload({ waitUntil: "networkidle" });
+  check(!(await page.isVisible(q("cookie.banner"))) && (await page.evaluate(() => localStorage.getItem("ezmailout_cookie_consent"))) === "true", "Accept all is remembered on this device (ezmailout_cookie_consent = true)");
+  for (const [path, title] of [["/terms", "Terms of Service"], ["/privacy", "Privacy Policy"], ["/cookies", "Cookie Policy"]]) {
+    await page.goto(`${site}${path}`, { waitUntil: "networkidle" });
+    const h1 = await page.textContent("main h1").catch(() => null);
+    const updated = await page.textContent(`[data-ocid$=".updated"]`).catch(() => "");
+    check(h1 === title && /Last updated \w+ \d+, \d{4}/.test(updated ?? ""), `${path} renders ${title} with its last updated date`, { h1, updated });
+  }
+
   step("Step 1: a 4×6 postcard");
   await page.goto(`${site}/wizard`, { waitUntil: "networkidle" });
   await page.click(q("catalog.category.postcards.button"));

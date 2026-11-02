@@ -1,5 +1,6 @@
 import { CreditTopUpModal } from "@/components/billing/CreditTopUpModal";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { CookieBanner } from "@/components/layout/CookieBanner";
 import { StampyPeek } from "@/components/layout/StampyPeek";
 import { StampyMark } from "@/components/stampy";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,13 @@ function NavLink({
     </Link>
   );
 }
+
+/** The legal pages, linked from the footer and the phone menu. */
+const LEGAL_LINKS = [
+  { to: "/terms", label: "Terms of Service", ocid: "terms" },
+  { to: "/privacy", label: "Privacy Policy", ocid: "privacy" },
+  { to: "/cookies", label: "Cookie Policy", ocid: "cookies" },
+] as const;
 
 /** Mobile menu row: a 48 px row with the icon in an indigo tile. */
 function MenuLink({
@@ -329,7 +337,13 @@ function pageTitle(pathname: string): string {
               ? "Dashboard"
               : pathname.startsWith("/ref/")
                 ? "You're invited"
-                : null;
+                : pathname === "/terms"
+                  ? "Terms of Service"
+                  : pathname === "/privacy"
+                    ? "Privacy Policy"
+                    : pathname === "/cookies"
+                      ? "Cookie Policy"
+                      : null;
   return page ? `${page} · EZmailout` : SITE_TITLE;
 }
 
@@ -490,6 +504,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 className="px-2"
                 data-ocid="nav.mobile.theme"
               />
+              <div aria-hidden className="mx-2 my-1.5 h-px bg-hairline" />
+              <nav aria-label="Legal" data-ocid="nav.mobile.legal">
+                <ul className="flex flex-wrap gap-x-1 gap-y-1 px-1 pb-1">
+                  {LEGAL_LINKS.map((l) => (
+                    <li key={l.to}>
+                      <Link
+                        to={l.to}
+                        onClick={() => setOpen(false)}
+                        className="inline-flex min-h-11 items-center rounded-xl px-2 text-sm font-medium text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
+                        data-ocid={`nav.mobile.${l.ocid}.link`}
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
             </div>
           </div>
         )}
@@ -523,7 +554,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
               it has always read "V2.0.0". */}
           <span className="meta-mono uppercase">v2.0.0</span>
         </div>
+        <nav
+          aria-label="Legal"
+          className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8"
+          data-ocid="footer.legal"
+        >
+          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm sm:justify-start">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.to}>
+                <Link
+                  to={l.to}
+                  className="inline-flex min-h-6 items-center text-muted-foreground underline-offset-4 transition-smooth hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/80"
+                  data-ocid={`footer.${l.ocid}.link`}
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </footer>
+      <CookieBanner />
       <CreditTopUpModal />
       <BottomNav />
       {/* Lifted above the Stampy launcher, which owns the bottom-right corner,
