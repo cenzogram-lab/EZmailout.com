@@ -2,6 +2,7 @@ import type { CanvasSide, CanvasState, ReturnAddress } from "@/backend";
 import { QrMode } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { rotationOf, turnedBounds } from "@/lib/elementRotation";
 import { formatNumber } from "@/lib/format";
 import { canvasDims, safeRect } from "@/lib/printSpec";
 import { normalizeDestinationUrl, normalizeRedirectUrl } from "@/lib/qr";
@@ -77,6 +78,19 @@ function within(el: Rect, bounds: Rect): boolean {
   );
 }
 
+/** What an image or shape covers on the sheet, turned. */
+function layerRect(l: CanvasSide["logos"][number]): Rect {
+  return turnedBounds(
+    { x: l.x, y: l.y, w: l.width, h: l.height },
+    rotationOf(l),
+  );
+}
+
+/** What a QR code covers on the sheet, turned. */
+function qrRect(q: CanvasSide["qrCodes"][number]): Rect {
+  return turnedBounds({ x: q.x, y: q.y, w: q.size, h: q.size }, rotationOf(q));
+}
+
 export function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
   const ids: string[] = [];
   for (const t of side.textBlocks) {
@@ -87,12 +101,11 @@ export function outOfBoundsIds(side: CanvasSide, bounds: Rect): string[] {
     // Template art that runs to the trim on purpose (a photo or band that
     // bleeds) carries `data-ez-bleed`; uploads never do.
     if (l.url.includes("data-ez-bleed")) continue;
-    if (!within({ x: l.x, y: l.y, w: l.width, h: l.height }, bounds))
-      ids.push(l.id);
+    // A turned layer is judged by what it covers once turned.
+    if (!within(layerRect(l), bounds)) ids.push(l.id);
   }
   for (const q of side.qrCodes) {
-    if (!within({ x: q.x, y: q.y, w: q.size, h: q.size }, bounds))
-      ids.push(q.id);
+    if (!within(qrRect(q), bounds)) ids.push(q.id);
   }
   return ids;
 }
@@ -118,12 +131,11 @@ function zoneOccupants(
   for (const t of side.textBlocks)
     if (overlaps(textInkRect(t), zone)) hard.push(`“${clip(t.text)}”`);
   for (const q of side.qrCodes)
-    if (overlaps({ x: q.x, y: q.y, w: q.size, h: q.size }, zone))
-      hard.push("a QR code");
+    if (overlaps(qrRect(q), zone)) hard.push("a QR code");
   let art = 0;
   for (const l of side.logos) {
     if (/data-ez-(bleed|zone)/.test(l.url)) continue;
-    if (overlaps({ x: l.x, y: l.y, w: l.width, h: l.height }, zone)) art++;
+    if (overlaps(layerRect(l), zone)) art++;
   }
   return { hard, art };
 }

@@ -1,11 +1,12 @@
 import { clampToCanvas } from "@/lib/canvas";
+import { snapRotation } from "@/lib/elementRotation";
 import type { LayoutDims } from "@/lib/printSpec";
 import type { CanvasSideKey } from "@/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ResizeCorner = "nw" | "ne" | "sw" | "se";
 
-export type InteractionKind = "drag" | "resize";
+export type InteractionKind = "drag" | "resize" | "rotate";
 
 /** Geometry of the element being dragged or resized, in design pixels. */
 export interface ElementBox {
@@ -18,7 +19,7 @@ export interface ElementBox {
   keepAspect?: boolean;
   /** Smallest allowed width/height in design pixels. */
   minSize?: number;
-  /** Turn about the box centre in degrees (text boxes); handles turn with it. */
+  /** Turn about the box centre in degrees; the handles turn with it. */
   rotation?: number;
 }
 
@@ -36,6 +37,8 @@ export interface CanvasInteractionOptions {
   dims: LayoutDims;
   onMove: (side: CanvasSideKey, id: string, x: number, y: number) => void;
   onResize: (side: CanvasSideKey, id: string, box: ResizeResult) => void;
+  /** A rotation drag: the layer's new turn in degrees. */
+  onRotate?: (side: CanvasSideKey, id: string, deg: number) => void;
   onInteractionStart?: (id: string, kind: InteractionKind) => void;
   onInteractionEnd?: (
     id: string,
@@ -51,9 +54,20 @@ export interface CanvasInteractions {
     box: ElementBox,
     corner: ResizeCorner,
   ) => void;
+  /**
+   * Turns the layer about its centre, `center` in client (screen) pixels:
+   * the pointer's angle around it, from where the drag began, is added to
+   * the layer's turn. Shift steps by 15°.
+   */
+  startRotate: (
+    event: React.PointerEvent,
+    box: ElementBox,
+    center: { x: number; y: number },
+  ) => void;
   activeId: string | null;
   isDragging: boolean;
   isResizing: boolean;
+  isRotating: boolean;
 }
 
 interface Session {
@@ -65,6 +79,9 @@ interface Session {
   startClientY: number;
   initial: ElementBox;
   moved: boolean;
+  /** Rotation: the centre in client pixels and the pointer's start angle. */
+  center?: { x: number; y: number };
+  startAngle?: number;
 }
 
 type PointerListener = (event: PointerEvent) => void;
@@ -145,8 +162,18 @@ function computeTurnedResize(
   const localDy = -dx * sin + dy * cos;
   const signX = corner === "ne" || corner === "se" ? 1 : -1;
   const signY = corner === "sw" || corner === "se" ? 1 : -1;
-  const width = Math.max(min, initial.width + signX * localDx);
-  const height = Math.max(min, initial.height + signY * localDy);
+  let width = Math.max(min, initial.width + signX * localDx);
+  let height = Math.max(min, initial.height + signY * localDy);
+  if (initial.keepAspect && initial.width > 0 && initial.height > 0) {
+    // Images and QR codes keep their proportions, as when unturned.
+    const byWidth = width / initial.width;
+    const byHeight = height / initial.height;
+    let factor =
+      Math.abs(byWidth - 1) >= Math.abs(byHeight - 1) ? byWidth : byHeight;
+    factor = Math.max(factor, min / Math.min(initial.width, initial.height));
+    width = initial.width * factor;
+    height = initial.height * factor;
+  }
   // The anchored corner on screen: centre + R·(its offset in the box frame).
   const turned = (ox: number, oy: number) => ({
     x: ox * cos - oy * sin,
@@ -217,6 +244,23 @@ export function useCanvasInteractions(
     const dx = screenDx / safeScale;
     const dy = screenDy / safeScale;
 
+    if (session.kind === "rotate") {
+      const { center, startAngle } = session;
+      if (!center || startAngle === undefined) return;
+      const angle =
+        (Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180) /
+        Math.PI;
+      optionsRef.current.onRotate?.(
+        side,
+        session.id,
+        snapRotation(
+          (session.initial.rotation ?? 0) + angle - startAngle,
+          event.shiftKey,
+        ),
+      );
+      return;
+    }
+
     if (session.kind === "drag") {
       const { x, y } = clampToCanvas(
         session.initial.x + dx,
@@ -256,6 +300,7 @@ export function useCanvasInteractions(
       box: ElementBox,
       kind: InteractionKind,
       corner: ResizeCorner,
+      center?: { x: number; y: number },
     ) => {
       if (event.pointerType === "mouse" && event.button !== 0) return;
       event.preventDefault();
@@ -271,6 +316,12 @@ export function useCanvasInteractions(
         startClientY: event.clientY,
         initial: { ...box },
         moved: false,
+        center,
+        startAngle: center
+          ? (Math.atan2(event.clientY - center.y, event.clientX - center.x) *
+              180) /
+            Math.PI
+          : undefined,
       };
       try {
         (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
@@ -301,6 +352,17 @@ export function useCanvasInteractions(
     [begin],
   );
 
+  const startRotate = useCallback(
+    (
+      event: React.PointerEvent,
+      box: ElementBox,
+      center: { x: number; y: number },
+    ) => {
+      begin(event, box, "rotate", "se", center);
+    },
+    [begin],
+  );
+
   useEffect(() => {
     return () => {
       sessionRef.current = null;
@@ -311,8 +373,10 @@ export function useCanvasInteractions(
   return {
     startDrag,
     startResize,
+    startRotate,
     activeId: active?.id ?? null,
     isDragging: active?.kind === "drag",
     isResizing: active?.kind === "resize",
+    isRotating: active?.kind === "rotate",
   };
 }

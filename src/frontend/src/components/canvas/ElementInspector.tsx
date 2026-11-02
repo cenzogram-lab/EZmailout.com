@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { getSide } from "@/lib/canvas";
 import { toDataUrl } from "@/lib/download";
+import { rotationOf } from "@/lib/elementRotation";
 import { normalizeDestinationUrl } from "@/lib/qr";
 import {
   isShapeUrl,
@@ -37,6 +38,8 @@ import {
   AlignRight,
   Italic,
   MousePointerSquareDashed,
+  RotateCcw,
+  RotateCw,
   Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -134,6 +137,71 @@ function NumberField({
   );
 }
 
+/**
+ * A layer's turn: degrees (−180 to 180, about its centre), a quarter turn
+ * either way and a reset. The canvas's rotate handle and `[` / `]` do the
+ * same.
+ */
+function RotationControl({
+  value,
+  onChange,
+  ocid,
+}: {
+  value: number;
+  onChange: (deg: number) => void;
+  ocid: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className={FIELD_LABEL}>Rotation</Label>
+      <div className="flex items-center gap-1.5">
+        <NumberInput
+          value={value}
+          min={-180}
+          max={180}
+          onChange={onChange}
+          className="h-8 w-20 px-2"
+          ocid={`${ocid}`}
+        />
+        <span className="text-xs text-muted-foreground">°</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-8"
+          aria-label="Rotate 90° left"
+          onClick={() => onChange(value - 90)}
+          data-ocid={`${ocid}.left`}
+        >
+          <RotateCcw className="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-8"
+          aria-label="Rotate 90° right"
+          onClick={() => onChange(value + 90)}
+          data-ocid={`${ocid}.right`}
+        >
+          <RotateCw className="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
+          disabled={value === 0}
+          onClick={() => onChange(0)}
+          data-ocid={`${ocid}.reset`}
+        >
+          Reset
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Property editor for the selected element on the active side. */
 export function ElementInspector() {
   const canvas = useWizardStore((s) => s.canvas);
@@ -142,6 +210,7 @@ export function ElementInspector() {
   const updateTextBlock = useWizardStore((s) => s.updateTextBlock);
   const updateLogo = useWizardStore((s) => s.updateLogo);
   const updateQrCode = useWizardStore((s) => s.updateQrCode);
+  const setElementRotation = useWizardStore((s) => s.setElementRotation);
   const removeElement = useWizardStore((s) => s.removeElement);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const side = getSide(canvas, activeSide);
@@ -366,7 +435,7 @@ export function ElementInspector() {
             value={extras.rotation}
             min={-180}
             onChange={(rotation) =>
-              patch({ rotation: Math.max(-180, Math.min(180, rotation)) })
+              setElementRotation(activeSide, block.id, rotation)
             }
             ocid="canvas.inspector.rotation"
           />
@@ -426,9 +495,14 @@ export function ElementInspector() {
               ocid="canvas.inspector.shape_h"
             />
           </div>
+          <RotationControl
+            value={rotationOf(logo)}
+            onChange={(deg) => setElementRotation(activeSide, logo.id, deg)}
+            ocid="canvas.inspector.shape_rotation"
+          />
           <p className="text-[11px] text-muted-foreground">
             Shapes resize freely from any handle; drag to move, arrow keys
-            nudge.
+            nudge, the round handle (or [ and ]) rotates.
           </p>
         </div>
       );
@@ -506,8 +580,14 @@ export function ElementInspector() {
             ocid="canvas.inspector.logo_y"
           />
         </div>
+        <RotationControl
+          value={rotationOf(logo)}
+          onChange={(deg) => setElementRotation(activeSide, logo.id, deg)}
+          ocid="canvas.inspector.logo_rotation"
+        />
         <p className="text-[11px] text-muted-foreground">
-          Aspect ratio is locked when resizing.
+          Aspect ratio is locked when resizing; the round handle (or [ and ])
+          rotates.
         </p>
       </div>
     );
@@ -621,6 +701,11 @@ export function ElementInspector() {
           ocid="canvas.inspector.qr_y"
         />
       </div>
+      <RotationControl
+        value={rotationOf(qr)}
+        onChange={(deg) => setElementRotation(activeSide, qr.id, deg)}
+        ocid="canvas.inspector.qr_rotation"
+      />
     </div>
   );
 }

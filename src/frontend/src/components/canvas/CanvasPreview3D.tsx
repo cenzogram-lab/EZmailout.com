@@ -8,6 +8,7 @@ import {
 import { PhysicalOverlay } from "@/components/canvas/PhysicalOverlay";
 import { Button } from "@/components/ui/button";
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
+import { rotationOf, rotationTransform } from "@/lib/elementRotation";
 import { type PhysicalTraits, physicalTraitsFor } from "@/lib/physical";
 import type { LayoutDims } from "@/lib/printSpec";
 import { isShapeUrl } from "@/lib/shapes";
@@ -96,6 +97,7 @@ function Face({
                 width: el.data.width,
                 height: el.data.height,
                 zIndex: el.z,
+                transform: rotationTransform(rotationOf(el.data)),
               }}
             />
           );
@@ -110,6 +112,7 @@ function Face({
               width: el.data.size,
               height: el.data.size,
               zIndex: el.z,
+              transform: rotationTransform(rotationOf(el.data)),
             }}
           >
             <QrImage qr={el.data} />

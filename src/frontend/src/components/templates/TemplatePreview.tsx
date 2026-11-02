@@ -5,6 +5,7 @@ import {
   textBlockStyle,
 } from "@/components/canvas/CanvasEditor";
 import { canvasFromTemplate } from "@/lib/canvas";
+import { rotationOf, rotationTransform } from "@/lib/elementRotation";
 import {
   type AddressZone,
   type Orientation,
@@ -142,6 +143,7 @@ export function SidePreview({
                     width: el.data.width,
                     height: el.data.height,
                     zIndex: el.z,
+                    transform: rotationTransform(rotationOf(el.data)),
                   }}
                 />
               );
@@ -156,6 +158,7 @@ export function SidePreview({
                   width: el.data.size,
                   height: el.data.size,
                   zIndex: el.z,
+                  transform: rotationTransform(rotationOf(el.data)),
                 }}
               >
                 <QrImage qr={el.data} />

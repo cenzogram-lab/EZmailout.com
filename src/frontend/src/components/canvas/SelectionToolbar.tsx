@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { rotationOf } from "@/lib/elementRotation";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/store/wizard";
 import type {
@@ -19,6 +20,7 @@ import {
   ArrowUp,
   ArrowUpToLine,
   Copy,
+  RotateCw,
   Trash2,
 } from "lucide-react";
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
@@ -122,6 +124,7 @@ export function SelectionToolbar({
   const bringToFront = useWizardStore((s) => s.bringToFront);
   const sendToBack = useWizardStore((s) => s.sendToBack);
   const duplicateElement = useWizardStore((s) => s.duplicateElement);
+  const setElementRotation = useWizardStore((s) => s.setElementRotation);
   const removeElement = useWizardStore((s) => s.removeElement);
 
   const ref = useRef<HTMLDivElement>(null);
@@ -219,6 +222,21 @@ export function SelectionToolbar({
   );
   const edit = (
     <div className="flex items-center" data-ocid="canvas.edit.group">
+      <IconAction
+        label="Rotate 90°"
+        icon={RotateCw}
+        onClick={() => {
+          const store = useWizardStore.getState();
+          const s2 = store.canvas[side];
+          const layer =
+            s2.textBlocks.find((t) => t.id === id) ??
+            s2.logos.find((l) => l.id === id) ??
+            s2.qrCodes.find((q) => q.id === id);
+          if (layer) setElementRotation(side, id, rotationOf(layer) + 90);
+        }}
+        ocid="canvas.rotate_90"
+        compact={compact}
+      />
       <IconAction
         label="Duplicate"
         icon={Copy}

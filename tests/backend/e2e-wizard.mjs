@@ -15,7 +15,7 @@
 import { createServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { createRequire } from "node:module";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -228,6 +228,66 @@ try {
   check(inProof, "the 3D proof shows the same text on its front face", inProof);
   await shot("04-studio");
 
+  step("Step 3: rotate a shape with its handle, a QR code from the toolbar and keys");
+  const transformOf = (id) => page.evaluate((i) => document.querySelector(`[data-ocid="canvas.editor.element.${i}"]`)?.style.transform ?? "", id);
+  const selectedId = () => page.evaluate(() => document.querySelector('[data-ocid^="canvas.editor.rotate_handle."]')?.getAttribute("data-ocid")?.split(".").pop() ?? null);
+  await page.click(q("canvas.rail.elements"));
+  await page.click(q("canvas.elements.fill.custom"));
+  await page.fill(q("canvas.elements.fill.search"), "#e11d48");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  await page.click(q("canvas.elements.add_rect"));
+  await page.fill(q("canvas.inspector.shape_w"), "300");
+  await page.keyboard.press("Enter");
+  await page.fill(q("canvas.inspector.shape_h"), "40");
+  await page.keyboard.press("Enter");
+  await page.click(q("canvas.align.center"));
+  await page.click(q("canvas.align.middle"));
+  const barId = await selectedId();
+  const bar = page.locator(`[data-ocid="canvas.editor.element.${barId}"]`);
+  const bb = await bar.boundingBox();
+  const hb = await page.locator(q(`canvas.editor.rotate_handle.${barId}`)).boundingBox();
+  const cx = bb.x + bb.width / 2;
+  const cy = bb.y + bb.height / 2;
+  // From above the centre round to its right: a quarter turn clockwise.
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 16; i++) {
+    const a = -Math.PI / 2 + (Math.PI / 2) * (i / 16);
+    await page.mouse.move(cx + 160 * Math.cos(a), cy + 160 * Math.sin(a) + (i === 16 ? 3 : 0));
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  const barTurn = await page.inputValue(q("canvas.inspector.shape_rotation"));
+  check(barTurn === "90" && (await transformOf(barId)).includes("rotate(90deg)"), "dragging the rotate handle a quarter turn turns the shape 90° (snapped to the right angle)", { barTurn, transform: await transformOf(barId) });
+  const proofTurned = await page.evaluate(() => [...document.querySelectorAll('[data-ocid="canvas.preview.face.front"] img')].some((i) => i.style.transform.includes("rotate(90deg)")));
+  check(proofTurned, "the 3D proof shows the shape turned", proofTurned);
+
+  await page.click(q("canvas.rail.qr"));
+  await page.fill(q("canvas.qr.destination_input"), "www.elmstreetbakery.example/open");
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(300);
+  await page.click(q("canvas.qr.add_front"));
+  await page.waitForTimeout(300);
+  const qrId = await selectedId();
+  await page.click(q("canvas.rotate_90"));
+  await page.waitForTimeout(200);
+  check((await transformOf(qrId)).includes("rotate(90deg)") && (await page.inputValue(q("canvas.inspector.qr_rotation"))) === "90", "the toolbar's Rotate 90° turns the QR code", await transformOf(qrId));
+  await page.locator(`[data-ocid="canvas.editor.element.${qrId}"]`).click();
+  await page.keyboard.press("]");
+  await page.waitForTimeout(150);
+  const afterKey = await page.inputValue(q("canvas.inspector.qr_rotation"));
+  await page.keyboard.press("[");
+  await page.waitForTimeout(150);
+  check(afterKey === "105" && (await page.inputValue(q("canvas.inspector.qr_rotation"))) === "90", "] and [ turn the selection 15° either way", { afterKey });
+  await page.click(q("canvas.inspector.qr_rotation.left"));
+  await page.waitForTimeout(150);
+  check((await page.inputValue(q("canvas.inspector.qr_rotation"))) === "0", "the inspector's turn-left button turns it back a quarter", await page.inputValue(q("canvas.inspector.qr_rotation")));
+  await page.click(q("canvas.inspector.qr_rotation.right"));
+  await page.waitForTimeout(150);
+  await shot("04b-rotated");
+
   step("Step 4: the quote at the volume rates, then launch");
   if (!(await page.isVisible(q("review.launch.card")))) {
     await page.click(q("canvas.continue_button")).catch(() => {});
@@ -305,6 +365,23 @@ if (launched) {
   const info = pdf.length ? execFileSync("pdfinfo", [`${OUT}print.pdf`]).toString() : "";
   const size = /Page size:\s+([\d.]+) x ([\d.]+) pts/.exec(info);
   check(/Pages:\s+2\b/.test(info) && size && Math.round(+size[1]) === Math.round((row?.widthInches ?? 0) * 72) && Math.round(+size[2]) === Math.round((row?.heightInches ?? 0) * 72), "step 1: 2 pages on the product's native sheet", { info: info.split("\n").filter((l) => /Pages|Page size/.test(l)) });
+  if (pdf.length) {
+    execFileSync("pdftoppm", ["-r", "60", "-f", "1", "-l", "1", "-png", `${OUT}print.pdf`, `${OUT}print-front`]);
+    const front = readdirSync(OUT).find((f) => f.startsWith("print-front") && f.endsWith(".png"));
+    const px = execFileSync("convert", [join(OUT, front), "-depth", "8", "txt:-"], { maxBuffer: 256 * 1024 * 1024 }).toString();
+    let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+    for (const line of px.split("\n")) {
+      const m = /^(\d+),(\d+):\s*\((\d+),(\d+),(\d+)/.exec(line);
+      if (!m) continue;
+      const [x, y, r, g, b] = m.slice(1).map(Number);
+      if (Math.abs(r - 0xe1) < 40 && Math.abs(g - 0x1d) < 40 && Math.abs(b - 0x48) < 40) {
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      }
+    }
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+    check(maxX >= 0 && h > 5 * w, "the print file draws the shape turned: the 300 × 40 bar prints upright", { w, h });
+  }
   const lists = print.filter((r) => r.method === "POST" && r.url.endsWith("/addressLists"));
   const dispatchList = lists[lists.length - 1];
   const addresses = (dispatchList?.body.match(/<address>/g) ?? []).length;

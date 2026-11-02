@@ -20,6 +20,13 @@ import {
   withSide,
 } from "@/lib/canvas";
 import { draftStorage } from "@/lib/draftStorage";
+import {
+  type StudioLogo,
+  type StudioQrCode,
+  normalizeRotation,
+  rotationOf,
+  turnedBounds,
+} from "@/lib/elementRotation";
 import type { CatalogMailClass } from "@/lib/pricing";
 import { getPricingRow } from "@/lib/pricing";
 import {
@@ -186,20 +193,22 @@ interface WizardActions {
   addLogo: (
     side: CanvasSideKey,
     url: string,
-    partial?: Partial<LogoState>,
+    partial?: Partial<StudioLogo>,
   ) => string;
   updateLogo: (
     side: CanvasSideKey,
     id: string,
-    patch: Partial<LogoState>,
+    patch: Partial<StudioLogo>,
   ) => void;
   removeLogo: (side: CanvasSideKey, id: string) => void;
-  addQrCode: (side: CanvasSideKey, partial?: Partial<QrCodeState>) => string;
+  addQrCode: (side: CanvasSideKey, partial?: Partial<StudioQrCode>) => string;
   updateQrCode: (
     side: CanvasSideKey,
     id: string,
-    patch: Partial<QrCodeState>,
+    patch: Partial<StudioQrCode>,
   ) => void;
+  /** Turns any layer (text, image, shape, QR code) to `deg` about its centre. */
+  setElementRotation: (side: CanvasSideKey, id: string, deg: number) => void;
   removeQrCode: (side: CanvasSideKey, id: string) => void;
   setBackgroundImage: (side: CanvasSideKey, url: string | null) => void;
   setBackgroundColor: (side: CanvasSideKey, color: string) => void;
@@ -281,17 +290,41 @@ interface ElementGeometry {
   width: number;
   height: number;
   z: bigint;
+  /** Turn in degrees about the centre. */
+  rotation: number;
 }
 
 function geometryOf(side: CanvasSide, id: string): ElementGeometry | null {
   const t = side.textBlocks.find((b) => b.id === id);
   if (t)
-    return { x: t.x, y: t.y, width: t.width, height: t.height, z: t.zIndex };
+    return {
+      x: t.x,
+      y: t.y,
+      width: t.width,
+      height: t.height,
+      z: t.zIndex,
+      rotation: rotationOf(t),
+    };
   const l = side.logos.find((b) => b.id === id);
   if (l)
-    return { x: l.x, y: l.y, width: l.width, height: l.height, z: l.zIndex };
+    return {
+      x: l.x,
+      y: l.y,
+      width: l.width,
+      height: l.height,
+      z: l.zIndex,
+      rotation: rotationOf(l),
+    };
   const q = side.qrCodes.find((b) => b.id === id);
-  if (q) return { x: q.x, y: q.y, width: q.size, height: q.size, z: q.zIndex };
+  if (q)
+    return {
+      x: q.x,
+      y: q.y,
+      width: q.size,
+      height: q.size,
+      z: q.zIndex,
+      rotation: rotationOf(q),
+    };
   return null;
 }
 
@@ -864,6 +897,16 @@ export const useWizardStore = create<WizardStore>()(
             }),
           };
         }),
+      setElementRotation: (sideKey, id, deg) => {
+        const rotation = normalizeRotation(deg);
+        const side = getSide(get().canvas, sideKey);
+        if (side.textBlocks.some((t) => t.id === id))
+          get().updateTextBlock(sideKey, id, { rotation });
+        else if (side.logos.some((l) => l.id === id))
+          get().updateLogo(sideKey, id, { rotation });
+        else if (side.qrCodes.some((q) => q.id === id))
+          get().updateQrCode(sideKey, id, { rotation });
+      },
       removeQrCode: (sideKey, id) =>
         set((s) => {
           const side = getSide(s.canvas, sideKey);
@@ -941,37 +984,43 @@ export const useWizardStore = create<WizardStore>()(
           const geo = geometryOf(side, id);
           if (!geo) return {};
           const dims = canvasDims(s.canvas, s.selectedLayout ?? DEFAULT_LAYOUT);
+          // A turned layer aligns by what it covers on the sheet, so its
+          // turned corner, not its unturned box, meets the edge.
+          const seen = turnedBounds(
+            { x: geo.x, y: geo.y, w: geo.width, h: geo.height },
+            geo.rotation,
+          );
+          const ox = seen.x - geo.x;
+          const oy = seen.y - geo.y;
           let { x, y } = geo;
           switch (alignment) {
             case "left":
-              x = 0;
+              x = -ox;
               break;
             case "center":
-              x = (dims.designWidth - geo.width) / 2;
+              x = (dims.designWidth - seen.w) / 2 - ox;
               break;
             case "right":
-              x = dims.designWidth - geo.width;
+              x = dims.designWidth - seen.w - ox;
               break;
             case "top":
-              y = 0;
+              y = -oy;
               break;
             case "middle":
-              y = (dims.designHeight - geo.height) / 2;
+              y = (dims.designHeight - seen.h) / 2 - oy;
               break;
             case "bottom":
-              y = dims.designHeight - geo.height;
+              y = dims.designHeight - seen.h - oy;
               break;
           }
+          // An unturned layer never starts off the sheet; a turned one may
+          // (a long bar turned upright has its unturned box outside).
+          const keep = (v: number) => (geo.rotation ? v : Math.max(0, v));
           return {
             canvas: withSide(
               s.canvas,
               sideKey,
-              moveTo(
-                side,
-                id,
-                Math.round(Math.max(0, x)),
-                Math.round(Math.max(0, y)),
-              ),
+              moveTo(side, id, Math.round(keep(x)), Math.round(keep(y))),
             ),
           };
         }),

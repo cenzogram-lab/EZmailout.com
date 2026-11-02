@@ -16,6 +16,12 @@ import {
 import { useCanvasDims } from "@/hooks/use-canvas-dims";
 import { BRAND } from "@/lib/brand";
 import { getSide } from "@/lib/canvas";
+import {
+  ROTATION_STEP,
+  rotationOf,
+  rotationTransform,
+  turnedBounds,
+} from "@/lib/elementRotation";
 import { physicalTraitsFor } from "@/lib/physical";
 import {
   DESIGN_PPI,
@@ -325,6 +331,7 @@ function elementBox(el: CanvasElement): ElementBox {
       height: el.data.size,
       keepAspect: true,
       minSize: 40,
+      rotation: rotationOf(el.data),
     };
   }
   if (el.kind === "logo") {
@@ -336,6 +343,7 @@ function elementBox(el: CanvasElement): ElementBox {
       height: el.data.height,
       keepAspect: !isShapeUrl(el.data.url),
       minSize: 8,
+      rotation: rotationOf(el.data),
     };
   }
   return {
@@ -388,6 +396,76 @@ function ResizeHandles({
         />
       ))}
     </>
+  );
+}
+
+/**
+ * The rotate handle: a round grip on a short stem above the layer (below it
+ * when the layer sits at the sheet's top edge, where the sheet would clip
+ * it). It lives inside the layer's turned wrapper, so it turns with it.
+ */
+function RotateHandle({
+  box,
+  scale,
+  angle,
+  onStart,
+}: {
+  box: ElementBox;
+  scale: number;
+  /** Shown beside the grip while the layer is being turned. */
+  angle: number | null;
+  onStart: (event: React.PointerEvent) => void;
+}) {
+  const size = 16 / scale;
+  const stem = 22 / scale;
+  const below = box.y < stem + size;
+  const edge: CSSProperties = below
+    ? { top: "100%", paddingTop: stem }
+    : { bottom: "100%", paddingBottom: stem };
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center"
+      style={{ ...edge, zIndex: 3 }}
+    >
+      <span
+        aria-hidden
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{
+          [below ? "top" : "bottom"]: 0,
+          width: 1.5 / scale,
+          height: stem,
+          backgroundColor: "oklch(var(--primary))",
+        }}
+      />
+      <div
+        role="presentation"
+        title="Drag to rotate (Shift: 15° steps)"
+        className="pointer-events-auto touch-none rounded-full bg-white"
+        style={{
+          width: size,
+          height: size,
+          border: `${1.5 / scale}px solid oklch(var(--primary))`,
+          boxShadow: `0 ${1 / scale}px ${3 / scale}px rgba(15, 23, 42, 0.25)`,
+          cursor: "grab",
+        }}
+        onPointerDown={onStart}
+        data-ocid={`canvas.editor.rotate_handle.${box.id}`}
+      />
+      {angle !== null && (
+        <span
+          className="absolute whitespace-nowrap rounded-md bg-[#1b1f2b] px-1 font-mono text-white"
+          style={{
+            [below ? "bottom" : "top"]: 0,
+            left: size + 4 / scale,
+            fontSize: 11 / scale,
+            lineHeight: 1.5,
+          }}
+          data-ocid="canvas.editor.rotate_angle"
+        >
+          {Math.round(angle)}°
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -475,6 +553,13 @@ export function CanvasEditor({
     [],
   );
 
+  const onRotate = useCallback(
+    (sideKey: CanvasSideKey, id: string, deg: number) => {
+      useWizardStore.getState().setElementRotation(sideKey, id, deg);
+    },
+    [],
+  );
+
   const onInteractionStart = useCallback(
     (id: string) => {
       if (useWizardStore.getState().selectedElementId !== id) {
@@ -484,15 +569,22 @@ export function CanvasEditor({
     [setSelectedElementId],
   );
 
-  const { startDrag, startResize, isDragging, isResizing } =
-    useCanvasInteractions({
-      scale,
-      side: activeSide,
-      dims,
-      onMove,
-      onResize,
-      onInteractionStart,
-    });
+  const {
+    startDrag,
+    startResize,
+    startRotate,
+    isDragging,
+    isResizing,
+    isRotating,
+  } = useCanvasInteractions({
+    scale,
+    side: activeSide,
+    dims,
+    onMove,
+    onResize,
+    onRotate,
+    onInteractionStart,
+  });
 
   // Keyboard: delete / escape / nudge for the selected element.
   useEffect(() => {
@@ -517,6 +609,26 @@ export function CanvasEditor({
       }
       if (event.key === "Escape") {
         store.setSelectedElementId(null);
+        return;
+      }
+      // [ and ] turn the selection 15° (with Shift, 1°) about its centre.
+      const turn =
+        event.key === "[" || event.key === "{"
+          ? -1
+          : event.key === "]" || event.key === "}"
+            ? 1
+            : 0;
+      if (turn) {
+        event.preventDefault();
+        const current = getSide(store.canvas, store.activeSide);
+        const el = sortedElements(current).find((e) => e.id === id);
+        if (!el) return;
+        const step = event.shiftKey ? 1 : ROTATION_STEP;
+        store.setElementRotation(
+          store.activeSide,
+          id,
+          rotationOf(el.data) + turn * step,
+        );
         return;
       }
       const delta = ARROW_DELTAS[event.key];
@@ -585,7 +697,14 @@ export function CanvasEditor({
   const selectionToolbar = (() => {
     if (!selectedElement || editingId === selectedElement.id) return null;
     const box = elementBox(selectedElement);
-    const elTop = WORKSPACE_PADDING + box.y * scale;
+    // Placed by what the layer covers once turned, clear of the rotate
+    // handle (38 px on screen above the layer, or below it at the top edge).
+    const seen = turnedBounds(
+      { x: box.x, y: box.y, w: box.width, h: box.height },
+      box.rotation ?? 0,
+    );
+    const handleBelow = box.y < 38 / scale;
+    const elTop = WORKSPACE_PADDING + seen.y * scale - (handleBelow ? 0 : 40);
     return (
       <SelectionToolbar
         side={activeSide}
@@ -598,9 +717,12 @@ export function CanvasEditor({
             : undefined
         }
         anchor={{
-          left: sheetLeft + box.x * scale,
+          left: sheetLeft + seen.x * scale,
           top: elTop,
-          bottom: elTop + box.height * scale,
+          bottom:
+            WORKSPACE_PADDING +
+            (seen.y + seen.h) * scale +
+            (handleBelow ? 40 : 0),
         }}
         bounds={{
           width: containerWidth || displayWidth + WORKSPACE_PADDING * 2,
@@ -672,6 +794,7 @@ export function CanvasEditor({
             "relative origin-top-left overflow-hidden",
             isDragging && "cursor-grabbing",
             isResizing && "cursor-crosshair",
+            isRotating && "cursor-grabbing",
           )}
           style={{
             width: dims.designWidth,
@@ -756,10 +879,9 @@ export function CanvasEditor({
                   width: box.width,
                   height: box.height,
                   zIndex: el.z + 1,
-                  transform:
-                    el.kind === "text"
-                      ? textBlockStyle(el.data).transform
-                      : undefined,
+                  // Every layer turns about its centre; the outline and
+                  // handles turn with it.
+                  transform: rotationTransform(rotationOf(el.data)),
                   outline: selected
                     ? `${outline}px solid oklch(var(--primary))`
                     : undefined,
@@ -840,6 +962,27 @@ export function CanvasEditor({
                     box={box}
                     scale={scale}
                     onStart={(e, corner) => startResize(e, box, corner)}
+                  />
+                )}
+                {selected && !editing && (
+                  <RotateHandle
+                    box={box}
+                    scale={scale}
+                    angle={isRotating ? rotationOf(el.data) : null}
+                    onStart={(e) => {
+                      // The turned wrapper's screen box is centred on the
+                      // layer's centre, whatever its turn.
+                      const wrapper = (e.currentTarget as HTMLElement).closest(
+                        "[data-ocid^='canvas.editor.element.']",
+                      );
+                      const r = wrapper?.getBoundingClientRect();
+                      if (!r) return;
+                      focusEditor();
+                      startRotate(e, box, {
+                        x: r.left + r.width / 2,
+                        y: r.top + r.height / 2,
+                      });
+                    }}
                   />
                 )}
               </div>

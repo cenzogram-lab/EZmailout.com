@@ -3,6 +3,7 @@
  * `src/backend/lib/inputs.mo` and `mixins/support-api.mo`; change both.
  */
 import type { CanvasSide, CanvasState, VerifiedAddress } from "@/backend";
+import { stripRotation } from "@/lib/elementRotation";
 import { stripTextExtras } from "@/lib/textStyle";
 
 export const MAX_CAMPAIGN_NAME_CHARS = 100;
@@ -87,11 +88,12 @@ function sideForStorage(side: CanvasSide): CanvasSide {
   const logos = side.logos
     .filter((l) => imageUrlAllowed(l.url))
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE - textBlocks.length)
-    .map((l) => ({ ...l, id: short(l.id) }));
+    // A turn is studio-only (`lib/elementRotation.ts`), like the text extras.
+    .map((l) => ({ ...stripRotation(l), id: short(l.id) }));
   const qrCodes = side.qrCodes
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE - textBlocks.length - logos.length)
     .map((q) => ({
-      ...q,
+      ...stripRotation(q),
       id: short(q.id),
       foreground: short(q.foreground),
       background: short(q.background),

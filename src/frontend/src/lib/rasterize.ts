@@ -1,5 +1,6 @@
 import type { CanvasSide } from "@/backend";
 import { QrMode } from "@/backend";
+import { rotationOf } from "@/lib/elementRotation";
 import { DESIGN_PPI, type LayoutDims, RASTER_DPI } from "@/lib/printSpec";
 import { normalizeDestinationUrl, qrToCanvas } from "@/lib/qr";
 import { isShapeUrl } from "@/lib/shapes";
@@ -119,16 +120,19 @@ export async function rasterizeSide(
         const y = logo.y * scale;
         const w = logo.width * scale;
         const h = logo.height * scale;
+        ctx.save();
+        turnAbout(ctx, x + w / 2, y + h / 2, rotationOf(logo));
         // Shapes stretch to their box; images are fitted inside it and
         // centred, exactly as the editor draws them (object-fill / contain).
         if (isShapeUrl(logo.url) || !img.naturalWidth || !img.naturalHeight) {
           ctx.drawImage(img, x, y, w, h);
-          return;
+        } else {
+          const fit = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+          const dw = img.naturalWidth * fit;
+          const dh = img.naturalHeight * fit;
+          ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
         }
-        const fit = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-        const dw = img.naturalWidth * fit;
-        const dh = img.naturalHeight * fit;
-        ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        ctx.restore();
       },
     });
   }
@@ -170,12 +174,8 @@ export async function rasterizeSide(
         const boxY = block.y * scale;
         const boxW = block.width * scale;
         const boxH = block.height * scale;
-        if (rotation) {
-          // Turned about the box centre, as the editor's CSS transform does.
-          ctx.translate(boxX + boxW / 2, boxY + boxH / 2);
-          ctx.rotate((rotation * Math.PI) / 180);
-          ctx.translate(-(boxX + boxW / 2), -(boxY + boxH / 2));
-        }
+        // Turned about the box centre, as the editor's CSS transform does.
+        turnAbout(ctx, boxX + boxW / 2, boxY + boxH / 2, rotation);
         // Wrapped exactly as the editor and the height refit wrap it: at
         // design size, where the editor lays it out (wrapping at print size
         // rounds differently and could break a line elsewhere).
@@ -230,7 +230,12 @@ export async function rasterizeSide(
           foreground: qr.foreground,
           background: qr.background,
         });
-        ctx.drawImage(tmp, qr.x * scale, qr.y * scale, size, size);
+        const qx = qr.x * scale;
+        const qy = qr.y * scale;
+        ctx.save();
+        turnAbout(ctx, qx + size / 2, qy + size / 2, rotationOf(qr));
+        ctx.drawImage(tmp, qx, qy, size, size);
+        ctx.restore();
       },
     });
   }
@@ -245,6 +250,19 @@ export async function rasterizeSide(
     await layer.draw();
   }
   return canvas;
+}
+
+/** Turns the context `deg` clockwise about (cx, cy), as CSS `rotate()` does. */
+function turnAbout(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  deg: number,
+) {
+  if (!deg) return;
+  ctx.translate(cx, cy);
+  ctx.rotate((deg * Math.PI) / 180);
+  ctx.translate(-cx, -cy);
 }
 
 /**

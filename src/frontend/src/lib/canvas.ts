@@ -7,6 +7,7 @@ import type {
 } from "@/backend";
 import { QrMode } from "@/backend";
 import { DYNAMIC_QR_PLACEHOLDER } from "@/lib/brand";
+import { rotationOf, turnedBounds } from "@/lib/elementRotation";
 import { physicalTraitsFor } from "@/lib/physical";
 import {
   DESIGN_PPI,
@@ -231,7 +232,16 @@ export function sideSignature(
     }),
     ...side.logos.map((l) => ({
       z: l.zIndex,
-      item: ["logo", url(l.url), r(l.x), r(l.y), r(l.width), r(l.height)],
+      // A turn is an edit like any other (it ends a template's pristine state).
+      item: [
+        "logo",
+        url(l.url),
+        r(l.x),
+        r(l.y),
+        r(l.width),
+        r(l.height),
+        r(rotationOf(l)),
+      ],
     })),
     ...side.qrCodes.map((q) => ({
       z: q.zIndex,
@@ -245,6 +255,7 @@ export function sideSignature(
         q.foreground,
         q.background,
         q.caption ?? null,
+        r(rotationOf(q)),
       ],
     })),
   ];
@@ -288,8 +299,12 @@ function contentBox(side: CanvasSide): Box | null {
       w: t.width,
       h: t.height,
     })),
-    ...side.logos.map((l) => ({ x: l.x, y: l.y, w: l.width, h: l.height })),
-    ...side.qrCodes.map((q) => ({ x: q.x, y: q.y, w: q.size, h: q.size })),
+    ...side.logos.map((l) =>
+      turnedBounds({ x: l.x, y: l.y, w: l.width, h: l.height }, rotationOf(l)),
+    ),
+    ...side.qrCodes.map((q) =>
+      turnedBounds({ x: q.x, y: q.y, w: q.size, h: q.size }, rotationOf(q)),
+    ),
   ];
   if (boxes.length === 0) return null;
   const x = Math.min(...boxes.map((b) => b.x));
