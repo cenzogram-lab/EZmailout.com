@@ -16,4 +16,9 @@ mkdir -p "$T/.gen"
 cp "$ROOT/src/frontend/src/declarations/backend.did.js" "$T/.gen/backend.did.js"
 [ -d "$T/node_modules/@dfinity/pic" ] || npm --prefix "$T" install --no-audit --no-fund
 node "$T/e2e/build.mjs"
-cd "$T" && node e2e.mjs
+cd "$T"
+node e2e.mjs
+# The wizard flow: 4×6 postcard, radius map drags, the area's list verified
+# by the canister, a studio text layer, the volume-rate quote and the
+# browser's print hand-off to a local partner behind the outcall proxy.
+[ "${E2E_LIVE:-}" = "1" ] || node e2e-wizard.mjs

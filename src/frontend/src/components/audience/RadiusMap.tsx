@@ -21,7 +21,7 @@ import {
   Route,
   Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Circle,
   MapContainer,
@@ -92,17 +92,47 @@ function FlyToCenter({
   lat,
   lng,
   radiusMiles,
+  paused,
 }: {
   lat: number;
   lng: number;
   radiusMiles: number;
+  /** While the pin or the radius handle is dragged: no flight under the pointer. */
+  paused: boolean;
 }) {
   const map = useMap();
   useEffect(() => {
+    if (paused) return;
     map.flyTo([lat, lng], zoomForRadius(radiusMiles), { duration: 0.8 });
-  }, [map, lat, lng, radiusMiles]);
+  }, [map, lat, lng, radiusMiles, paused]);
   return null;
 }
+
+/** The point due east of `center`, `miles` away: where the radius handle sits. */
+function eastOf(
+  center: { lat: number; lng: number },
+  miles: number,
+): { lat: number; lng: number } {
+  const metersPerDegreeLng =
+    111_320 * Math.max(0.01, Math.cos((center.lat * Math.PI) / 180));
+  return {
+    lat: center.lat,
+    lng: center.lng + (miles * METERS_PER_MILE) / metersPerDegreeLng,
+  };
+}
+
+/** A dragged handle's distance from the pin, as a radius the tool allows (0.1 mi steps). */
+function radiusFromHandle(meters: number): number {
+  const miles = Math.round((meters / METERS_PER_MILE) * 10) / 10;
+  return Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, miles));
+}
+
+const RADIUS_HANDLE_ICON = L.divIcon({
+  className: "",
+  html: '<span style="display:block;width:18px;height:18px;border-radius:9999px;background:#fff;border:3px solid #5c5ee8;box-shadow:0 1px 4px rgb(15 20 36 / .35);cursor:ew-resize"></span>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
 
 /**
  * Leaflet measures its box once. From lg the map grows to the height of the
@@ -135,6 +165,13 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
   const [label, setLabel] = useState<string | undefined>(initialTarget?.label);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
+  // Which map control is being dragged. While the radius handle moves, its
+  // own position prop stays where the drag began (`handleRadius`), so React
+  // never moves the marker under the pointer; it settles due east on release.
+  const [dragging, setDragging] = useState<"pin" | "radius" | null>(null);
+  const handleRadius = useRef(radiusMiles);
+  if (dragging !== "radius") handleRadius.current = radiusMiles;
+  const handlePos = eastOf(center, handleRadius.current);
 
   const estimate = useMemo(
     () =>
@@ -295,7 +332,44 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution="&copy; OpenStreetMap contributors"
             />
-            <Marker position={[center.lat, center.lng]} />
+            <Marker
+              position={[center.lat, center.lng]}
+              draggable
+              title="Drag to move the centre"
+              alt="Centre pin"
+              eventHandlers={{
+                dragstart: () => setDragging("pin"),
+                drag: (e) => {
+                  const p = (e.target as L.Marker).getLatLng();
+                  setCenter({ lat: p.lat, lng: p.lng });
+                },
+                dragend: (e) => {
+                  const p = (e.target as L.Marker).getLatLng();
+                  setCenter({ lat: p.lat, lng: p.lng });
+                  setLabel(undefined);
+                  setDragging(null);
+                },
+              }}
+            />
+            <Marker
+              position={[handlePos.lat, handlePos.lng]}
+              icon={RADIUS_HANDLE_ICON}
+              draggable
+              title="Drag to change the radius"
+              alt="Radius handle"
+              eventHandlers={{
+                dragstart: () => setDragging("radius"),
+                drag: (e) => {
+                  const p = (e.target as L.Marker).getLatLng();
+                  setRadiusMiles(
+                    radiusFromHandle(
+                      L.latLng(center.lat, center.lng).distanceTo(p),
+                    ),
+                  );
+                },
+                dragend: () => setDragging(null),
+              }}
+            />
             <Circle
               center={[center.lat, center.lng]}
               radius={radiusMiles * METERS_PER_MILE}
@@ -316,12 +390,14 @@ export function RadiusMap({ initialTarget, onUseAudience }: RadiusMapProps) {
               lat={center.lat}
               lng={center.lng}
               radiusMiles={radiusMiles}
+              paused={dragging !== null}
             />
             <KeepMapSized />
           </MapContainer>
         </div>
         <p className="text-xs text-muted-foreground">
-          Click anywhere on the map to drop the pin. Pin:{" "}
+          Click the map or drag the pin to move the centre; drag the white
+          handle on the circle to change the radius. Pin:{" "}
           <span className="font-mono tabular-nums">
             {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
           </span>

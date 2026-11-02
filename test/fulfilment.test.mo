@@ -99,4 +99,20 @@ assert Fulfilment.parseTrackingStatuses("<scan><scanDescription>Delivered</scanD
 assert not Fulfilment.customerError("Tracking lookup failed: dns error").contains(#text "nothing has been printed");
 assert Fulfilment.customerError("Job submission failed: HTTP 500").contains(#text "nothing has been printed");
 
+// Address lists answer with their own codes: 3 ("CASS Standardized") is
+// ready for jobs, 0 and 1 are still processing, 9 is an error.
+assert Fulfilment.addressListState("{\"id\":\"77\",\"status\":3,\"description\":\"CASS Standardized\"}") == #ready;
+assert Fulfilment.addressListState("<addressList><id>77</id><status>3</status><description>CASS Standardized</description></addressList>") == #ready;
+assert Fulfilment.addressListState("{\"id\":\"77\",\"status\":0,\"description\":\"Uploaded\"}") == #processing;
+assert Fulfilment.addressListState("{\"id\":\"77\",\"status\":\"1\"}") == #processing;
+assert Fulfilment.addressListState("{\"status\":9,\"description\":\"Invalid input\"}") == #failed;
+assert Fulfilment.addressListState("<addressList><status>9</status></addressList>") == #failed;
+// The list's own status, not a nested address record's.
+assert Fulfilment.addressListState("{\"id\":\"77\",\"status\":3,\"addresses\":[{\"Address1\":\"1 Main St\",\"status\":9}]}") == #ready;
+// No status: read as ready, as before.
+assert Fulfilment.addressListState("{\"id\":\"77\"}") == #ready;
+assert Fulfilment.listProbeBytes(1) == 33_000;
+assert Fulfilment.listProbeBytes(100_000) == 2_000_000;
+assert not Fulfilment.customerError(Fulfilment.listStillProcessing).contains(#text "did not accept");
+
 Debug.print("fulfilment: all checks passed");

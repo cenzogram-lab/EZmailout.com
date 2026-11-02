@@ -4,6 +4,7 @@ import type {
   VerifiedAddress,
 } from "@/backend";
 import { AddressTable } from "@/components/audience/AddressTable";
+import { ManualAddressForm } from "@/components/audience/ManualAddressForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   Download,
   FileSpreadsheet,
   Loader2,
+  Plus,
   ShieldCheck,
   Upload,
   XCircle,
@@ -159,6 +161,32 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
     setDragging(false);
     const file = event.dataTransfer.files?.[0];
     if (file) void loadFile(file);
+  }
+
+  /** A typed address joins the list (a new list once verified), unless it is already on it. */
+  function handleTypedAddress(address: AddressInput): boolean {
+    if (verifying) return false;
+    const key = (a: AddressInput) =>
+      [
+        a.name,
+        a.address_line1,
+        a.address_line2 ?? "",
+        a.city,
+        a.state,
+        a.zip_code,
+      ]
+        .map((x) => x.trim().toLowerCase())
+        .join("|");
+    if (rows.some((r) => key(r) === key(address))) {
+      toast.info("That address is already on the list.");
+      return false;
+    }
+    setRows((prev) => [...prev, address]);
+    setResult(null);
+    setVerifyError(null);
+    setParseErrors([]);
+    if (!fileName) setFileName("Typed addresses");
+    return true;
   }
 
   function handleDeleteRow(index: number) {
@@ -327,6 +355,25 @@ export function CsvUploader({ onUseAudience }: CsvUploaderProps) {
           </Badge>
         )}
       </section>
+
+      <details
+        className="group rounded-3xl border border-hairline bg-card-raised px-4 py-3 sm:px-5"
+        data-ocid="audience.csv.manual.panel"
+      >
+        <summary className="cursor-pointer list-none text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-2">
+            <Plus className="size-4 text-primary-text transition-transform group-open:rotate-45" />
+            Or type addresses one by one
+          </span>
+        </summary>
+        <div className="pt-3">
+          <ManualAddressForm
+            ocidPrefix="audience.csv.manual"
+            disabled={verifying}
+            onAdd={handleTypedAddress}
+          />
+        </div>
+      </details>
 
       {parseErrors.length > 0 && (
         <Alert variant="destructive" data-ocid="audience.csv.parse.error">

@@ -374,11 +374,16 @@ mixin (
         // run never heard back (a timed-out submit), so it is checked first.
         let jobFromEarlierRun = b.jobId != null;
 
+        // Whether the partner has said the list is ready for jobs (status 3,
+        // "CASS Standardized"). A list uploaded by an earlier run is checked
+        // again before a job is made from it.
+        var listReady = false;
         if (b.addressListId == null) {
           let listName = record.name # " " # campaignId # (if (batches == 1) "" else " " # (i + 1).toText() # "/" # batches.toText());
           let xml = Fulfilment.buildAddressListXml(listName, recipients.sliceToArray(b.first, b.first + b.count));
           let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-          if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markBatchFailed(record, campaignId, batches, responseError("Address list submission failed" # which, resp)) };
+          let state = Fulfilment.addressListState(resp.body);
+          if (not Http.isSuccess(resp) or state == #failed) { return markBatchFailed(record, campaignId, batches, responseError("Address list submission failed" # which, resp)) };
           switch (Fulfilment.parseId(resp.body)) {
             case (?id) {
               b := { b with addressListId = ?id };
@@ -386,6 +391,7 @@ mixin (
               if (i == 0) { record.printAddressListId := ?id };
               ignore CampaignLib.moveProduction(record, #AddressListReady);
               record.updatedAt := Time.now();
+              listReady := state == #ready;
             };
             case null { return markBatchFailed(record, campaignId, batches, "Address list returned no id" # which) };
           };
@@ -393,6 +399,13 @@ mixin (
 
         if (b.jobId == null) {
           let addressListId = switch (b.addressListId) { case (?a) a; case null "" };
+          if (not listReady) {
+            switch (await* awaitListReady(base, auth, addressListId, b.count)) {
+              case (#failed detail) { return markBatchFailed(record, campaignId, batches, "Address list submission failed" # which # ": the list was refused" # (if (detail == "") "" else " (" # detail # ")")) };
+              case (#processing) { return markBatchFailed(record, campaignId, batches, Fulfilment.listStillProcessing # which) };
+              case (#ready) {};
+            };
+          };
           let form = Fulfilment.buildJobForm(record.printSpec, documentId, addressListId, returnAddress);
           let resp = await* Http.postText(base # "/jobs", Fulfilment.jsonHeaders(auth, "application/x-www-form-urlencoded"), form, opts, transformFn);
           if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) { return markBatchFailed(record, campaignId, batches, responseError("Job creation failed" # which, resp)) };
@@ -442,6 +455,30 @@ mixin (
       batches.toText() # " print jobs submitted for production (" # recipients.size().toText() # " pieces)" # (if (alreadySubmitted > 0) "; " # alreadySubmitted.toText() # " had already been submitted and were not submitted again" else "");
     };
     markSubmitted(record, campaignId, firstJob, detail);
+  };
+
+  /// Reads an uploaded address list until the partner reports it ready for
+  /// jobs (`Fulfilment.listReadyProbes` reads at most). `#processing` when
+  /// it still says so after the last read; a read that gets no answer (the
+  /// list's reply can outgrow the response budget) leaves the job step to
+  /// decide, since a job made from a list that is not ready is refused and
+  /// nothing is printed or billed before submission.
+  private func awaitListReady(base : Text, auth : Text, listId : Text, count : Nat) : async* { #ready; #processing; #failed : Text } {
+    let probeOpts = AdminLib.outcallOptions(adminKeysState, Fulfilment.listProbeBytes(count));
+    var probes = 0;
+    var sawProcessing = false;
+    while (probes < Fulfilment.listReadyProbes) {
+      probes += 1;
+      let probe = await* Http.get(base # "/addressLists/" # listId, Fulfilment.jsonHeaders(auth, "application/json"), probeOpts, transformFn);
+      if (Http.isSuccess(probe)) {
+        switch (Fulfilment.addressListState(probe.body)) {
+          case (#ready) { return #ready };
+          case (#failed) { return #failed(Fulfilment.scrub(Fulfilment.parseDescription(probe.body))) };
+          case (#processing) { sawProcessing := true };
+        };
+      };
+    };
+    if (sawProcessing) #processing else #ready;
   };
 
   /// `markFailed` for a batch step: once earlier batches are in production

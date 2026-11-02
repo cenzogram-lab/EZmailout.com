@@ -202,7 +202,7 @@ mixin (
     let xml = Fulfilment.buildVerificationXml(listName, candidates);
     let opts = AdminLib.outcallOptions(adminKeysState, verifyResponseBytes(candidates.size()));
     let resp = await* Http.postText(base # "/addressLists", Fulfilment.jsonHeaders(auth, "application/xml"), xml, opts, transformFn);
-    if (not Http.isSuccess(resp) or Fulfilment.reportedFailure(resp.body)) {
+    if (not Http.isSuccess(resp) or Fulfilment.addressListState(resp.body) == #failed) {
       // The detail (a network error, the partner's own wording) is for the
       // admin; customers get plain advice.
       let msg = if (resp.status == 0) {
@@ -220,12 +220,22 @@ mixin (
         return batch(false, ?"Unexpected address verification response", results.toArray(), null);
       };
     };
-    let detail = await* Http.get(base # "/addressLists/" # listId, Fulfilment.jsonHeaders(auth, "application/json"), opts, transformFn);
+    // The result is read until the partner reports the list standardised
+    // (status 3); 0 and 1 mean it is still being processed.
+    var detail = await* Http.get(base # "/addressLists/" # listId, Fulfilment.jsonHeaders(auth, "application/json"), opts, transformFn);
+    var reads = 1;
+    while (reads < Fulfilment.listReadyProbes and Http.isSuccess(detail) and Fulfilment.addressListState(detail.body) == #processing) {
+      reads += 1;
+      detail := await* Http.get(base # "/addressLists/" # listId, Fulfilment.jsonHeaders(auth, "application/json"), opts, transformFn);
+    };
     // Fail-closed: without the verification result nothing counts as checked.
     // (A result that lists no per-address detail is the list accepted as a
-    // whole, handled below; an error or no answer is not.)
-    if (not Http.isSuccess(detail) or Fulfilment.reportedFailure(detail.body)) {
-      let msg = "Address verification did not finish; try again in a few minutes";
+    // whole, handled below; an error, no answer, a refused list or one still
+    // processing is not.)
+    if (not Http.isSuccess(detail) or Fulfilment.addressListState(detail.body) != #ready) {
+      let msg = if (Http.isSuccess(detail) and Fulfilment.addressListState(detail.body) == #failed) {
+        AdminLib.providerError(adminKeysState, caller, "The address list was rejected: " # Fulfilment.parseDescription(detail.body), "The address list was rejected. Check the addresses for typos and try again.");
+      } else { "Address verification did not finish; try again in a few minutes" };
       markAll(msg);
       return batch(false, ?msg, results.toArray(), ?listId);
     };

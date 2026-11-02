@@ -167,6 +167,24 @@ const sections = {
     check(r.results[0].verified[0]?.zip_plus4[0] === "1234", "ZIP+4 is appended from the verification result", r.results[0]);
     check(ok.log[0].body.includes("<Address1>101 Main St</Address1>") && ok.log[0].maxResponseBytes <= 1_500_000, "the address list XML and response budget are sent", ok.log[0].maxResponseBytes);
 
+    check(ok.log[0].url.endsWith("/addressLists"), "a list the partner reports CASS Standardized (status 3) is accepted, not read as an error code");
+
+    // The result is read again while the partner still says Mapped (1).
+    const slow = upstream(fakePrintPartner({ listProcessing: 1, detail: [{ Address1: "101 Main St", Postalcode: "97201" }] }));
+    await env.pic.advanceTime(20_000); await env.pic.tick();
+    const rs = await call(env.pic, slow, env.deferred(user).verifyAddresses([rawAddr(1)]));
+    const slowReads = slow.log.filter((l) => l.method === "GET" && /\/addressLists\//.test(l.url)).length;
+    check(rs.ok && rs.validCount === 1n && slowReads === 2, "a list still processing (status 1) is read again until standardised", { ok: rs.ok, error: rs.error, slowReads });
+    const stuck = upstream(fakePrintPartner({ listProcessing: 10 }));
+    await env.pic.advanceTime(20_000); await env.pic.tick();
+    const rk = await call(env.pic, stuck, env.deferred(user).verifyAddresses([rawAddr(1)]));
+    const stuckReads = stuck.log.filter((l) => l.method === "GET" && /\/addressLists\//.test(l.url)).length;
+    check(!rk.ok && rk.validCount === 0n && stuckReads === 3 && (rk.error[0] ?? "").includes("did not finish"), "a list that never finishes processing marks nothing valid after 3 reads (fail-closed)", { ok: rk.ok, error: rk.error, stuckReads });
+    const badList = upstream(fakePrintPartner({ listProcessing: 1, listRefusedOnRead: 1 }));
+    await env.pic.advanceTime(20_000); await env.pic.tick();
+    const rb = await call(env.pic, badList, env.deferred(user).verifyAddresses([rawAddr(1)]));
+    check(!rb.ok && rb.validCount === 0n && (rb.error[0] ?? "").includes("rejected"), "a list the partner reports in error (status 9) marks nothing valid", rb.error);
+
     const down = upstream(fakePrintPartner({ addressLists: 1 }));
     await env.pic.advanceTime(20_000); await env.pic.tick();
     const r2 = await call(env.pic, down, env.deferred(user).verifyAddresses([rawAddr(1)]));
@@ -962,6 +980,49 @@ sections.pricing = async function pricing() {
   }
 };
 
+// ─── Address lists: wait for status 3 before the print job ──────────────────
+sections.listReady = async function listReady() {
+  const env = await setup({ sandboxCheckout: true });
+  const lists = (up) => up.log.filter((l) => l.method === "POST" && l.url.endsWith("/addressLists")).length;
+  const reads = (up) => up.log.filter((l) => l.method === "GET" && /\/addressLists\//.test(l.url)).length;
+  const jobs = (up) => up.log.filter((l) => l.method === "POST" && l.url.endsWith("/jobs")).length;
+
+  // Standardised at once (status 3): no read-back, straight to the job.
+  const fast = upstream(fakePrintPartner());
+  const c0 = await paidCampaign(env, ident(191), fast);
+  const r0 = await call(env.pic, fast, env.deferred(ident(191)).dispatchPrintJob(c0));
+  check(r0.ok && r0.productionStatus[0]?.Submitted !== undefined && reads(fast) === 0, "a list answered with status 3 goes straight to the print job", { r0, reads: reads(fast) });
+
+  // Mapped (1) on upload, standardised on the second read.
+  const slow = upstream(fakePrintPartner({ listProcessing: 1 }));
+  const c1 = await paidCampaign(env, ident(192), slow);
+  const r1 = await call(env.pic, slow, env.deferred(ident(192)).dispatchPrintJob(c1));
+  const order = slow.log.map((l) => `${l.method} ${l.url.replace(/^.*\/molpro/, "")}`).filter((x) => !x.includes("payment"));
+  const firstJob = order.findIndex((x) => x.startsWith("POST /jobs"));
+  const lastRead = order.map((x, i) => (x.startsWith("GET /addressLists/") ? i : -1)).reduce((a, b) => Math.max(a, b), -1);
+  check(r1.ok && reads(slow) === 2 && lastRead < firstJob, "a list still processing is read until standardised, and only then is the job made", { ok: r1.ok, error: r1.error, order });
+
+  // Still processing after three reads: the run stops before the job, keeps
+  // the list, and the retry makes the job from that same list.
+  const owner = ident(193);
+  const stuck = upstream(fakePrintPartner({ listProcessing: 10 }));
+  const c2 = await paidCampaign(env, owner, stuck);
+  const r2 = await call(env.pic, stuck, env.deferred(owner).dispatchPrintJob(c2));
+  check(!r2.ok && reads(stuck) === 3 && jobs(stuck) === 0 && r2.addressListId.length === 1, "a list still processing after 3 reads stops the run before any print job, keeping the list", { r2, reads: reads(stuck), jobs: jobs(stuck) });
+  check((r2.error[0] ?? "").includes("still being prepared") && (r2.error[0] ?? "").includes("nothing has been printed"), "the owner is told the list is still being prepared and to send it again", r2.error);
+  await env.pic.advanceTime(5 * 60_000 + 1000); await env.pic.tick();
+  const ready = upstream(fakePrintPartner());
+  const r3 = await call(env.pic, ready, env.deferred(owner).dispatchPrintJob(c2));
+  const form = new URLSearchParams(ready.log.find((l) => l.method === "POST" && l.url.endsWith("/jobs"))?.body ?? "");
+  check(r3.ok && lists(ready) === 0 && reads(ready) === 1 && form.get("addressId") === r2.addressListId[0], "the retry checks the kept list once and makes the job from it, without uploading it again", { r3, lists: lists(ready), reads: reads(ready), addressId: form.get("addressId") });
+
+  // The partner reports the list in error (9) while it processes.
+  const bad = upstream(fakePrintPartner({ listProcessing: 1, listRefusedOnRead: 1 }));
+  const c4 = await paidCampaign(env, ident(194), bad);
+  const r4 = await call(env.pic, bad, env.deferred(ident(194)).dispatchPrintJob(c4));
+  check(!r4.ok && jobs(bad) === 0 && r4.productionStatus[0]?.Failed !== undefined, "a list the partner reports in error fails the run before any print job", r4);
+};
+
 sections.scale = async function scale() {
   const env = await setup({ sandboxCheckout: true });
   const user = ident(141);
@@ -1220,7 +1281,10 @@ sections.upgrade = async function upgrade() {
   const adminId = ident(5);
   await old.assignAdmin(adminId.getPrincipal());
   const user = ident(131);
-  const up = upstream([...fakePrintPartner(), ...fakeResend()]);
+  // The deployed version read a list's status 3 ("CASS Standardized") as an
+  // error, so its dispatch is answered as it expected (status 0); the
+  // upgraded canister reads both.
+  const up = upstream([...fakePrintPartner({ legacyListStatus: true }), ...fakeResend()]);
   const u = env.as(user);
   const created = await u.createCampaign(campaignInput(4));
   const cid = created.campaignId[0];

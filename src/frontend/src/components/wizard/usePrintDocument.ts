@@ -111,9 +111,12 @@ function downscaleToDataUrl(source: HTMLCanvasElement, maxWidth = 720): string {
 }
 
 /**
- * Builds the print-ready PDF for a campaign: the front face, plus the back
- * face when it carries any content, each rasterized at 300 DPI and embedded
- * as a JPEG page sized to the physical mail piece. A rotated design is
+ * Builds the print-ready PDF for a campaign: the front face and the back
+ * face, each rasterized at 300 DPI and embedded as a JPEG page sized to the
+ * physical mail piece. The back is always sent, blank or not: every product
+ * prints both sides and is priced for front and back, and on a postcard the
+ * second page is the address side (a one-page file did not match the
+ * double-sided layout the job names). A rotated design is
  * rasterized as laid out, then turned back onto the product's own page, so
  * Print always receives pages of the size it prints. Pages are encoded
  * at the best JPEG quality that keeps the file within `MAX_PRINT_FILE_BYTES`;
@@ -129,12 +132,8 @@ export async function buildPrintPdf(
   const options = { dpi: RASTER_DPI, sampleRecipientId, requireImages: true };
   const rasters: HTMLCanvasElement[] = [
     toNativePage(await rasterizeSide(canvas.front, dims, options), dims),
+    toNativePage(await rasterizeSide(canvas.back, dims, options), dims),
   ];
-  if (sideHasContent(canvas.back)) {
-    rasters.push(
-      toNativePage(await rasterizeSide(canvas.back, dims, options), dims),
-    );
-  }
   let smallest = Number.POSITIVE_INFINITY;
   for (const quality of PRINT_JPEG_QUALITIES) {
     const pages: PdfImagePage[] = [];

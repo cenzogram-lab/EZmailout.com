@@ -14,6 +14,7 @@ import Nat8 "mo:core/Nat8";
 import Nat32 "mo:core/Nat32";
 import List "mo:core/List";
 import Nat "mo:core/Nat";
+import Nat64 "mo:core/Nat64";
 import Map "mo:core/Map";
 
 module {
@@ -134,6 +135,21 @@ module {
   /// headers and body) may not exceed 2 MB.
   public let maxAddressListBytes : Nat = 1_800_000;
 
+  /// Reads of an uploaded list's state before its print job is made; each
+  /// is a consensus round of a few seconds, so the partner has time to
+  /// standardise the list.
+  public let listReadyProbes : Nat = 3;
+
+  /// Response budget for reading back a list of `count` addresses (the
+  /// reply carries the list): 32 KB + 1 KB an address, at most 2 MB, the
+  /// largest reply an outcall may take.
+  public func listProbeBytes(count : Nat) : Nat64 {
+    Nat64.fromNat(Nat.min(2_000_000, 32_000 + count * 1_000));
+  };
+
+  /// A run that stopped because the partner was still standardising a list.
+  public let listStillProcessing = "The address list is still being prepared for print; nothing has been printed yet. Send the campaign to print again in a few minutes";
+
   /// Splits `addresses` into contiguous `(first, count)` slices whose address
   /// list stays within `maxBytes`, so
   /// a campaign of any size is sent as several lists and print jobs. The same
@@ -242,7 +258,42 @@ module {
     });
   };
 
+  /// Where an address list stands, from a `POST /addressLists` or
+  /// `GET /addressLists/{id}` reply. The list's own status codes differ from
+  /// every other endpoint's: 3 ("CASS Standardized") is the one that means
+  /// ready for jobs, 0 (uploaded) and 1 (mapped) mean still processing, and 9
+  /// or any other code is an error. `reportedFailure` read 3 as a failure,
+  /// which refused every processed list. A reply with no status is read as
+  /// ready, as before (the job step or the per-address detail decides).
+  public type ListState = { #ready; #processing; #failed };
+
+  public func addressListState(body : Text) : ListState {
+    let code : ?Text = switch (Json.topLevelNumber(body, "status")) {
+      case (?n) ?n.toText();
+      case null {
+        switch (Json.topLevelString(body, "status")) {
+          case (?s) ?AddressLib.sanitizeText(s);
+          case null {
+            switch (Json.xmlTag(body, "status")) {
+              case (?s) ?AddressLib.sanitizeText(s);
+              case null null;
+            };
+          };
+        };
+      };
+    };
+    switch (code) {
+      case null #ready;
+      case (?c) {
+        if (c == "3" or c == "200" or c == "201" or c.toLower() == "success") #ready
+        else if (c == "0" or c == "1") #processing
+        else #failed;
+      };
+    };
+  };
+
   /// Whether the API reported success (status 0 / description "Success" / HTTP 2xx handled by caller).
+  /// Not for address lists: those use `addressListState`.
   public func reportedFailure(body : Text) : Bool {
     switch (Json.getNumber(body, "status")) {
       case (?n) { n != 0 and n != 200 and n != 201 };

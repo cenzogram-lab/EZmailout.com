@@ -90,6 +90,10 @@ export function Step2AudienceIntake() {
   const [tab, setTab] = useState<WizardAudienceType>(audienceType ?? "map");
   const [selectedPreset, setSelectedPreset] =
     useState<AudiencePresetShared | null>(null);
+  // Set when the radius tool hands over to the CSV tab: the list uploaded
+  // next is the recipients for that area, so the area stays with the
+  // campaign. Choosing another tab ends it.
+  const [listForArea, setListForArea] = useState(false);
 
   function applyMapAudience(target: MapTarget) {
     // The radius tool sizes and prices a drop, but the print partner mails the address
@@ -97,6 +101,7 @@ export function Step2AudienceIntake() {
     // recipients before the campaign can be created or paid for.
     setGeoTarget(target);
     setSourcePresetId(null);
+    setListForArea(true);
     toast.success(
       `Saved a radius estimate of about ${formatNumber(target.estimatedHouseholds)} households. Add the recipient list for this area to continue.`,
     );
@@ -110,8 +115,11 @@ export function Step2AudienceIntake() {
     }
     setVerifiedAddresses(addresses);
     setRecipientCount(addresses.length);
-    setAudienceType("csv");
-    setGeoTarget(null);
+    // The list for a saved radius keeps the area (Step 4 shows it and the
+    // campaign records a radius audience); a list on its own clears it.
+    const forArea = listForArea && geoTarget !== null;
+    setAudienceType(forArea ? "map" : "csv");
+    if (!forArea) setGeoTarget(null);
     setSourcePresetId(null);
     setStep(3);
   }
@@ -167,7 +175,9 @@ export function Step2AudienceIntake() {
       <Tabs
         value={tab}
         onValueChange={(v) => {
-          if (isTab(v)) setTab(v);
+          if (!isTab(v)) return;
+          setTab(v);
+          if (v !== "csv") setListForArea(false);
         }}
         className="w-full"
       >
@@ -214,6 +224,19 @@ export function Step2AudienceIntake() {
         <TabsContent value="csv" className="pt-3">
           <Card>
             <CardContent className="px-4 py-1 sm:px-6">
+              {listForArea && geoTarget && (
+                <p
+                  className="mt-3 rounded-2xl bg-primary/10 px-3 py-2 text-sm text-primary-ink"
+                  data-ocid="audience.csv.area_note"
+                >
+                  Adding the recipient list for your {geoTarget.radiusMiles} mi
+                  radius around{" "}
+                  {geoTarget.label ??
+                    `${geoTarget.lat.toFixed(3)}, ${geoTarget.lng.toFixed(3)}`}{" "}
+                  (about {formatNumber(geoTarget.estimatedHouseholds)}{" "}
+                  households).
+                </p>
+              )}
               <CsvUploader onUseAudience={applyCsvAudience} />
             </CardContent>
           </Card>

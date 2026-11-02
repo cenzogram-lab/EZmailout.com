@@ -329,7 +329,7 @@ export function computePreflight(input: PreflightInput): PreflightReport {
       : {
           id: "back",
           label: "Back side",
-          detail: "Back left blank; only the front face is printed.",
+          detail: "Back left blank; it prints as a plain white side.",
           level: "info",
         },
   );

@@ -67,8 +67,10 @@ export function fakePrintPartner(plan = {}) {
   const fail = (step) => plan[step] && plan[step]-- > 0;
   return [
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/documents"), () => fail("documents") ? { status: 500, body: { description: "doc storage down" } } : { body: { id: `doc${++ids}`, status: 0 } }],
-    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => (++lists === plan.addressListFailsOnCall) ? { status: 500, body: { description: "list store busy" } } : fail("addressLists") ? { reject: "connection reset" } : fail("addressListsRefused") ? { status: 402, body: { status: 9, description: "Click2Mail account balance too low" } } : { body: { id: `list${++ids}`, status: 0 } }],
-    [(r) => isPrint(r) && r.method === "GET" && /\/addressLists\/[^/]+$/.test(r.url), (r) => fail("addressListDetail") ? { status: 503, body: { description: "busy" } } : { body: (plan.detail ?? []) }],
+    [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/addressLists"), () => (++lists === plan.addressListFailsOnCall) ? { status: 500, body: { description: "list store busy" } } : fail("addressLists") ? { reject: "connection reset" } : fail("addressListsRefused") ? { status: 402, body: { status: 9, description: "Click2Mail account balance too low" } } : plan.legacyListStatus ? { body: { id: `list${++ids}`, status: 0 } } : { body: { id: `list${++ids}`, status: plan.listProcessing ? 1 : 3, description: plan.listProcessing ? "Mapped" : "CASS Standardized" } }],
+    // Reading a list back: `listProcessing` reads still say "Mapped" (1),
+    // `listRefusedOnRead` says error (9); otherwise the per-address detail.
+    [(r) => isPrint(r) && r.method === "GET" && /\/addressLists\/[^/]+$/.test(r.url), (r) => fail("addressListDetail") ? { status: 503, body: { description: "busy" } } : fail("listProcessing") ? { body: { id: r.url.split("/").pop(), status: 1, description: "Mapped" } } : fail("listRefusedOnRead") ? { body: { id: r.url.split("/").pop(), status: 9, description: "Invalid address list" } } : { body: (plan.detail ?? []) }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/jobs"), () => fail("jobs") ? { status: 400, body: { description: "bad job" } } : { body: { id: `job${++ids}`, status: 0 } }],
     [(r) => isPrint(r) && r.method === "POST" && r.url.endsWith("/submit"), (r) => {
       const id = r.url.split("/jobs/")[1].split("/")[0];
