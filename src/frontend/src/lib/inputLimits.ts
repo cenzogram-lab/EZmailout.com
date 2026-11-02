@@ -3,7 +3,7 @@
  * `src/backend/lib/inputs.mo` and `mixins/support-api.mo`; change both.
  */
 import type { CanvasSide, CanvasState, VerifiedAddress } from "@/backend";
-import { stripRotation } from "@/lib/elementRotation";
+import { normalizeRotation, rotationOf } from "@/lib/elementRotation";
 import { stripTextExtras } from "@/lib/textStyle";
 
 export const MAX_CAMPAIGN_NAME_CHARS = 100;
@@ -71,14 +71,22 @@ export function imageUrlAllowed(url: string): boolean {
 
 const clip = (t: string, max: number) => (t.length > max ? t.slice(0, max) : t);
 
+/** A layer's turn as the canister stores it: within ±180°, or none. */
+function storedRotation(layer: object): number | undefined {
+  const r = normalizeRotation(rotationOf(layer));
+  return r === 0 ? undefined : r;
+}
+
 function sideForStorage(side: CanvasSide): CanvasSide {
   const short = (t: string) => clip(t, MAX_CANVAS_SHORT_CHARS);
   const textBlocks = side.textBlocks
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE)
     .map((b) => ({
-      // Tracking, leading, italic and rotation are studio-only (see
-      // `lib/textStyle.ts`): the stored copy is a preview.
+      // Tracking, leading and italic are studio-only (see
+      // `lib/textStyle.ts`): the stored copy is a preview. The turn is kept,
+      // so the campaign page shows the layer as it was designed.
       ...stripTextExtras(b),
+      rotation: storedRotation(b),
       id: short(b.id),
       text: clip(b.text, MAX_CANVAS_TEXT_CHARS),
       color: short(b.color),
@@ -88,12 +96,16 @@ function sideForStorage(side: CanvasSide): CanvasSide {
   const logos = side.logos
     .filter((l) => imageUrlAllowed(l.url))
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE - textBlocks.length)
-    // A turn is studio-only (`lib/elementRotation.ts`), like the text extras.
-    .map((l) => ({ ...stripRotation(l), id: short(l.id) }));
+    .map((l) => ({
+      ...l,
+      rotation: storedRotation(l),
+      id: short(l.id),
+    }));
   const qrCodes = side.qrCodes
     .slice(0, MAX_CANVAS_LAYERS_PER_SIDE - textBlocks.length - logos.length)
     .map((q) => ({
-      ...stripRotation(q),
+      ...q,
+      rotation: storedRotation(q),
       id: short(q.id),
       foreground: short(q.foreground),
       background: short(q.background),

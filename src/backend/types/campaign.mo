@@ -117,7 +117,8 @@ module {
     fontFamily : Text;
     fontWeight : Nat;
     align : Text;
-    zIndex : Nat;
+    zIndex : Nat;    /// Clockwise turn in degrees about the layer's centre (null: unturned).
+    rotation : ?Float;
   };
 
   public type LogoState = {
@@ -127,7 +128,8 @@ module {
     y : Float;
     width : Float;
     height : Float;
-    zIndex : Nat;
+    zIndex : Nat;    /// Clockwise turn in degrees about the layer's centre (null: unturned).
+    rotation : ?Float;
   };
 
   public type QrMode = {
@@ -145,7 +147,8 @@ module {
     foreground : Text;
     background : Text;
     caption : ?Text;
-    zIndex : Nat;
+    zIndex : Nat;    /// Clockwise turn in degrees about the layer's centre (null: unturned).
+    rotation : ?Float;
   };
 
   public type CanvasSide = {

@@ -50,6 +50,7 @@ export const ReturnAddress = IDL.Record({
   'organization' : IDL.Opt(IDL.Text),
 });
 export const LogoState = IDL.Record({
+  'rotation' : IDL.Opt(IDL.Float64),
   'x' : IDL.Float64,
   'y' : IDL.Float64,
   'id' : IDL.Text,
@@ -63,6 +64,7 @@ export const QrMode = IDL.Variant({
   'StaticUrl' : IDL.Null,
 });
 export const QrCodeState = IDL.Record({
+  'rotation' : IDL.Opt(IDL.Float64),
   'x' : IDL.Float64,
   'y' : IDL.Float64,
   'id' : IDL.Text,
@@ -75,6 +77,7 @@ export const QrCodeState = IDL.Record({
   'caption' : IDL.Opt(IDL.Text),
 });
 export const TextBlockState = IDL.Record({
+  'rotation' : IDL.Opt(IDL.Float64),
   'x' : IDL.Float64,
   'y' : IDL.Float64,
   'id' : IDL.Text,
@@ -833,6 +836,7 @@ export const idlFactory = ({ IDL }) => {
     'organization' : IDL.Opt(IDL.Text),
   });
   const LogoState = IDL.Record({
+    'rotation' : IDL.Opt(IDL.Float64),
     'x' : IDL.Float64,
     'y' : IDL.Float64,
     'id' : IDL.Text,
@@ -846,6 +850,7 @@ export const idlFactory = ({ IDL }) => {
     'StaticUrl' : IDL.Null,
   });
   const QrCodeState = IDL.Record({
+    'rotation' : IDL.Opt(IDL.Float64),
     'x' : IDL.Float64,
     'y' : IDL.Float64,
     'id' : IDL.Text,
@@ -858,6 +863,7 @@ export const idlFactory = ({ IDL }) => {
     'caption' : IDL.Opt(IDL.Text),
   });
   const TextBlockState = IDL.Record({
+    'rotation' : IDL.Opt(IDL.Float64),
     'x' : IDL.Float64,
     'y' : IDL.Float64,
     'id' : IDL.Text,

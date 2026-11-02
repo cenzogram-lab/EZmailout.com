@@ -3,7 +3,7 @@
 // records the exact request the canister sent.
 import { PocketIcServer } from "@dfinity/pic";
 import { start, upstream, drive, call, check, failures, ident, anon, EOP, WASM } from "./harness.mjs";
-import { keys, SECRETS, RAW_SECRETS, campaignInput, addr, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress, printPdf } from "./fixtures.mjs";
+import { keys, SECRETS, RAW_SECRETS, campaignInput, addr, rawAddr, fakePrintPartner, fakeStripe, fakeOpenAi, fakeResend, returnAddress, printPdf, sampleCanvas } from "./fixtures.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
@@ -1023,6 +1023,28 @@ sections.listReady = async function listReady() {
   check(!r4.ok && jobs(bad) === 0 && r4.productionStatus[0]?.Failed !== undefined, "a list the partner reports in error fails the run before any print job", r4);
 };
 
+// ─── Layer rotation: stored with the campaign, validated, kept on upgrade ────
+sections.rotation = async function rotation() {
+  const env = await setup({ sandboxCheckout: true });
+  const user = ident(201);
+  const u = env.as(user);
+  const turns = (c) => [c.front.textBlocks[0].rotation, c.front.logos[0].rotation, c.front.qrCodes[0].rotation].map((x) => (x.length ? x[0] : null));
+  const created = await u.createCampaign(campaignInput(2, { canvasState: [sampleCanvas([30, -45, 90])] }));
+  check(created.ok, "a design with turned text, shape and QR code is stored", created.error);
+  const cid = created.campaignId[0];
+  const stored = (await u.getCampaign(cid))[0].canvasState[0];
+  check(ser(turns(stored)) === ser([30, -45, 90]), "each layer's turn reads back from the campaign", turns(stored));
+  const plain = await u.createCampaign(campaignInput(2, { canvasState: [sampleCanvas([])] }));
+  check(plain.ok && ser(turns((await u.getCampaign(plain.campaignId[0]))[0].canvasState[0])) === ser([null, null, null]), "a layer with no turn stays unturned", plain.error);
+  for (const [bad, label] of [[400, "more than a full turn"], [Number.NaN, "not a number"], [Number.POSITIVE_INFINITY, "infinite"]]) {
+    const r = await u.createCampaign(campaignInput(2, { canvasState: [sampleCanvas([0, bad, 0])] }));
+    check(!r.ok && /invalid rotation/.test(r.error[0] ?? ""), `a turn that is ${label} is refused`, r.error);
+  }
+  const saved = await u.saveCanvasState(cid, sampleCanvas([-90, 0, 180]));
+  check(saved && ser(turns((await u.getCampaign(cid))[0].canvasState[0])) === ser([-90, 0, 180]), "saving the draft's design again keeps the new turns", saved);
+  check(!(await u.saveCanvasState(cid, sampleCanvas([720, 0, 0]))), "saving a design with an out-of-range turn is refused");
+};
+
 sections.scale = async function scale() {
   const env = await setup({ sandboxCheckout: true });
   const user = ident(141);
@@ -1293,7 +1315,7 @@ sections.upgrade = async function upgrade() {
   await u.uploadDocumentChunk(cid, 0n, 1n, "application/pdf", "art.pdf", printPdf(1));
   const d = await call(env.pic, up, env.deferred(user).dispatchClick2MailJob(cid));
   check(d.ok, "a campaign is dispatched on the deployed version", d.error);
-  const draft = await u.createCampaign(campaignInput(2));
+  const draft = await u.createCampaign(campaignInput(2, { canvasState: [sampleCanvas()] }));
   await u.submitSupportTicket({ name: "Old", email: "old@example.com", subject: "Before", message: "hi", pagePath: [] });
   await drive(env.pic, up, []);
   const oldView = await old.getAdminKeys();
@@ -1312,7 +1334,11 @@ sections.upgrade = async function upgrade() {
   check(c.printJobId[0] === oldCampaign.c2mJobId[0] && c.printDocumentId[0] === oldCampaign.c2mDocumentId[0] && c.printAddressListId[0] === oldCampaign.c2mAddressListId[0],
     "each campaign's document, address list and job ids carry over", { new: [c.printDocumentId, c.printAddressListId, c.printJobId], old: [oldCampaign.c2mDocumentId, oldCampaign.c2mAddressListId, oldCampaign.c2mJobId] });
   check(ser(c.status) === ser(oldCampaign.status) && ser(c.paymentStatus) === ser(oldCampaign.paymentStatus) && c.recipientCount === oldCampaign.recipientCount, "status, payment and recipients carry over");
-  check((await as(user).getCampaign(draft.campaignId[0]))[0]?.name === "Audit campaign", "unpaid drafts carry over");
+  const kept = (await as(user).getCampaign(draft.campaignId[0]))[0];
+  check(kept?.name === "Audit campaign", "unpaid drafts carry over");
+  const layers = kept?.canvasState[0]?.front;
+  check(layers?.textBlocks[0]?.text === "Fresh bagels" && layers.logos[0]?.width === 300 && layers.qrCodes[0]?.size === 110 && [layers.textBlocks[0], layers.logos[0], layers.qrCodes[0]].every((l) => ser(l.rotation) === "[]"),
+    "a stored design carries over with every layer unturned (rotation added as none)", layers);
   check((await as(user).getMyPayments()).some((p) => p.paymentIntentId === intent.paymentIntentId[0]), "payments made before the upgrade are found by customer (the payment index is rebuilt)");
   const up2 = upstream([...fakePrintPartner(), ...fakeResend()]);
   const s = await call(env.pic, up2, deferred(adminId).syncPrintTracking(cid));

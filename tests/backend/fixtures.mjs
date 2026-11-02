@@ -47,6 +47,22 @@ export function printPdf(fill = 1, pages = 2, imageBytes = 1024) {
   return out;
 }
 
+/**
+ * A design with one text box, one shape and one QR code on the front.
+ * `turns` gives each layer's `rotation` ([] for none); leave it out for a
+ * canister from before layers could be turned (no `rotation` field).
+ */
+export function sampleCanvas(turns) {
+  const r = (i) => (turns ? { rotation: turns[i] === undefined ? [] : [turns[i]] } : {});
+  const side = (front) => ({
+    backgroundColor: "#ffffff", backgroundImageUrl: [],
+    textBlocks: front ? [{ id: "t1", text: "Fresh bagels", x: 40, y: 40, width: 300, height: 60, fontSize: 32, color: "#111111", fontFamily: "Geist", fontWeight: 700n, align: "left", zIndex: 1n, ...r(0) }] : [],
+    logos: front ? [{ id: "s1", url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E", x: 100, y: 200, width: 300, height: 40, zIndex: 2n, ...r(1) }] : [],
+    qrCodes: front ? [{ id: "q1", x: 420, y: 40, size: 110, url: "https://ezmailout.com/t/{{recipientId}}", mode: { DynamicTracking: null }, foreground: "#0f172a", background: "#ffffff", caption: [], zIndex: 3n, ...r(2) }] : [],
+  });
+  return { front: side(true), back: side(false), designPpi: 100n, widthInches: 6, heightInches: 4.25 };
+}
+
 export function campaignInput(n = 3, extra = {}) {
   return {
     audienceType: { CsvUpload: null }, canvasState: [], designTemplateId: [], mailClass: [], name: "Audit campaign",

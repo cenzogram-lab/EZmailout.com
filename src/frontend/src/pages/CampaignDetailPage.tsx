@@ -61,6 +61,7 @@ import {
   useUpdateCampaignStatus,
 } from "@/hooks/use-backend";
 import { downloadText } from "@/lib/download";
+import { rotationOf, rotationTransform } from "@/lib/elementRotation";
 import {
   formatNumber,
   formatTimestamp,
@@ -152,6 +153,8 @@ function CanvasThumbnail({ canvas }: { canvas: CanvasState }) {
             width: logo.width * scale,
             height: logo.height * scale,
             zIndex: Number(logo.zIndex),
+            // Turned about its centre, as designed and printed.
+            transform: rotationTransform(rotationOf(logo)),
           }}
         />
       ))}
@@ -171,6 +174,7 @@ function CanvasThumbnail({ canvas }: { canvas: CanvasState }) {
             fontWeight: Number(block.fontWeight),
             textAlign: block.align as "left" | "center" | "right",
             zIndex: Number(block.zIndex),
+            transform: rotationTransform(rotationOf(block)),
           }}
         >
           {shownText(block.text)}
@@ -189,6 +193,7 @@ function CanvasThumbnail({ canvas }: { canvas: CanvasState }) {
             color: qr.foreground,
             borderColor: qr.foreground,
             zIndex: Number(qr.zIndex),
+            transform: rotationTransform(rotationOf(qr)),
           }}
         >
           <QrCode style={{ width: "70%", height: "70%" }} />

@@ -1,13 +1,13 @@
 import type { LogoState, QrCodeState } from "@/backend";
 
 /**
- * Rotation for every studio layer. Text blocks already carry `rotation` among
- * their studio-only extras (`lib/textStyle.ts`); images, shapes and QR codes
- * carry the same field. Like the text extras it lives on the layer in the
- * studio and in the saved draft and drives the editor, the 3D proof, the
- * preflight bounds and the 300 DPI export; `canvasForStorage` drops it, so
- * the canister's candid types and stable state are unchanged (the stored
- * canvas is a preview: the print file is uploaded on its own).
+ * Rotation for every studio layer: text blocks, images, shapes and QR codes
+ * all carry an optional `rotation` (the canister's candid has it on
+ * `TextBlockState`, `LogoState` and `QrCodeState` since migration
+ * `20261102_000000_LayerRotation`). It drives the editor, the 3D proof, the
+ * preflight bounds and the 300 DPI export, and `canvasForStorage` keeps it
+ * (normalised, omitted when 0) so the campaign page shows layers turned as
+ * they were designed and printed.
  */
 export interface Rotatable {
   /** Clockwise turn in degrees about the box centre. */
@@ -67,12 +67,6 @@ export function turnedBounds(r: Rect, deg: number): Rect {
   const w = r.w * c + r.h * s;
   const h = r.w * s + r.h * c;
   return { x: r.x + r.w / 2 - w / 2, y: r.y + r.h / 2 - h / 2, w, h };
-}
-
-/** The layer without its turn, as the canister stores it. */
-export function stripRotation<T extends object>(layer: T): T {
-  const { rotation: _r, ...rest } = layer as T & Rotatable;
-  return rest as T;
 }
 
 /** CSS transform for a turned layer (undefined when it is not turned). */

@@ -9,11 +9,12 @@ import {
 
 /**
  * Typographic settings a text block can carry beyond the canister's
- * `TextBlockState`: tracking, leading, italic and rotation. They live on the
- * block in the studio (and in the saved draft) and drive the editor, the 3D
- * proof, the text measurement and the 300 DPI export. The canister keeps only
- * a preview of the design (the print file is uploaded on its own), so
- * `canvasForStorage` drops them and the stored candid type stays unchanged.
+ * `TextBlockState`: tracking, leading and italic (plus `rotation`, which the
+ * canister stores too, see `lib/elementRotation.ts`). They live on the block
+ * in the studio (and in the saved draft) and drive the editor, the 3D proof,
+ * the text measurement and the 300 DPI export. The canister keeps only a
+ * preview of the design (the print file is uploaded on its own), so
+ * `canvasForStorage` drops the typographic ones.
  */
 export interface TextExtras {
   /** Tracking in em (0.1 = 10% of the type size after every character). */

@@ -261,6 +261,7 @@ export interface HttpResponse {
   'status_code' : number,
 }
 export interface LogoState {
+  'rotation' : [] | [number],
   'x' : number,
   'y' : number,
   'id' : string,
@@ -374,6 +375,7 @@ export interface PublicConfig {
   'referralBaseUrl' : string,
 }
 export interface QrCodeState {
+  'rotation' : [] | [number],
   'x' : number,
   'y' : number,
   'id' : string,
@@ -464,6 +466,7 @@ export interface SyncResult {
   'cached' : boolean,
 }
 export interface TextBlockState {
+  'rotation' : [] | [number],
   'x' : number,
   'y' : number,
   'id' : string,

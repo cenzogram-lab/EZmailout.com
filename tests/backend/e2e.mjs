@@ -214,7 +214,8 @@ if (done) {
   const norm = (c) => JSON.parse(ser(c));
   const storedCanvas = norm(rec.canvasState[0] ?? rec.canvasState);
   const strip = (side) => ({ ...side, backgroundImageUrl: side.backgroundImageUrl?.[0] ?? side.backgroundImageUrl ?? null });
-  const keyed = (blocks) => blocks.map((t) => JSON.stringify(Object.fromEntries(Object.keys(t).sort().map((k) => [k, typeof t[k] === "string" && /^\d+n$/.test(t[k]) ? t[k].slice(0, -1) : t[k]]))));
+  // An unturned layer is sent without `rotation` and read back as [] (none).
+  const keyed = (blocks) => blocks.map((t) => JSON.stringify(Object.fromEntries(Object.keys(t).filter((k) => !(k === "rotation" && Array.isArray(t[k]) && t[k].length === 0)).sort().map((k) => [k, typeof t[k] === "string" && /^\d+n$/.test(t[k]) ? t[k].slice(0, -1) : t[k]]))));
   const [sa, sb] = [keyed(storedCanvas.front.textBlocks), keyed(sent.front.textBlocks)];
   const diff = sa.findIndex((x, i) => x !== sb[i]);
   check(sa.length === sb.length && diff === -1, "front text layers stored exactly as sent (text, font, colour, size, box)", diff === -1 ? { stored: sa.length, sent: sb.length } : { stored: sa[diff], sent: sb[diff] });

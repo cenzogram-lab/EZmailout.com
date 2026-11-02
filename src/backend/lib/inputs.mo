@@ -151,6 +151,15 @@ module {
     l.startsWith(#text "data:image/") or l.startsWith(#text "blob:") or l.startsWith(#text "https://");
   };
 
+  /// A layer's turn: none, or a finite angle of at most a full turn either
+  /// way (the studio keeps (−180, 180]). Written so that NaN fails too.
+  public func rotationValid(r : ?Float) : Bool {
+    switch (r) {
+      case null true;
+      case (?d) { d >= -360.0 and d <= 360.0 };
+    };
+  };
+
   func sideError(side : Types.CanvasSide, name : Text, images : { var chars : Nat }) : ?Text {
     let layers = side.textBlocks.size() + side.logos.size() + side.qrCodes.size();
     if (layers > maxCanvasLayersPerSide) {
@@ -172,10 +181,12 @@ module {
       if (tooLong(b.id, short) or tooLong(b.color, short) or tooLong(b.fontFamily, short) or tooLong(b.align, short)) {
         return ?("A text box on the " # name # " has an invalid style");
       };
+      if (not rotationValid(b.rotation)) { return ?("A text box on the " # name # " has an invalid rotation") };
     };
     for (l in side.logos.vals()) {
       if (tooLong(l.id, short)) { return ?("An image on the " # name # " has an invalid id") };
       if (not imageUrlAllowed(l.url)) { return ?("An image on the " # name # " has an unsupported address") };
+      if (not rotationValid(l.rotation)) { return ?("An image on the " # name # " has an invalid rotation") };
       images.chars += l.url.size();
     };
     for (q in side.qrCodes.vals()) {
@@ -184,6 +195,7 @@ module {
       };
       if (tooLong(q.url, maxRedirectUrlChars)) { return ?("A QR code on the " # name # " points to an address longer than 2,048 characters") };
       if (optTooLong(q.caption, maxCanvasCaptionChars)) { return ?("A QR caption on the " # name # " is too long") };
+      if (not rotationValid(q.rotation)) { return ?("A QR code on the " # name # " has an invalid rotation") };
     };
     null;
   };

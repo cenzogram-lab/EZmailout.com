@@ -1,6 +1,7 @@
 /// Campaign state machines (src/backend/lib/campaign.mo), run in the interpreter:
 ///   moc -r --implicit-package=core --package core <motoko-core>/src test/campaign.test.mo
 import CampaignLib "../src/backend/lib/campaign";
+import Inputs "../src/backend/lib/inputs";
 import Types "../src/backend/types/campaign";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
@@ -57,5 +58,12 @@ for (i in [0, 1, 2, 3, 4, 5, 6].vals()) { expect("stage round trip", CampaignLib
 // Ids are sequential.
 let st = { var nextCampaignId = 7 };
 expect("next id", CampaignLib.nextId(st) == "cmp_7" and CampaignLib.nextId(st) == "cmp_8");
+
+// A stored layer's turn: none, or a finite angle within a full turn.
+expect("no turn", Inputs.rotationValid(null));
+expect("a turn", Inputs.rotationValid(?90.0) and Inputs.rotationValid(?-180.0) and Inputs.rotationValid(?360.0));
+expect("past a full turn", not Inputs.rotationValid(?400.0) and not Inputs.rotationValid(?-361.0));
+expect("not a number", not Inputs.rotationValid(?(0.0 / 0.0)));
+expect("infinite", not Inputs.rotationValid(?(1.0 / 0.0)));
 
 Debug.print("campaign: all checks passed");

@@ -137,6 +137,7 @@ export interface TrackingEvent {
     timestamp: bigint;
 }
 export interface TextBlockState {
+    rotation?: number;
     align: string;
     color: string;
     fontFamily: string;
@@ -236,6 +237,7 @@ export enum QrMode {
     StaticUrl = "StaticUrl"
 }
 export interface QrCodeState {
+    rotation?: number;
     background: string;
     caption?: string;
     foreground: string;
@@ -367,6 +369,7 @@ export enum MailClass {
     PriorityExpress = "PriorityExpress"
 }
 export interface LogoState {
+    rotation?: number;
     height: number;
     id: string;
     url: string;

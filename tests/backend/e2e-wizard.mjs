@@ -343,6 +343,14 @@ if (launched) {
   const rec = (await cust.getCampaign(campaignId))[0];
   check(ser(rec?.productionStatus).includes("Submitted") && rec?.printJobId?.[0], "the campaign is Submitted with its print job id stored", { production: rec?.productionStatus, job: rec?.printJobId, error: rec?.lastError });
   check(rec?.testMode === true, "the campaign is paid in test mode", rec?.paymentStatus);
+  const storedFront = rec?.canvasState?.[0]?.front;
+  const storedBar = storedFront?.logos.find((l) => l.width === 300 && l.height === 40);
+  check(ser(storedBar?.rotation) === "[90]", "the campaign stores the bar's 90° turn", storedBar?.rotation);
+  await page.goto(`${site}/campaigns/${campaignId}`, { waitUntil: "networkidle" });
+  await page.waitForSelector(q("campaign_detail.design.thumbnail"), { timeout: 20000 });
+  const pageTurns = await page.evaluate(() => [...document.querySelectorAll('[data-ocid="campaign_detail.design.thumbnail"] > *')].map((e) => e.style.transform).filter(Boolean));
+  check(pageTurns.includes("rotate(90deg)"), "the campaign page draws the bar turned 90°", pageTurns);
+  await page.screenshot({ path: `${OUT}07-campaign-page.png`, fullPage: true });
 
   step("The four print steps, as the partner received them");
   const print = partnerLog.filter((r) => r.url.includes("/molpro/"));

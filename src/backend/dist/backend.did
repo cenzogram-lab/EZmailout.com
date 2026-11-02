@@ -98,6 +98,7 @@ type TextBlockState =
    fontWeight: nat;
    height: float64;
    id: text;
+   rotation: opt float64;
    "text": text;
    width: float64;
    x: float64;
@@ -244,6 +245,7 @@ type QrCodeState =
    foreground: text;
    id: text;
    mode: QrMode;
+   rotation: opt float64;
    size: float64;
    url: text;
    x: float64;
@@ -389,6 +391,7 @@ type LogoState =
  record {
    height: float64;
    id: text;
+   rotation: opt float64;
    url: text;
    width: float64;
    x: float64;
