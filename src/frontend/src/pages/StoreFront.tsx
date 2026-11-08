@@ -1,4 +1,5 @@
 import { BookDemoModal } from "@/components/BookDemoModal";
+import { HeroShowcase } from "@/components/marketing/HeroShowcase";
 import { MembershipCard } from "@/components/marketing/MembershipCard";
 import { PricingCalculator } from "@/components/marketing/PricingCalculator";
 import { ProductShowcase } from "@/components/marketing/ProductShowcase";
@@ -77,112 +78,6 @@ function Section({
       </div>
       {children}
     </section>
-  );
-}
-
-/* ─── Studio mock (hero illustration built from the real design tokens) ─── */
-const RAIL_ITEMS: { icon: LucideIcon; label: string }[] = [
-  { icon: LayoutTemplate, label: "Templates" },
-  { icon: Layers, label: "Elements" },
-  { icon: Type, label: "Text" },
-  { icon: Upload, label: "Uploads" },
-  { icon: Palette, label: "Brand" },
-  { icon: QrCode, label: "QR" },
-  { icon: Sparkles, label: "AI" },
-];
-
-function StudioMock() {
-  return (
-    <div
-      className="relative overflow-hidden rounded-3xl border border-hairline bg-card shadow-raised ring-1 ring-primary/10"
-      data-ocid="hero.studio_mock"
-      aria-hidden="true"
-    >
-      <div className="flex items-center gap-2 border-b border-hairline bg-card-raised px-3 py-2.5">
-        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
-        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
-        <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/30" />
-        <span className="ml-2 min-w-0 truncate rounded-full border border-hairline bg-well px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          Spring open-house · 6″ × 4.25″ Postcard
-        </span>
-        <span className="btn-3d-primary ml-auto shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold">
-          Continue to review
-        </span>
-      </div>
-      <div className="flex">
-        <div className="flex w-14 shrink-0 flex-col items-center gap-2 border-r border-hairline bg-card-raised py-3">
-          {RAIL_ITEMS.map((item, i) => (
-            <span
-              key={item.label}
-              className={`flex size-9 items-center justify-center rounded-xl ${i === 2 ? "bg-primary/15 text-primary-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] ring-1 ring-primary/25" : "text-muted-foreground"}`}
-            >
-              <item.icon className="size-4" strokeWidth={1.75} />
-            </span>
-          ))}
-        </div>
-        <div className="studio-dotgrid relative min-w-0 flex-1 p-6 sm:p-8">
-          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-full border border-hairline bg-popover px-2 py-1 shadow-raised">
-            <span className="px-1 text-[9px] font-semibold uppercase text-muted-foreground">
-              text
-            </span>
-            <AlignStartVertical className="size-3.5 text-muted-foreground" />
-            <AlignCenterVertical className="size-3.5 text-primary" />
-            <Copy className="size-3.5 text-muted-foreground" />
-            <Trash2 className="size-3.5 text-destructive" />
-          </div>
-          <div className="relative mx-auto mt-6 aspect-[6/4.25] w-full max-w-[360px]">
-            <div className="absolute -inset-1.5 rounded-sm border-2 border-[#ef4444]/80" />
-            {/* The postcard is artwork: print colours, the same in both
-                themes (the studio keeps an artboard's own colours too). */}
-            <div className="relative h-full w-full overflow-hidden rounded-sm shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#cff3fd] via-white to-[#d3e8fd]" />
-              <div className="absolute inset-[6%] rounded-sm border border-dashed border-[#008058]/70" />
-              <div className="absolute left-[10%] top-[16%] w-[62%]">
-                <div className="relative rounded-sm outline outline-2 outline-primary">
-                  <div className="px-1 font-display text-[clamp(14px,3.6vw,22px)] font-extrabold leading-tight text-[#01080a]">
-                    Open house Saturday 10–4
-                  </div>
-                  {[
-                    "-left-1.5 -top-1.5",
-                    "-right-1.5 -top-1.5",
-                    "-left-1.5 -bottom-1.5",
-                    "-right-1.5 -bottom-1.5",
-                  ].map((pos) => (
-                    <span
-                      key={pos}
-                      className={`absolute ${pos} size-3 rounded-full border-2 border-primary bg-white shadow`}
-                    />
-                  ))}
-                </div>
-                <p className="mt-2 px-1 text-[10px] font-medium text-[#475467] sm:text-xs">
-                  120 Harbor View Dr · Free valuation for every visitor
-                </p>
-                <span className="mt-2 inline-block rounded-full bg-[#0e2b4f] px-3 py-1 text-[9px] font-semibold uppercase tracking-wide text-white">
-                  Book today
-                </span>
-              </div>
-              <div className="absolute bottom-[10%] right-[8%] flex size-12 items-center justify-center rounded-sm bg-white shadow sm:size-14">
-                <QrCode className="size-9 text-[#01080a]" strokeWidth={1.5} />
-              </div>
-            </div>
-            <span className="absolute -right-2 -top-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
-              You
-            </span>
-          </div>
-          <div className="mt-5 flex items-center justify-center gap-2">
-            {["#f0f1f5", "#0e2b4f", "#b5d8fc", "#6366f1", "#dbefad"].map(
-              (hex) => (
-                <span
-                  key={hex}
-                  className="size-5 rounded-full border border-hairline-strong shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]"
-                  style={{ backgroundColor: hex }}
-                />
-              ),
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -280,15 +175,8 @@ function HeroSection({ onOpenDemo }: { onOpenDemo: () => void }) {
             ))}
           </ul>
         </div>
-        <div className="relative min-w-0 motion-safe:animate-fade-up lg:pl-6">
-          <StudioMock />
-          {/* Stampy with his palette, presenting the studio. */}
-          <MascotStage
-            pose="design"
-            size="lg"
-            className="pointer-events-none absolute -bottom-12 -right-1 sm:-bottom-14 sm:-left-5 sm:right-auto lg:-left-6"
-            mascotClassName="size-24 sm:size-32 lg:size-36 xl:size-40"
-          />
+        <div className="relative mx-auto w-full min-w-0 max-w-xl motion-safe:animate-fade-up lg:max-w-none lg:pl-4">
+          <HeroShowcase />
         </div>
       </div>
     </section>
